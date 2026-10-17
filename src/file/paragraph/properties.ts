@@ -11,9 +11,11 @@
  * @module
  */
 import type { SectionProperties } from "@file/document/body/section-properties/section-properties";
+import { listKey } from "@file/numbering/list-key";
 import type { NumberingDefinition } from "@file/numbering/numbering";
 import { ChangeAttributes, type IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { type IContext, type IXmlableObject, IgnoreIfEmptyXmlComponent, OnOffElement, XmlComponent } from "@file/xml-components";
+import { uniqueNumericIdCreator } from "@util/convenience-functions";
 
 import { type IParagraphRunOptions, ParagraphRunProperties } from ".";
 import { FontWrapper } from "../fonts/font-wrapper";
@@ -85,8 +87,21 @@ export type IParagraphStylePropertiesOptions = {
               readonly reference: string | NumberingDefinition;
               /** Level in the numbering hierarchy (0-8) */
               readonly level: number;
-              /** Instance number for multiple lists with same reference */
+              /**
+               * Which list of this reference the paragraph is in. Paragraphs with the same `instance` are one list, numbered
+               * on from each other, and a new `instance` starts a new list, at every level's `start` (`1` by default).
+               * Paragraphs that leave it out are in the list that the last paragraph to `restart` it started, or, before
+               * any did, the first list of the reference
+               */
               readonly instance?: number;
+              /**
+               * Whether the paragraph starts its list again, numbering it and the paragraphs after it from every level's
+               * `start` (`1` by default), as when a list carries on after other paragraphs, such as a heading, and should
+               * count from 1 again. The paragraphs after it that leave out `instance` continue the restarted list, until a
+               * paragraph restarts it again. Has no effect with `instance`, which says the list itself.
+               * Only affects document paragraphs; style, numbering level and document default definitions are not in a list.
+               */
+              readonly restart?: boolean;
               /**
                * Whether the numbering is fully custom, in which case the paragraph is not given the
                * built-in `ListParagraph` style. Only affects document paragraphs; style, numbering level
@@ -172,7 +187,28 @@ export type IParagraphPropertiesConfig = {
      * @default true
      */
     readonly implicitListParagraphStyle?: boolean;
+    /**
+     * Whether the paragraph has a place in the order of its part's lists, where a `numbering.restart` starts its list
+     * again for it and the paragraphs after it.
+     *
+     * This is the default for document paragraphs. Paragraph style, numbering level and document default definitions,
+     * and the earlier formatting a revision keeps, must pass `false`: they are not where the list is in the part, so they
+     * leave `restart` out and do not move the paragraphs after them onto another list.
+     *
+     * @default true
+     */
+    readonly inListOrder?: boolean;
 };
+
+/**
+ * The restarted list that paragraphs leaving out `instance` are in, by list reference, for each part being written, as
+ * the id of the restart. A paragraph that restarts a list moves the paragraphs after it in the part onto its own list,
+ * and before any does, they are in instance 0. Each part is written
+ * with a context of its own, so the lists of one part, or of the same part written again, start from the first list.
+ */
+const currentRestartedLists = new WeakMap<IContext, ReadonlyMap<string, number>>();
+
+const restartedListIds = uniqueNumericIdCreator();
 
 type AlignmentValue = (typeof AlignmentType)[keyof typeof AlignmentType];
 
@@ -295,12 +331,15 @@ const RIGHT_TO_LEFT_ALIGNMENTS: Partial<Record<AlignmentValue, AlignmentValue>> 
  * ```
  */
 export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
-    // eslint-disable-next-line functional/prefer-readonly-type
-    private readonly numberingReferences: {
+    private readonly numbering?: {
         readonly reference: string;
-        readonly instance: number;
+        readonly level: number;
+        readonly instance?: number;
+        /** The id of the restart, for a paragraph that restarts its list */
+        readonly restartedListId?: number;
         readonly definition?: NumberingDefinition;
-    }[] = [];
+        readonly numberProperties: NumberProperties;
+    };
 
     /**
      * Creates paragraph properties.
@@ -308,7 +347,10 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
      * @param options - The paragraph formatting to emit
      * @param config - Controls how the element is assembled; see {@link IParagraphPropertiesConfig}
      */
-    public constructor(options?: IParagraphPropertiesOptions, { implicitListParagraphStyle = true }: IParagraphPropertiesConfig = {}) {
+    public constructor(
+        options?: IParagraphPropertiesOptions,
+        { implicitListParagraphStyle = true, inListOrder = true }: IParagraphPropertiesConfig = {},
+    ) {
         super("w:pPr", options?.includeIfEmpty);
 
         if (!options) {
@@ -358,11 +400,19 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.numbering) {
-            const { reference: list, instance = 0, level } = options.numbering;
+            const { reference: list, instance, level, restart } = options.numbering;
             const reference = typeof list === "string" ? list : list.reference;
-            this.numberingReferences.push({ reference, instance, definition: typeof list === "string" ? undefined : list });
+            const numberProperties = new NumberProperties(listKey(reference, instance ?? 0), level);
+            this.numbering = {
+                reference,
+                level,
+                instance,
+                restartedListId: restart && inListOrder && instance === undefined ? restartedListIds() : undefined,
+                definition: typeof list === "string" ? undefined : list,
+                numberProperties,
+            };
 
-            this.push(new NumberProperties(`${reference}-${instance}`, level));
+            this.push(numberProperties);
         } else if (options.numbering === false) {
             this.push(new NumberProperties(0, 0));
         }
@@ -486,17 +536,34 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
     /**
      * Prepares the paragraph properties for XML serialization.
      *
-     * This method creates concrete numbering instances for any numbering references
-     * before the properties are converted to XML.
+     * This method works out which list instance a numbered paragraph is in, from where it is in its part when it
+     * leaves out `instance`, and creates the concrete numbering instance for it before the properties are converted to XML.
      *
      * @param context - The XML context containing document and file information
      * @returns The prepared XML object, or undefined if the component should be ignored
      */
     public prepForXml(context: IContext): IXmlableObject | undefined {
-        if (!(context.viewWrapper instanceof FontWrapper)) {
-            for (const { reference, instance, definition } of this.numberingReferences) {
-                context.file.Numbering.createConcreteNumberingInstance(reference, instance, definition);
+        if (this.numbering) {
+            const { reference, level, instance = 0, definition, numberProperties } = this.numbering;
+            const restartedListId =
+                this.numbering.instance === undefined
+                    ? (this.numbering.restartedListId ?? currentRestartedLists.get(context)?.get(reference))
+                    : undefined;
+
+            if (this.numbering.restartedListId !== undefined) {
+                currentRestartedLists.set(
+                    context,
+                    new Map([...(currentRestartedLists.get(context) ?? []), [reference, this.numbering.restartedListId]]),
+                );
             }
+
+            if (!(context.viewWrapper instanceof FontWrapper)) {
+                context.file.Numbering.createConcreteNumberingInstance(reference, instance, definition, restartedListId);
+            }
+
+            // The paragraph's place in its part's lists is only known now, so its list id is written for it here
+            const index = this.root.indexOf(numberProperties);
+            this.root[index] = new NumberProperties(listKey(reference, instance, restartedListId), level);
         }
 
         return super.prepForXml(context);
@@ -514,6 +581,6 @@ export class ParagraphPropertiesChange extends XmlComponent {
             }),
         );
         // pPr is required (minOccurs="1") even if empty
-        this.root.push(new ParagraphProperties({ ...options, includeIfEmpty: true }));
+        this.root.push(new ParagraphProperties({ ...options, includeIfEmpty: true }, { inListOrder: false }));
     }
 }

@@ -3,7 +3,7 @@ import { afterEach, assert, beforeEach, describe, expect, it, vi } from "vitest"
 import { Formatter } from "@export/formatter";
 import { BorderStyle } from "@file/border";
 import { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared";
-import { EMPTY_OBJECT } from "@file/xml-components";
+import { EMPTY_OBJECT, type IContext } from "@file/xml-components";
 import * as convenienceFunctions from "@util/convenience-functions";
 
 import { DocumentWrapper, type IViewWrapper } from "../document-wrapper";
@@ -708,7 +708,7 @@ describe("Paragraph", () => {
                 file: { Numbering: { createConcreteNumberingInstance } } as unknown as File,
             });
 
-            expect(createConcreteNumberingInstance).toHaveBeenCalledWith("own-list", 2, definition);
+            expect(createConcreteNumberingInstance).toHaveBeenCalledWith("own-list", 2, definition, undefined);
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
@@ -732,7 +732,101 @@ describe("Paragraph", () => {
                 file: { Numbering: { createConcreteNumberingInstance } } as unknown as File,
             });
 
-            expect(createConcreteNumberingInstance).toHaveBeenCalledWith("steps", 0, undefined);
+            expect(createConcreteNumberingInstance).toHaveBeenCalledWith("steps", 0, undefined, undefined);
+        });
+
+        describe("restart", () => {
+            // Writes the paragraphs one after another in one part, as a part's paragraphs are written, giving their list ids
+            const listIdsOf = (paragraphs: readonly Paragraph[], context: IContext = createNumberingContext()): readonly string[] =>
+                paragraphs.map((paragraph) => {
+                    const xml = JSON.stringify(new Formatter().format(paragraph, context));
+                    return /"w:numId":\{"_attr":\{"w:val":"\{([^}]+)\}"/.exec(xml)?.[1] ?? "";
+                });
+
+            it("should put the paragraph and the paragraphs after it that leave out instance in a list of its own", () => {
+                const ids = listIdsOf([
+                    new Paragraph({ numbering: { reference: "steps", level: 0 } }),
+                    new Paragraph({ numbering: { reference: "steps", level: 0, restart: true } }),
+                    new Paragraph({ numbering: { reference: "steps", level: 1 } }),
+                    new Paragraph({ numbering: { reference: "steps", level: 0, restart: true } }),
+                    new Paragraph({ numbering: { reference: "steps", level: 0 } }),
+                ]);
+
+                expect(ids[0]).to.equal("steps-0");
+                expect(ids[1]).to.match(/^steps-restart \d+$/);
+                expect(ids[2]).to.equal(ids[1]);
+                expect(ids[3])
+                    .to.match(/^steps-restart \d+$/)
+                    .and.not.equal(ids[1]);
+                expect(ids[4]).to.equal(ids[3]);
+            });
+
+            it("should create the restarted list's concrete numbering instance", () => {
+                const createConcreteNumberingInstance = vi.fn();
+                const [id] = listIdsOf([new Paragraph({ numbering: { reference: "steps", level: 0, restart: true } })], {
+                    ...createNumberingContext(),
+                    file: { Numbering: { createConcreteNumberingInstance } } as unknown as File,
+                });
+
+                expect(createConcreteNumberingInstance).toHaveBeenCalledWith(
+                    "steps",
+                    0,
+                    undefined,
+                    Number(id.replace("steps-restart ", "")),
+                );
+            });
+
+            it("should only restart lists of the same reference", () => {
+                const ids = listIdsOf([
+                    new Paragraph({ numbering: { reference: "steps", level: 0, restart: true } }),
+                    new Paragraph({ numbering: { reference: "other", level: 0 } }),
+                ]);
+
+                expect(ids[1]).to.equal("other-0");
+            });
+
+            it("should keep a paragraph that gives an instance in that instance, without moving the paragraphs after it", () => {
+                const ids = listIdsOf([
+                    new Paragraph({ numbering: { reference: "steps", level: 0, instance: 3, restart: true } }),
+                    new Paragraph({ numbering: { reference: "steps", level: 0 } }),
+                    new Paragraph({ numbering: { reference: "steps", level: 0, restart: true } }),
+                    new Paragraph({ numbering: { reference: "steps", level: 0, instance: 3 } }),
+                ]);
+
+                expect(ids[0]).to.equal("steps-3");
+                expect(ids[1]).to.equal("steps-0");
+                expect(ids[3]).to.equal("steps-3");
+            });
+
+            it("should start each part from the first list", () => {
+                const paragraphs = [
+                    new Paragraph({ numbering: { reference: "steps", level: 0 } }),
+                    new Paragraph({ numbering: { reference: "steps", level: 0, restart: true } }),
+                ];
+
+                const first = listIdsOf(paragraphs);
+                const second = listIdsOf(paragraphs);
+
+                expect(second).to.deep.equal(first);
+                expect(listIdsOf([paragraphs[0]])).to.deep.equal(["steps-0"]);
+            });
+
+            it("should not move the paragraphs after it onto another list for the formatting a revision keeps", () => {
+                const ids = listIdsOf([
+                    new Paragraph({
+                        numbering: { reference: "steps", level: 0 },
+                        revision: {
+                            id: 1,
+                            author: "Firstname Lastname",
+                            date: "2020-10-06T09:05:00Z",
+                            numbering: { reference: "steps", level: 0, restart: true },
+                        },
+                    }),
+                    new Paragraph({ numbering: { reference: "steps", level: 0 } }),
+                ]);
+
+                expect(ids).to.deep.equal(["steps-0", "steps-0"]);
+            });
         });
 
         it("should not add ListParagraph style when custom is true", () => {

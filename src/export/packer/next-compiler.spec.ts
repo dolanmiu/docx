@@ -125,6 +125,59 @@ describe("Compiler", () => {
             expect(await zipFile.file("word/numbering.xml")?.async("text")).to.contain('<w:num w:numId="2">');
         });
 
+        describe("restarting a list", () => {
+            const numIdsIn = (xml: string): readonly string[] => Array.from(xml.matchAll(/<w:numId w:val="(\d+)"\/>/g), ([, id]) => id);
+
+            const createRestartedListFile = (): File =>
+                new File({
+                    numbering: {
+                        config: [{ reference: "steps", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }] }],
+                    },
+                    sections: [
+                        {
+                            children: [
+                                new Paragraph({ text: "One", numbering: { reference: "steps", level: 0 } }),
+                                new Paragraph({ text: "Two", numbering: { reference: "steps", level: 0 } }),
+                                new Paragraph({ text: "A heading between the lists" }),
+                                new Paragraph({ text: "One again", numbering: { reference: "steps", level: 0, restart: true } }),
+                                new Paragraph({ text: "Two again", numbering: { reference: "steps", level: 0 } }),
+                                new Paragraph({ text: "Another heading" }),
+                                new Paragraph({ text: "One a third time", numbering: { reference: "steps", level: 0, restart: true } }),
+                                new Paragraph({ text: "Two a third time", numbering: { reference: "steps", level: 0 } }),
+                            ],
+                        },
+                    ],
+                });
+
+            it("should put the restarting paragraph and the paragraphs after it in a new list that starts from 1", async () => {
+                const zipFile = compiler.compile(createRestartedListFile());
+
+                const document = (await zipFile.file("word/document.xml")?.async("text")) ?? "";
+                const numbering = (await zipFile.file("word/numbering.xml")?.async("text")) ?? "";
+
+                expect(numIdsIn(document)).to.deep.equal(["2", "2", "3", "3", "4", "4"]);
+                for (const numId of ["2", "3", "4"]) {
+                    expect(numbering).to.match(
+                        new RegExp(
+                            `<w:num w:numId="${numId}"><w:abstractNumId w:val="\\d+"/><w:lvlOverride w:ilvl="0"><w:startOverride w:val="1"/>`,
+                        ),
+                    );
+                }
+            });
+
+            it("should write the same lists when the document is compiled again", async () => {
+                const file = createRestartedListFile();
+                compiler.compile(file);
+                const zipFile = compiler.compile(file);
+
+                const document = (await zipFile.file("word/document.xml")?.async("text")) ?? "";
+                const numbering = (await zipFile.file("word/numbering.xml")?.async("text")) ?? "";
+
+                expect(numIdsIn(document)).to.deep.equal(["2", "2", "3", "3", "4", "4"]);
+                expect(numbering).to.not.contain('w:numId="5"');
+            });
+        });
+
         it("should pack all additional headers and footers", { timeout: 99999999 }, () => {
             const file = new File({
                 sections: [

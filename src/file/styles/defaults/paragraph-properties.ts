@@ -30,6 +30,6 @@ export class ParagraphPropertiesDefaults extends XmlComponent {
     public constructor(options?: IParagraphStylePropertiesOptions) {
         super("w:pPrDefault");
         // Document defaults are a definition, not a paragraph, so no implicit `ListParagraph` reference belongs here.
-        this.root.push(new ParagraphProperties(options, { implicitListParagraphStyle: false }));
+        this.root.push(new ParagraphProperties(options, { implicitListParagraphStyle: false, inListOrder: false }));
     }
 }

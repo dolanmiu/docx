@@ -16,6 +16,7 @@ import { decimalNumber } from "@util/values";
 
 import { AbstractNumbering } from "./abstract-numbering";
 import { type ILevelsOptions, LevelFormat } from "./level";
+import { listKey } from "./list-key";
 import { ConcreteNumbering } from "./num";
 import { DocumentAttributes } from "../document/document-attributes";
 
@@ -288,8 +289,15 @@ export class Numbering extends XmlComponent {
      * @param definition - The list's definition, for a list a paragraph gives its own definition of. It is added with
      * its reference, unless the numbering already has a list with that reference, such as one of the document's
      * `numbering` option, which is kept
+     * @param restartedListId - For a list a paragraph starts again with `restart`, the id of that restart. The list is
+     * then that restart's own, not the `instance`'s
      */
-    public createConcreteNumberingInstance(reference: string, instance: number, definition?: NumberingDefinition): void {
+    public createConcreteNumberingInstance(
+        reference: string,
+        instance: number,
+        definition?: NumberingDefinition,
+        restartedListId?: number,
+    ): void {
         if (definition && !this.abstractNumberingMap.has(definition.reference)) {
             // eslint-disable-next-line functional/immutable-data
             this.abstractNumberingMap.set(
@@ -306,7 +314,7 @@ export class Numbering extends XmlComponent {
             return;
         }
 
-        const fullReference = `${reference}-${instance}`;
+        const fullReference = listKey(reference, instance, restartedListId);
 
         if (this.concreteNumberingMap.has(fullReference)) {
             return;
@@ -321,6 +329,7 @@ export class Numbering extends XmlComponent {
             abstractNumId: abstractNumbering.id,
             reference,
             instance,
+            restartedListId,
             overrideLevels: referenceConfigLevels.map(({ level, start = 1 }) => ({
                 num: level,
                 start: decimalNumber(start),

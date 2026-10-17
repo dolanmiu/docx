@@ -67,6 +67,11 @@ export type IConcreteNumberingOptions = {
     readonly reference: string;
     /** Instance number for tracking multiple uses. */
     readonly instance: number;
+    /**
+     * For a list a paragraph starts again with `restart`, the id of that restart, which tells the list apart from the
+     * reference's numbered instances.
+     */
+    readonly restartedListId?: number;
     /** Array of level overrides to customize specific levels. */
     readonly overrideLevels?: readonly IOverrideLevel[];
 };
@@ -115,6 +120,8 @@ export class ConcreteNumbering extends XmlComponent {
     public readonly reference: string;
     /** The instance number for tracking multiple uses. */
     public readonly instance: number;
+    /** For a list a paragraph restarts, the id of that restart, as {@link IConcreteNumberingOptions.restartedListId} describes. */
+    public readonly restartedListId?: number;
 
     /**
      * Creates a new concrete numbering instance.
@@ -127,6 +134,7 @@ export class ConcreteNumbering extends XmlComponent {
         this.numId = options.numId;
         this.reference = options.reference;
         this.instance = options.instance;
+        this.restartedListId = options.restartedListId;
 
         this.root.push(
             new NumAttributes({
