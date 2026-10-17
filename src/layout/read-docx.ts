@@ -5,7 +5,8 @@
  *
  * @module
  */
-import type { Element } from "xml-js";
+
+import type { XmlElement as Element } from "docx";
 
 import { type XmlObject, attributesOf, childrenOf, find, readTextStyles, readThemeFonts, stringOf, withoutUndefined } from "../text-layout";
 import type { DataStores } from "./bound-controls";
@@ -26,7 +27,7 @@ type Relationship = {
 const DEFAULT_DOCUMENT = "word/document.xml";
 
 /**
- * An element as xml-js parses it, formatted as docx formats elements: `{ "w:p": [{ _attr: {...} }, ...content] }`, with
+ * An element as `parseXml` reads it, formatted as docx formats elements: `{ "w:p": [{ _attr: {...} }, ...content] }`, with
  * text as strings.
  */
 const formatted = (element: Element): unknown => {
@@ -250,8 +251,8 @@ const dataStoresOf = (parts: ReadonlyMap<string, Element>, documentPath: string)
  * Reads a .docx's main document, with the parts it refers to, and the documents it imports (`w:altChunk`) as Word turns
  * them into its own paragraphs and tables when it opens it (see `imported-documents.ts`).
  *
- * @param parts - The XML parts of its package, parsed by xml-js's `xml2js`, not compact and keeping the spaces between
- * elements, by their paths, such as "word/document.xml"
+ * @param parts - The XML parts of its package, read by `parseXml` keeping the text that is only whitespace, by their
+ * paths, such as "word/document.xml"
  * @param binaryParts - Its other parts, such as the fonts it embeds, by their paths
  * @param options - How it is read: to be laid out with a guess, or not
  * @param importedDocuments - The .docx files it imports, by their paths, each read as it is

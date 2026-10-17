@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from "vitest";
-import type { Element } from "xml-js";
 
 import type { IViewWrapper } from "@file/document-wrapper";
 import type { File } from "@file/file";
@@ -8,6 +7,7 @@ import { FootnoteReferenceRun } from "@file/footnotes/footnote/run/reference-run
 import { Bookmark, ConcreteHyperlink, Paragraph, type ParagraphChild, TextRun } from "@file/paragraph";
 import { WpsShapeRun } from "@file/paragraph/run/wps-shape-run";
 import { Table, TableCell, TableRow } from "@file/table";
+import type { XmlElement as Element } from "@util/xml";
 
 import { PatchType } from "./from-docx";
 import { replacer } from "./replacer";

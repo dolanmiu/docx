@@ -1,14 +1,13 @@
 // cspell:ignore cmpd
 import { describe, expect, it } from "vitest";
-import xml from "xml";
-import { type Element, xml2js } from "xml-js";
 
 import { Formatter } from "@export/formatter";
+import { type XmlElement as Element, parseXml, stringifyXmlable } from "@util/xml";
 import type { XmlComponent } from "docx";
 
 import { PRIMARY_AXES, createCategoryAxis, createPointAxes, createValueAxis } from "./axes";
 
-const parse = (component: XmlComponent): Element => (xml2js(xml(new Formatter().format(component))) as Element).elements![0];
+const parse = (component: XmlComponent): Element => parseXml(stringifyXmlable(new Formatter().format(component))).elements![0];
 const names = (element: Element): readonly string[] => (element.elements ?? []).map(({ name }) => name!);
 const child = (element: Element, name: string): Element => element.elements!.find((one) => one.name === name)!;
 const value = (element: Element, name: string): unknown => child(element, name)?.attributes?.val;
@@ -63,7 +62,7 @@ describe("createCategoryAxis", () => {
         ]);
         expect(value(axis, "c:delete")).to.equal("1");
         // The title of an axis on the left reads from bottom to top
-        expect(xml(new Formatter().format(createCategoryAxis({ ...CATEGORY, position: "l" }, { title: "Month" })))).to.contain(
+        expect(stringifyXmlable(new Formatter().format(createCategoryAxis({ ...CATEGORY, position: "l" }, { title: "Month" })))).to.contain(
             'rot="-5400000"',
         );
     });
@@ -90,7 +89,7 @@ describe("createCategoryAxis", () => {
     });
 
     it("should turn the labels as asked, in 60,000ths of a degree, in the font given over the chart's", () => {
-        const written = xml(
+        const written = stringifyXmlable(
             new Formatter().format(
                 createCategoryAxis(
                     { ...CATEGORY, font: { name: "Arial", bold: true } },
@@ -103,7 +102,7 @@ describe("createCategoryAxis", () => {
         expect(written).to.contain('<a:defRPr sz="1200" b="0" i="0"');
         expect(written).to.contain('<a:latin typeface="Arial"/><a:ea typeface="+mn-ea"/><a:cs typeface="Arial"/>');
         // Office's automatic rotation otherwise
-        expect(xml(new Formatter().format(createCategoryAxis(CATEGORY)))).to.contain('<a:bodyPr rot="-60000000"');
+        expect(stringifyXmlable(new Formatter().format(createCategoryAxis(CATEGORY)))).to.contain('<a:bodyPr rot="-60000000"');
     });
 
     it("should write a date axis for dates, spaced by their unit and labelled in their format", () => {
@@ -214,10 +213,12 @@ describe("createValueAxis", () => {
         expect(value(units, "c:builtInUnit")).to.equal("thousands");
         expect(names(child(units, "c:dispUnitsLbl"))).to.deep.equal(["c:layout", "c:spPr", "c:txPr"]);
         // Upright beside a vertical axis, and level beside a horizontal one
-        expect(xml(new Formatter().format(createValueAxis(VALUE, { displayUnits: "millions" })))).to.contain(
+        expect(stringifyXmlable(new Formatter().format(createValueAxis(VALUE, { displayUnits: "millions" })))).to.contain(
             '<c:dispUnits><c:builtInUnit val="millions"/><c:dispUnitsLbl><c:layout/><c:spPr><a:noFill/><a:ln><a:noFill/></a:ln><a:effectLst/></c:spPr><c:txPr><a:bodyPr rot="-5400000"',
         );
-        expect(xml(new Formatter().format(createValueAxis({ ...VALUE, position: "b" }, { displayUnits: "millions" })))).to.contain(
+        expect(
+            stringifyXmlable(new Formatter().format(createValueAxis({ ...VALUE, position: "b" }, { displayUnits: "millions" }))),
+        ).to.contain(
             '<c:dispUnitsLbl><c:layout/><c:spPr><a:noFill/><a:ln><a:noFill/></a:ln><a:effectLst/></c:spPr><c:txPr><a:bodyPr rot="0"',
         );
     });
@@ -228,7 +229,7 @@ describe("createValueAxis", () => {
     });
 
     it("should give a radar chart's value axis a line and tick marks", () => {
-        const written = xml(new Formatter().format(createValueAxis({ ...VALUE, radar: true })));
+        const written = stringifyXmlable(new Formatter().format(createValueAxis({ ...VALUE, radar: true })));
 
         expect(written).to.contain('<c:majorTickMark val="cross"/>');
         expect(written).to.contain(
@@ -240,7 +241,7 @@ describe("createValueAxis", () => {
         const axis = parse(createValueAxis({ ...VALUE, crossBetween: "midCat", scatter: true }));
 
         expect(value(axis, "c:crossBetween")).to.equal("midCat");
-        expect(xml(new Formatter().format(createValueAxis({ ...VALUE, crossBetween: "midCat", scatter: true })))).to.contain(
+        expect(stringifyXmlable(new Formatter().format(createValueAxis({ ...VALUE, crossBetween: "midCat", scatter: true })))).to.contain(
             '<c:spPr><a:noFill/><a:ln w="9525" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="tx1"><a:lumMod val="25000"/>',
         );
     });

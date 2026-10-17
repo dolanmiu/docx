@@ -1,8 +1,8 @@
 // cspell:ignore cmpd prst
 import { describe, expect, it } from "vitest";
-import xml from "xml";
 
 import { Formatter } from "@export/formatter";
+import { stringifyXmlable } from "@util/xml";
 import type { XmlComponent } from "docx";
 
 import {
@@ -23,7 +23,7 @@ import {
     createTextProperties,
 } from "./chart-style";
 
-const toXml = (component: XmlComponent): string => xml(new Formatter().format(component));
+const toXml = (component: XmlComponent): string => stringifyXmlable(new Formatter().format(component));
 
 const ACCENT1 = '<a:schemeClr val="accent1"/>';
 const FILL = `<a:solidFill>${ACCENT1}</a:solidFill>`;

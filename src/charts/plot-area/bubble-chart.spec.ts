@@ -1,15 +1,14 @@
 import { describe, expect, it } from "vitest";
-import xml from "xml";
-import { type Element, xml2js } from "xml-js";
 
 import { Formatter } from "@export/formatter";
+import { type XmlElement as Element, parseXml, stringifyXmlable } from "@util/xml";
 import type { XmlComponent } from "docx";
 
 import { createChartData } from "../chart-data";
 import type { BubbleChartOptions } from "../chart-options";
 import { createBubbleChart } from "./bubble-chart";
 
-const parse = (component: XmlComponent): Element => (xml2js(xml(new Formatter().format(component))) as Element).elements![0];
+const parse = (component: XmlComponent): Element => parseXml(stringifyXmlable(new Formatter().format(component))).elements![0];
 const names = (element: Element): readonly string[] => (element.elements ?? []).map(({ name }) => name!);
 const children = (element: Element, name: string): readonly Element[] => element.elements!.filter((one) => one.name === name);
 const value = (element: Element, name: string): unknown => children(element, name)[0]?.attributes?.val;
@@ -69,14 +68,14 @@ describe("createBubbleChart", () => {
             "c:bubble3D",
         ]);
         expect(value(series, "c:bubble3D")).to.equal("0");
-        const sizes = xml(new Formatter().format(create().group));
+        const sizes = stringifyXmlable(new Formatter().format(create().group));
         expect(sizes).to.contain(
             '<c:bubbleSize><c:numRef><c:f>Sheet1!$C$2:$C$3</c:f><c:numCache><c:formatCode>General</c:formatCode><c:ptCount val="2"/><c:pt idx="0"><c:v>10</c:v></c:pt><c:pt idx="1"><c:v>20</c:v></c:pt></c:numCache></c:numRef></c:bubbleSize>',
         );
     });
 
     it("should fill bubbles with the series' colour at 75% opacity, without a line", () => {
-        const written = xml(new Formatter().format(create().group));
+        const written = stringifyXmlable(new Formatter().format(create().group));
 
         expect(written).to.contain(
             '<c:spPr><a:solidFill><a:schemeClr val="accent1"><a:alpha val="75000"/></a:schemeClr></a:solidFill><a:ln><a:noFill/></a:ln><a:effectLst/></c:spPr>',

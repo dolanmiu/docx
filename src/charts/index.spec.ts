@@ -1,7 +1,7 @@
 import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
-import { type Element, xml2js } from "xml-js";
 
+import { type XmlElement as Element, parseXml } from "@util/xml";
 import { Document, Footer, FootnoteReferenceRun, Header, Packer, Paragraph, Run, Table, TableCell, TableRow, TextRun } from "docx";
 
 import { ChartRun, type ChartRunOptions } from ".";
@@ -95,7 +95,7 @@ const paragraphWith = (options: ChartRunOptions): Paragraph => new Paragraph({ c
 
 const read = async (zip: JSZip, path: string): Promise<string> => (await zip.file(path)?.async("text")) ?? "";
 
-const parse = (text: string): Element => xml2js(text) as Element;
+const parse = (text: string): Element => parseXml(text);
 
 const descendants = (element: Element, name: string): readonly Element[] =>
     (element.elements ?? []).flatMap((child) => [...(child.name === name ? [child] : []), ...descendants(child, name)]);

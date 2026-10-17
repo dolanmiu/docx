@@ -3,7 +3,8 @@
  *
  * @module
  */
-import type { Element } from "xml-js";
+
+import type { XmlElement as Element } from "@util/xml";
 
 import type { IRenderedParagraphNode } from "./run-renderer";
 import { createTextElementContents, patchSpaceAttribute } from "./util";

@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import xml from "xml";
 
 import { Formatter } from "@export/formatter";
+import { stringifyXmlable } from "@util/xml";
 import { Math, MathRun, MathSuperScript, TextRun } from "docx";
 
 import { MathCases } from "./math-cases";
 import { MathEquationArray, type MathEquationArrayOptions, type MathEquationArrayRow } from "./math-equation-array";
 
-const toXml = (component: MathEquationArray | MathCases): string => xml(new Formatter().format(component));
+const toXml = (component: MathEquationArray | MathCases): string => stringifyXmlable(new Formatter().format(component));
 
 const r = (text: string): string => `<m:r><m:t>${text}</m:t></m:r>`;
 const AMP = r("&amp;");

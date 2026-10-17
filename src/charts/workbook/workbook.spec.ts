@@ -1,13 +1,13 @@
 // cspell:ignore Fmts
 import { describe, expect, it } from "vitest";
-import xml from "xml";
 
 import { Formatter } from "@export/formatter";
+import { stringifyXmlable } from "@util/xml";
 import type { EmbeddedPackageFile, XmlComponent } from "docx";
 
 import { createWorkbookFiles } from "./workbook";
 
-const toXml = (component: EmbeddedPackageFile["content"]): string => xml(new Formatter().format(component as XmlComponent));
+const toXml = (component: EmbeddedPackageFile["content"]): string => stringifyXmlable(new Formatter().format(component as XmlComponent));
 
 const files = (sheet: Parameters<typeof createWorkbookFiles>[0]): Readonly<Record<string, string>> =>
     Object.fromEntries(createWorkbookFiles(sheet).map(({ path, content }) => [path, toXml(content)]));

@@ -1,16 +1,15 @@
 // cspell:ignore cmpd
 import { describe, expect, it } from "vitest";
-import xml from "xml";
-import { type Element, xml2js } from "xml-js";
 
 import { Formatter } from "@export/formatter";
+import { type XmlElement as Element, parseXml, stringifyXmlable } from "@util/xml";
 
 import { createChartData } from "../chart-data";
 import type { ChartRunOptions } from "../chart-options";
 import { createPlotArea } from "./plot-area";
 
 const plotArea = (options: ChartRunOptions): Element =>
-    (xml2js(xml(new Formatter().format(createPlotArea(options, createChartData(options))))) as Element).elements![0];
+    parseXml(stringifyXmlable(new Formatter().format(createPlotArea(options, createChartData(options))))).elements![0];
 const names = (element: Element): readonly string[] => (element.elements ?? []).map(({ name }) => name!);
 const children = (element: Element, name: string): readonly Element[] => element.elements!.filter((one) => one.name === name);
 const value = (element: Element, name: string): unknown => children(element, name)[0]?.attributes?.val;
@@ -87,7 +86,7 @@ describe("createPlotArea's data table", () => {
             "1",
             "1",
         ]);
-        const written = xml(
+        const written = stringifyXmlable(
             new Formatter().format(
                 createPlotArea(
                     { type: "column", categories, series, dataTable: true },
@@ -115,7 +114,7 @@ describe("createPlotArea's data table", () => {
             "0",
             "0",
         ]);
-        const written = xml(new Formatter().format(createPlotArea(options, createChartData(options))));
+        const written = stringifyXmlable(new Formatter().format(createPlotArea(options, createChartData(options))));
         expect(written).to.contain('<a:defRPr sz="800"');
         expect(written).to.contain('<a:latin typeface="Arial"/>');
     });

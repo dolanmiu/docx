@@ -15,7 +15,7 @@
 import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 
-import { type Element, xml2js } from "xml-js";
+import { type XmlElement as Element, parseXml } from "../src/util/xml";
 
 import { PRESET_SHAPE_OOXML_NAMES } from "../src/shapes/preset-shape/preset-shape-type";
 
@@ -51,7 +51,7 @@ const guides = (shape: Element, list: string): readonly (readonly [string, strin
     children(child(shape, list), "gd").map((guide) => [attribute(guide, "name"), attribute(guide, "fmla")] as const);
 
 const main = async (): Promise<void> => {
-    const document = xml2js(await loadDefinitions(process.argv[2]), { compact: false }) as Element;
+    const document = parseXml(await loadDefinitions(process.argv[2]));
     const root = children(document)[0];
     const shapes = new Map(children(root).map((shape) => [shape.name!, shape]));
     const lines: string[] = [];

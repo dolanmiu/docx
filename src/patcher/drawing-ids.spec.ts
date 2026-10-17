@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { Element } from "xml-js";
+
+import type { XmlElement as Element } from "@util/xml";
 
 import { findDrawingIds, renumberDrawingsAvoiding } from "./drawing-ids";
 import { toJson } from "./util";

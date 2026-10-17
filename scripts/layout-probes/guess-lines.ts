@@ -14,7 +14,7 @@
 import { readFileSync } from "node:fs";
 
 import JSZip from "jszip";
-import { type Element, xml2js } from "xml-js";
+import { type XmlElement as Element, parseXml } from "../../src/util/xml";
 
 import type { BlockLayout } from "../../src/layout";
 import { layOutPasses } from "../../src/layout/layout-passes";
@@ -60,7 +60,7 @@ for (const [path, file] of Object.entries(zip.files)) {
         continue;
     }
     if (path.endsWith(".xml") || path.endsWith(".rels")) {
-        parts.set(path, xml2js(await file.async("string"), { compact: false, captureSpacesBetweenElements: true }) as Element);
+        parts.set(path, parseXml(await file.async("string"), { keepWhitespaceText: true }));
     } else {
         binaryParts.set(path, await file.async("uint8array"));
     }

@@ -3,11 +3,10 @@
  *
  * @module
  */
-import xml from "xml";
-import { type Element, xml2js } from "xml-js";
 
 import { Formatter } from "@export/formatter";
 import { Text } from "@file/paragraph/run/run-components/text";
+import { type XmlElement as Element, parseXml, stringifyXmlable } from "@util/xml";
 
 const formatter = new Formatter();
 
@@ -27,7 +26,7 @@ const formatter = new Formatter();
  * ```
  */
 export const toJson = (xmlData: string): Element => {
-    const xmlObj = xml2js(xmlData, { compact: false, captureSpacesBetweenElements: true }) as Element;
+    const xmlObj = parseXml(xmlData, { keepWhitespaceText: true });
     return xmlObj;
 };
 
@@ -49,7 +48,7 @@ export const toJson = (xmlData: string): Element => {
  */
 // eslint-disable-next-line functional/prefer-readonly-type
 export const createTextElementContents = (text: string): Element[] => {
-    const textJson = toJson(xml(formatter.format(new Text({ text }))));
+    const textJson = toJson(stringifyXmlable(formatter.format(new Text({ text }))));
 
     return textJson.elements![0].elements ?? [];
 };

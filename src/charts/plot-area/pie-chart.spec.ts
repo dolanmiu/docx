@@ -1,16 +1,15 @@
 // cspell:ignore cmpd cust
 import { describe, expect, it } from "vitest";
-import xml from "xml";
-import { type Element, xml2js } from "xml-js";
 
 import { Formatter } from "@export/formatter";
+import { type XmlElement as Element, parseXml, stringifyXmlable } from "@util/xml";
 import type { XmlComponent } from "docx";
 
 import { createChartData } from "../chart-data";
 import type { BarOfPieChartOptions, DoughnutChartOptions, PieChartOptions, PieOfPieChartOptions } from "../chart-options";
 import { createPieChart } from "./pie-chart";
 
-const parse = (component: XmlComponent): Element => (xml2js(xml(new Formatter().format(component))) as Element).elements![0];
+const parse = (component: XmlComponent): Element => parseXml(stringifyXmlable(new Formatter().format(component))).elements![0];
 const names = (element: Element): readonly string[] => (element.elements ?? []).map(({ name }) => name!);
 const children = (element: Element, name: string): readonly Element[] => element.elements!.filter((one) => one.name === name);
 const value = (element: Element, name: string): unknown => children(element, name)[0]?.attributes?.val;
@@ -219,7 +218,9 @@ describe("createPieChart for a pie of pie or bar of pie chart", () => {
         const element = split({ secondPlotSize: 150.4, gapWidth: 250.6 });
         expect([value(element, "c:secondPieSize"), value(element, "c:gapWidth")]).to.deep.equal(["150", "251"]);
         const written = (options: Partial<PieOfPieChartOptions>): string =>
-            xml(new Formatter().format(create({ type: "pieOfPie", categories, series: [{ name: "S", values: [1] }], ...options }).group));
+            stringifyXmlable(
+                new Formatter().format(create({ type: "pieOfPie", categories, series: [{ name: "S", values: [1] }], ...options }).group),
+            );
         expect(written({})).to.contain(
             '<c:serLines><c:spPr><a:ln w="9525" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="tx1"><a:lumMod val="35000"/><a:lumOff val="65000"/></a:schemeClr></a:solidFill><a:round/></a:ln><a:effectLst/></c:spPr></c:serLines>',
         );

@@ -1,14 +1,13 @@
 import { describe, expect, it } from "vitest";
-import xml from "xml";
-import { type Element, xml2js } from "xml-js";
 
 import { Formatter } from "@export/formatter";
+import { type XmlElement as Element, parseXml, stringifyXmlable } from "@util/xml";
 import type { XmlComponent } from "docx";
 
 import type { ChartDataLabelPosition } from "../chart-options";
 import { type LabelledShape, createGroupDataLabels, createSeriesDataLabels } from "./data-labels";
 
-const parse = (component: XmlComponent): Element => (xml2js(xml(new Formatter().format(component))) as Element).elements![0];
+const parse = (component: XmlComponent): Element => parseXml(stringifyXmlable(new Formatter().format(component))).elements![0];
 const names = (element: Element): readonly string[] => (element.elements ?? []).map(({ name }) => name!);
 const values = (element: Element): Readonly<Record<string, unknown>> =>
     Object.fromEntries(
@@ -116,7 +115,7 @@ describe("createSeriesDataLabels' formats and fonts", () => {
     });
 
     it("should write the labels' font over the chart's, over Office's 9 point grey", () => {
-        const written = xml(
+        const written = stringifyXmlable(
             new Formatter().format(
                 createSeriesDataLabels(
                     { value: true, font: { color: "FFFFFF", bold: true } },
@@ -207,7 +206,7 @@ describe("createSeriesDataLabels' labels of single points", () => {
             "c:showBubbleSize",
         ]);
         expect(values(point)).to.include({ "c:dLblPos": "ctr", "c:showVal": "1" });
-        const written = xml(
+        const written = stringifyXmlable(
             new Formatter().format(createSeriesDataLabels(undefined, { ...BARS, pointLabels: [{ text: "Record\nhigh" }] })[0]),
         );
         expect(written).to.contain("<a:t>Record</a:t>");
@@ -260,7 +259,7 @@ describe("createSeriesDataLabels' labels of single points", () => {
         // Its own flags replace the series', and its own number format and font replace theirs
         expect(values(own)).to.include({ "c:dLblPos": "inEnd", "c:showVal": "0", "c:showCatName": "1" });
         expect(own.elements!.find(({ name }) => name === "c:numFmt")!.attributes!.formatCode).to.equal("0.0");
-        const written = xml(
+        const written = stringifyXmlable(
             new Formatter().format(createSeriesDataLabels(series, { ...BARS, pointLabels: [{ font: { bold: true } }] })[0]),
         );
         expect(written).to.contain('<a:defRPr sz="900" b="1"');

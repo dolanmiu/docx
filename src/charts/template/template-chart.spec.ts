@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { type Element, xml2js } from "xml-js";
+
+import { type XmlElement as Element, parseXml } from "@util/xml";
 
 import { formatCodeOf, isDateFormat, pointCountOf, readTemplateChart } from "./template-chart";
 
 // cspell:ignore varyColors barDir radarStyle scatterStyle ofPieType ofPie dLbls strRef numRef numCache formatCode ptCount pivotSource
 
-const parse = (text: string): Element => (xml2js(text, { compact: false, captureSpacesBetweenElements: true }) as Element).elements![0];
+const parse = (text: string): Element => parseXml(text, { keepWhitespaceText: true }).elements![0];
 
 // A series, with its order, or null for none
 const series = (index: number, order: number | null = index): string =>

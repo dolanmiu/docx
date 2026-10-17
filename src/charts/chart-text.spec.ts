@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import xml from "xml";
 
 import { Formatter } from "@export/formatter";
+import { stringifyXmlable } from "@util/xml";
 
 import { createAxisTitle, createChartTitle, fontOf, titleOf } from "./chart-text";
 
@@ -13,7 +13,7 @@ const BODY = (rotation: number): string =>
 describe("createChartTitle", () => {
     it("should write the title as Office does: 14 point text in the theme's body font, not over the plot", () => {
         const properties = `<a:pPr><a:defRPr sz="1400" b="0" i="0" u="none" strike="noStrike" kern="1200" spc="0" baseline="0">${TEXT_COLOR}${FONTS}</a:defRPr></a:pPr>`;
-        expect(xml(new Formatter().format(createChartTitle("Sales")))).to.equal(
+        expect(stringifyXmlable(new Formatter().format(createChartTitle("Sales")))).to.equal(
             "<c:title>" +
                 `<c:tx><c:rich>${BODY(0)}<a:p>${properties}<a:r><a:rPr lang="en-US"/><a:t>Sales</a:t></a:r></a:p></c:rich></c:tx>` +
                 '<c:overlay val="0"/>' +
@@ -24,30 +24,30 @@ describe("createChartTitle", () => {
     });
 
     it("should write each line of the title as a paragraph", () => {
-        const title = xml(new Formatter().format(createChartTitle("Sales\nby month")));
+        const title = stringifyXmlable(new Formatter().format(createChartTitle("Sales\nby month")));
         expect(title.match(/<a:t>[^<]*<\/a:t>/g)).to.deep.equal(["<a:t>Sales</a:t>", "<a:t>by month</a:t>"]);
     });
 });
 
 describe("createAxisTitle", () => {
     it("should write 10 point text, reading from bottom to top on a vertical axis", () => {
-        const vertical = xml(new Formatter().format(createAxisTitle("Units", true)));
+        const vertical = stringifyXmlable(new Formatter().format(createAxisTitle("Units", true)));
         expect(vertical).to.contain(BODY(-5400000));
         expect(vertical).to.contain('<a:defRPr sz="1000" b="0" i="0" u="none" strike="noStrike" kern="1200" baseline="0">');
         expect(vertical).to.contain("<a:t>Units</a:t>");
-        expect(xml(new Formatter().format(createAxisTitle("Month", false)))).to.contain(BODY(0));
+        expect(stringifyXmlable(new Formatter().format(createAxisTitle("Month", false)))).to.contain(BODY(0));
     });
 });
 
 describe("titles with fonts", () => {
     it("should write a title's own font over the chart's", () => {
-        const title = xml(
+        const title = stringifyXmlable(
             new Formatter().format(createChartTitle({ text: "Sales", font: { size: 18, bold: true } }, { name: "Arial", bold: false })),
         );
 
         expect(title).to.contain('<a:defRPr sz="1800" b="1" i="0"');
         expect(title).to.contain('<a:latin typeface="Arial"/>');
-        expect(xml(new Formatter().format(createAxisTitle({ text: "Units", font: { italics: true } }, true)))).to.contain(
+        expect(stringifyXmlable(new Formatter().format(createAxisTitle({ text: "Units", font: { italics: true } }, true)))).to.contain(
             'sz="1000" b="0" i="1"',
         );
     });

@@ -22,7 +22,7 @@
 import { readFileSync } from "node:fs";
 
 import JSZip from "jszip";
-import { type Element, xml2js } from "xml-js";
+import { type XmlElement as Element, parseXml } from "../../src/util/xml";
 
 import type { BlockLayout } from "../../src/layout";
 import { layOutPasses } from "../../src/layout/layout-passes";
@@ -65,13 +65,7 @@ const parts = new Map(
     await Promise.all(
         Object.keys(zip.files)
             .filter((file) => file.endsWith(".xml") || file.endsWith(".rels"))
-            .map(
-                async (file) =>
-                    [
-                        file,
-                        xml2js(await zip.file(file)!.async("string"), { compact: false, captureSpacesBetweenElements: true }) as Element,
-                    ] as const,
-            ),
+            .map(async (file) => [file, parseXml(await zip.file(file)!.async("string"), { keepWhitespaceText: true })] as const),
     ),
 );
 

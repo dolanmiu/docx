@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import xml from "xml";
 
 import { Formatter } from "@export/formatter";
+import { stringifyXmlable } from "@util/xml";
 import { Math, type MathComponent, MathFraction, MathRun } from "docx";
 
 import { type MathColumnAlignment, MathMatrix, type MathMatrixBrackets, type MathMatrixOptions } from "./math-matrix";
 
-const toXml = (component: MathMatrix | MathFraction): string => xml(new Formatter().format(component));
+const toXml = (component: MathMatrix | MathFraction): string => stringifyXmlable(new Formatter().format(component));
 
 const cell = (text: string): readonly MathComponent[] => [new MathRun(text)];
 const e = (text: string): string => `<m:e><m:r><m:t>${text}</m:t></m:r></m:e>`;

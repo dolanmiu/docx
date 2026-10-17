@@ -1,6 +1,7 @@
 import JSZip from "jszip";
 import { describe, expect, it, vi } from "vitest";
-import { type Element, js2xml } from "xml-js";
+
+import { type XmlElement as Element, stringifyElement } from "@util/xml";
 
 import { type PatchedTemplate, fillTemplatePageNumbers } from "./page-numbers";
 import { toJson } from "./util";
@@ -23,7 +24,7 @@ const sectionEnd = (references: string): string => `<w:p><w:pPr><w:sectPr>${refe
 
 /** The text of a part, with each field's result where it is */
 const textOf = (part: Element): string =>
-    js2xml(part)
+    stringifyElement(part)
         .replace(/<w:instrText[^>]*>[^<]*<\/w:instrText>/g, "")
         .replace(/<w:t[^>]*>([^<]*)<\/w:t>|<w:t[^>]*\/>|<[^>]+>/g, "$1");
 
@@ -101,7 +102,7 @@ describe("fillTemplatePageNumbers", () => {
             ],
         ]);
         await fillTemplatePageNumbers(parts, () => ({ bookmarks: new Map([["_Toc1", "3"]]) }));
-        const document = js2xml(parts.get("word/document.xml")!);
+        const document = stringifyElement(parts.get("word/document.xml")!);
         expect(document.match(/<w:fldChar [^>]*w:fldCharType="begin"[^>]*\/>/g)).to.deep.equal([
             '<w:fldChar w:fldCharType="begin"/>',
             '<w:fldChar w:fldCharType="begin"/>',
@@ -140,7 +141,7 @@ describe("fillTemplatePageNumbers", () => {
             const outer = await zipOf(
                 new Map([
                     ["word/document.xml", `<w:document ${W}><w:body><w:altChunk/></w:body></w:document>`],
-                    ["word/_rels/document.xml.rels", js2xml(relationships(["rId1", "inner.docx"]))],
+                    ["word/_rels/document.xml.rels", stringifyElement(relationships(["rId1", "inner.docx"]))],
                     ["word/inner.docx", ""],
                     ["word/media/image1.png", "png"],
                     ["word/folder/", ""],
@@ -186,7 +187,7 @@ describe("fillTemplatePageNumbers", () => {
             const inner = await zipOf(new Map([["word/document.xml", `<w:document ${W}><w:body><w:p/></w:body></w:document>`]]));
             const outer = new JSZip();
             outer.file("word/document.xml", `<w:document ${W}><w:body><w:altChunk/></w:body></w:document>`);
-            outer.file("word/_rels/document.xml.rels", js2xml(relationships(["rId1", "inner.docx"])));
+            outer.file("word/_rels/document.xml.rels", stringifyElement(relationships(["rId1", "inner.docx"])));
             outer.file("word/inner.docx", inner);
             const parts = new Map([
                 ["word/document.xml", toJson(`<w:document ${W}><w:body/></w:document>`)],

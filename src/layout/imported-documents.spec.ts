@@ -1,13 +1,14 @@
 // cspell:ignore endedi
 import { describe, expect, it } from "vitest";
-import { type Element, xml2js } from "xml-js";
+
+import { type XmlElement as Element, parseXml } from "@util/xml";
 
 import type { DocxPackage } from "./imported-documents";
 import { type Block, type DocumentContent, type ParagraphBlock } from "./read-document";
 import { readDocx } from "./read-docx";
 
 /** Parses XML as patchDocument parses a template's parts */
-const parse = (xml: string): Element => xml2js(xml, { compact: false, captureSpacesBetweenElements: true }) as Element;
+const parse = (xml: string): Element => parseXml(xml, { keepWhitespaceText: true });
 
 const W = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
 const R = 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';

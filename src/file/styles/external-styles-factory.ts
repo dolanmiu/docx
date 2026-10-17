@@ -7,9 +7,9 @@
  *
  * @module
  */
-import { type Element as XMLElement, xml2js } from "xml-js";
 
 import { ImportedRootElementAttributes, type ImportedXmlComponent, convertToXmlComponent } from "@file/xml-components";
+import { type XmlElement as XMLElement, parseXml } from "@util/xml";
 
 import type { IStylesOptions } from "./styles";
 
@@ -54,7 +54,7 @@ export class ExternalStylesFactory {
      * @throws Error if styles element cannot be found in the XML
      */
     public newInstance(xmlData: string): IStylesOptions {
-        const xmlObj = xml2js(xmlData, { compact: false }) as XMLElement;
+        const xmlObj = parseXml(xmlData);
 
         let stylesXmlElement: XMLElement | undefined;
         for (const xmlElm of xmlObj.elements || []) {

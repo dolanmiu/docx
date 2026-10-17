@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
-import xml from "xml";
-import { type Element, xml2js } from "xml-js";
 
 import { Formatter } from "@export/formatter";
 import { File } from "@file/file";
 import { Relationships } from "@file/relationships";
+import { type XmlElement as Element, parseXml, stringifyXmlable } from "@util/xml";
 import { type IContext, PackagePart } from "docx";
 
 import { createChartData } from "./chart-data";
@@ -15,7 +14,7 @@ import chartSchema from "../../ooxml-schemas/ISO-IEC29500-4_2016/dml-chart.xsd?r
 
 // The chart schema, which every chart part's elements are checked against: each element's children are ones its type
 // has, in its type's order. The Open XML SDK validator checks this too, for the demos only
-const schema = xml2js(chartSchema as string) as Element;
+const schema = parseXml(chartSchema as string);
 
 const definitions = new Map(
     schema
@@ -103,14 +102,14 @@ const workbook = new PackagePart({
 
 const chartSpaceOf = (options: ChartRunOptions): Element => {
     const component = createChartSpace(options, createChartData(options), workbook);
-    const written = xml(
+    const written = stringifyXmlable(
         new Formatter().format(component, {
             file: new File({ sections: [] }),
             viewWrapper: { View: component, Relationships: new Relationships() },
             stack: [],
         } as IContext),
     );
-    return (xml2js(written) as Element).elements![0];
+    return parseXml(written).elements![0];
 };
 
 const problemsOf = (options: ChartRunOptions): readonly string[] => problemsIn(chartSpaceOf(options), "CT_ChartSpace", "c:chartSpace");

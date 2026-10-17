@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import xml from "xml";
 
 import { Formatter } from "@export/formatter";
+import { stringifyXmlable } from "@util/xml";
 import { Math, MathFraction, MathRun, Paragraph, TextRun } from "docx";
 
 import { MathBrackets } from "./math-brackets";
 import { MathMatrix } from "./math-matrix";
 
-const toXml = (component: MathBrackets): string => xml(new Formatter().format(component));
+const toXml = (component: MathBrackets): string => stringifyXmlable(new Formatter().format(component));
 
 const x = "<m:e><m:r><m:t>x</m:t></m:r></m:e>";
 
@@ -104,7 +104,7 @@ describe("MathBrackets", () => {
             numerator: [new MathBrackets({ open: "|", close: "|", children: [new MathRun("x")] })],
             denominator: [new MathRun("2")],
         });
-        expect(xml(new Formatter().format(fraction))).toContain('<m:num><m:d><m:dPr><m:begChr m:val="|"/>');
+        expect(stringifyXmlable(new Formatter().format(fraction))).toContain('<m:num><m:d><m:dPr><m:begChr m:val="|"/>');
         expect(toXml(new MathBrackets({ children: [new MathMatrix({ rows: [[[new MathRun("1")]]] })] }))).toContain("<m:e><m:m>");
     });
 });

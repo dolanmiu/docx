@@ -34,6 +34,8 @@ export default defineConfig({
             protocolImports: true,
         }),
     ],
+    // Lets specs import Word documents with ?inline, such as the corpus src/util/xml reads
+    assetsInclude: ["**/*.docx", "**/*.dotx"],
     resolve: {
         tsconfigPaths: true,
         alias: {

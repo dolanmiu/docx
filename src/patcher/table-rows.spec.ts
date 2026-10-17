@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { js2xml } from "xml-js";
 
 import type { IViewWrapper } from "@file/document-wrapper";
 import type { File } from "@file/file";
 import { Paragraph, TextRun } from "@file/paragraph";
+import { stringifyElement } from "@util/xml";
 
 import { findDrawingIds, renumberDrawingsAvoiding } from "./drawing-ids";
 import type { IPatch, TableRowsPatch } from "./from-docx";
@@ -50,7 +50,7 @@ const tablesOf = (json: ReturnType<typeof toJson>): readonly (readonly (readonly
             t.elements!.filter((e) => e.name === "w:tr").map((r) => r.elements!.map((c) => traverse({ elements: [c] })[0]?.text ?? "")),
         );
 
-const xmlOf = (json: ReturnType<typeof toJson>): string => js2xml(json);
+const xmlOf = (json: ReturnType<typeof toJson>): string => stringifyElement(json);
 
 const ITEMS: TableRowsPatch = {
     type: PatchType.TABLE_ROWS,
@@ -224,7 +224,7 @@ describe("patchTableRows", () => {
 
         const [first, second] = json
             .elements![0].elements![0].elements!.filter((e) => e.name === "w:tr")
-            .map((r) => js2xml({ elements: [r] }));
+            .map((r) => stringifyElement({ elements: [r] }));
         expect(first).to.contain('w14:paraId="00000001"').and.contain('w14:paraId="00000003"').and.contain('<w:id w:val="7"/>');
         expect(first).to.contain('<w:bookmarkStart w:id="5" w:name="item"/>').and.contain('<w:bookmarkEnd w:id="5"/>');
         expect(second).not.to.match(/paraId|textId|w:id|bookmark/);

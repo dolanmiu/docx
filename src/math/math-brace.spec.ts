@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import xml from "xml";
 
 import { Formatter } from "@export/formatter";
+import { stringifyXmlable } from "@util/xml";
 import { Math, MathRun } from "docx";
 
 import { MathBrace } from "./math-brace";
 
-const toXml = (component: MathBrace): string => xml(new Formatter().format(component));
+const toXml = (component: MathBrace): string => stringifyXmlable(new Formatter().format(component));
 
 const e = "<m:e><m:r><m:t>a+b</m:t></m:r></m:e>";
 

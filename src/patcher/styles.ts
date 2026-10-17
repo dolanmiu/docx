@@ -3,12 +3,11 @@
  *
  * @module
  */
-import xml from "xml";
-import type { Element } from "xml-js";
 
 import { Formatter } from "@export/formatter";
 import { createDefaultStyles } from "@file/styles/factory";
 import type { IContext } from "@file/xml-components";
+import { type XmlElement as Element, stringifyXmlable } from "@util/xml";
 
 import { getFirstLevelElements, toJson } from "./util";
 
@@ -43,7 +42,7 @@ const nameOf = (style: Element): string | undefined => {
 const formatDefaultStyles = (context: IContext): ReadonlyMap<string, Element> =>
     new Map(
         Object.values(createDefaultStyles())
-            .map((style) => toJson(xml(formatter.format(style, context))).elements![0])
+            .map((style) => toJson(stringifyXmlable(formatter.format(style, context))).elements![0])
             // Rather than the document's defaults, which aren't a style
             .filter((style) => style.name === "w:style")
             .map((style) => [idOf(style), style]),

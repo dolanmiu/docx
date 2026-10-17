@@ -5,10 +5,10 @@
  * @module
  */
 import JSZip from "jszip";
-import type { Element } from "xml-js";
 
 import { type ElementTree, fillBodyFields, fillPartFields } from "@file/document/body/page-number-fields";
 import type { EstimatedPageNumbers } from "@file/document/body/page-numbers";
+import type { XmlElement as Element } from "@util/xml";
 
 import { relationshipsPathOf, resolveTarget, sourceOfRelationships } from "./drawing-patch";
 import { toJson } from "./util";
@@ -21,8 +21,8 @@ import { toJson } from "./util";
 export type PatchedTemplate = {
     /**
      * Each XML part of the template's package, by its path in the package, such as "word/document.xml". Each is parsed as
-     * `patchDocument` parses it, with xml-js's `xml2js`, not compact, and keeping the spaces between elements
-     * (`captureSpacesBetweenElements`), as the spaces in a text element are its text
+     * `patchDocument` parses it, with `parseXml` keeping the text that is only whitespace (`keepWhitespaceText`), as the
+     * spaces in a text element are its text
      */
     readonly parts: ReadonlyMap<string, Element>;
     /** Each of its other parts, such as its pictures and the fonts it embeds, by its path in the package, as bytes */
@@ -45,7 +45,7 @@ export type PatchedTemplate = {
  */
 export type TemplatePageNumberEstimator = (template: PatchedTemplate) => EstimatedPageNumbers;
 
-/** The elements of a template, as xml-js parses them */
+/** The elements of a template, as `parseXml` reads them */
 const PARSED: ElementTree<Element> = {
     nameOf: (element) => (element.type === "element" ? element.name : undefined),
     contentOf: (element) => element.elements,

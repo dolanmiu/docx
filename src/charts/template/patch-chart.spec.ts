@@ -1,8 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import xml from "xml";
-import { type Element, js2xml, xml2js } from "xml-js";
 
 import { Formatter } from "@export/formatter";
+import { type XmlElement as Element, parseXml, stringifyElement, stringifyXmlable } from "@util/xml";
 import type { XmlComponent } from "docx";
 
 import { createChartData } from "../chart-data";
@@ -21,12 +20,12 @@ import { childOf, childrenOf, descendantsOf, textOf } from "./template-xml";
 // cspell:ignore dLbls dLbl dPt varyColors barDir axId crossAx valAx catAx dateAx baseTimeUnit majorTimeUnit legendEntry schemeClr srgbClr lumMod
 // cspell:ignore numCache strCache ptCount strRef numRef formatCode datalabelsRange trendlineLbl errBars sqref externalData autoUpdate userShapes
 
-const parse = (text: string): Element => (xml2js(text, { compact: false, captureSpacesBetweenElements: true }) as Element).elements![0];
+const parse = (text: string): Element => parseXml(text, { keepWhitespaceText: true }).elements![0];
 
-const write = (element: Element | undefined): string => (element === undefined ? "" : js2xml({ elements: [element] }));
+const write = (element: Element | undefined): string => (element === undefined ? "" : stringifyElement({ elements: [element] }));
 
 const formatter = new Formatter();
-const format = (content: XmlComponent): Element => parse(xml(formatter.format(content)));
+const format = (content: XmlComponent): Element => parse(stringifyXmlable(formatter.format(content)));
 
 const NAMESPACES =
     'xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +

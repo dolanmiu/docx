@@ -1,17 +1,16 @@
 // cspell:ignore cmpd cust
 import { describe, expect, it } from "vitest";
-import xml from "xml";
-import { type Element, xml2js } from "xml-js";
 
 import { Formatter } from "@export/formatter";
+import { type XmlElement as Element, parseXml, stringifyXmlable } from "@util/xml";
 import type { XmlComponent } from "docx";
 
 import type { ChartErrorData } from "../chart-data";
 import type { ChartErrorBars } from "../chart-options";
 import { createErrorBars } from "./error-bars";
 
-const write = (component: XmlComponent): string => xml(new Formatter().format(component));
-const parse = (component: XmlComponent): Element => (xml2js(write(component)) as Element).elements![0];
+const write = (component: XmlComponent): string => stringifyXmlable(new Formatter().format(component));
+const parse = (component: XmlComponent): Element => parseXml(write(component)).elements![0];
 const names = (element: Element): readonly string[] => (element.elements ?? []).map(({ name }) => name!);
 const value = (element: Element, name: string): unknown => element.elements!.find((one) => one.name === name)?.attributes?.val;
 

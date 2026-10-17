@@ -2,9 +2,9 @@ import type { Element } from "domhandler";
 import { parse } from "parse5";
 import { adapter } from "parse5-htmlparser2-tree-adapter";
 import { describe, expect, it } from "vitest";
-import xml from "xml";
 
 import { Formatter } from "@export/formatter";
+import { stringifyXmlable } from "@util/xml";
 import {
     Math,
     type MathComponent,
@@ -34,7 +34,7 @@ const elementIn = (html: string, name: string): Element => {
     return find(document)!;
 };
 
-const written = (...children: readonly MathComponent[]): string => xml(new Formatter().format(new Math({ children })));
+const written = (...children: readonly MathComponent[]): string => stringifyXmlable(new Formatter().format(new Math({ children })));
 const read = (mathMl: string): string => written(...mathOf(elementIn(`<math>${mathMl}</math>`, "math")));
 const run = (text: string, options: Omit<ConstructorParameters<typeof MathRun>[0] & object, "text"> = {}): MathRun =>
     new MathRun({ text, ...options });

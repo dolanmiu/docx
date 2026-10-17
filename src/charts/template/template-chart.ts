@@ -5,7 +5,8 @@
  * @module
  */
 // cspell:ignore dmyhs
-import type { Element } from "xml-js";
+
+import type { XmlElement as Element } from "docx";
 
 import type { ChartType } from "../chart-options";
 import { childOf, childrenOf, descendantsOf, elementsOf, nameOf, numberOf, textOf, valueOf } from "./template-xml";

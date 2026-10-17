@@ -3,10 +3,9 @@
  *
  * @module
  */
-import xml from "xml";
-import type { Element } from "xml-js";
 
 import type { IContext, XmlComponent } from "@file/xml-components";
+import { type XmlElement as Element, stringifyXmlable } from "@util/xml";
 
 import { type IPatch, PatchType } from "./from-docx";
 import { findRunElementIndexWithToken, splitRunElement } from "./paragraph-split-inject";
@@ -134,7 +133,7 @@ const formatChildren = (patch: IPatch, context: IContext, renumberIds: RenumberI
             // A child written as nothing in this part, such as a footnote's reference in a header, is left out
             .flatMap((c) => {
                 const formatted = c.prepForXml(context);
-                return formatted ? [toJson(xml(formatted)).elements![0]] : [];
+                return formatted ? [toJson(stringifyXmlable(formatted)).elements![0]] : [];
             }),
     );
 

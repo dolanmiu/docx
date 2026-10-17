@@ -3,9 +3,9 @@
  *
  * @module
  */
-import type { Element } from "xml-js";
 
 import type { RelationshipType, TargetModeType } from "@file/relationships/relationship/relationship";
+import type { XmlElement as Element } from "@util/xml";
 
 import { getFirstLevelElements } from "./util";
 

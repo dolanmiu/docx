@@ -4,12 +4,12 @@
  * @module
  */
 import JSZip from "jszip";
-import xml from "xml";
 
 import type { File } from "@file/file";
 import { obfuscate } from "@file/fonts/obfuscate-ttf-to-odttf";
 import { Relationships } from "@file/relationships";
 import { encodeUtf8 } from "@util/convenience-functions";
+import { stringifyXmlable } from "@util/xml";
 
 import { Formatter } from "../formatter";
 import { ImageReplacer } from "./image-replacer";
@@ -181,7 +181,7 @@ export class Compiler {
     }
 
     private xmlifyFile(file: File, prettify?: (typeof PrettifyType)[keyof typeof PrettifyType]): IXmlifyedFileMapping {
-        const documentXmlData = xml(
+        const documentXmlData = stringifyXmlable(
             this.formatter.format(file.Document.View, {
                 viewWrapper: file.Document,
                 file,
@@ -196,7 +196,7 @@ export class Compiler {
             },
         );
 
-        const commentXmlData = xml(
+        const commentXmlData = stringifyXmlable(
             this.formatter.format(file.Comments, {
                 viewWrapper: {
                     View: file.Comments,
@@ -214,7 +214,7 @@ export class Compiler {
             },
         );
 
-        const footnoteXmlData = xml(
+        const footnoteXmlData = stringifyXmlable(
             this.formatter.format(file.FootNotes.View, {
                 viewWrapper: file.FootNotes,
                 file,
@@ -229,7 +229,7 @@ export class Compiler {
             },
         );
 
-        const endnoteXmlData = xml(
+        const endnoteXmlData = stringifyXmlable(
             this.formatter.format(file.Endnotes.View, {
                 viewWrapper: file.Endnotes,
                 file,
@@ -274,7 +274,7 @@ export class Compiler {
                         "fontTable.xml",
                     );
 
-                    return xml(
+                    return stringifyXmlable(
                         this.formatter.format(relationships, {
                             viewWrapper: file.Document,
                             file,
@@ -300,7 +300,7 @@ export class Compiler {
             },
             Styles: {
                 data: (() => {
-                    const xmlStyles = xml(
+                    const xmlStyles = stringifyXmlable(
                         this.formatter.format(file.Styles, {
                             viewWrapper: file.Document,
                             file,
@@ -320,7 +320,7 @@ export class Compiler {
                 path: "word/styles.xml",
             },
             Properties: {
-                data: xml(
+                data: stringifyXmlable(
                     this.formatter.format(file.CoreProperties, {
                         viewWrapper: file.Document,
                         file,
@@ -337,7 +337,7 @@ export class Compiler {
                 path: "docProps/core.xml",
             },
             FileRelationships: {
-                data: xml(
+                data: stringifyXmlable(
                     this.formatter.format(file.FileRelationships, {
                         viewWrapper: file.Document,
                         file,
@@ -353,7 +353,7 @@ export class Compiler {
                 path: "_rels/.rels",
             },
             HeaderRelationships: file.Headers.map((headerWrapper, index) => {
-                const xmlData = xml(
+                const xmlData = stringifyXmlable(
                     this.formatter.format(headerWrapper.View, {
                         viewWrapper: headerWrapper,
                         file,
@@ -379,7 +379,7 @@ export class Compiler {
                 });
 
                 return {
-                    data: xml(
+                    data: stringifyXmlable(
                         this.formatter.format(relationships, {
                             viewWrapper: headerWrapper,
                             file,
@@ -396,7 +396,7 @@ export class Compiler {
                 };
             }),
             FooterRelationships: file.Footers.map((footerWrapper, index) => {
-                const xmlData = xml(
+                const xmlData = stringifyXmlable(
                     this.formatter.format(footerWrapper.View, {
                         viewWrapper: footerWrapper,
                         file,
@@ -422,7 +422,7 @@ export class Compiler {
                 });
 
                 return {
-                    data: xml(
+                    data: stringifyXmlable(
                         this.formatter.format(relationships, {
                             viewWrapper: footerWrapper,
                             file,
@@ -439,7 +439,7 @@ export class Compiler {
                 };
             }),
             Headers: file.Headers.map((headerWrapper, index) => {
-                const tempXmlData = xml(
+                const tempXmlData = stringifyXmlable(
                     this.formatter.format(headerWrapper.View, {
                         viewWrapper: headerWrapper,
                         file,
@@ -464,7 +464,7 @@ export class Compiler {
                 };
             }),
             Footers: file.Footers.map((footerWrapper, index) => {
-                const tempXmlData = xml(
+                const tempXmlData = stringifyXmlable(
                     this.formatter.format(footerWrapper.View, {
                         viewWrapper: footerWrapper,
                         file,
@@ -489,7 +489,7 @@ export class Compiler {
                 };
             }),
             CustomProperties: {
-                data: xml(
+                data: stringifyXmlable(
                     this.formatter.format(file.CustomProperties, {
                         viewWrapper: file.Document,
                         file,
@@ -506,7 +506,7 @@ export class Compiler {
                 path: "docProps/custom.xml",
             },
             AppProperties: {
-                data: xml(
+                data: stringifyXmlable(
                     this.formatter.format(file.AppProperties, {
                         viewWrapper: file.Document,
                         file,
@@ -541,7 +541,7 @@ export class Compiler {
                             `media/${mediaData.fileName}`,
                         );
                     });
-                    return xml(
+                    return stringifyXmlable(
                         this.formatter.format(relationships, {
                             viewWrapper: file.FootNotes,
                             file,
@@ -576,7 +576,7 @@ export class Compiler {
                             `media/${mediaData.fileName}`,
                         );
                     });
-                    return xml(
+                    return stringifyXmlable(
                         this.formatter.format(relationships, {
                             viewWrapper: file.Endnotes,
                             file,
@@ -593,7 +593,7 @@ export class Compiler {
                 path: "word/_rels/endnotes.xml.rels",
             },
             Settings: {
-                data: xml(
+                data: stringifyXmlable(
                     this.formatter.format(file.Settings, {
                         viewWrapper: file.Document,
                         file,
@@ -631,7 +631,7 @@ export class Compiler {
                                       `media/${mediaData.fileName}`,
                                   );
                               });
-                              return xml(
+                              return stringifyXmlable(
                                   this.formatter.format(relationships, {
                                       viewWrapper: {
                                           View: file.Comments,
@@ -654,7 +654,7 @@ export class Compiler {
             ...(file.CommentsExtended
                 ? {
                       CommentsExtended: {
-                          data: xml(
+                          data: stringifyXmlable(
                               this.formatter.format(file.CommentsExtended, {
                                   viewWrapper: {
                                       View: file.CommentsExtended,
@@ -678,7 +678,7 @@ export class Compiler {
             ...(file.CommentsIds
                 ? {
                       CommentsIds: {
-                          data: xml(
+                          data: stringifyXmlable(
                               this.formatter.format(file.CommentsIds, {
                                   viewWrapper: {
                                       View: file.CommentsIds,
@@ -700,7 +700,7 @@ export class Compiler {
                   }
                 : {}),
             FontTable: {
-                data: xml(
+                data: stringifyXmlable(
                     this.formatter.format(file.FontTable.View, {
                         viewWrapper: file.Document,
                         file,
@@ -718,7 +718,7 @@ export class Compiler {
             },
             FontTableRelationships: {
                 data: (() =>
-                    xml(
+                    stringifyXmlable(
                         this.formatter.format(file.FontTable.Relationships, {
                             viewWrapper: file.Document,
                             file,
@@ -734,7 +734,7 @@ export class Compiler {
                 path: "word/_rels/fontTable.xml.rels",
             },
             Theme: {
-                data: xml(
+                data: stringifyXmlable(
                     this.formatter.format(file.Theme, {
                         viewWrapper: file.Document,
                         file,
@@ -755,7 +755,7 @@ export class Compiler {
             // After every part that can have lists, such as headers and footers, as the lists they use are added to the
             // numbering while they're written
             Numbering: {
-                data: xml(
+                data: stringifyXmlable(
                     this.formatter.format(file.Numbering, {
                         viewWrapper: file.Document,
                         file,
@@ -773,7 +773,7 @@ export class Compiler {
             },
             // Last, as parts are added to the package, with their content types, while the others are written
             ContentTypes: {
-                data: xml(
+                data: stringifyXmlable(
                     this.formatter.format(file.ContentTypes, {
                         viewWrapper: file.Document,
                         file,

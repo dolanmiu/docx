@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import xml from "xml";
 
 import { Formatter } from "@export/formatter";
+import { stringifyXmlable } from "@util/xml";
 import type { XmlComponent } from "docx";
 
 import { createCategoriesAndValues, createDataSource, createSeriesStart, formatNumber } from "./series";
 
-const toXml = (component: XmlComponent): string => xml(new Formatter().format(component));
+const toXml = (component: XmlComponent): string => stringifyXmlable(new Formatter().format(component));
 
 describe("series", () => {
     it("should write numbers in JavaScript's shortest form that reads back as the same number", () => {

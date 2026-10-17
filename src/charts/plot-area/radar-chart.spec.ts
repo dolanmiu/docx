@@ -1,15 +1,14 @@
 import { describe, expect, it } from "vitest";
-import xml from "xml";
-import { type Element, xml2js } from "xml-js";
 
 import { Formatter } from "@export/formatter";
+import { type XmlElement as Element, parseXml, stringifyXmlable } from "@util/xml";
 import type { XmlComponent } from "docx";
 
 import { createChartData } from "../chart-data";
 import type { RadarChartOptions } from "../chart-options";
 import { createRadarChart } from "./radar-chart";
 
-const parse = (component: XmlComponent): Element => (xml2js(xml(new Formatter().format(component))) as Element).elements![0];
+const parse = (component: XmlComponent): Element => parseXml(stringifyXmlable(new Formatter().format(component))).elements![0];
 const names = (element: Element): readonly string[] => (element.elements ?? []).map(({ name }) => name!);
 const children = (element: Element, name: string): readonly Element[] => element.elements!.filter((one) => one.name === name);
 const value = (element: Element, name: string): unknown => children(element, name)[0]?.attributes?.val;
@@ -39,7 +38,7 @@ describe("createRadarChart", () => {
         expect(value(group, "c:varyColors")).to.equal("0");
         expect(names(series)).to.deep.equal(["c:idx", "c:order", "c:tx", "c:spPr", "c:marker", "c:cat", "c:val"]);
         expect(value(children(series, "c:marker")[0], "c:symbol")).to.equal("none");
-        expect(xml(new Formatter().format(create().group))).to.contain(
+        expect(stringifyXmlable(new Formatter().format(create().group))).to.contain(
             '<c:spPr><a:ln w="28575" cap="rnd"><a:solidFill><a:srgbClr val="FF0000"/></a:solidFill><a:round/></a:ln><a:effectLst/></c:spPr>',
         );
     });
@@ -58,9 +57,9 @@ describe("createRadarChart", () => {
         const symbols = children(group, "c:ser").map((series) => value(children(series, "c:marker")[0], "c:symbol"));
 
         expect(symbols).to.deep.equal(["diamond", "circle", "none"]);
-        expect(xml(new Formatter().format(create({ series: [{ name: "A", values: [1], line: { dash: "dot" } }] }).group))).to.contain(
-            '<a:prstDash val="dot"/>',
-        );
+        expect(
+            stringifyXmlable(new Formatter().format(create({ series: [{ name: "A", values: [1], line: { dash: "dot" } }] }).group)),
+        ).to.contain('<a:prstDash val="dot"/>');
     });
 
     it("should fill the series of a filled radar chart, without lines or markers", () => {

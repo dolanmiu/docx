@@ -4,9 +4,8 @@
  * @module
  */
 // cspell:ignore descr
-import type { Element } from "xml-js";
 
-import { DrawingPatch, type TemplateDrawing, type TemplatePackage } from "docx";
+import { DrawingPatch, type XmlElement as Element, type TemplateDrawing, type TemplatePackage } from "docx";
 
 import { leafCategoriesOf } from "./chart-categories";
 import { TYPE_NAMES, checkChartOptions } from "./chart-checks";

@@ -7,7 +7,6 @@
  * @module
  */
 import JSZip from "jszip";
-import { type Element, js2xml } from "xml-js";
 
 import { ImageReplacer } from "@export/packer/image-replacer";
 import { xmlifyPackageParts } from "@export/packer/package-part-writer";
@@ -25,6 +24,7 @@ import { type RelationshipType, TargetModeType } from "@file/relationships/relat
 import type { IContext } from "@file/xml-components";
 import { encodeUtf8, uniqueId } from "@util/convenience-functions";
 import type { OutputByType, OutputType } from "@util/output-type";
+import { type XmlElement as Element, stringifyElement } from "@util/xml";
 
 import { findBookmarkIds, renumberBookmarksAvoiding } from "./bookmark-ids";
 import { appendContentType, appendContentTypeOverride } from "./content-types-manager";
@@ -643,7 +643,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     const zip = new JSZip();
 
     for (const [key, value] of map) {
-        const output = toXml(value);
+        const output = stringifyElement(value);
 
         zip.file(key, encodeUtf8(output));
     }
@@ -665,38 +665,4 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
         mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         compression: "DEFLATE",
     });
-};
-
-/**
- * The element with an extra escape on each "&" in its text and attributes. xml-js reads "&amp;" in text as an "&"
- * already escaped, and would write a text's literal "&amp;", such as in a document about HTML, as "&". It escapes the
- * quotes in an attribute before `attributeValueFn` is given it, so that can't tell its "&quot;" from a literal one.
- */
-const withAmpersandsEscaped = (element: Element): Element => ({
-    ...element,
-    ...(element.attributes === undefined
-        ? {}
-        : {
-              attributes: Object.fromEntries(
-                  Object.entries(element.attributes).map(([key, value]) => [
-                      key,
-                      value === undefined ? value : String(value).replace(/&/g, "&amp;"),
-                  ]),
-              ),
-          }),
-    ...(element.elements === undefined
-        ? {}
-        : {
-              elements: element.elements.map((child) =>
-                  child.type === "text" ? { ...child, text: String(child.text).replace(/&/g, "&amp;") } : withAmpersandsEscaped(child),
-              ),
-          }),
-});
-
-const toXml = (jsonObj: Element): string => {
-    const output = js2xml(withAmpersandsEscaped(jsonObj), {
-        // xml-js has already escaped the quotes, and withAmpersandsEscaped each "&"
-        attributeValueFn: (str) => String(str).replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/'/g, "&apos;"), // cspell:words apos
-    });
-    return output;
 };
