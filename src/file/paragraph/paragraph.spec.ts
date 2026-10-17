@@ -827,6 +827,19 @@ describe("Paragraph", () => {
 
                 expect(ids).to.deep.equal(["steps-0", "steps-0"]);
             });
+
+            it("should write the list a paragraph is in for each part it is written in", () => {
+                const paragraph = new Paragraph({ numbering: { reference: "steps", level: 0 } });
+
+                const [inRestartedList] = listIdsOf([
+                    new Paragraph({ numbering: { reference: "steps", level: 0, restart: true } }),
+                    paragraph,
+                ]).slice(1);
+                const [inFirstList] = listIdsOf([paragraph]);
+
+                expect(inRestartedList).to.match(/^steps-restart \d+$/);
+                expect(inFirstList).to.equal("steps-0");
+            });
         });
 
         it("should not add ListParagraph style when custom is true", () => {
