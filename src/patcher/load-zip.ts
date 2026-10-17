@@ -13,12 +13,12 @@ const isStream = (data: InputDataType): data is TemplateStream =>
  *
  * It listens for the stream's events, rather than iterating it, so that a stream with no iterator also works, such
  * as `Packer.toStream`'s. A chunk is usually a run of bytes, but a stream made with `Readable.from` of a `Uint8Array`
- * gives each byte as a number of its own.
+ * gives each byte as a number of its own. Those are kept as numbers, not wrapped in an array each.
  */
 const readStream = (stream: TemplateStream): Promise<Uint8Array> =>
     new Promise((resolve, reject) => {
         // eslint-disable-next-line functional/prefer-readonly-type
-        const chunks: Uint8Array[] = [];
+        const chunks: (Uint8Array | number)[] = [];
         stream.on("data", (chunk: unknown) => {
             // Not `instanceof Uint8Array`, which is false for a Buffer or Uint8Array from another realm, such as a vm context's
             if (ArrayBuffer.isView(chunk)) {
@@ -26,7 +26,7 @@ const readStream = (stream: TemplateStream): Promise<Uint8Array> =>
                 chunks.push(new Uint8Array(chunk.buffer, chunk.byteOffset, chunk.byteLength));
             } else if (typeof chunk === "number") {
                 // eslint-disable-next-line functional/immutable-data
-                chunks.push(Uint8Array.of(chunk));
+                chunks.push(chunk);
             } else {
                 reject(
                     new TypeError(
@@ -37,8 +37,15 @@ const readStream = (stream: TemplateStream): Promise<Uint8Array> =>
         });
         stream.on("error", reject);
         stream.on("end", () => {
-            const bytes = new Uint8Array(chunks.reduce((length, chunk) => length + chunk.length, 0));
-            chunks.reduce((offset, chunk) => {
+            const bytes = new Uint8Array(
+                chunks.reduce<number>((length, chunk) => length + (typeof chunk === "number" ? 1 : chunk.length), 0),
+            );
+            chunks.reduce<number>((offset, chunk) => {
+                if (typeof chunk === "number") {
+                    // eslint-disable-next-line functional/immutable-data
+                    bytes[offset] = chunk;
+                    return offset + 1;
+                }
                 bytes.set(chunk, offset);
                 return offset + chunk.length;
             }, 0);
