@@ -13214,12 +13214,18 @@ MAX: 9026 };
 		constructor(options) {
 			super("w:p");
 			_defineProperty(this, "properties", void 0);
+			_defineProperty(this, "alignment", void 0);
 			if (typeof options === "string") {
+				this.alignment = {};
 				this.properties = new ParagraphProperties({});
 				this.root.push(this.properties);
 				this.root.push(new TextRun(options));
 				return this;
 			}
+			this.alignment = {
+				alignment: options.alignment,
+				bidirectional: options.bidirectional
+			};
 			this.properties = new ParagraphProperties(options);
 			this.root.push(this.properties);
 			if (options.text) this.root.push(new TextRun(options.text));
@@ -13262,6 +13268,15 @@ MAX: 9026 };
 		*/
 		removeSectionProperties(sectionProperties) {
 			this.properties.removeSectionProperties(sectionProperties);
+		}
+		/**
+		* The paragraph's alignment and direction, which a table gives the empty paragraphs of the cells it adds below a
+		* cell merged down rows (`rowSpan`), so that the merged cell is aligned as one.
+		*
+		* @internal
+		*/
+		get Alignment() {
+			return this.alignment;
 		}
 		addRunToFront(run) {
 			this.root.splice(1, 0, run);
@@ -18450,11 +18465,17 @@ MAX: 9026 };
 				let columnIndex = 0;
 				row.cells.forEach((cell) => {
 					if (cell.options.rowSpan && cell.options.rowSpan > 1) {
+						const lastChild = cell.options.children[cell.options.children.length - 1];
 						const continueCell = new TableCell({
 							rowSpan: cell.options.rowSpan - 1,
 							columnSpan: cell.options.columnSpan,
+							width: cell.options.width,
 							borders: cell.options.borders,
-							children: [],
+							shading: cell.options.shading,
+							margins: cell.options.margins,
+							textDirection: cell.options.textDirection,
+							verticalAlign: cell.options.verticalAlign,
+							children: lastChild instanceof Paragraph ? [new Paragraph(lastChild.Alignment)] : [],
 							verticalMerge: VerticalMergeType.CONTINUE
 						});
 						rows[rowIndex + 1].addCellToColumnIndex(continueCell, columnIndex);

@@ -10837,6 +10837,7 @@ export declare const PageTextDirectionType: {
  */
 export declare class Paragraph extends FileChild {
     private readonly properties;
+    private readonly alignment;
     constructor(options: string | IParagraphOptions);
     prepForXml(context: IContext): IXmlableObject | undefined;
     /**
@@ -10857,6 +10858,13 @@ export declare class Paragraph extends FileChild {
      * @param sectionProperties - The properties of the section to remove
      */
     removeSectionProperties(sectionProperties: SectionProperties): void;
+    /**
+     * The paragraph's alignment and direction, which a table gives the empty paragraphs of the cells it adds below a
+     * cell merged down rows (`rowSpan`), so that the merged cell is aligned as one.
+     *
+     * @internal
+     */
+    get Alignment(): Pick<IParagraphOptions, "alignment" | "bidirectional">;
     addRunToFront(run: Run): Paragraph;
 }
 
