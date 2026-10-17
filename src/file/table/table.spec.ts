@@ -6,10 +6,12 @@ import { BorderStyle } from "@file/border";
 import { PageOrientation } from "@file/document/body/section-properties/properties/page-size";
 import { File } from "@file/file";
 import { Header } from "@file/header";
+import { ShadingType } from "@file/shading";
+import { VerticalAlignTable } from "@file/vertical-align";
 
 import { AlignmentType, Paragraph } from "../paragraph";
 import { Table } from "./table";
-import { TableCell } from "./table-cell";
+import { TableCell, TextDirection } from "./table-cell";
 import { RelativeHorizontalPosition, RelativeVerticalPosition, TableAnchorType } from "./table-properties";
 import { TableLayoutType } from "./table-properties/table-layout";
 import { TableRow } from "./table-row";
@@ -481,6 +483,101 @@ describe("Table", () => {
                     },
                 ],
             });
+        });
+    });
+
+    describe("#rowSpan", () => {
+        // The first cell of each row of a table, as formatted
+        const firstCellsOf = (table: Table): readonly any[] => {
+            const tree = new Formatter().format(table);
+            return tree["w:tbl"]
+                .filter((child: any) => child["w:tr"])
+                .map((row: any) => row["w:tr"].find((child: any) => child["w:tc"])["w:tc"]);
+        };
+        const mergedDownThreeRows = (cell: TableCell): Table =>
+            new Table({
+                rows: [
+                    new TableRow({ children: [cell, new TableCell({ children: [new Paragraph("1")] })] }),
+                    new TableRow({ children: [new TableCell({ children: [new Paragraph("2")] })] }),
+                    new TableRow({ children: [new TableCell({ children: [new Paragraph("3")] })] }),
+                ],
+            });
+
+        it("formats the cells it adds below a merged cell as the merged cell, all the way down", () => {
+            const cells = firstCellsOf(
+                mergedDownThreeRows(
+                    new TableCell({
+                        rowSpan: 3,
+                        width: { size: 3000, type: WidthType.DXA },
+                        borders: { left: { style: BorderStyle.DOUBLE, size: 6, color: "FF0000" } },
+                        shading: { type: ShadingType.CLEAR, fill: "DDEEFF", color: "auto" },
+                        margins: { top: 400, bottom: 400 },
+                        textDirection: TextDirection.BOTTOM_TO_TOP_LEFT_TO_RIGHT,
+                        verticalAlign: VerticalAlignTable.CENTER,
+                        children: [new Paragraph("Merged")],
+                    }),
+                ),
+            );
+            // The same properties, but the merge's start
+            const properties = cells[0][0]["w:tcPr"].filter((property: any) => !property["w:vMerge"]);
+
+            for (const cell of cells.slice(1)) {
+                expect(cell[0]["w:tcPr"]).to.deep.equal([
+                    properties[0],
+                    { "w:vMerge": { _attr: { "w:val": "continue" } } },
+                    ...properties.slice(1),
+                ]);
+            }
+            expect(properties.map((property: any) => Object.keys(property)[0])).to.deep.equal([
+                "w:tcW",
+                "w:tcBorders",
+                "w:shd",
+                "w:tcMar",
+                "w:textDirection",
+                "w:vAlign",
+            ]);
+        });
+
+        it("aligns the paragraphs of the cells it adds below a merged cell as the merged cell's last paragraph (#1219)", () => {
+            const cells = firstCellsOf(
+                mergedDownThreeRows(
+                    new TableCell({
+                        rowSpan: 3,
+                        children: [new Paragraph("Title"), new Paragraph({ text: "Merged", alignment: AlignmentType.CENTER })],
+                    }),
+                ),
+            );
+
+            expect(cells[1].slice(1)).to.deep.equal([{ "w:p": [{ "w:pPr": [{ "w:jc": { _attr: { "w:val": "center" } } }] }] }]);
+            expect(cells[2].slice(1)).to.deep.equal(cells[1].slice(1));
+        });
+
+        it("keeps the side of the page a right-to-left merged cell is aligned to", () => {
+            const cells = firstCellsOf(
+                mergedDownThreeRows(
+                    new TableCell({
+                        rowSpan: 2,
+                        children: [new Paragraph({ text: "Merged", bidirectional: true, alignment: AlignmentType.LEFT })],
+                    }),
+                ),
+            );
+
+            // A right-to-left paragraph aligned to the left of the page is written as aligned to its end
+            expect(cells[1].slice(1)).to.deep.equal([
+                { "w:p": [{ "w:pPr": [{ "w:bidi": {} }, { "w:jc": { _attr: { "w:val": "right" } } }] }] },
+            ]);
+        });
+
+        it("leaves the paragraphs of the cells it adds unaligned when the merged cell's last paragraph is, or it ends with a table", () => {
+            const nested = new Table({ rows: [new TableRow({ children: [new TableCell({ children: [new Paragraph("Nested")] })] })] });
+            for (const children of [
+                [new Paragraph("Merged")],
+                [new Paragraph({ text: "Merged", alignment: AlignmentType.CENTER }), nested],
+            ]) {
+                const cells = firstCellsOf(mergedDownThreeRows(new TableCell({ rowSpan: 2, children })));
+
+                expect(cells[1]).to.deep.equal([{ "w:tcPr": [{ "w:vMerge": { _attr: { "w:val": "continue" } } }] }, { "w:p": {} }]);
+            }
         });
     });
 

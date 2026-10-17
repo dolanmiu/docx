@@ -110,17 +110,20 @@ export type IParagraphOptions = {
  */
 export class Paragraph extends FileChild {
     private readonly properties: ParagraphProperties;
+    private readonly alignment: Pick<IParagraphOptions, "alignment" | "bidirectional">;
 
     public constructor(options: string | IParagraphOptions) {
         super("w:p");
 
         if (typeof options === "string") {
+            this.alignment = {};
             this.properties = new ParagraphProperties({});
             this.root.push(this.properties);
             this.root.push(new TextRun(options));
             return this;
         }
 
+        this.alignment = { alignment: options.alignment, bidirectional: options.bidirectional };
         this.properties = new ParagraphProperties(options);
 
         this.root.push(this.properties);
@@ -183,6 +186,16 @@ export class Paragraph extends FileChild {
      */
     public removeSectionProperties(sectionProperties: SectionProperties): void {
         this.properties.removeSectionProperties(sectionProperties);
+    }
+
+    /**
+     * The paragraph's alignment and direction, which a table gives the empty paragraphs of the cells it adds below a
+     * cell merged down rows (`rowSpan`), so that the merged cell is aligned as one.
+     *
+     * @internal
+     */
+    public get Alignment(): Pick<IParagraphOptions, "alignment" | "bidirectional"> {
+        return this.alignment;
     }
 
     public addRunToFront(run: Run): Paragraph {
