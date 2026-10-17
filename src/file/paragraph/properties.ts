@@ -338,8 +338,10 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
         /** The id of the restart, for a paragraph that restarts its list */
         readonly restartedListId?: number;
         readonly definition?: NumberingDefinition;
-        readonly numberProperties: NumberProperties;
     };
+    /** The paragraph's `w:numPr`, which is written again with its list's id each time the paragraph is written */
+    // eslint-disable-next-line functional/prefer-readonly-type
+    private numberProperties?: NumberProperties;
 
     /**
      * Creates paragraph properties.
@@ -409,8 +411,8 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
                 instance,
                 restartedListId: restart && inListOrder && instance === undefined ? restartedListIds() : undefined,
                 definition: typeof list === "string" ? undefined : list,
-                numberProperties,
             };
+            this.numberProperties = numberProperties;
 
             this.push(numberProperties);
         } else if (options.numbering === false) {
@@ -544,29 +546,36 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
      */
     public prepForXml(context: IContext): IXmlableObject | undefined {
         if (this.numbering) {
-            const { reference, level, instance = 0, definition, numberProperties } = this.numbering;
+            const { reference, level, instance = 0, definition } = this.numbering;
             const restartedListId =
                 this.numbering.instance === undefined
                     ? (this.numbering.restartedListId ?? currentRestartedLists.get(context)?.get(reference))
                     : undefined;
 
-            if (this.numbering.restartedListId !== undefined) {
-                currentRestartedLists.set(
-                    context,
-                    new Map([...(currentRestartedLists.get(context) ?? []), [reference, this.numbering.restartedListId]]),
-                );
-            }
-
             if (!(context.viewWrapper instanceof FontWrapper)) {
                 context.file.Numbering.createConcreteNumberingInstance(reference, instance, definition, restartedListId);
             }
 
-            // The paragraph's place in its part's lists is only known now, so its list id is written for it here
-            const index = this.root.indexOf(numberProperties);
-            this.root[index] = new NumberProperties(listKey(reference, instance, restartedListId), level);
+            // The paragraph's place in its part's lists is only known now, so its list id is written for it here. It can
+            // differ each time the paragraph is written, such as in another part, so the last one written is replaced
+            const numberProperties = new NumberProperties(listKey(reference, instance, restartedListId), level);
+            this.root.splice(this.root.indexOf(this.numberProperties!), 1, numberProperties);
+            // eslint-disable-next-line functional/immutable-data
+            this.numberProperties = numberProperties;
         }
 
-        return super.prepForXml(context);
+        const result = super.prepForXml(context);
+
+        // Only once the paragraph's own properties are written, so the earlier formatting a revision keeps is still in the
+        // list the paragraph was in before it restarted, and only the paragraphs after it are moved onto the new list
+        if (this.numbering?.restartedListId !== undefined) {
+            currentRestartedLists.set(
+                context,
+                new Map([...(currentRestartedLists.get(context) ?? []), [this.numbering.reference, this.numbering.restartedListId]]),
+            );
+        }
+
+        return result;
     }
 }
 

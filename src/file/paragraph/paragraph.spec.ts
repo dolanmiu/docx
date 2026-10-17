@@ -827,6 +827,48 @@ describe("Paragraph", () => {
 
                 expect(ids).to.deep.equal(["steps-0", "steps-0"]);
             });
+
+            it("should keep the list the paragraph was in before it restarted in the formatting a revision keeps", () => {
+                const context = createNumberingContext();
+                const [previousList] = listIdsOf([new Paragraph({ numbering: { reference: "steps", level: 0, restart: true } })], context);
+
+                const xml = JSON.stringify(
+                    new Formatter().format(
+                        new Paragraph({
+                            numbering: { reference: "steps", level: 0, restart: true },
+                            revision: {
+                                id: 1,
+                                author: "Firstname Lastname",
+                                date: "2020-10-06T09:05:00Z",
+                                numbering: { reference: "steps", level: 0 },
+                            },
+                        }),
+                        context,
+                    ),
+                );
+                const [restartedList, earlierList] = Array.from(
+                    xml.matchAll(/"w:numId":\{"_attr":\{"w:val":"\{([^}]+)\}"/g),
+                    ([, id]) => id,
+                );
+
+                expect(restartedList)
+                    .to.match(/^steps-restart \d+$/)
+                    .and.not.equal(previousList);
+                expect(earlierList).to.equal(previousList);
+            });
+
+            it("should write the list a paragraph is in for each part it is written in", () => {
+                const paragraph = new Paragraph({ numbering: { reference: "steps", level: 0 } });
+
+                const [inRestartedList] = listIdsOf([
+                    new Paragraph({ numbering: { reference: "steps", level: 0, restart: true } }),
+                    paragraph,
+                ]).slice(1);
+                const [inFirstList] = listIdsOf([paragraph]);
+
+                expect(inRestartedList).to.match(/^steps-restart \d+$/);
+                expect(inFirstList).to.equal("steps-0");
+            });
         });
 
         it("should not add ListParagraph style when custom is true", () => {
