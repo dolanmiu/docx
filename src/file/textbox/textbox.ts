@@ -117,7 +117,8 @@ export class Textbox extends FileChild {
     }
 
     public prepForXml(context: IContext): IXmlableObject | undefined {
-        // A paragraph can't contain another, so in a paragraph's children, the textbox is only its run
+        // A paragraph can't contain another, so in a paragraph's children, the textbox is only its run. The paragraph is
+        // known by its element, so in another copy of docx's paragraph, the textbox isn't written as a `w:p` inside it
         return elementOf(context.stack[context.stack.length - 1]) === "w:p" ? this.run.prepForXml(context) : super.prepForXml(context);
     }
 }

@@ -146,9 +146,13 @@ export class Paragraph extends FileChild {
 
     public prepForXml(context: IContext): IXmlableObject | undefined {
         for (const element of this.root) {
-            // An external hyperlink is known by its element, so one from another copy of docx gets its relationship too
+            // An external hyperlink is known by its element, so one from another copy of docx gets its relationship too.
+            // Otherwise it is written as itself, `w:externalHyperlink`, which isn't an element of WordprocessingML, and
+            // the link has no relationship to point to
             if (elementOf(element) === "w:externalHyperlink") {
                 const index = this.root.indexOf(element);
+                // Only `ExternalHyperlink` writes that element, and its options are the same in every copy of docx, so
+                // reading them from another copy's hyperlink is safe
                 const { options } = element as ExternalHyperlink;
                 const { target, anchor } = externalHyperlinkTarget(options.link);
                 // The full link goes with the split one, so pictures in the hyperlink can link to the address with its fragment

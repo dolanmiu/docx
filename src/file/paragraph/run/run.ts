@@ -203,7 +203,9 @@ export class Run extends XmlComponent {
             for (const [index, child] of options.children.entries()) {
                 if (elementOf(child) === "w:r") {
                     // A run can't be inside another, so this run ends before it, and the children after it go in a run
-                    // with this run's properties. The run may be from another copy of docx
+                    // with this run's properties. The run is known by its element, so one from another copy of docx is
+                    // split out too, rather than written as a `w:r` inside this one, which Word can't open. Every `Run`
+                    // writes `w:r`, so this copy's runs are split as before
                     const rest = options.children.slice(index + 1);
                     this.following = [
                         child as Run,

@@ -100,7 +100,9 @@ export class TableCell extends XmlComponent {
     }
 
     public prepForXml(context: IContext): IXmlableObject | undefined {
-        // Cells must end with a paragraph, which may be from another copy of docx
+        // Cells must end with a paragraph, which may be from another copy of docx. It is known by its element, so a cell
+        // ending with another copy's paragraph isn't given an empty one after it, which shows as a blank line at the
+        // bottom of the cell
         if (elementOf(this.root[this.root.length - 1]) !== "w:p") {
             this.root.push(new Paragraph({}));
         }

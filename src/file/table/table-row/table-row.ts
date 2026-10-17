@@ -127,7 +127,9 @@ export class TableRow extends XmlComponent {
     }
 
     public get cells(): readonly TableCell[] {
-        // Including cells from another copy of docx
+        // Including cells from another copy of docx, known by their element. The table counts columns across these
+        // cells to put the cells it adds below a `rowSpan` cell, so leaving any out puts those cells in the wrong column
+        // and breaks the merge
         return this.root.filter((xmlComponent) => elementOf(xmlComponent) === "w:tc");
     }
 
