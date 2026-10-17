@@ -6572,9 +6572,9 @@ declare type INotePropertiesBaseOptions = {
  * Supported input data types for document patching.
  *
  * The patcher can accept documents in various formats including buffers,
- * arrays, and streams.
+ * arrays, and streams, such as `fs.createReadStream`'s or `Packer.toStream`'s.
  */
-export declare type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob | NodeJS.ReadableStream | default_2;
+export declare type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob | NodeJS.ReadableStream | Stream | default_2;
 
 export declare class InsertedTableCell extends XmlComponent {
     constructor(options: IChangedAttributesProperties);

@@ -35524,6 +35524,47 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 		for (const { drawing, patch } of found) patch.patch(drawing, createTemplatePackage(parts, binaryParts, file, createContext(drawing.part.path)));
 	};
 	//#endregion
+	//#region src/patcher/load-zip.ts
+	var isStream = (data) => typeof data === "object" && data !== null && "on" in data && typeof data.on === "function";
+	/**
+	* Reads a stream to its end, as JSZip cannot load a zip file from a stream.
+	*
+	* It listens for the stream's events, rather than iterating it, so that a stream with no iterator also works, such
+	* as `Packer.toStream`'s. A chunk is usually a run of bytes, but a stream made with `Readable.from` of a `Uint8Array`
+	* gives each byte as a number of its own. Those are kept as numbers, not wrapped in an array each.
+	*/
+	var readStream = (stream) => new Promise((resolve, reject) => {
+		const chunks = [];
+		stream.on("data", (chunk) => {
+			if (ArrayBuffer.isView(chunk)) chunks.push(new Uint8Array(chunk.buffer, chunk.byteOffset, chunk.byteLength));
+			else if (typeof chunk === "number") chunks.push(chunk);
+			else reject(/* @__PURE__ */ new TypeError(`A template stream must give bytes, but it gave a ${typeof chunk}. A stream with an encoding set gives text, so do not set one.`));
+		});
+		stream.on("error", reject);
+		stream.on("end", () => {
+			const bytes = new Uint8Array(chunks.reduce((length, chunk) => length + (typeof chunk === "number" ? 1 : chunk.length), 0));
+			chunks.reduce((offset, chunk) => {
+				if (typeof chunk === "number") {
+					bytes[offset] = chunk;
+					return offset + 1;
+				}
+				bytes.set(chunk, offset);
+				return offset + chunk.length;
+			}, 0);
+			resolve(bytes);
+		});
+	});
+	/** Opens the zip file of a template, from any of the forms `patchDocument` and `patchDetector` take it in */
+	var loadZip = function() {
+		var _ref = _asyncToGenerator(function* (data) {
+			if (data instanceof import_jszip_min.default) return data;
+			return import_jszip_min.default.loadAsync(isStream(data) ? yield readStream(data) : data);
+		});
+		return function loadZip(_x) {
+			return _ref.apply(this, arguments);
+		};
+	}();
+	//#endregion
 	//#region src/patcher/notes.ts
 	/**
 	* Footnotes and endnotes for content inserted into an existing document.
@@ -36778,7 +36819,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 			start: "{{",
 			end: "}}"
 		}, recursive = true, footnotes, endnotes, numbering = { config: [] }, pageNumbers }) {
-			const zipContent = data instanceof import_jszip_min.default ? data : yield import_jszip_min.default.loadAsync(data);
+			const zipContent = yield loadZip(data);
 			const contexts = /* @__PURE__ */ new Map();
 			const themeColors = yield readThemeColors(zipContent);
 			const contentTypeOverrides = [];
@@ -37036,7 +37077,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	*/
 	var patchDetector = function() {
 		var _ref = _asyncToGenerator(function* ({ data }) {
-			const zipContent = data instanceof import_jszip_min.default ? data : yield import_jszip_min.default.loadAsync(data);
+			const zipContent = yield loadZip(data);
 			const patches = /* @__PURE__ */ new Set();
 			for (const [key, value] of Object.entries(zipContent.files)) {
 				if (!key.endsWith(".xml") && !key.endsWith(".rels")) continue;
