@@ -9,7 +9,7 @@ import { Body } from "@file/document/body/body";
 import { FileChild } from "@file/file-child";
 import type { IContext, IXmlableObject, XmlComponent } from "@file/xml-components";
 
-import type { AlignmentType } from "../paragraph";
+import { type AlignmentType, Paragraph } from "../paragraph";
 import { DEFAULT_AVAILABLE_WIDTH, resolveColumnWidths, resolvePreferredWidth } from "./column-widths";
 import { type ITableGridChangeOptions, TableGrid } from "./grid";
 import { TableCell, VerticalMergeType } from "./table-cell";
@@ -150,12 +150,21 @@ export class Table extends FileChild {
                 // Row Span has to be added in this method and not the constructor because it needs to know information about the column which happens after Table Cell construction
                 // Row Span of 1 will crash word as it will add RESTART and not a corresponding CONTINUE
                 if (cell.options.rowSpan && cell.options.rowSpan > 1) {
+                    // The inserted cell is part of the merged cell, so it is formatted as the merged cell is, as Word
+                    // writes the cells of a merge. Word sizes the rows below by its margins, and selecting the merged
+                    // cell selects its paragraph too, which is aligned as the merged cell's last paragraph
+                    const lastChild = cell.options.children[cell.options.children.length - 1];
                     const continueCell = new TableCell({
                         // the inserted CONTINUE cell has rowSpan, and will be handled when process the next row
                         rowSpan: cell.options.rowSpan - 1,
                         columnSpan: cell.options.columnSpan,
+                        width: cell.options.width,
                         borders: cell.options.borders,
-                        children: [],
+                        shading: cell.options.shading,
+                        margins: cell.options.margins,
+                        textDirection: cell.options.textDirection,
+                        verticalAlign: cell.options.verticalAlign,
+                        children: lastChild instanceof Paragraph ? [new Paragraph(lastChild.Alignment)] : [],
                         verticalMerge: VerticalMergeType.CONTINUE,
                     });
                     rows[rowIndex + 1].addCellToColumnIndex(continueCell, columnIndex);
