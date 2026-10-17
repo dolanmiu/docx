@@ -943,16 +943,16 @@ var docx = (function(exports) {
 	*
 	* @param val - The number to validate and convert
 	* @returns The floored integer value
-	* @throws Error if the value is NaN
+	* @throws Error if the value is NaN or infinite, which no integer can be written as
 	*
 	* @example
 	* ```typescript
 	* const num = decimalNumber(10.7); // Returns 10
-	* const negative = decimalNumber(-5.3); // Returns -5
+	* const negative = decimalNumber(-5.3); // Returns -6
 	* ```
 	*/
 	var decimalNumber = (val) => {
-		if (isNaN(val)) throw new Error(`Invalid value '${val}' specified. Must be an integer.`);
+		if (!Number.isFinite(val)) throw new Error(`Invalid value '${val}' specified. Must be an integer.`);
 		return Math.floor(val);
 	};
 	/**
@@ -962,7 +962,7 @@ var docx = (function(exports) {
 	*
 	* @param val - The number to validate and convert
 	* @returns The floored positive integer value
-	* @throws Error if the value is NaN or negative
+	* @throws Error if the value is NaN, infinite or negative
 	*
 	* @example
 	* ```typescript
@@ -2980,6 +2980,92 @@ var docx = (function(exports) {
 		}
 	};
 	//#endregion
+	//#region src/file/paragraph/run/east-asian-layout.ts
+	/**
+	* East Asian layout module for WordprocessingML run properties.
+	*
+	* This module provides Word's two lines in one, which sets a run's text in two half-size lines within one line, and
+	* horizontal in vertical, which sets a run's text across the line in text that runs down the page.
+	*
+	* Reference: ISO/IEC 29500-1, 17.3.2.10 eastAsianLayout
+	*
+	* @module
+	*/
+	/**
+	* Brackets Word draws around text set as two lines in one.
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:simpleType name="ST_CombineBrackets">
+	*   <xsd:restriction base="xsd:string">
+	*     <xsd:enumeration value="none"/>
+	*     <xsd:enumeration value="round"/>
+	*     <xsd:enumeration value="square"/>
+	*     <xsd:enumeration value="angle"/>
+	*     <xsd:enumeration value="curly"/>
+	*   </xsd:restriction>
+	* </xsd:simpleType>
+	* ```
+	*
+	* @publicApi
+	*/
+	var TwoLinesInOneBrackets = {
+		/** No brackets */
+		NONE: "none",
+		/** Round brackets: ( ) */
+		ROUND: "round",
+		/** Square brackets: [ ] */
+		SQUARE: "square",
+		/** Angle brackets: < > */
+		ANGLE: "angle",
+		/** Curly brackets: { } */
+		CURLY: "curly"
+	};
+	/**
+	* Creates the East Asian layout (`w:eastAsianLayout`) of a run's text.
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:complexType name="CT_EastAsianLayout">
+	*   <xsd:attribute name="id" type="ST_DecimalNumber" use="optional"/>
+	*   <xsd:attribute name="combine" type="s:ST_OnOff" use="optional"/>
+	*   <xsd:attribute name="combineBrackets" type="ST_CombineBrackets" use="optional"/>
+	*   <xsd:attribute name="vert" type="s:ST_OnOff" use="optional"/>
+	*   <xsd:attribute name="vertCompress" type="s:ST_OnOff" use="optional"/>
+	* </xsd:complexType>
+	* ```
+	*
+	* @example
+	* ```typescript
+	* createEastAsianLayout({ twoLinesInOne: true, brackets: TwoLinesInOneBrackets.ROUND });
+	* ```
+	*/
+	var createEastAsianLayout = ({ twoLinesInOne, brackets, horizontalInVertical, fitToLine, group }) => new BuilderElement({
+		name: "w:eastAsianLayout",
+		attributes: {
+			id: {
+				key: "w:id",
+				value: group === void 0 ? void 0 : decimalNumber(group)
+			},
+			combine: {
+				key: "w:combine",
+				value: twoLinesInOne
+			},
+			combineBrackets: {
+				key: "w:combineBrackets",
+				value: brackets
+			},
+			vert: {
+				key: "w:vert",
+				value: horizontalInVertical
+			},
+			vertCompress: {
+				key: "w:vertCompress",
+				value: fitToLine
+			}
+		}
+	});
+	//#endregion
 	//#region src/file/paragraph/run/emphasis-mark.ts
 	/**
 	* Emphasis mark module for WordprocessingML run properties.
@@ -3717,6 +3803,7 @@ DOT: "dot" };
 			if (options.rightToLeft !== void 0) this.push(new OnOffElement("w:rtl", options.rightToLeft));
 			if (options.emphasisMark) this.push(createEmphasisMark(options.emphasisMark.type));
 			if (options.language) this.push(createLanguageComponent(options.language));
+			if (options.eastAsianLayout) this.push(createEastAsianLayout(options.eastAsianLayout));
 			if (options.specVanish !== void 0) this.push(new OnOffElement("w:specVanish", options.specVanish));
 			if (options.math !== void 0) this.push(new OnOffElement("w:oMath", options.math));
 			if (options.revision) this.push(new RunPropertiesChange(options.revision));
@@ -37135,6 +37222,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	exports.Textbox = Textbox;
 	exports.ThematicBreak = ThematicBreak;
 	exports.Theme = Theme;
+	exports.TwoLinesInOneBrackets = TwoLinesInOneBrackets;
 	exports.UnderlineType = UnderlineType;
 	exports.VerticalAlign = VerticalAlign;
 	exports.VerticalAlignSection = VerticalAlignSection;
@@ -37166,6 +37254,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	exports.createColumns = createColumns;
 	exports.createDocumentGrid = createDocumentGrid;
 	exports.createDotEmphasisMark = createDotEmphasisMark;
+	exports.createEastAsianLayout = createEastAsianLayout;
 	exports.createEmphasisMark = createEmphasisMark;
 	exports.createEndnoteProperties = createEndnoteProperties;
 	exports.createFootnoteProperties = createFootnoteProperties;

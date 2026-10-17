@@ -1731,6 +1731,27 @@ export declare const createDocumentGrid: ({ type, linePitch, charSpace }: IDocGr
 export declare const createDotEmphasisMark: () => XmlComponent;
 
 /**
+ * Creates the East Asian layout (`w:eastAsianLayout`) of a run's text.
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_EastAsianLayout">
+ *   <xsd:attribute name="id" type="ST_DecimalNumber" use="optional"/>
+ *   <xsd:attribute name="combine" type="s:ST_OnOff" use="optional"/>
+ *   <xsd:attribute name="combineBrackets" type="ST_CombineBrackets" use="optional"/>
+ *   <xsd:attribute name="vert" type="s:ST_OnOff" use="optional"/>
+ *   <xsd:attribute name="vertCompress" type="s:ST_OnOff" use="optional"/>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * createEastAsianLayout({ twoLinesInOne: true, brackets: TwoLinesInOneBrackets.ROUND });
+ * ```
+ */
+export declare const createEastAsianLayout: ({ twoLinesInOne, brackets, horizontalInVertical, fitToLine, group, }: IEastAsianLayoutOptions) => XmlComponent;
+
+/**
  * Creates an emphasis mark element for a WordprocessingML document.
  *
  * Emphasis marks are characters (typically dots or circles) placed above or below
@@ -2922,12 +2943,12 @@ export declare class DayShort extends EmptyElement {
  *
  * @param val - The number to validate and convert
  * @returns The floored integer value
- * @throws Error if the value is NaN
+ * @throws Error if the value is NaN or infinite, which no integer can be written as
  *
  * @example
  * ```typescript
  * const num = decimalNumber(10.7); // Returns 10
- * const negative = decimalNumber(-5.3); // Returns -5
+ * const negative = decimalNumber(-5.3); // Returns -6
  * ```
  */
 export declare const decimalNumber: (val: number) => number;
@@ -5679,6 +5700,33 @@ export declare type IDrawingOptions = DrawingLinkOptions & {
 };
 
 /**
+ * Options for the East Asian layout of a run's text.
+ *
+ * @publicApi
+ */
+export declare type IEastAsianLayoutOptions = {
+    /** Sets the run's text in two lines within one line, each at half the text's size, as Word's Two Lines in One does (`w:combine`) */
+    readonly twoLinesInOne?: boolean;
+    /** The brackets drawn around text set as two lines in one (`w:combineBrackets`). Without them, none are drawn. */
+    readonly brackets?: (typeof TwoLinesInOneBrackets)[keyof typeof TwoLinesInOneBrackets];
+    /**
+     * Sets the run's text across the line in text that runs down the page, as Word's Horizontal in Vertical does (`w:vert`).
+     * Word ignores it when `twoLinesInOne` is on.
+     */
+    readonly horizontalInVertical?: boolean;
+    /**
+     * Asks for text set across the line in vertical text to be squeezed so that it fits in the width of the line
+     * (`w:vertCompress`). Word ignores it (MS-OI29500, 17.3.2.10), so only other applications may squeeze the text.
+     */
+    readonly fitToLine?: boolean;
+    /**
+     * Runs next to each other with the same group are laid out together, as one two lines in one or one piece of
+     * horizontal in vertical text, so it can be made of runs formatted differently (`w:id`)
+     */
+    readonly group?: number;
+};
+
+/**
  * Endnote settings of a section.
  *
  * @property position - Where the endnotes are placed
@@ -7147,6 +7195,12 @@ export declare type IRunStylePropertiesOptions = {
     readonly imprint?: boolean;
     readonly revision?: IRunPropertiesChangeOptions;
     readonly language?: ILanguageOptions;
+    /**
+     * Word's East Asian typography for the run's text: two lines in one, which sets it in two half-size lines within
+     * one line, optionally in brackets, and horizontal in vertical, which sets it across the line in text that runs
+     * down the page
+     */
+    readonly eastAsianLayout?: IEastAsianLayoutOptions;
     readonly border?: IBorderOptions;
     readonly snapToGrid?: boolean;
     /** Hides the text. `false` shows text that the run's style hides. */
@@ -13498,6 +13552,37 @@ declare type ToCEntry = {
 export declare const twipsMeasureValue: (val: PositiveUniversalMeasure | number) => PositiveUniversalMeasure | number;
 
 /**
+ * Brackets Word draws around text set as two lines in one.
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:simpleType name="ST_CombineBrackets">
+ *   <xsd:restriction base="xsd:string">
+ *     <xsd:enumeration value="none"/>
+ *     <xsd:enumeration value="round"/>
+ *     <xsd:enumeration value="square"/>
+ *     <xsd:enumeration value="angle"/>
+ *     <xsd:enumeration value="curly"/>
+ *   </xsd:restriction>
+ * </xsd:simpleType>
+ * ```
+ *
+ * @publicApi
+ */
+export declare const TwoLinesInOneBrackets: {
+    /** No brackets */
+    readonly NONE: "none";
+    /** Round brackets: ( ) */
+    readonly ROUND: "round";
+    /** Square brackets: [ ] */
+    readonly SQUARE: "square";
+    /** Angle brackets: < > */
+    readonly ANGLE: "angle";
+    /** Curly brackets: { } */
+    readonly CURLY: "curly";
+};
+
+/**
  * Validates a single-byte hexadecimal number (1 byte / 2 characters).
  *
  * Reference: ST_UcharHexNumber in OOXML specification
@@ -13700,7 +13785,7 @@ export declare const universalMeasureValue: (val: UniversalMeasure) => Universal
  *
  * @param val - The number to validate and convert
  * @returns The floored positive integer value
- * @throws Error if the value is NaN or negative
+ * @throws Error if the value is NaN, infinite or negative
  *
  * @example
  * ```typescript
