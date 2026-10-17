@@ -674,7 +674,7 @@ const doc = new Document({
 When cell rows are merged, it counts as multiple rows, so be sure to remove excess cells. It is similar to how HTML's `rowspan` works.
 https://www.w3schools.com/tags/att_td_rowspan.asp
 
-docx adds a cell to each row below the first for the merged cell, as Word writes a merge. Those cells take the merged cell's width, borders, shading, margins, text direction and vertical alignment, and their paragraphs take the alignment of its last paragraph, so Word treats the merged cell as one when it lays it out and when you select it.
+docx adds a cell to each row below the first for the merged cell, as Word writes a merge. Those cells take the merged cell's width, borders, shading, margins, text direction and vertical alignment, and when the merged cell ends with a paragraph rather than a table, their paragraphs take that paragraph's alignment, so Word treats the merged cell as one when it lays it out and when you select it.
 
 ```ts
 const cell = new TableCell({
