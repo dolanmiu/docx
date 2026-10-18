@@ -11545,7 +11545,10 @@ export declare const PrettifyType: {
 };
 
 declare type RegularImageOptions = {
-    /** The image format. */
+    /**
+     * The image format. JavaScript, which has no types to require it, can leave it out, and it is then read from the
+     * start of `data`, so data that isn't a PNG, JPEG, GIF or BMP file is an error.
+     */
     readonly type: "jpg" | "png" | "gif" | "bmp";
     /** The image data. Accepts a Buffer, Uint8Array, ArrayBuffer, or a base64-encoded data URI string. */
     readonly data: Buffer | string | Uint8Array | ArrayBuffer;

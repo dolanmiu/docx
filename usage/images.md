@@ -128,7 +128,7 @@ const doc = new Document({
 });
 ```
 
-The `type` is `jpg` (for JPEG files), `png`, `gif`, `bmp` or [`svg`](#svg-images).
+The `type` is `jpg` (for JPEG files), `png`, `gif`, `bmp` or [`svg`](#svg-images). TypeScript requires it. From JavaScript, an image without one has its type read from the start of its `data`, and `docx` throws an error when the data isn't a PNG, JPEG, GIF or BMP file.
 
 The `width` and `height` in `transformation` are in pixels, at 96 to the inch, so `width: 528` is 5.5 inches wide. They aren't in EMUs, which floating offsets use. Word won't open a document with an image more than 225457 pixels wide or tall, so `docx` throws an error for one, such as an image sized in EMUs by mistake.
 

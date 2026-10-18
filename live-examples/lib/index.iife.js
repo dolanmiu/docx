@@ -8857,6 +8857,52 @@ EXTERNAL: "External" };
 		return new Uint8Array(atob(dataURI.substring(base64IndexWithOffset)).split("").map((c) => c.charCodeAt(0)));
 	};
 	var standardizeData = (data) => typeof data === "string" ? convertDataURIToBinary(data) : data;
+	var SIGNATURES = [
+		["png", [
+			137,
+			80,
+			78,
+			71,
+			13,
+			10,
+			26,
+			10
+		]],
+		["jpg", [
+			255,
+			216,
+			255
+		]],
+		["gif", [
+			71,
+			73,
+			70,
+			56,
+			55,
+			97
+		]],
+		["gif", [
+			71,
+			73,
+			70,
+			56,
+			57,
+			97
+		]],
+		["bmp", [66, 77]]
+	];
+	/**
+	* The format of an image given without a `type`, read from the bytes its file starts with. Without one, its file in the
+	* package would be named `.undefined`, which has no content type, so Word reports the document as unreadable.
+	*/
+	var typeOf = ({ type, data }, name) => {
+		if (type !== void 0) return type;
+		const standardized = standardizeData(data);
+		const bytes = ArrayBuffer.isView(standardized) ? new Uint8Array(standardized.buffer, standardized.byteOffset, standardized.byteLength) : new Uint8Array(standardized);
+		const signature = SIGNATURES.find(([, start]) => start.every((byte, index) => bytes[index] === byte));
+		if (signature === void 0) throw new Error(`${name}: type isn't given, and data isn't a PNG, JPEG, GIF or BMP file to read it from. Give its type`);
+		return signature[0];
+	};
 	var createImageData = (options, key) => ({
 		data: standardizeData(options.data),
 		fileName: key,
@@ -8873,6 +8919,11 @@ EXTERNAL: "External" };
 			rotation: options.transformation.rotation ? options.transformation.rotation * 6e4 : void 0
 		}
 	});
+	/** The media data of a PNG, JPEG, GIF or BMP image, as an image of its own or as an SVG image's fallback */
+	var createRegularImageData = (options, transformation, name) => {
+		const type = typeOf(options, name);
+		return _objectSpread2({ type }, createImageData(_objectSpread2(_objectSpread2({}, options), {}, { transformation }), `${hashedId(options.data)}.${type}`));
+	};
 	var createDeletion = ({ id, author, date }, run) => new BuilderElement({
 		name: "w:del",
 		attributes: {
@@ -8917,8 +8968,7 @@ EXTERNAL: "External" };
 	var ImageRun = class extends XmlComponent {
 		constructor(options) {
 			var _options$insertion;
-			const key = `${hashedId(options.data)}.${options.type}`;
-			const imageData = options.type === "svg" ? _objectSpread2(_objectSpread2({ type: options.type }, createImageData(options, key)), {}, { fallback: _objectSpread2({ type: options.fallback.type }, createImageData(_objectSpread2(_objectSpread2({}, options.fallback), {}, { transformation: options.transformation }), `${hashedId(options.fallback.data)}.${options.fallback.type}`)) }) : _objectSpread2({ type: options.type }, createImageData(options, key));
+			const imageData = options.type === "svg" ? _objectSpread2(_objectSpread2({ type: options.type }, createImageData(options, `${hashedId(options.data)}.svg`)), {}, { fallback: createRegularImageData(options.fallback, options.transformation, "ImageRun fallback") }) : createRegularImageData(options, options.transformation, "ImageRun");
 			const drawing = new Drawing(imageData, {
 				floating: options.floating,
 				docProperties: options.altText,
