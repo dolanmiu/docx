@@ -1,14 +1,18 @@
+import JSZip from "jszip";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
+import { Packer } from "@export/packer/packer";
 import type { IViewWrapper } from "@file/document-wrapper";
-import type { File } from "@file/file";
+import { File } from "@file/file";
+import type { IMediaData } from "@file/media/data";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 import * as convenienceFunctions from "@util/convenience-functions";
 
-import { ImageRun } from "./image-run";
+import { type IImageOptions, ImageRun } from "./image-run";
 import type { IRunOptions } from "./run";
 import { ConcreteHyperlink } from "../links";
+import { Paragraph } from "../paragraph";
 
 describe("ImageRun", () => {
     beforeEach(() => {
@@ -1631,6 +1635,102 @@ describe("ImageRun", () => {
             expect(
                 () => new ImageRun({ type: "jpg", data: Buffer.from(""), transformation: { width: 225457, height: 225457 } }),
             ).not.toThrow();
+        });
+    });
+
+    describe("type", () => {
+        // The bytes each format's files start with, which are all of a file that is read for its type
+        const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d]);
+        const files = [
+            ["PNG", "png", PNG],
+            ["JPEG", "jpg", Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10])],
+            ["GIF87a", "gif", Buffer.from("GIF87a\x01\x00\x01\x00")],
+            ["GIF89a", "gif", Buffer.from("GIF89a\x01\x00\x01\x00")],
+            ["BMP", "bmp", Buffer.from([0x42, 0x4d, 0x3a, 0x00, 0x00, 0x00])],
+        ] as const;
+        const transformation = { width: 100, height: 100 };
+
+        // An image without the type its types require, as JavaScript can give it
+        const untyped = (options: object): IImageOptions => ({ transformation, ...options }) as IImageOptions;
+
+        const addedImages = (imageRun: ImageRun): readonly (readonly [string, IMediaData])[] => {
+            const addImage = vi.fn<(fileName: string, mediaData: IMediaData) => void>();
+            new Formatter().format(imageRun, {
+                file: { Media: { addImage } } as unknown as File,
+                viewWrapper: {} as unknown as IViewWrapper,
+                stack: [],
+            });
+            return addImage.mock.calls;
+        };
+
+        it.each(files)("should read the type of a %s image given without one from its data", (_, type, data) => {
+            const [[fileName, mediaData]] = addedImages(new ImageRun(untyped({ data })));
+
+            expect(fileName).to.equal(`${convenienceFunctions.hashedId(data)}.${type}`);
+            expect(mediaData).to.include({ type, fileName });
+        });
+
+        it("should read the type of an image given as a base64 data URI", () => {
+            const data = `data:image/png;base64,${PNG.toString("base64")}`;
+
+            expect(addedImages(new ImageRun(untyped({ data })))[0][0]).to.match(/\.png$/);
+        });
+
+        it("should read the type of an image given as an ArrayBuffer", () => {
+            const data = new Uint8Array(PNG).buffer;
+
+            expect(addedImages(new ImageRun(untyped({ data })))[0][0]).to.match(/\.png$/);
+        });
+
+        it("should read the type from the image's own bytes, not those of a larger buffer it is a slice of", () => {
+            const data = Buffer.concat([Buffer.from("GIF89a"), PNG]).subarray(6);
+
+            expect(addedImages(new ImageRun(untyped({ data })))[0][0]).to.match(/\.png$/);
+        });
+
+        it("should read the type of an SVG image's fallback given without one", () => {
+            const fileNames = addedImages(
+                new ImageRun(untyped({ type: "svg", data: Buffer.from("<svg></svg>"), fallback: { data: PNG } })),
+            ).map(([fileName]) => fileName);
+
+            expect(fileNames).to.deep.equal([
+                `${convenienceFunctions.hashedId(Buffer.from("<svg></svg>"))}.svg`,
+                `${convenienceFunctions.hashedId(PNG)}.png`,
+            ]);
+        });
+
+        it("should keep the type it is given, whatever its data", () => {
+            expect(addedImages(new ImageRun({ type: "jpg", data: PNG, transformation }))[0][0]).to.match(/\.jpg$/);
+        });
+
+        it.each([
+            ["an SVG image", Buffer.from("<svg></svg>")],
+            ["no data", Buffer.from("")],
+        ])("should throw for an image given without a type whose data is %s", (_, data) => {
+            expect(() => new ImageRun(untyped({ data }))).toThrow(
+                "ImageRun: type isn't given, and data isn't a PNG, JPEG, GIF or BMP file to read it from. Give its type",
+            );
+        });
+
+        it("should throw for an SVG image's fallback given without a type whose data isn't a PNG, JPEG, GIF or BMP file", () => {
+            expect(
+                () =>
+                    new ImageRun(
+                        untyped({ type: "svg", data: Buffer.from("<svg></svg>"), fallback: { data: Buffer.from("<svg></svg>") } }),
+                    ),
+            ).toThrow("ImageRun fallback: type isn't given");
+        });
+
+        it("should write an image given without a type to a file of its format, which Word can read", async () => {
+            const document = new File({
+                sections: [{ children: [new Paragraph({ children: [new ImageRun(untyped({ data: PNG }))] })] }],
+            });
+            const zip = await JSZip.loadAsync(await Packer.toBuffer(document));
+
+            expect(zip.file(/^word\/media\//).map((file) => file.name)).to.deep.equal([
+                `word/media/${convenienceFunctions.hashedId(PNG)}.png`,
+            ]);
+            expect(await zip.file("[Content_Types].xml")!.async("text")).to.contain('Extension="png"');
         });
     });
 });
