@@ -169,6 +169,9 @@ class RootCommentsAttributes extends XmlAttributeComponent<{
  * ```
  */
 export class CommentRangeStart extends XmlComponent {
+    // Only in the type: with no members of its own, any component, such as a Paragraph, would type check as one
+    declare private readonly brand: "CommentRangeStart";
+
     public constructor(id: number) {
         super("w:commentRangeStart");
 
@@ -199,6 +202,9 @@ export class CommentRangeStart extends XmlComponent {
  * ```
  */
 export class CommentRangeEnd extends XmlComponent {
+    // Only in the type: with no members of its own, any component, such as a Paragraph, would type check as one
+    declare private readonly brand: "CommentRangeEnd";
+
     public constructor(id: number) {
         super("w:commentRangeEnd");
 
@@ -229,6 +235,9 @@ export class CommentRangeEnd extends XmlComponent {
  * ```
  */
 export class CommentReference extends XmlComponent {
+    // Only in the type: with no members of its own, any component, such as a Paragraph, would type check as one
+    declare private readonly brand: "CommentReference";
+
     public constructor(id: number) {
         super("w:commentReference");
 
@@ -270,6 +279,9 @@ export class CommentReference extends XmlComponent {
  * ```
  */
 export class Comment extends XmlComponent {
+    // Only in the type: its own member is optional, so without this, any component, such as a Paragraph, would type
+    // check as one
+    declare private readonly brand: "Comment";
     private readonly paraId?: string;
 
     public constructor({ id, initials, author, date = new Date(), children }: ICommentOptions, paraId?: string) {

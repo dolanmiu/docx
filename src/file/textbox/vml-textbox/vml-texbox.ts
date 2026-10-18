@@ -7,7 +7,8 @@
  *
  * @module
  */
-import type { ParagraphChild } from "@file/paragraph";
+import type { Paragraph } from "@file/paragraph";
+import type { Table } from "@file/table";
 import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 import { createTextboxContent } from "../texbox-content/textbox-content";
@@ -21,14 +22,14 @@ import type { LengthUnit } from "../types";
  * Options for creating a VML textbox element.
  *
  * @property style - CSS-style string for textbox styling
- * @property children - Array of paragraph children to include in the textbox
+ * @property children - The paragraphs and tables in the textbox
  * @property inset - Custom inset margins for the textbox content
  */
 export type IVTextboxOptions = {
     /** CSS-style string for textbox styling */
     readonly style?: string;
-    /** Array of paragraph children to include in the textbox */
-    readonly children?: readonly ParagraphChild[];
+    /** The paragraphs and tables in the textbox */
+    readonly children?: readonly (Paragraph | Table)[];
     /** Custom inset margins for the textbox content (top, left, bottom, right) */
     readonly inset?: {
         /** Top inset margin */
@@ -70,7 +71,7 @@ export type IVTextboxOptions = {
  * ```typescript
  * const vmlTextbox = createVmlTextbox({
  *   style: "mso-fit-shape-to-text:t;",
- *   children: [new TextRun("Hello World")],
+ *   children: [new Paragraph("Hello World")],
  *   inset: {
  *     top: "0.1in",
  *     left: "0.1in",

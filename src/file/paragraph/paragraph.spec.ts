@@ -9,11 +9,15 @@ import * as convenienceFunctions from "@util/convenience-functions";
 import { DocumentWrapper, type IViewWrapper } from "../document-wrapper";
 import type { File } from "../file";
 import { ShadingType } from "../shading";
+import { Table, TableCell, TableRow } from "../table";
+import { Textbox } from "../textbox";
 import { AlignmentType, HeadingLevel, LeaderType, PageBreak, TabStopPosition, TabStopType } from "./formatting";
 import { FrameAnchorType } from "./frame";
 import { Bookmark, ExternalHyperlink } from "./links";
-import { Paragraph } from "./paragraph";
+import { Math } from "./math";
+import { Paragraph, type ParagraphChild } from "./paragraph";
 import { TextRun } from "./run";
+import { CommentRangeStart } from "./run/comment-run";
 
 describe("Paragraph", () => {
     beforeEach(() => {
@@ -43,6 +47,23 @@ describe("Paragraph", () => {
             const stringifiedJson = JSON.stringify(paragraph);
             const newJson = JSON.parse(stringifiedJson);
             assert.equal(newJson.root[0].rootKey, "w:pPr");
+        });
+
+        it("should only take what goes in a paragraph as children, not a paragraph or a table (#2395)", () => {
+            // TypeScript compares classes by their members, so a child type with no members of its own, such as
+            // CommentRangeStart, would let any component through, a paragraph included
+            const children: readonly ParagraphChild[] = [
+                new TextRun("Text"),
+                new CommentRangeStart(0),
+                new Math({ children: [] }),
+                new Textbox({ children: [new Paragraph("In a text box")] }),
+                // @ts-expect-error -- a paragraph can't be inside another
+                new Paragraph("Inner"),
+                // @ts-expect-error -- nor can a table
+                new Table({ rows: [new TableRow({ children: [new TableCell({ children: [] })] })] }),
+            ];
+
+            expect(children).toHaveLength(6);
         });
     });
 

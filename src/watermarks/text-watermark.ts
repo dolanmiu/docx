@@ -9,7 +9,7 @@
  *
  * @module
  */
-import { XmlComponent, createVmlShape, uniqueId } from "docx";
+import { Run, createVmlShape, uniqueId } from "docx";
 
 import { createPict } from "./vml/pict";
 import { createVmlFill } from "./vml/vml-fill";
@@ -160,7 +160,7 @@ const estimateHeight = (text: string, width: number): number => {
  * });
  * ```
  */
-export class TextWatermark extends XmlComponent {
+export class TextWatermark extends Run {
     public constructor({
         text,
         font = DEFAULT_FONT,
@@ -174,7 +174,8 @@ export class TextWatermark extends XmlComponent {
         width = DEFAULT_WIDTH,
         height = estimateHeight(text, width),
     }: ITextWatermarkOptions) {
-        super("w:r");
+        // A run, so that it can be one of a paragraph's children. It has no formatting, so only the `w:r` is written
+        super({});
 
         this.root.push(
             createPict({

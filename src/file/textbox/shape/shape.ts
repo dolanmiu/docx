@@ -11,7 +11,8 @@
  *
  * @module
  */
-import type { ParagraphChild } from "@file/paragraph";
+import type { Paragraph } from "@file/paragraph";
+import type { Table } from "@file/table";
 import { type VmlShapeStyle, createVmlShape } from "@file/vml";
 import type { XmlComponent } from "@file/xml-components";
 
@@ -26,15 +27,15 @@ const SHAPE_TYPE = "#_x0000_t202";
  * Options for creating a VML shape.
  *
  * @property id - Unique identifier for the shape
- * @property children - Array of paragraph children to include in the shape's textbox
+ * @property children - The paragraphs and tables in the shape's textbox
  * @property type - VML shape type identifier (default: "#_x0000_t202" for text rectangle)
  * @property style - Styling properties for the shape
  */
 type ShapeOptions = {
     /** Unique identifier for the shape */
     readonly id: string;
-    /** Array of paragraph children to include in the shape's textbox */
-    readonly children?: readonly ParagraphChild[];
+    /** The paragraphs and tables in the shape's textbox */
+    readonly children?: readonly (Paragraph | Table)[];
     /** VML shape type identifier (default: "#_x0000_t202" for text rectangle) */
     readonly type?: string;
     /** Styling properties for the shape */
@@ -74,7 +75,7 @@ type ShapeOptions = {
  * ```typescript
  * const shape = createShape({
  *   id: "textbox1",
- *   children: [new TextRun("Hello World")],
+ *   children: [new Paragraph("Hello World")],
  *   style: {
  *     width: "3in",
  *     height: "1in",

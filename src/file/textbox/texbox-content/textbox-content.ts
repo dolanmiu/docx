@@ -5,7 +5,8 @@
  *
  * @module
  */
-import type { ParagraphChild } from "@file/paragraph";
+import type { Paragraph } from "@file/paragraph";
+import type { Table } from "@file/table";
 import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 /**
@@ -22,17 +23,17 @@ import { BuilderElement, type XmlComponent } from "@file/xml-components";
  * ```
  *
  * @param options - Configuration options
- * @param options.children - Array of paragraph children to include in the textbox content
+ * @param options.children - The paragraphs and tables in the textbox content
  * @returns An XmlComponent representing the w:txbxContent element
  *
  * @example
  * ```typescript
  * const content = createTextboxContent({
- *   children: [new TextRun("Hello World")]
+ *   children: [new Paragraph("Hello World")]
  * });
  * ```
  */
-export const createTextboxContent = ({ children = [] }: { readonly children?: readonly ParagraphChild[] }): XmlComponent =>
+export const createTextboxContent = ({ children = [] }: { readonly children?: readonly (Paragraph | Table)[] }): XmlComponent =>
     new BuilderElement<{ readonly style?: string }>({
         name: "w:txbxContent",
         children: children as readonly XmlComponent[],
