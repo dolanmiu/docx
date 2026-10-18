@@ -306,7 +306,8 @@ const findEvents = (code: string): readonly DocumentMacroEvent[] => [
  * elsewhere.
  *
  * VBA keeps code in Windows-1252, the code page of Word in English and the other Western European languages, so a
- * character it doesn't have goes in a string as `ChrW`, such as `ChrW(&H4E2D)` for "中".
+ * character it doesn't have goes in a string as `ChrW`, such as `ChrW(&H4E2D)` for "中", or two for a character beyond
+ * U+FFFF, such as `ChrW(&HD83D) & ChrW(&HDE00)` for "😀".
  *
  * Word compiles the code when it first runs a macro, so a mistake in it shows then, in the VBA editor.
  *

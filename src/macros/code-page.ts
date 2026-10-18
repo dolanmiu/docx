@@ -27,9 +27,14 @@ export const encodeWindows1252 = (text: string, what: string): Uint8Array =>
         const code = character.codePointAt(0)!;
         const byte = code < 0x80 || (code >= 0xa0 && code <= 0xff) ? code : BYTES.get(character);
         if (byte === undefined) {
+            // ChrW takes a UTF-16 code unit, up to U+FFFF, so a character beyond that is two: its surrogate pair
+            const chrW = Array.from(
+                { length: character.length },
+                (_, index) => `ChrW(&H${character.charCodeAt(index).toString(16).toUpperCase()})`,
+            );
             throw new Error(
                 `${what} has "${character}", which VBA can't keep in its code page, Windows-1252. ` +
-                    `Write it with ChrW instead, such as ChrW(&H${code.toString(16).toUpperCase()}) in a string`,
+                    `Write it with ChrW instead, such as ${chrW.join(" & ")} in a string`,
             );
         }
         return byte;

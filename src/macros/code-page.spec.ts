@@ -31,4 +31,8 @@ describe("encodeWindows1252", () => {
     it("should throw for a control character Windows-1252 has no byte for", () => {
         expect(() => encodeWindows1252("\u0081", "Code")).toThrow("ChrW(&H81)");
     });
+
+    it("should say to write a character beyond U+FFFF, which ChrW can't take, as its two UTF-16 halves", () => {
+        expect(() => encodeWindows1252('MsgBox "😀"', "Code")).toThrow("such as ChrW(&HD83D) & ChrW(&HDE00) in a string");
+    });
 });

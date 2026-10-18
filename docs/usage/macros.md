@@ -143,7 +143,7 @@ Packer.toBuffer(doc).then((buffer) => {
 
 ## Characters in the code
 
-VBA keeps code in Windows-1252, the code page of Word in English and the other Western European languages. It has the accented letters of those languages, and `createMacros` throws for a character it doesn't have. Write one in a string with `ChrW` and its code in hexadecimal instead, such as `ChrW(&H4E2D)` for "中".
+VBA keeps code in Windows-1252, the code page of Word in English and the other Western European languages. It has the accented letters of those languages, and `createMacros` throws for a character it doesn't have. Write one in a string with `ChrW` and its code in hexadecimal instead, such as `ChrW(&H4E2D)` for "中". `ChrW` goes up to `&HFFFF`, so a character beyond that, such as an emoji, is two, its UTF-16 surrogate pair: `ChrW(&HD83D) & ChrW(&HDE00)` for "😀". The error `createMacros` throws gives the `ChrW` to write.
 
 ## Macros from a .docm
 
