@@ -1073,6 +1073,7 @@ export declare class ColumnBreak extends Run {
  * ```
  */
 declare class Comment_2 extends XmlComponent {
+    private readonly brand;
     private readonly paraId?;
     constructor({ id, initials, author, date, children }: ICommentOptions, paraId?: string);
     /**
@@ -1112,6 +1113,7 @@ export declare const commentIdToParaId: (id: number) => string;
  * ```
  */
 export declare class CommentRangeEnd extends XmlComponent {
+    private readonly brand;
     constructor(id: number);
 }
 
@@ -1138,6 +1140,7 @@ export declare class CommentRangeEnd extends XmlComponent {
  * ```
  */
 export declare class CommentRangeStart extends XmlComponent {
+    private readonly brand;
     constructor(id: number);
 }
 
@@ -1164,6 +1167,7 @@ export declare class CommentRangeStart extends XmlComponent {
  * ```
  */
 export declare class CommentReference extends XmlComponent {
+    private readonly brand;
     constructor(id: number);
 }
 
@@ -6624,6 +6628,7 @@ export declare class InsertedTableRow extends XmlComponent {
  * ```
  */
 export declare class InsertedTextRun extends XmlComponent {
+    private readonly brand;
     constructor(options: IInsertedRunOptions);
 }
 
@@ -8066,14 +8071,17 @@ export declare type ITableWidthProperties = {
 /**
  * Options for creating a Textbox.
  *
- * Extends paragraph options while replacing the style property with VML shape styling.
+ * Extends paragraph options while replacing the style property with VML shape styling,
+ * and the children with the paragraphs and tables inside the textbox.
  *
  * @property style - VML shape style properties for positioning and sizing
- * @property children - Array of child elements (text runs, hyperlinks, etc.)
+ * @property children - The paragraphs and tables inside the textbox
  */
-declare type ITextboxOptions = Omit<IParagraphOptions, "style"> & {
+declare type ITextboxOptions = Omit<IParagraphOptions, "style" | "children"> & {
     /** VML shape style properties for the textbox (positioning, sizing, wrapping, etc.) */
     readonly style?: VmlShapeStyle;
+    /** The paragraphs and tables inside the textbox */
+    readonly children?: readonly (Paragraph | Table)[];
 };
 
 /**
@@ -8777,6 +8785,7 @@ export declare const longHexNumber: (val: string) => string;
  * ```
  */
 declare class Math_2 extends XmlComponent {
+    private readonly brand;
     constructor(options: IMathOptions);
 }
 export { Math_2 as Math }
@@ -10906,7 +10915,7 @@ export declare class Paragraph extends FileChild {
  * This union type represents all valid inline content elements that can appear
  * within a paragraph in WordprocessingML.
  */
-export declare type ParagraphChild = TextRun | ImageRun | SymbolRun | Bookmark | PageBreak | ColumnBreak | SequentialIdentifier | FootnoteReferenceRun | InternalHyperlink | ExternalHyperlink | InsertedTextRun | DeletedTextRun | Math_2 | SimpleField | SimpleMailMergeField | Comments | Comment_2 | CommentRangeStart | CommentRangeEnd | CommentReference | CheckBox;
+export declare type ParagraphChild = TextRun | ImageRun | SymbolRun | Bookmark | PageBreak | ColumnBreak | SequentialIdentifier | FootnoteReferenceRun | InternalHyperlink | ExternalHyperlink | InsertedTextRun | DeletedTextRun | Math_2 | SimpleField | SimpleMailMergeField | Comments | Comment_2 | CommentRangeStart | CommentRangeEnd | CommentReference | CheckBox | Textbox;
 
 /**
  * Patch definition for paragraph-level replacement.
@@ -12242,6 +12251,7 @@ export declare const signedTwipsMeasureValue: (val: UniversalMeasure | number) =
  * ```
  */
 export declare class SimpleField extends XmlComponent {
+    private readonly brand;
     constructor(instruction: string, cachedValue?: string, options?: ISimpleFieldOptions);
 }
 

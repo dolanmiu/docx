@@ -24876,13 +24876,13 @@ MAX: 9026 };
 	* ```
 	*
 	* @param options - Configuration options
-	* @param options.children - Array of paragraph children to include in the textbox content
+	* @param options.children - The paragraphs and tables in the textbox content
 	* @returns An XmlComponent representing the w:txbxContent element
 	*
 	* @example
 	* ```typescript
 	* const content = createTextboxContent({
-	*   children: [new TextRun("Hello World")]
+	*   children: [new Paragraph("Hello World")]
 	* });
 	* ```
 	*/
@@ -24920,7 +24920,7 @@ MAX: 9026 };
 	* ```typescript
 	* const vmlTextbox = createVmlTextbox({
 	*   style: "mso-fit-shape-to-text:t;",
-	*   children: [new TextRun("Hello World")],
+	*   children: [new Paragraph("Hello World")],
 	*   inset: {
 	*     top: "0.1in",
 	*     left: "0.1in",
@@ -24981,7 +24981,7 @@ MAX: 9026 };
 	* ```typescript
 	* const shape = createShape({
 	*   id: "textbox1",
-	*   children: [new TextRun("Hello World")],
+	*   children: [new Paragraph("Hello World")],
 	*   style: {
 	*     width: "3in",
 	*     height: "1in",

@@ -852,9 +852,9 @@ var docxWatermarks = (function(exports, docx) {
 	* });
 	* ```
 	*/
-	var TextWatermark = class extends docx.XmlComponent {
+	var TextWatermark = class extends docx.Run {
 		constructor({ text, font = DEFAULT_FONT, fontSize = AUTO_FONT_SIZE, bold, italics, color = DEFAULT_COLOR, opacity = DEFAULT_OPACITY, layout = "diagonal", rotation = layout === "diagonal" ? DIAGONAL_ROTATION : 0, width = DEFAULT_WIDTH, height = estimateHeight(text, width) }) {
-			super("w:r");
+			super({});
 			this.root.push(createPict({ children: [createWordArtShapeType(), (0, docx.createVmlShape)({
 				id: `${TEXT_WATERMARK_ID_PREFIX}${(0, docx.uniqueId)()}`,
 				type: `#${WORD_ART_SHAPE_TYPE_ID}`,
@@ -1222,9 +1222,9 @@ var docxWatermarks = (function(exports, docx) {
 	* });
 	* ```
 	*/
-	var ImageWatermark = class extends docx.XmlComponent {
+	var ImageWatermark = class extends docx.Run {
 		constructor({ type, data, transformation, washout = true, title }) {
-			super("w:r");
+			super({});
 			_defineProperty(this, "mediaData", void 0);
 			const fileName = `${(0, docx.hashedId)(data)}.${type}`;
 			this.mediaData = {

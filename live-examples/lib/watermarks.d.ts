@@ -1,6 +1,6 @@
 import { IContext } from 'docx';
 import { IXmlableObject } from 'docx';
-import { XmlComponent } from 'docx';
+import { Run } from 'docx';
 
 /**
  * Options for creating an image watermark.
@@ -74,7 +74,7 @@ export declare type IImageWatermarkOptions = {
  * });
  * ```
  */
-export declare class ImageWatermark extends XmlComponent {
+export declare class ImageWatermark extends Run {
     private readonly mediaData;
     constructor({ type, data, transformation, washout, title }: IImageWatermarkOptions);
     prepForXml(context: IContext): IXmlableObject | undefined;
@@ -158,7 +158,7 @@ export declare type ITextWatermarkOptions = {
  * });
  * ```
  */
-export declare class TextWatermark extends XmlComponent {
+export declare class TextWatermark extends Run {
     constructor({ text, font, fontSize, bold, italics, color, opacity, layout, rotation, width, height, }: ITextWatermarkOptions);
 }
 
