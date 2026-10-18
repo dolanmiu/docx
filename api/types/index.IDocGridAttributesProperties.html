@@ -13,7 +13,7 @@
 <h1>Type Alias IDocGridAttributesProperties</h1></div>
 <div class="tsd-signature"><span class="tsd-signature-keyword">type</span> <span class="tsd-kind-type-alias">IDocGridAttributesProperties</span> <span class="tsd-signature-symbol">=</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#charspace">charSpace</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#linepitch">linePitch</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#type">type</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-keyword">typeof</span> <a href="../variables/index.DocumentGridType.html" class="tsd-signature-type tsd-kind-variable">DocumentGridType</a><span class="tsd-signature-symbol">[</span><span class="tsd-signature-keyword">keyof</span> <span class="tsd-signature-keyword">typeof</span> <a href="../variables/index.DocumentGridType.html" class="tsd-signature-type tsd-kind-variable">DocumentGridType</a><span class="tsd-signature-symbol">]</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/f12329161d05096ab8e30cdc9267ca040b76771d/src/file/document/body/section-properties/properties/doc-grid.ts#L45">file/document/body/section-properties/properties/doc-grid.ts:45</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/ea08b9677cde223ab983a361800d7d7f0b0a9c25/src/file/document/body/section-properties/properties/doc-grid.ts#L45">file/document/body/section-properties/properties/doc-grid.ts:45</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -34,7 +34,7 @@
 <div class="tsd-comment tsd-typography"><p>Specifies the number of characters to be allowed on the document grid for each line in this section.</p>
 <p>This attribute's value shall be specified by multiplying the difference between the desired character pitch and the character pitch for that character in the font size of the Normal font by 4096.</p>
 <p>This value shall then be used to add the character pitch for the specified point size to each character in the section [: This results in text in the Normal style having a specific number of characters per line. ]</p>
-<pre><code class="xml"><span class="hl-9">&lt;</span><span class="hl-10">w:docGrid</span><span class="hl-1"> </span><span class="hl-11">w:charSize</span><span class="hl-1">=</span><span class="hl-12">&quot;40960&quot;</span><span class="hl-1"> …</span><span class="hl-9">/&gt;</span>
+<pre><code class="xml"><span class="hl-10">&lt;</span><span class="hl-11">w:docGrid</span><span class="hl-1"> </span><span class="hl-12">w:charSize</span><span class="hl-1">=</span><span class="hl-13">&quot;40960&quot;</span><span class="hl-1"> …</span><span class="hl-10">/&gt;</span>
 </code><button type="button">Copy</button></pre>
 
 <p>The <code>charSpace</code> attribute specifies a value of 40960, which means that the delta between the character pitch of each character in the grid and the Normal font is 10 points, resulting in a character pitch of 11+10 = 21 points for all characters in this section. ]</p>
@@ -42,13 +42,13 @@
 <p>The possible values for this attribute are defined by the <code>ST_DecimalNumber</code> simple type (§2.18.16).</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/f12329161d05096ab8e30cdc9267ca040b76771d/src/file/document/body/section-properties/properties/doc-grid.ts#L88">file/document/body/section-properties/properties/doc-grid.ts:88</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/ea08b9677cde223ab983a361800d7d7f0b0a9c25/src/file/document/body/section-properties/properties/doc-grid.ts#L88">file/document/body/section-properties/properties/doc-grid.ts:88</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="linepitch"><code class="tsd-tag">Readonly</code><span>line<wbr/>Pitch</span><a href="#linepitch" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">linePitch</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 <div class="tsd-comment tsd-typography"><p>Specifies the number of lines to be allowed on the document grid for the current page assuming all lines have equal line pitch applied to them. This line pitch shall not be added to any line which appears within a table cell unless the <adjustLineHeightInTable> element (§2.15.3.1) is present in the document's compatibility settings.</p>
 <p>This attribute is specified in twentieths of a point, and defines the pitch for each line of text on this page such that the desired number of single spaced lines of text fits on the current page.</p>
-<pre><code class="xml"><span class="hl-9">&lt;</span><span class="hl-10">w:docGrid</span><span class="hl-1"> </span><span class="hl-11">w:linePitch</span><span class="hl-1">=</span><span class="hl-12">&quot;684&quot;</span><span class="hl-1"> …</span><span class="hl-9">/&gt;</span>
+<pre><code class="xml"><span class="hl-10">&lt;</span><span class="hl-11">w:docGrid</span><span class="hl-1"> </span><span class="hl-12">w:linePitch</span><span class="hl-1">=</span><span class="hl-13">&quot;684&quot;</span><span class="hl-1"> …</span><span class="hl-10">/&gt;</span>
 </code><button type="button">Copy</button></pre>
 
 <p>The <code>linePitch</code> attribute specifies that 34.2 points is to the amount of pitch allowed for each line on this page in order to maintain the specific document grid. ]</p>
@@ -58,7 +58,7 @@
 <p>The possible values for this attribute are defined by the ST_DecimalNumber simple type (§2.18.16).</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/f12329161d05096ab8e30cdc9267ca040b76771d/src/file/document/body/section-properties/properties/doc-grid.ts#L71">file/document/body/section-properties/properties/doc-grid.ts:71</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/ea08b9677cde223ab983a361800d7d7f0b0a9c25/src/file/document/body/section-properties/properties/doc-grid.ts#L71">file/document/body/section-properties/properties/doc-grid.ts:71</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="type"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>type</span><a href="#type" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">type</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-keyword">typeof</span> <a href="../variables/index.DocumentGridType.html" class="tsd-signature-type tsd-kind-variable">DocumentGridType</a><span class="tsd-signature-symbol">[</span><span class="tsd-signature-keyword">keyof</span> <span class="tsd-signature-keyword">typeof</span> <a href="../variables/index.DocumentGridType.html" class="tsd-signature-type tsd-kind-variable">DocumentGridType</a><span class="tsd-signature-symbol">]</span></div>
@@ -66,7 +66,7 @@
 <p>The grid can define a grid which snaps all East Asian characters to grid positions, but leaves Latin text with its default spacing; a grid which adds the specified character pitch to each character on each row; or a grid which affects only the line pitch for the current section.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/f12329161d05096ab8e30cdc9267ca040b76771d/src/file/document/body/section-properties/properties/doc-grid.ts#L51">file/document/body/section-properties/properties/doc-grid.ts:51</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/ea08b9677cde223ab983a361800d7d7f0b0a9c25/src/file/document/body/section-properties/properties/doc-grid.ts#L51">file/document/body/section-properties/properties/doc-grid.ts:51</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

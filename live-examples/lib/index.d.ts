@@ -1419,7 +1419,13 @@ export declare const concreteNumUniqueNumericIdGen: () => UniqueNumericIdCreator
  * ```
  */
 declare class ContentTypes extends XmlComponent {
-    constructor();
+    /**
+     * @param options.macros - Whether the document has VBA macros, which makes its main part a macro-enabled document
+     * and adds the VBA project (word/vbaProject.bin)
+     */
+    constructor({ macros }?: {
+        readonly macros?: boolean;
+    });
     /**
      * Registers the comments part in the content types.
      */
@@ -3375,6 +3381,33 @@ export declare const DocumentGridType: {
 };
 
 /**
+ * An event of a document that its macros can handle, in the document's own module, ThisDocument. Each is the event's
+ * name in VBA, after "Document_", such as "open" for `Document_Open`.
+ *
+ * @publicApi
+ */
+export declare type DocumentMacroEvent = "new" | "open" | "close" | "sync" | "xmlAfterInsert" | "xmlBeforeDelete" | "contentControlAfterAdd" | "contentControlBeforeDelete" | "contentControlOnExit" | "contentControlOnEnter" | "contentControlBeforeStoreUpdate" | "contentControlBeforeContentUpdate" | "buildingBlockInsert";
+
+/**
+ * A document's VBA macros, for the document's `macros`.
+ *
+ * @publicApi
+ */
+export declare type DocumentMacros = {
+    /**
+     * The VBA project, the file Word keeps a document's macros in. `createMacros` from `docx/macros` writes it from VBA
+     * code. Or it is the word/vbaProject.bin of a .docm Word saved
+     */
+    readonly project: Uint8Array | ArrayBuffer;
+    /**
+     * The events of the document that the project handles in ThisDocument, such as "open" for `Document_Open`. Word only
+     * runs the handlers of the events listed. `createMacros` lists them from the code. For a project from a .docm, they
+     * are the `wne:docEvents` in its word/vbaData.xml
+     */
+    readonly events?: readonly DocumentMacroEvent[];
+};
+
+/**
  * Wrapper for the main document body.
  *
  * DocumentWrapper combines the main Document view with its Relationships,
@@ -3941,6 +3974,7 @@ declare class File_2 {
     private readonly fontWrapper;
     private readonly theme;
     private readonly packageParts;
+    private readonly macros?;
     constructor(options: IPropertiesOptions);
     private addSection;
     private createHeader;
@@ -3972,6 +4006,11 @@ declare class File_2 {
     get Theme(): Theme;
     /** The parts that drawings, such as charts, add to the package when it is written. */
     get PackageParts(): PackageParts;
+    /**
+     * The document's macros, when it has any: its VBA project (word/vbaProject.bin), the events of the document it
+     * handles (word/vbaData.xml), and the project's relationships, to the events.
+     */
+    get Macros(): FileMacros | undefined;
 }
 export { File_2 as Document }
 export { File_2 as File }
@@ -3986,6 +4025,18 @@ export declare class FileChild extends XmlComponent {
     /** Marker property identifying this as a FileChild */
     readonly fileChild: symbol;
 }
+
+/**
+ * A document's macros, as the document writes them.
+ */
+declare type FileMacros = {
+    /** The VBA project (word/vbaProject.bin) */
+    readonly project: Uint8Array;
+    /** The events of the document the project handles (word/vbaData.xml), if it handles any */
+    readonly events?: XmlComponent;
+    /** The project's relationships (word/_rels/vbaProject.bin.rels), to its events */
+    readonly relationships: Relationships;
+};
 
 /**
  * Patch definition for document-level replacement.
@@ -7086,6 +7137,7 @@ export declare type IPatch = ParagraphPatch | FilePatch;
  * @property hyphenation - Hyphenation settings
  * @property theme - The document's theme: its colors, and its fonts for headings and body text
  * @property pageNumbers - Works out the page each bookmark is on, so the page numbers of tables of contents and page references are written with the document
+ * @property macros - The document's VBA macros, which make it a macro-enabled document (.docm)
  */
 export declare type IPropertiesOptions = {
     readonly sections: readonly ISectionOptions[];
@@ -7129,6 +7181,11 @@ export declare type IPropertiesOptions = {
      * from `docx/layout`, which lays out the document's pages as Word would
      */
     readonly pageNumbers?: PageNumberEstimator;
+    /**
+     * The document's VBA macros. `createMacros` from `docx/macros` writes them from VBA code. A document with macros is a
+     * macro-enabled document, which Word only opens from a .docm file
+     */
+    readonly macros?: DocumentMacros;
 };
 
 /**
@@ -8752,6 +8809,12 @@ export declare const LineRuleType: {
  * ```
  */
 export declare const longHexNumber: (val: string) => string;
+
+/**
+ * The types of the relationships to a document's macros: to its VBA project, and from that to the events it handles.
+ * Only the document adds these, so a package part's relationship can't be one of them.
+ */
+declare type MacroRelationshipType = "http://schemas.microsoft.com/office/2006/relationships/vbaProject" | "http://schemas.microsoft.com/office/2006/relationships/wordVbaData";
 
 /**
  * Represents a mathematical equation in a WordprocessingML document.
@@ -11599,7 +11662,7 @@ declare class Relationships extends XmlComponent {
      * @param target - Path to the target part
      * @param targetMode - Optional mode indicating if target is external
      */
-    addRelationship(id: number | string, type: RelationshipType, target: string, targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType]): void;
+    addRelationship(id: number | string, type: RelationshipType | MacroRelationshipType, target: string, targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType]): void;
     /**
      * Creates a copy of the relationships given. Relationships added to the copy aren't added to them, so the compiler
      * adds the ones it writes for a part, such as to its images, to a copy, and packing a document again doesn't add

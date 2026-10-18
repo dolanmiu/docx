@@ -20,11 +20,11 @@ to be excluded from the output.</p>
 </div>
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-example">
-<h4 class="tsd-anchor-link" id="example">Example<a href="#example" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="typescript"><span class="hl-4">class</span><span class="hl-1"> </span><span class="hl-13">OptionalContainer</span><span class="hl-1"> </span><span class="hl-4">extends</span><span class="hl-1"> </span><span class="hl-13">IgnoreIfEmptyXmlComponent</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-4">constructor</span><span class="hl-1">(</span><span class="hl-2">items</span><span class="hl-1">?: </span><span class="hl-13">Item</span><span class="hl-1">[]) {</span><br/><span class="hl-1">    </span><span class="hl-4">super</span><span class="hl-1">(</span><span class="hl-3">&quot;w:container&quot;</span><span class="hl-1">);</span><br/><span class="hl-1">    </span><span class="hl-0">if</span><span class="hl-1"> (</span><span class="hl-2">items</span><span class="hl-1">) {</span><br/><span class="hl-1">      </span><span class="hl-2">items</span><span class="hl-1">.</span><span class="hl-6">forEach</span><span class="hl-1">(</span><span class="hl-2">item</span><span class="hl-1"> </span><span class="hl-4">=&gt;</span><span class="hl-1"> </span><span class="hl-4">this</span><span class="hl-1">.</span><span class="hl-2">root</span><span class="hl-1">.</span><span class="hl-6">push</span><span class="hl-1">(</span><span class="hl-2">item</span><span class="hl-1">));</span><br/><span class="hl-1">    }</span><br/><span class="hl-1">  }</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-5">container1</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">OptionalContainer</span><span class="hl-1">([</span><span class="hl-2">item1</span><span class="hl-1">, </span><span class="hl-2">item2</span><span class="hl-1">]);</span><br/><span class="hl-8">// Renders: &lt;w:container&gt;...&lt;/w:container&gt;</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-5">container2</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">OptionalContainer</span><span class="hl-1">();</span><br/><span class="hl-8">// Renders: nothing (excluded from output)</span>
+<h4 class="tsd-anchor-link" id="example">Example<a href="#example" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="typescript"><span class="hl-4">class</span><span class="hl-1"> </span><span class="hl-14">OptionalContainer</span><span class="hl-1"> </span><span class="hl-4">extends</span><span class="hl-1"> </span><span class="hl-14">IgnoreIfEmptyXmlComponent</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-4">constructor</span><span class="hl-1">(</span><span class="hl-2">items</span><span class="hl-1">?: </span><span class="hl-14">Item</span><span class="hl-1">[]) {</span><br/><span class="hl-1">    </span><span class="hl-4">super</span><span class="hl-1">(</span><span class="hl-3">&quot;w:container&quot;</span><span class="hl-1">);</span><br/><span class="hl-1">    </span><span class="hl-0">if</span><span class="hl-1"> (</span><span class="hl-2">items</span><span class="hl-1">) {</span><br/><span class="hl-1">      </span><span class="hl-2">items</span><span class="hl-1">.</span><span class="hl-6">forEach</span><span class="hl-1">(</span><span class="hl-2">item</span><span class="hl-1"> </span><span class="hl-4">=&gt;</span><span class="hl-1"> </span><span class="hl-4">this</span><span class="hl-1">.</span><span class="hl-2">root</span><span class="hl-1">.</span><span class="hl-6">push</span><span class="hl-1">(</span><span class="hl-2">item</span><span class="hl-1">));</span><br/><span class="hl-1">    }</span><br/><span class="hl-1">  }</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-5">container1</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">OptionalContainer</span><span class="hl-1">([</span><span class="hl-2">item1</span><span class="hl-1">, </span><span class="hl-2">item2</span><span class="hl-1">]);</span><br/><span class="hl-9">// Renders: &lt;w:container&gt;...&lt;/w:container&gt;</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-5">container2</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">OptionalContainer</span><span class="hl-1">();</span><br/><span class="hl-9">// Renders: nothing (excluded from output)</span>
 </code><button type="button">Copy</button></pre>
 
 </div></div></section>
-<section class="tsd-panel tsd-hierarchy" data-refl="3397">
+<section class="tsd-panel tsd-hierarchy" data-refl="3401">
 <h4>Hierarchy (<a href="../hierarchy.html#index.IgnoreIfEmptyXmlComponent">View Summary</a>)</h4>
 <ul class="tsd-hierarchy">
 <li class="tsd-hierarchy-item"><a href="index.XmlComponent.html" class="tsd-signature-type tsd-kind-class">XmlComponent</a>
@@ -40,7 +40,7 @@ to be excluded from the output.</p>
 <li class="tsd-hierarchy-item"><a href="index.TableRowProperties.html" class="tsd-signature-type tsd-kind-class">TableRowProperties</a></li>
 <li class="tsd-hierarchy-item"><a href="index.PageBorders.html" class="tsd-signature-type tsd-kind-class">PageBorders</a></li></ul></li></ul></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/f12329161d05096ab8e30cdc9267ca040b76771d/src/file/xml-components/xml-component.ts#L165">file/xml-components/xml-component.ts:165</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/ea08b9677cde223ab983a361800d7d7f0b0a9c25/src/file/xml-components/xml-component.ts#L165">file/xml-components/xml-component.ts:165</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -76,7 +76,7 @@ to be excluded from the output.</p>
 <h4 class="tsd-returns-title">Returns <a href="" class="tsd-signature-type tsd-kind-class">IgnoreIfEmptyXmlComponent</a></h4><aside class="tsd-sources">
 <p>Overrides <a href="index.XmlComponent.html">XmlComponent</a>.<a href="index.XmlComponent.html#constructor">constructor</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/f12329161d05096ab8e30cdc9267ca040b76771d/src/file/xml-components/xml-component.ts#L168">file/xml-components/xml-component.ts:168</a></li></ul></aside></div></li></ul></section></section></details>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/ea08b9677cde223ab983a361800d7d7f0b0a9c25/src/file/xml-components/xml-component.ts#L168">file/xml-components/xml-component.ts:168</a></li></ul></aside></div></li></ul></section></section></details>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Accessors"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="accessors-1">Accessors<a href="#accessors-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
@@ -92,7 +92,7 @@ such as a run with another run in its children. Undefined when it is written as 
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-keyword">readonly</span> <a href="index.BaseXmlComponent.html" class="tsd-signature-type tsd-kind-class">BaseXmlComponent</a><span class="tsd-signature-symbol">[]</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span></h4><aside class="tsd-sources">
 <p>Inherited from XmlComponent.writtenAs</p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/f12329161d05096ab8e30cdc9267ca040b76771d/src/file/xml-components/base.ts#L84">file/xml-components/base.ts:84</a></li></ul></aside></div></li></ul></section></section></details>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/ea08b9677cde223ab983a361800d7d7f0b0a9c25/src/file/xml-components/base.ts#L84">file/xml-components/base.ts:84</a></li></ul></aside></div></li></ul></section></section></details>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Methods"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="methods-1">Methods<a href="#methods-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
@@ -118,7 +118,7 @@ such as a run with another run in its children. Undefined when it is written as 
 </div></div><aside class="tsd-sources">
 <p>Inherited from <a href="index.XmlComponent.html">XmlComponent</a>.<a href="index.XmlComponent.html#addchildelement">addChildElement</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/f12329161d05096ab8e30cdc9267ca040b76771d/src/file/xml-components/xml-component.ts#L132">file/xml-components/xml-component.ts:132</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/ea08b9677cde223ab983a361800d7d7f0b0a9c25/src/file/xml-components/xml-component.ts#L132">file/xml-components/xml-component.ts:132</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="prepforxml"><span>prep<wbr/>For<wbr/>Xml</span><a href="#prepforxml" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -137,7 +137,7 @@ such as a run with another run in its children. Undefined when it is written as 
 <aside class="tsd-sources">
 <p>Overrides <a href="index.XmlComponent.html">XmlComponent</a>.<a href="index.XmlComponent.html#prepforxml">prepForXml</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/f12329161d05096ab8e30cdc9267ca040b76771d/src/file/xml-components/xml-component.ts#L179">file/xml-components/xml-component.ts:179</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/ea08b9677cde223ab983a361800d7d7f0b0a9c25/src/file/xml-components/xml-component.ts#L179">file/xml-components/xml-component.ts:179</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

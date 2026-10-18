@@ -18874,7 +18874,11 @@ MAX: 9026 };
 	* ```
 	*/
 	var ContentTypes = class extends XmlComponent {
-		constructor() {
+		/**
+		* @param options.macros - Whether the document has VBA macros, which makes its main part a macro-enabled document
+		* and adds the VBA project (word/vbaProject.bin)
+		*/
+		constructor({ macros = false } = {}) {
 			super("Types");
 			this.root.push(new ContentTypeAttributes({ xmlns: "http://schemas.openxmlformats.org/package/2006/content-types" }));
 			this.root.push(createDefault("image/png", "png"));
@@ -18886,7 +18890,7 @@ MAX: 9026 };
 			this.root.push(createDefault("application/vnd.openxmlformats-package.relationships+xml", "rels"));
 			this.root.push(createDefault("application/xml", "xml"));
 			this.root.push(createDefault("application/vnd.openxmlformats-officedocument.obfuscatedFont", "odttf"));
-			this.root.push(createOverride("application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml", "/word/document.xml"));
+			this.root.push(createOverride(macros ? "application/vnd.ms-word.document.macroEnabled.main+xml" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml", "/word/document.xml"));
 			this.root.push(createOverride("application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml", "/word/styles.xml"));
 			this.root.push(createOverride("application/vnd.openxmlformats-package.core-properties+xml", "/docProps/core.xml"));
 			this.root.push(createOverride("application/vnd.openxmlformats-officedocument.custom-properties+xml", "/docProps/custom.xml"));
@@ -18897,6 +18901,7 @@ MAX: 9026 };
 			this.root.push(createOverride("application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml", "/word/settings.xml"));
 			this.root.push(createOverride("application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml", "/word/fontTable.xml"));
 			this.root.push(createOverride("application/vnd.openxmlformats-officedocument.theme+xml", "/word/theme/theme1.xml"));
+			if (macros) this.root.push(createOverride("application/vnd.ms-office.vbaProject", "/word/vbaProject.bin"));
 		}
 		/**
 		* Registers the comments part in the content types.
@@ -19333,6 +19338,58 @@ MAX: 9026 };
 			}));
 		}
 	};
+	//#endregion
+	//#region src/file/document-macros/document-macros.ts
+	/**
+	* Document macros module: a document's VBA macros, which make it a macro-enabled document (.docm).
+	*
+	* The macros are a VBA project, which Word keeps in word/vbaProject.bin. The events of the document that the project
+	* handles are listed in word/vbaData.xml, as Word only runs a handler, such as `Document_Open`, for an event listed
+	* there.
+	*
+	* Reference: ooxml-schemas/microsoft/wml-2006.xsd (CT_VbaSuppData), [MS-OFFMACRO2]
+	*
+	* @module
+	*/
+	var EVENT_ELEMENTS = {
+		new: "wne:eventDocNew",
+		open: "wne:eventDocOpen",
+		close: "wne:eventDocClose",
+		sync: "wne:eventDocSync",
+		xmlAfterInsert: "wne:eventDocXmlAfterInsert",
+		xmlBeforeDelete: "wne:eventDocXmlBeforeDelete",
+		contentControlAfterAdd: "wne:eventDocContentControlAfterInsert",
+		contentControlBeforeDelete: "wne:eventDocContentControlBeforeDelete",
+		contentControlOnExit: "wne:eventDocContentControlOnExit",
+		contentControlOnEnter: "wne:eventDocContentControlOnEnter",
+		contentControlBeforeStoreUpdate: "wne:eventDocStoreUpdate",
+		contentControlBeforeContentUpdate: "wne:eventDocContentControlContentUpdate",
+		buildingBlockInsert: "wne:eventDocBuildingBlockAfterInsert"
+	};
+	/**
+	* The events of a document that its macros handle (word/vbaData.xml).
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:complexType name="CT_VbaSuppData">
+	*   <xsd:sequence>
+	*     <xsd:element name="docEvents" type="CT_DocEvents" minOccurs="0" maxOccurs="1"/>
+	*     <xsd:element name="mcds" type="CT_Mcds" minOccurs="0" maxOccurs="1"/>
+	*   </xsd:sequence>
+	* </xsd:complexType>
+	* ```
+	*/
+	var createMacroEvents = (events) => new BuilderElement({
+		name: "wne:vbaSuppData",
+		attributes: { namespace: {
+			key: "xmlns:wne",
+			value: "http://schemas.microsoft.com/office/word/2006/wordml"
+		} },
+		children: [new BuilderElement({
+			name: "wne:docEvents",
+			children: Object.entries(EVENT_ELEMENTS).filter(([event]) => events.includes(event)).map(([, name]) => new BuilderElement({ name }))
+		})]
+	});
 	//#endregion
 	//#region src/file/document/document-background/document-background.ts
 	/**
@@ -23625,6 +23682,16 @@ MAX: 9026 };
 	*
 	* @module
 	*/
+	var COMPOUND_FILE_SIGNATURE = [
+		208,
+		207,
+		17,
+		224,
+		161,
+		177,
+		26,
+		225
+	];
 	/**
 	* Represents a Word document file.
 	*
@@ -23701,7 +23768,7 @@ MAX: 9026 };
 	*/
 	var File = class {
 		constructor(options) {
-			var _options$creator, _options$revision, _options$lastModified, _options$comments, _options$customProper, _options$features, _options$features2, _options$fonts, _options$hyphenation, _options$hyphenation2, _options$hyphenation3, _options$hyphenation4, _options$fonts2;
+			var _options$creator, _options$revision, _options$lastModified, _options$comments, _options$customProper, _this$macros, _options$features, _options$features2, _options$fonts, _options$hyphenation, _options$hyphenation2, _options$hyphenation3, _options$hyphenation4, _options$fonts2;
 			_defineProperty(this, "currentRelationshipId", 1);
 			_defineProperty(this, "documentWrapper", void 0);
 			_defineProperty(this, "headers", []);
@@ -23733,6 +23800,19 @@ MAX: 9026 };
 			_defineProperty(this, "fontWrapper", void 0);
 			_defineProperty(this, "theme", void 0);
 			_defineProperty(this, "packageParts", void 0);
+			_defineProperty(this, "macros", void 0);
+			if (options.macros !== void 0) {
+				const { project, events = [] } = options.macros;
+				const bytes = project instanceof Uint8Array ? project : new Uint8Array(project);
+				if (!COMPOUND_FILE_SIGNATURE.every((byte, index) => bytes[index] === byte)) throw new Error("macros.project isn't a VBA project. Use createMacros from docx/macros, or the word/vbaProject.bin in a .docm rather than the .docm itself");
+				const relationships = new Relationships();
+				if (events.length > 0) relationships.addRelationship(1, "http://schemas.microsoft.com/office/2006/relationships/wordVbaData", "vbaData.xml");
+				this.macros = {
+					project: bytes,
+					events: events.length > 0 ? createMacroEvents(events) : void 0,
+					relationships
+				};
+			}
 			this.coreProperties = new CoreProperties(_objectSpread2(_objectSpread2({}, options), {}, {
 				creator: (_options$creator = options.creator) !== null && _options$creator !== void 0 ? _options$creator : "Un-named",
 				revision: (_options$revision = options.revision) !== null && _options$revision !== void 0 ? _options$revision : 1,
@@ -23747,7 +23827,8 @@ MAX: 9026 };
 			this.appProperties = new AppProperties();
 			this.footnotesWrapper = new FootnotesWrapper();
 			this.endnotesWrapper = new EndnotesWrapper();
-			this.contentTypes = new ContentTypes();
+			this.contentTypes = new ContentTypes({ macros: this.macros !== void 0 });
+			if (((_this$macros = this.macros) === null || _this$macros === void 0 ? void 0 : _this$macros.events) !== void 0) this.contentTypes.addOverride("application/vnd.ms-word.vbaData+xml", "/word/vbaData.xml");
 			this.packageParts = new PackageParts(this.contentTypes);
 			this.documentWrapper = new DocumentWrapper({
 				background: options.background,
@@ -23798,6 +23879,7 @@ MAX: 9026 };
 			this.fontWrapper = new FontWrapper((_options$fonts2 = options.fonts) !== null && _options$fonts2 !== void 0 ? _options$fonts2 : []);
 			this.theme = new Theme(options.theme);
 			this.documentWrapper.Relationships.addRelationship(this.currentRelationshipId++, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme", "theme/theme1.xml");
+			if (this.macros !== void 0) this.documentWrapper.Relationships.addRelationship(this.currentRelationshipId++, "http://schemas.microsoft.com/office/2006/relationships/vbaProject", "vbaProject.bin");
 		}
 		addSection({ headers = {}, footers = {}, children, properties }) {
 			this.documentWrapper.View.Body.addSection(_objectSpread2(_objectSpread2({}, properties), {}, {
@@ -23928,6 +24010,13 @@ MAX: 9026 };
 		/** The parts that drawings, such as charts, add to the package when it is written. */
 		get PackageParts() {
 			return this.packageParts;
+		}
+		/**
+		* The document's macros, when it has any: its VBA project (word/vbaProject.bin), the events of the document it
+		* handles (word/vbaData.xml), and the project's relationships, to the events.
+		*/
+		get Macros() {
+			return this.macros;
 		}
 	};
 	//#endregion
@@ -34351,6 +34440,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 			else zip.file(obj.path, encodeUtf8(obj.data));
 			for (const { path, data } of packageParts) zip.file(path, typeof data === "string" ? encodeUtf8(data) : data);
 			for (const subFile of overrides) zip.file(subFile.path, encodeUtf8(subFile.data));
+			if (file.Macros !== void 0) zip.file("word/vbaProject.bin", file.Macros.project);
 			for (const data of file.Media.Array) if (data.type !== "svg") zip.file(`word/media/${data.fileName}`, data.data);
 			else {
 				zip.file(`word/media/${data.fileName}`, data.data);
@@ -34360,6 +34450,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 			return zip;
 		}
 		xmlifyFile(file, prettify) {
+			var _file$Macros;
 			const documentXmlData = stringifyXmlable(this.formatter.format(file.Document.View, {
 				viewWrapper: file.Document,
 				file,
@@ -34412,7 +34503,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 			const commentMediaDatas = this.imageReplacer.getMediaData(commentXmlData, file.Media);
 			const footnoteMediaDatas = this.imageReplacer.getMediaData(footnoteXmlData, file.Media);
 			const endnoteMediaDatas = this.imageReplacer.getMediaData(endnoteXmlData, file.Media);
-			return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
+			return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
 				Relationships: {
 					data: (() => {
 						const relationships = Relationships.copy(file.Document.Relationships);
@@ -34753,7 +34844,34 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 						}
 					}),
 					path: "word/theme/theme1.xml"
+				}
+			}, ((_file$Macros = file.Macros) === null || _file$Macros === void 0 ? void 0 : _file$Macros.events) ? {
+				MacroEvents: {
+					data: stringifyXmlable(this.formatter.format(file.Macros.events, {
+						viewWrapper: file.Document,
+						file,
+						stack: []
+					}), {
+						indent: prettify,
+						declaration: {
+							standalone: "yes",
+							encoding: "UTF-8"
+						}
+					}),
+					path: "word/vbaData.xml"
 				},
+				MacroRelationships: {
+					data: stringifyXmlable(this.formatter.format(file.Macros.relationships, {
+						viewWrapper: file.Document,
+						file,
+						stack: []
+					}), {
+						indent: prettify,
+						declaration: { encoding: "UTF-8" }
+					}),
+					path: "word/_rels/vbaProject.bin.rels"
+				}
+			} : {}), {}, {
 				PackageParts: xmlifyPackageParts(file, prettify),
 				Numbering: {
 					data: stringifyXmlable(this.formatter.format(file.Numbering, {
@@ -34835,6 +34953,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 		WITH_TAB: "	"
 	};
 	var convertPrettifyType = (prettify) => prettify === true ? PrettifyType.WITH_2_BLANKS : prettify === false ? void 0 : prettify;
+	var mimeTypeOf = (file) => file.Macros === void 0 ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : "application/vnd.ms-word.document.macroEnabled.12";
 	/**
 	* Exports documents to various output formats.
 	*
@@ -34871,7 +34990,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 			return _asyncToGenerator(function* (file, type, prettify, overrides = []) {
 				return _this.compiler.compile(file, convertPrettifyType(prettify), overrides).generateAsync({
 					type,
-					mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+					mimeType: mimeTypeOf(file),
 					compression: "DEFLATE"
 				});
 			}).apply(this, arguments);
@@ -34943,7 +35062,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 			const stream = new import_stream_browserify.Stream();
 			this.compiler.compile(file, convertPrettifyType(prettify), overrides).generateAsync({
 				type: "nodebuffer",
-				mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+				mimeType: mimeTypeOf(file),
 				compression: "DEFLATE"
 			}).then((z) => {
 				stream.emit("data", z);

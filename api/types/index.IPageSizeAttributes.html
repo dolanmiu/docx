@@ -13,7 +13,7 @@
 <h1>Type Alias IPageSizeAttributes</h1></div>
 <div class="tsd-signature"><span class="tsd-signature-keyword">type</span> <span class="tsd-kind-type-alias">IPageSizeAttributes</span> <span class="tsd-signature-symbol">=</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#code">code</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#height">height</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span> <span class="tsd-signature-symbol">|</span> <a href="index.PositiveUniversalMeasure.html" class="tsd-signature-type tsd-kind-type-alias">PositiveUniversalMeasure</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#orientation">orientation</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-keyword">typeof</span> <a href="../variables/index.PageOrientation.html" class="tsd-signature-type tsd-kind-variable">PageOrientation</a><span class="tsd-signature-symbol">[</span><span class="tsd-signature-keyword">keyof</span> <span class="tsd-signature-keyword">typeof</span> <a href="../variables/index.PageOrientation.html" class="tsd-signature-type tsd-kind-variable">PageOrientation</a><span class="tsd-signature-symbol">]</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#width">width</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span> <span class="tsd-signature-symbol">|</span> <a href="index.PositiveUniversalMeasure.html" class="tsd-signature-type tsd-kind-type-alias">PositiveUniversalMeasure</a><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/f12329161d05096ab8e30cdc9267ca040b76771d/src/file/document/body/section-properties/properties/page-size.ts#L37">file/document/body/section-properties/properties/page-size.ts:37</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/ea08b9677cde223ab983a361800d7d7f0b0a9c25/src/file/document/body/section-properties/properties/page-size.ts#L37">file/document/body/section-properties/properties/page-size.ts:37</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -40,21 +40,21 @@
 <p>The possible values for this attribute are defined by the <code>ST_DecimalNumber</code> simple type (§2.18.16).</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/f12329161d05096ab8e30cdc9267ca040b76771d/src/file/document/body/section-properties/properties/page-size.ts#L103">file/document/body/section-properties/properties/page-size.ts:103</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/ea08b9677cde223ab983a361800d7d7f0b0a9c25/src/file/document/body/section-properties/properties/page-size.ts#L103">file/document/body/section-properties/properties/page-size.ts:103</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="height"><code class="tsd-tag">Readonly</code><span>height</span><a href="#height" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">height</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span> <span class="tsd-signature-symbol">|</span> <a href="index.PositiveUniversalMeasure.html" class="tsd-signature-type tsd-kind-type-alias">PositiveUniversalMeasure</a></div>
 <div class="tsd-comment tsd-typography"><h2 id="page-height" class="tsd-anchor-link">Page Height<a href="#page-height" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
 <p>Specifies the height (in twentieths of a point) for all pages in the current section.</p>
 <h3 id="example" class="tsd-anchor-link">Example<a href="#example" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
-<pre><code class="xml"><span class="hl-9">&lt;</span><span class="hl-10">w:pgSz</span><span class="hl-1"> </span><span class="hl-11">w:w</span><span class="hl-1">=</span><span class="hl-12">&quot;15840&quot;</span><span class="hl-1"> </span><span class="hl-11">w:h</span><span class="hl-1">=</span><span class="hl-12">&quot;12240&quot;</span><span class="hl-1"> </span><span class="hl-9">/&gt;</span>
+<pre><code class="xml"><span class="hl-10">&lt;</span><span class="hl-11">w:pgSz</span><span class="hl-1"> </span><span class="hl-12">w:w</span><span class="hl-1">=</span><span class="hl-13">&quot;15840&quot;</span><span class="hl-1"> </span><span class="hl-12">w:h</span><span class="hl-1">=</span><span class="hl-13">&quot;12240&quot;</span><span class="hl-1"> </span><span class="hl-10">/&gt;</span>
 </code><button type="button">Copy</button></pre>
 
 <p>All pages in this section are displayed on a page that is <code>12240</code> twentieths of a point (<code>8.5&quot;</code>) tall.</p>
 <p>The possible values for this attribute are defined by the <code>ST_TwipsMeasure</code> simple type (§2.18.105).</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/f12329161d05096ab8e30cdc9267ca040b76771d/src/file/document/body/section-properties/properties/page-size.ts#L69">file/document/body/section-properties/properties/page-size.ts:69</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/ea08b9677cde223ab983a361800d7d7f0b0a9c25/src/file/document/body/section-properties/properties/page-size.ts#L69">file/document/body/section-properties/properties/page-size.ts:69</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="orientation"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>orientation</span><a href="#orientation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">orientation</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-keyword">typeof</span> <a href="../variables/index.PageOrientation.html" class="tsd-signature-type tsd-kind-variable">PageOrientation</a><span class="tsd-signature-symbol">[</span><span class="tsd-signature-keyword">keyof</span> <span class="tsd-signature-keyword">typeof</span> <a href="../variables/index.PageOrientation.html" class="tsd-signature-type tsd-kind-variable">PageOrientation</a><span class="tsd-signature-symbol">]</span></div>
@@ -63,28 +63,28 @@
 <p>This information is used to determine the actual paper size to use on the printer.</p>
 <p>This implies that the actual paper size width and height are reversed for pages in this section. If this attribute is omitted, then portrait shall be implied.</p>
 <h3 id="example-1" class="tsd-anchor-link">Example<a href="#example-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
-<pre><code class="xml"><span class="hl-9">&lt;</span><span class="hl-10">w:pgSz</span><span class="hl-1"> </span><span class="hl-11">w:w</span><span class="hl-1">=</span><span class="hl-12">&quot;15840&quot;</span><span class="hl-1"> </span><span class="hl-11">w:h</span><span class="hl-1">=</span><span class="hl-12">&quot;12240&quot;</span><span class="hl-1"> </span><span class="hl-11">w:orient</span><span class="hl-1">=</span><span class="hl-12">&quot;landscape&quot;</span><span class="hl-1"> </span><span class="hl-9">/&gt;</span>
+<pre><code class="xml"><span class="hl-10">&lt;</span><span class="hl-11">w:pgSz</span><span class="hl-1"> </span><span class="hl-12">w:w</span><span class="hl-1">=</span><span class="hl-13">&quot;15840&quot;</span><span class="hl-1"> </span><span class="hl-12">w:h</span><span class="hl-1">=</span><span class="hl-13">&quot;12240&quot;</span><span class="hl-1"> </span><span class="hl-12">w:orient</span><span class="hl-1">=</span><span class="hl-13">&quot;landscape&quot;</span><span class="hl-1"> </span><span class="hl-10">/&gt;</span>
 </code><button type="button">Copy</button></pre>
 
 <p>Although the page width is 11&quot;, and page height is 8.5&quot;, according to the <code>w</code> and <code>h</code> attributes, because the <code>orient</code> attribute is set to landscape, pages in this section are printed on 8.5x11&quot; paper in landscape mode.</p>
 <p>The possible values for this attribute are defined by the <code>ST_PageOrientation</code> simple type (§2.18.71).</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/f12329161d05096ab8e30cdc9267ca040b76771d/src/file/document/body/section-properties/properties/page-size.ts#L89">file/document/body/section-properties/properties/page-size.ts:89</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/ea08b9677cde223ab983a361800d7d7f0b0a9c25/src/file/document/body/section-properties/properties/page-size.ts#L89">file/document/body/section-properties/properties/page-size.ts:89</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="width"><code class="tsd-tag">Readonly</code><span>width</span><a href="#width" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">width</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span> <span class="tsd-signature-symbol">|</span> <a href="index.PositiveUniversalMeasure.html" class="tsd-signature-type tsd-kind-type-alias">PositiveUniversalMeasure</a></div>
 <div class="tsd-comment tsd-typography"><h2 id="page-width" class="tsd-anchor-link">Page Width<a href="#page-width" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
 <p>This attribute indicates the width (in twentieths of a point) for all pages in the current section.</p>
 <h3 id="example-2" class="tsd-anchor-link">Example<a href="#example-2" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
-<pre><code class="xml"><span class="hl-9">&lt;</span><span class="hl-10">w:pgSz</span><span class="hl-1"> </span><span class="hl-11">w:w</span><span class="hl-1">=</span><span class="hl-12">&quot;15840&quot;</span><span class="hl-1"> </span><span class="hl-11">w:h</span><span class="hl-1">=</span><span class="hl-12">&quot;12240&quot;</span><span class="hl-1"> </span><span class="hl-9">/&gt;</span>
+<pre><code class="xml"><span class="hl-10">&lt;</span><span class="hl-11">w:pgSz</span><span class="hl-1"> </span><span class="hl-12">w:w</span><span class="hl-1">=</span><span class="hl-13">&quot;15840&quot;</span><span class="hl-1"> </span><span class="hl-12">w:h</span><span class="hl-1">=</span><span class="hl-13">&quot;12240&quot;</span><span class="hl-1"> </span><span class="hl-10">/&gt;</span>
 </code><button type="button">Copy</button></pre>
 
 <p>All pages in this section are displayed on a page that is 15840 twentieths of a point (11&quot;) wide.</p>
 <p>The possible values for this attribute are defined by the ST_TwipsMeasure simple type (§2.18.105).</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/f12329161d05096ab8e30cdc9267ca040b76771d/src/file/document/body/section-properties/properties/page-size.ts#L53">file/document/body/section-properties/properties/page-size.ts:53</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/ea08b9677cde223ab983a361800d7d7f0b0a9c25/src/file/document/body/section-properties/properties/page-size.ts#L53">file/document/body/section-properties/properties/page-size.ts:53</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
