@@ -107,6 +107,24 @@ const doc = new Document({
 
 In a page without a bundler, load `dist/html.umd.cjs` after `dist/index.umd.cjs` and `dist/math.umd.cjs`. It adds the `docxHtml` global. See the [HTML](https://docx.js.org/#/usage/html) documentation.
 
+# Macros
+
+VBA macros, written from their code, make a document a macro-enabled document (`.docm`), with `docx/macros`:
+
+```ts
+import { Document, Paragraph } from "docx";
+import { createMacros } from "docx/macros";
+
+const doc = new Document({
+    macros: createMacros({
+        modules: [{ name: "Greetings", code: 'Sub SayHello()\n    MsgBox "Hello"\nEnd Sub' }],
+    }),
+    sections: [{ children: [new Paragraph("Run SayHello from View > Macros")] }],
+});
+```
+
+In a page without a bundler, load `dist/macros.umd.cjs` after `dist/index.umd.cjs`. It adds the `docxMacros` global. See the [macros](https://docx.js.org/#/usage/macros) documentation.
+
 # Playground
 
 Experience `docx` in action through [Docx.js Editor][docxjs-editor-url], an interactive playground where you can code and preview the results in real-time.

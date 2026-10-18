@@ -76,6 +76,16 @@
                 "types": "./dist/html.d.cts",
                 "default": "./dist/html.cjs"
             }
+        },
+        "./macros": {
+            "import": {
+                "types": "./dist/macros.d.ts",
+                "default": "./dist/macros.mjs"
+            },
+            "require": {
+                "types": "./dist/macros.d.cts",
+                "default": "./dist/macros.cjs"
+            }
         }
     },
     "typesVersions": {
@@ -97,6 +107,9 @@
             ],
             "html": [
                 "./dist/html.d.ts"
+            ],
+            "macros": [
+                "./dist/macros.d.ts"
             ]
         }
     },
@@ -104,14 +117,14 @@
         "dist"
     ],
     "scripts": {
-        "build": "tsc && vite build && vite build --config vite.entries.config.ts --mode shapes && vite build --config vite.entries.config.ts --mode watermarks && vite build --config vite.entries.config.ts --mode charts && vite build --config vite.entries.config.ts --mode math && vite build --config vite.entries.config.ts --mode layout && vite build --config vite.entries.config.ts --mode html",
+        "build": "tsc && vite build && vite build --config vite.entries.config.ts --mode shapes && vite build --config vite.entries.config.ts --mode watermarks && vite build --config vite.entries.config.ts --mode charts && vite build --config vite.entries.config.ts --mode math && vite build --config vite.entries.config.ts --mode layout && vite build --config vite.entries.config.ts --mode html && vite build --config vite.entries.config.ts --mode macros",
         "test": "vitest --ui --coverage",
         "test:ci": "vitest run --coverage",
         "prepublishOnly": "npm run build --omit=dev",
         "lint": "eslint --config eslint.config.ts",
         "predemo": "npm run build",
         "demo": "tsx ./demo/index.ts",
-        "typedoc": "typedoc src/index.ts src/shapes/index.ts src/watermarks/index.ts src/charts/index.ts src/math/index.ts src/layout/index.ts src/html/index.ts --tsconfig tsconfig.typedoc.json",
+        "typedoc": "typedoc src/index.ts src/shapes/index.ts src/watermarks/index.ts src/charts/index.ts src/math/index.ts src/layout/index.ts src/html/index.ts src/macros/index.ts --tsconfig tsconfig.typedoc.json",
         "prettier": "prettier -l \"{src,scripts,demo,docs}/**/*.{ts,html,md}\"",
         "prettier:fix": "npm run prettier -- --write",
         "cspell": "cspell \"{src,demo,docs,scripts}/**/*.{ts,scss,html,md}\" && cspell \"./*.*\"",

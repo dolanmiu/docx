@@ -34,6 +34,7 @@
         "docx/layout": { file: "layout", global: "docxLayout" },
         // docx/html writes math with docx/math, so it is loaded after it
         "docx/html": { file: "html", global: "docxHtml", after: ["docx/math"] },
+        "docx/macros": { file: "macros", global: "docxMacros" },
     };
 
     // Packages from npm an example can import too, from jsDelivr at the version the docs are written for: where each is, and
@@ -47,6 +48,10 @@
 
     // docx-preview draws these as empty space
     const NOT_DRAWN = { "docx/shapes": "shapes", "docx/charts": "charts", "docx/watermarks": "watermarks" };
+
+    // The type of a document with macros, a .docm, which Word doesn't open as a .docx. A blob's type is in lower case
+    const DOCM = "application/vnd.ms-word.document.macroenabled.12";
+    const extensionOf = (blob) => (blob.type === DOCM ? "docm" : "docx");
 
     // The editor's types for what docx's types use from Node, and for the parts of Node an example can use
     const NODE_TYPES = `
@@ -184,7 +189,10 @@ declare module "stream" {
 
     const AsyncFunction = (async () => {}).constructor;
 
-    /** Runs an example, and returns the .docx it makes: the one it writes with fs.writeFileSync, or else its last Document */
+    /**
+     * Runs an example, and returns the .docx or .docm it makes: the one it writes with fs.writeFileSync, or else its last
+     * Document
+     */
     const make = async (source) => {
         const imports = importsOf(source).filter((name) => name in MODULES);
         const packageNames = importsOf(source).filter((name) => name in PACKAGES);
@@ -235,8 +243,8 @@ declare module "stream" {
                 return encoding ? new FileBuffer(bytes).toString(encoding) : new FileBuffer(bytes);
             },
             writeFileSync: (path, data, encoding) => {
-                if (/\.docx$/i.test(path)) {
-                    written = bytesOf(data, encoding);
+                if (/\.doc[xm]$/i.test(path)) {
+                    written = new Blob([bytesOf(data, encoding)], /\.docm$/i.test(path) ? { type: DOCM } : {});
                 }
             },
             createWriteStream: () => ({}),
@@ -265,7 +273,7 @@ declare module "stream" {
         await new Promise((resolve) => setTimeout(resolve));
 
         if (written) {
-            return new Blob([written]);
+            return written;
         }
         const failure = results.find((result) => result.status === "rejected");
         if (failure) {
@@ -397,7 +405,7 @@ declare module "stream" {
         const download = button("Download .docx", () => {
             const link = document.createElement("a");
             link.href = URL.createObjectURL(example.blob);
-            link.download = "example.docx";
+            link.download = `example.${extensionOf(example.blob)}`;
             link.click();
             // Some browsers start the download after click() returns
             setTimeout(() => URL.revokeObjectURL(link.href), 60_000);
@@ -469,13 +477,18 @@ declare module "stream" {
                 pages.classList.remove("drawing");
                 fit();
                 example.blob = blob;
+                download.textContent = `Download .${extensionOf(blob)}`;
                 download.disabled = false;
                 preview.classList.remove("live-example__preview--stale");
                 const notDrawn = importsOf(source)
                     .filter((name) => name in NOT_DRAWN)
                     .map((name) => NOT_DRAWN[name]);
                 setStatus(
-                    notDrawn.length > 0 ? `The preview can't draw ${notDrawn.join(" or ")}. Download the file to see them in Word.` : "",
+                    notDrawn.length > 0
+                        ? `The preview can't draw ${notDrawn.join(" or ")}. Download the file to see them in Word.`
+                        : blob.type === DOCM
+                          ? "The preview doesn't run macros. Download the .docm to run them in Word."
+                          : "",
                 );
             } catch (error) {
                 if (runNumber === example.runs) {

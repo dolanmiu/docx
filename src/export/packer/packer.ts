@@ -34,6 +34,12 @@ const convertPrettifyType = (
 ): (typeof PrettifyType)[keyof typeof PrettifyType] | undefined =>
     prettify === true ? PrettifyType.WITH_2_BLANKS : prettify === false ? undefined : prettify;
 
+// A document with macros is a .docm, whose type isn't a .docx's
+const mimeTypeOf = (file: File): string =>
+    file.Macros === undefined
+        ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        : "application/vnd.ms-word.document.macroEnabled.12";
+
 /**
  * Exports documents to various output formats.
  *
@@ -75,7 +81,7 @@ export class Packer {
         const zip = this.compiler.compile(file, convertPrettifyType(prettify), overrides);
         return zip.generateAsync({
             type,
-            mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            mimeType: mimeTypeOf(file),
             compression: "DEFLATE",
         });
     }
@@ -178,7 +184,7 @@ export class Packer {
 
         zip.generateAsync({
             type: "nodebuffer",
-            mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            mimeType: mimeTypeOf(file),
             compression: "DEFLATE",
         }).then((z) => {
             stream.emit("data", z);

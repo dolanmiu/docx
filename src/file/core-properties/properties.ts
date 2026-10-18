@@ -17,6 +17,7 @@ import { dateTimeValue } from "@util/values";
 import type { ICustomPropertyOptions } from "../custom-properties";
 import type { IDocumentBackgroundOptions, PageNumberEstimator } from "../document";
 import { DocumentAttributes } from "../document/document-attributes";
+import type { DocumentMacros } from "../document-macros";
 import type { ISectionOptions } from "../file";
 import type { INumberingOptions } from "../numbering";
 import type { Paragraph } from "../paragraph";
@@ -50,6 +51,7 @@ import type { IThemeOptions } from "../theme";
  * @property hyphenation - Hyphenation settings
  * @property theme - The document's theme: its colors, and its fonts for headings and body text
  * @property pageNumbers - Works out the page each bookmark is on, so the page numbers of tables of contents and page references are written with the document
+ * @property macros - The document's VBA macros, which make it a macro-enabled document (.docm)
  */
 export type IPropertiesOptions = {
     readonly sections: readonly ISectionOptions[];
@@ -103,6 +105,11 @@ export type IPropertiesOptions = {
      * from `docx/layout`, which lays out the document's pages as Word would
      */
     readonly pageNumbers?: PageNumberEstimator;
+    /**
+     * The document's VBA macros. `createMacros` from `docx/macros` writes them from VBA code. A document with macros is a
+     * macro-enabled document, which Word only opens from a .docm file
+     */
+    readonly macros?: DocumentMacros;
 };
 
 /**

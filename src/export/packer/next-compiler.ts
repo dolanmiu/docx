@@ -87,6 +87,10 @@ type IXmlifyedFileMapping = {
     readonly Theme: IXmlifyedFile;
     /** Parts added by the document's content, such as charts (word/charts/chart1.xml), and their relationships */
     readonly PackageParts: readonly PackagePartFile[];
+    /** The events of the document its macros handle (word/vbaData.xml) */
+    readonly MacroEvents?: IXmlifyedFile;
+    /** The relationships of the macros' VBA project (word/_rels/vbaProject.bin.rels), to their events */
+    readonly MacroRelationships?: IXmlifyedFile;
 };
 
 /**
@@ -158,6 +162,10 @@ export class Compiler {
 
         for (const subFile of overrides) {
             zip.file(subFile.path, encodeUtf8(subFile.data));
+        }
+
+        if (file.Macros !== undefined) {
+            zip.file("word/vbaProject.bin", file.Macros.project);
         }
 
         for (const data of file.Media.Array) {
@@ -750,6 +758,43 @@ export class Compiler {
                 ),
                 path: "word/theme/theme1.xml",
             },
+            ...(file.Macros?.events
+                ? {
+                      MacroEvents: {
+                          data: stringifyXmlable(
+                              this.formatter.format(file.Macros.events, {
+                                  viewWrapper: file.Document,
+                                  file,
+                                  stack: [],
+                              }),
+                              {
+                                  indent: prettify,
+                                  declaration: {
+                                      standalone: "yes",
+                                      encoding: "UTF-8",
+                                  },
+                              },
+                          ),
+                          path: "word/vbaData.xml",
+                      },
+                      MacroRelationships: {
+                          data: stringifyXmlable(
+                              this.formatter.format(file.Macros.relationships, {
+                                  viewWrapper: file.Document,
+                                  file,
+                                  stack: [],
+                              }),
+                              {
+                                  indent: prettify,
+                                  declaration: {
+                                      encoding: "UTF-8",
+                                  },
+                              },
+                          ),
+                          path: "word/_rels/vbaProject.bin.rels",
+                      },
+                  }
+                : {}),
             // After every part that can refer to them, which adds them to the package as it is written
             PackageParts: xmlifyPackageParts(file, prettify),
             // After every part that can have lists, such as headers and footers, as the lists they use are added to the

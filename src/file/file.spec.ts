@@ -602,6 +602,85 @@ describe("File", () => {
         });
     });
 
+    describe("#macros", () => {
+        // The start of a compound file, which is all the document checks a VBA project for
+        const project = Uint8Array.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1, 0x00]);
+        const VBA_PROJECT = "http://schemas.microsoft.com/office/2006/relationships/vbaProject";
+
+        it("should leave a document without macros a .docx, with no VBA project", () => {
+            const doc = new File({ sections: [] });
+
+            expect(doc.Macros).toBeUndefined();
+            expect(JSON.stringify(new Formatter().format(doc.Document.Relationships))).not.toContain(VBA_PROJECT);
+            expect(JSON.stringify(new Formatter().format(doc.ContentTypes))).toContain(
+                JSON.stringify({
+                    ContentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml",
+                    PartName: "/word/document.xml",
+                }),
+            );
+        });
+
+        it("should make a document with macros macro-enabled, with a relationship to its VBA project after the theme's", () => {
+            const doc = new File({ macros: { project }, sections: [] });
+            const contentTypes = JSON.stringify(new Formatter().format(doc.ContentTypes));
+
+            expect(doc.Macros?.project).toBe(project);
+            expect(doc.Macros?.events).toBeUndefined();
+            expect(doc.Macros?.relationships.RelationshipCount).toBe(0);
+            expect(JSON.stringify(new Formatter().format(doc.Document.Relationships))).toContain(
+                JSON.stringify({ Id: "rId7", Type: VBA_PROJECT, Target: "vbaProject.bin" }),
+            );
+            expect(contentTypes).toContain(
+                JSON.stringify({ ContentType: "application/vnd.ms-word.document.macroEnabled.main+xml", PartName: "/word/document.xml" }),
+            );
+            expect(contentTypes).not.toContain("wordprocessingml.document.main+xml");
+            expect(contentTypes).toContain(
+                JSON.stringify({ ContentType: "application/vnd.ms-office.vbaProject", PartName: "/word/vbaProject.bin" }),
+            );
+            expect(contentTypes).not.toContain("vbaData");
+        });
+
+        it("should list the events the macros handle, with a relationship to them from the VBA project", () => {
+            const doc = new File({ macros: { project, events: ["close", "open"] }, sections: [] });
+
+            expect(new Formatter().format(doc.Macros!.events!)).toEqual({
+                "wne:vbaSuppData": [
+                    { _attr: { "xmlns:wne": "http://schemas.microsoft.com/office/word/2006/wordml" } },
+                    { "wne:docEvents": [{ "wne:eventDocOpen": {} }, { "wne:eventDocClose": {} }] },
+                ],
+            });
+            expect(new Formatter().format(doc.Macros!.relationships)).toEqual({
+                Relationships: [
+                    { _attr: { xmlns: "http://schemas.openxmlformats.org/package/2006/relationships" } },
+                    {
+                        Relationship: {
+                            _attr: {
+                                Id: "rId1",
+                                Type: "http://schemas.microsoft.com/office/2006/relationships/wordVbaData",
+                                Target: "vbaData.xml",
+                            },
+                        },
+                    },
+                ],
+            });
+            expect(JSON.stringify(new Formatter().format(doc.ContentTypes))).toContain(
+                JSON.stringify({ ContentType: "application/vnd.ms-word.vbaData+xml", PartName: "/word/vbaData.xml" }),
+            );
+        });
+
+        it("should take a VBA project as an ArrayBuffer", () => {
+            const doc = new File({ macros: { project: project.buffer }, sections: [] });
+
+            expect(doc.Macros?.project).toEqual(project);
+        });
+
+        it("should throw for macros that aren't a VBA project, such as a .docm", () => {
+            expect(() => new File({ macros: { project: Uint8Array.from([0x50, 0x4b, 0x03, 0x04]) }, sections: [] })).toThrow(
+                "macros.project isn't a VBA project",
+            );
+        });
+    });
+
     describe("#theme", () => {
         it("should write a theme with the given colors and fonts, and a relationship to it after the headers' and footers'", () => {
             const doc = new File({
