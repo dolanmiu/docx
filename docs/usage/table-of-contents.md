@@ -52,6 +52,66 @@ The entries are written for the paragraphs the options include, as Word includes
 
 With none of these, the headings Heading 1 to Heading 9 are included. Each entry uses the `TOC1` to `TOC9` paragraph style for its level. When the document doesn't define that style, the entry is indented as Word's is. A Table of Contents of captions or of TC fields (`captionLabel`, `captionLabelIncludingNumbers`, `tcFieldIdentifier` or `tcFieldLevelRange` alone) is left empty for Word to fill in.
 
+## Styling the entries
+
+To change how the entries look, such as their size or spacing, define the `TOC1` to `TOC9` paragraph styles in `paragraphStyles`, with the names `toc 1` to `toc 9`.
+
+When Word updates the table, it copies the formatting set on a heading's text onto the heading's entry, such as `bold: true` on a `TextRun`. That formatting is set on the entry's text, so it takes priority over the `TOC1` style, and `bold: false` in the style doesn't remove it. Formatting that comes from the heading's style isn't copied.
+
+So to have bold headings without bold entries, make the heading style bold instead of the heading's text. Here Heading 1 is made bold with `styles.default.heading1`, and the entries are plain:
+
+```ts live
+import { Document, HeadingLevel, Paragraph, TableOfContents } from "docx";
+
+const doc = new Document({
+    features: {
+        updateFields: true,
+    },
+    styles: {
+        default: {
+            heading1: {
+                run: {
+                    size: 32,
+                    bold: true,
+                },
+            },
+        },
+        paragraphStyles: [
+            {
+                id: "TOC1",
+                name: "toc 1",
+                basedOn: "Normal",
+                next: "Normal",
+                run: {
+                    size: 22,
+                },
+                paragraph: {
+                    spacing: {
+                        after: 120,
+                    },
+                },
+            },
+        ],
+    },
+    sections: [
+        {
+            children: [
+                new TableOfContents("Contents", {
+                    hyperlink: true,
+                    headingStyleRange: "1-1",
+                }),
+                new Paragraph({ text: "Introduction", heading: HeadingLevel.HEADING_1, pageBreakBefore: true }),
+                new Paragraph("Bold from the Heading 1 style, so its entry isn't bold."),
+                new Paragraph({ text: "Getting started", heading: HeadingLevel.HEADING_1, pageBreakBefore: true }),
+                new Paragraph("Bold from the Heading 1 style too."),
+            ],
+        },
+    ],
+});
+```
+
+A heading of your own can be a paragraph style with `run: { bold: true }` instead, listed in the table with `stylesWithLevels`.
+
 ## Table of Contents Options
 
 Here is the list of all options that you can use to generate your tables of contents:
