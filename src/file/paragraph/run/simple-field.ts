@@ -64,6 +64,9 @@ export type ISimpleFieldOptions = {
  * ```
  */
 export class SimpleField extends XmlComponent {
+    // Only in the type: with no members of its own, any component, such as a Paragraph, would type check as one
+    declare private readonly brand: "SimpleField";
+
     public constructor(instruction: string, cachedValue?: string, options: ISimpleFieldOptions = {}) {
         super("w:fldSimple");
         this.root.push(new FldSimpleAttrs({ instr: instruction, fldLock: options.locked ? true : undefined }));

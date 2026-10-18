@@ -680,7 +680,7 @@ describe("replacer", () => {
                 // cspell:enable
                 patch: {
                     type: PatchType.PARAGRAPH,
-                    children: [new Paragraph("Lorem ipsum paragraph")],
+                    children: [new TextRun("Lorem ipsum paragraph")],
                 },
                 patchText: "{{address}}",
                 context: {

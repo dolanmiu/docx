@@ -7,7 +7,8 @@
  * @module
  */
 import { FileChild } from "@file/file-child";
-import { type IParagraphOptions, ParagraphProperties } from "@file/paragraph";
+import { type IParagraphOptions, type Paragraph, ParagraphProperties } from "@file/paragraph";
+import type { Table } from "@file/table";
 import { BuilderElement, type IContext, type IXmlableObject, type XmlComponent, elementOf } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 
@@ -17,14 +18,17 @@ import { type VmlShapeStyle, createShape } from "./shape/shape";
 /**
  * Options for creating a Textbox.
  *
- * Extends paragraph options while replacing the style property with VML shape styling.
+ * Extends paragraph options while replacing the style property with VML shape styling,
+ * and the children with the paragraphs and tables inside the textbox.
  *
  * @property style - VML shape style properties for positioning and sizing
- * @property children - Array of child elements (text runs, hyperlinks, etc.)
+ * @property children - The paragraphs and tables inside the textbox
  */
-type ITextboxOptions = Omit<IParagraphOptions, "style"> & {
+type ITextboxOptions = Omit<IParagraphOptions, "style" | "children"> & {
     /** VML shape style properties for the textbox (positioning, sizing, wrapping, etc.) */
     readonly style?: VmlShapeStyle;
+    /** The paragraphs and tables inside the textbox */
+    readonly children?: readonly (Paragraph | Table)[];
 };
 
 /**

@@ -54,6 +54,9 @@ export type IMathOptions = {
  * ```
  */
 export class Math extends XmlComponent {
+    // Only in the type: with no members of its own, any component, such as a Paragraph, would type check as one
+    declare private readonly brand: "Math";
+
     public constructor(options: IMathOptions) {
         super("m:oMath");
 

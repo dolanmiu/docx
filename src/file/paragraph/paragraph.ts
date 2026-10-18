@@ -8,6 +8,7 @@
 import type { SectionProperties } from "@file/document/body/section-properties/section-properties";
 import { FileChild } from "@file/file-child";
 import type { FootnoteReferenceRun } from "@file/footnotes";
+import type { Textbox } from "@file/textbox";
 import { type IContext, type IXmlableObject, elementOf } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 
@@ -56,7 +57,8 @@ export type ParagraphChild =
     | CommentRangeStart
     | CommentRangeEnd
     | CommentReference
-    | CheckBox;
+    | CheckBox
+    | Textbox;
 
 /**
  * Options for creating a Paragraph element.

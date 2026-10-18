@@ -9,16 +9,7 @@
  *
  * @module
  */
-import {
-    type IContext,
-    type IMediaData,
-    type IXmlableObject,
-    XmlComponent,
-    createVmlShape,
-    hashedId,
-    standardizeData,
-    uniqueId,
-} from "docx";
+import { type IContext, type IMediaData, type IXmlableObject, Run, createVmlShape, hashedId, standardizeData, uniqueId } from "docx";
 
 import { createPict } from "./vml/pict";
 import { PICTURE_FRAME_SHAPE_TYPE_ID, createPictureFrameShapeType } from "./vml/picture-frame-shape-type";
@@ -123,11 +114,12 @@ export type IImageWatermarkOptions = {
  * });
  * ```
  */
-export class ImageWatermark extends XmlComponent {
+export class ImageWatermark extends Run {
     private readonly mediaData: IMediaData;
 
     public constructor({ type, data, transformation, washout = true, title }: IImageWatermarkOptions) {
-        super("w:r");
+        // A run, so that it can be one of a paragraph's children. It has no formatting, so only the `w:r` is written
+        super({});
 
         const fileName = `${hashedId(data)}.${type}`;
 
