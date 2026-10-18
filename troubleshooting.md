@@ -480,6 +480,12 @@ const doc = new Document({
 
 ## Table of Contents
 
+### TOC entries are bold, though the TOC style isn't
+
+**Cause:** When Word updates the table, it copies the formatting set on a heading's text, such as `bold: true` on a `TextRun`, onto its entry. That takes priority over the `TOC1` to `TOC9` styles, so `bold: false` in them doesn't remove it.
+
+**Solution:** Make the heading style bold instead of the heading's text, such as with `styles.default.heading1: { run: { bold: true } }`. Formatting from the heading's style isn't copied onto the entries. See [Styling the entries](usage/table-of-contents.md#styling-the-entries).
+
 ### TOC has no page numbers
 
 **Cause:** The page numbers depend on how the document is laid out, so `docx` writes the entries for the headings without them, and leaves them for Word to fill in when it updates the field.
