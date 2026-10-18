@@ -150,8 +150,8 @@ Made with 💖
 [npm-url]: https://npmjs.org/package/docx
 [downloads-image]: https://img.shields.io/npm/dm/docx.svg
 [downloads-url]: https://npmjs.org/package/docx
-[github-actions-workflow-image]: https://github.com/dolanmiu/docx/workflows/Default/badge.svg?branch=master
-[github-actions-workflow-url]: https://github.com/dolanmiu/docx/actions
+[github-actions-workflow-image]: https://github.com/dolanmiu/docx/actions/workflows/default.yml/badge.svg?branch=master
+[github-actions-workflow-url]: https://github.com/dolanmiu/docx/actions/workflows/default.yml
 [snky-image]: https://snyk.io/test/github/dolanmiu/docx/badge.svg
 [snky-url]: https://snyk.io/test/github/dolanmiu/docx
 [pr-image]: https://img.shields.io/badge/PRs-welcome-brightgreen.svg
