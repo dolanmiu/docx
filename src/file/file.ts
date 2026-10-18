@@ -11,6 +11,7 @@ import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties, type IPropertiesOptions } from "./core-properties";
 import { CustomProperties } from "./custom-properties";
 import { HeaderFooterReferenceType, type ISectionPropertiesOptions } from "./document/body/section-properties";
+import { createMacroEvents } from "./document-macros/document-macros";
 import { DocumentWrapper } from "./document-wrapper";
 import { EndnotesWrapper } from "./endnotes-wrapper";
 import type { FileChild } from "./file-child";
@@ -71,6 +72,21 @@ export type ISectionOptions = {
     readonly properties?: ISectionPropertiesOptions;
     /** Array of content elements (paragraphs, tables, etc.) for this section. */
     readonly children: readonly FileChild[];
+};
+
+// The first bytes of a compound file, the format of a VBA project
+const COMPOUND_FILE_SIGNATURE = [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1];
+
+/**
+ * A document's macros, as the document writes them.
+ */
+type FileMacros = {
+    /** The VBA project (word/vbaProject.bin) */
+    readonly project: Uint8Array;
+    /** The events of the document the project handles (word/vbaData.xml), if it handles any */
+    readonly events?: XmlComponent;
+    /** The project's relationships (word/_rels/vbaProject.bin.rels), to its events */
+    readonly relationships: Relationships;
 };
 
 /**
@@ -175,8 +191,27 @@ export class File {
     private readonly fontWrapper: FontWrapper;
     private readonly theme: Theme;
     private readonly packageParts: PackageParts;
+    private readonly macros?: FileMacros;
 
     public constructor(options: IPropertiesOptions) {
+        if (options.macros !== undefined) {
+            const { project, events = [] } = options.macros;
+            const bytes = project instanceof Uint8Array ? project : new Uint8Array(project);
+            // Every VBA project is a compound file, which starts with this signature. The .docm itself, a zip, is the
+            // likeliest mistake
+            if (!COMPOUND_FILE_SIGNATURE.every((byte, index) => bytes[index] === byte)) {
+                throw new Error(
+                    "macros.project isn't a VBA project. Use createMacros from docx/macros, or the word/vbaProject.bin in a .docm rather than the .docm itself",
+                );
+            }
+            // The events are in their own part, which the project's relationships point to
+            const relationships = new Relationships();
+            if (events.length > 0) {
+                relationships.addRelationship(1, "http://schemas.microsoft.com/office/2006/relationships/wordVbaData", "vbaData.xml");
+            }
+            this.macros = { project: bytes, events: events.length > 0 ? createMacroEvents(events) : undefined, relationships };
+        }
+
         this.coreProperties = new CoreProperties({
             ...options,
             creator: options.creator ?? "Un-named",
@@ -200,7 +235,10 @@ export class File {
         this.appProperties = new AppProperties();
         this.footnotesWrapper = new FootnotesWrapper();
         this.endnotesWrapper = new EndnotesWrapper();
-        this.contentTypes = new ContentTypes();
+        this.contentTypes = new ContentTypes({ macros: this.macros !== undefined });
+        if (this.macros?.events !== undefined) {
+            this.contentTypes.addOverride("application/vnd.ms-word.vbaData+xml", "/word/vbaData.xml");
+        }
         this.packageParts = new PackageParts(this.contentTypes);
         this.documentWrapper = new DocumentWrapper({ background: options.background, pageNumbers: options.pageNumbers });
         this.settings = new Settings({
@@ -287,6 +325,14 @@ export class File {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
             "theme/theme1.xml",
         );
+        if (this.macros !== undefined) {
+            this.documentWrapper.Relationships.addRelationship(
+                // eslint-disable-next-line functional/immutable-data
+                this.currentRelationshipId++,
+                "http://schemas.microsoft.com/office/2006/relationships/vbaProject",
+                "vbaProject.bin",
+            );
+        }
     }
 
     private addSection({ headers = {}, footers = {}, children, properties }: ISectionOptions): void {
@@ -527,5 +573,13 @@ export class File {
     /** The parts that drawings, such as charts, add to the package when it is written. */
     public get PackageParts(): PackageParts {
         return this.packageParts;
+    }
+
+    /**
+     * The document's macros, when it has any: its VBA project (word/vbaProject.bin), the events of the document it
+     * handles (word/vbaData.xml), and the project's relationships, to the events.
+     */
+    public get Macros(): FileMacros | undefined {
+        return this.macros;
     }
 }

@@ -31,6 +31,14 @@ export type RelationshipType =
     | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/package";
 
 /**
+ * The types of the relationships to a document's macros: to its VBA project, and from that to the events it handles.
+ * Only the document adds these, so a package part's relationship can't be one of them.
+ */
+export type MacroRelationshipType =
+    | "http://schemas.microsoft.com/office/2006/relationships/vbaProject"
+    | "http://schemas.microsoft.com/office/2006/relationships/wordVbaData";
+
+/**
  * Target mode types for relationships.
  *
  * Indicates whether a relationship target is external to the package.
@@ -42,7 +50,7 @@ export const TargetModeType = {
 
 type IRelationshipAttributes = {
     readonly id: string;
-    readonly type: RelationshipType;
+    readonly type: RelationshipType | MacroRelationshipType;
     readonly target: string;
     readonly targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType];
 };
@@ -65,7 +73,7 @@ type IRelationshipAttributes = {
 
 export const createRelationship = (
     id: string,
-    type: RelationshipType,
+    type: RelationshipType | MacroRelationshipType,
     target: string,
     targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType],
 ): XmlComponent =>

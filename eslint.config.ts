@@ -397,7 +397,8 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
     // and the package has one copy of each class and id counter. docx doesn't import them. Specs may import docx's
     // internals, such as the Formatter. docx/math (src/math) re-exports docx's math, which docx still exports and keeps in
     // src/file/paragraph/math. src/text-layout measures text for docx/shapes and docx/layout, and each bundles a copy.
-    // docx/html (src/html) imports docx/math by name too, for the math in HTML
+    // docx/html (src/html) imports docx/math by name too, for the math in HTML. docx/macros (src/macros) writes VBA
+    // projects for docx's macros
     {
         files: ["src/**/*.ts"],
         ignores: [
@@ -407,6 +408,7 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
             "src/math/**",
             "src/layout/**",
             "src/html/**",
+            "src/macros/**",
             "src/text-layout/**",
             "**/*.spec.ts",
         ],
@@ -418,7 +420,7 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
                     patterns: [
                         { group: ["docx/*"], message: "docx doesn't import its optional entries, such as docx/shapes" },
                         {
-                            regex: "(^|/)(shapes|watermarks|charts|layout|html|text-layout)(/|$)",
+                            regex: "(^|/)(shapes|watermarks|charts|layout|html|macros|text-layout)(/|$)",
                             message: "docx doesn't import its optional entries, such as docx/shapes",
                         },
                     ],
@@ -434,6 +436,7 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
             "src/math/*.ts",
             "src/layout/*.ts",
             "src/html/*.ts",
+            "src/macros/*.ts",
             "src/text-layout/*.ts",
         ],
         ignores: ["**/*.spec.ts"],

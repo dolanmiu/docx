@@ -26,6 +26,7 @@ const ENTRIES: Readonly<Record<string, Entry>> = {
     math: { name: "math", global: "docxMath" },
     layout: { name: "layout", global: "docxLayout" },
     html: { name: "html", global: "docxHtml" },
+    macros: { name: "macros", global: "docxMacros" },
 };
 
 // API Extractor, which bundles the declarations, copies in those of any module that isn't a library, so it would copy

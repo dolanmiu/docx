@@ -30,7 +30,11 @@ import { createOverride } from "./override/override";
  * ```
  */
 export class ContentTypes extends XmlComponent {
-    public constructor() {
+    /**
+     * @param options.macros - Whether the document has VBA macros, which makes its main part a macro-enabled document
+     * and adds the VBA project (word/vbaProject.bin)
+     */
+    public constructor({ macros = false }: { readonly macros?: boolean } = {}) {
         super("Types");
 
         this.root.push(
@@ -50,7 +54,12 @@ export class ContentTypes extends XmlComponent {
         this.root.push(createDefault("application/vnd.openxmlformats-officedocument.obfuscatedFont", "odttf"));
 
         this.root.push(
-            createOverride("application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml", "/word/document.xml"),
+            createOverride(
+                macros
+                    ? "application/vnd.ms-word.document.macroEnabled.main+xml"
+                    : "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml",
+                "/word/document.xml",
+            ),
         );
 
         this.root.push(createOverride("application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml", "/word/styles.xml"));
@@ -69,6 +78,10 @@ export class ContentTypes extends XmlComponent {
             createOverride("application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml", "/word/fontTable.xml"),
         );
         this.root.push(createOverride("application/vnd.openxmlformats-officedocument.theme+xml", "/word/theme/theme1.xml"));
+
+        if (macros) {
+            this.root.push(createOverride("application/vnd.ms-office.vbaProject", "/word/vbaProject.bin"));
+        }
     }
 
     /**

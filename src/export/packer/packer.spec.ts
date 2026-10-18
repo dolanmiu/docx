@@ -149,6 +149,18 @@ describe("Packer", () => {
     });
 
     describe("#toBlob()", () => {
+        it("should give a document the type of a .docx", async () => {
+            expect((await Packer.toBlob(file)).type).toBe("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        });
+
+        it("should give a document with macros the type of a .docm", async () => {
+            const project = Uint8Array.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1, 0x00]);
+            const blob = await Packer.toBlob(new File({ sections: [], macros: { project } }));
+
+            // A blob's type is in lower case
+            expect(blob.type).toBe("application/vnd.ms-word.document.macroenabled.12");
+        });
+
         it("should create a standard docx file", async () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             vi.spyOn((Packer as any).compiler, "compile").mockReturnValue({

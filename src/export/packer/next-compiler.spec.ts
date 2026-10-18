@@ -84,6 +84,35 @@ describe("Compiler", () => {
             );
         });
 
+        describe("macros", () => {
+            // The start of a compound file, which is all the document checks a VBA project for
+            const project = Uint8Array.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1, 0x00]);
+
+            it("should pack the VBA project, without the events part when the macros handle no events", async () => {
+                const zipFile = compiler.compile(new File({ sections: [], macros: { project } }));
+                const fileNames = Object.keys(zipFile.files);
+
+                expect(await zipFile.file("word/vbaProject.bin")?.async("uint8array")).toEqual(project);
+                expect(fileNames).not.toContain("word/vbaData.xml");
+                expect(fileNames).not.toContain("word/_rels/vbaProject.bin.rels");
+                expect(await zipFile.file("word/_rels/document.xml.rels")?.async("text")).toContain(
+                    'Type="http://schemas.microsoft.com/office/2006/relationships/vbaProject" Target="vbaProject.bin"',
+                );
+            });
+
+            it("should pack the events the macros handle, and the VBA project's relationship to them", async () => {
+                const zipFile = compiler.compile(new File({ sections: [], macros: { project, events: ["open"] } }));
+
+                expect(await zipFile.file("word/vbaData.xml")?.async("text")).toBe(
+                    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+                        '<wne:vbaSuppData xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml"><wne:docEvents><wne:eventDocOpen/></wne:docEvents></wne:vbaSuppData>',
+                );
+                expect(await zipFile.file("word/_rels/vbaProject.bin.rels")?.async("text")).toContain(
+                    '<Relationship Id="rId1" Type="http://schemas.microsoft.com/office/2006/relationships/wordVbaData" Target="vbaData.xml"/>',
+                );
+            });
+        });
+
         it("should give an image in a comment a relationship from the comments part", async () => {
             const image = new ImageRun({ type: "png", data: Buffer.from("", "base64"), transformation: { width: 10, height: 10 } });
             const zipFile = compiler.compile(
