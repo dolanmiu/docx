@@ -43,7 +43,7 @@ Packer.toBuffer(doc).then((buffer) => {
 
 Save a document with macros as a `.docm`. Word won't open it from a `.docx`, the extension of a document without macros. `Packer.toBlob` gives it a `.docm`'s type, `application/vnd.ms-word.document.macroEnabled.12`.
 
-Word disables the macros of a document from elsewhere until they are enabled, as for any `.docm`: it asks when the document opens. Word for the web doesn't run macros.
+Word disables the macros of a document from elsewhere until they are enabled, as for any `.docm`. Word for Mac asks when the document opens, and Word for Windows shows a bar with **Enable Content**. Word for Windows [blocks the macros of a file from the internet](https://learn.microsoft.com/en-us/microsoft-365-apps/security/internet-macros-blocked), though, such as a `.docm` a web page made and the browser downloaded, without **Enable Content**. To run them, right-click the file, choose **Properties** and tick **Unblock** on the **General** tab. An organization's policy can block macros all the same. Word for the web doesn't run macros.
 
 ## Options
 
