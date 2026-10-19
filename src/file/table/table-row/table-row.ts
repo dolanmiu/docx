@@ -16,7 +16,10 @@ import { type ITableRowPropertiesOptions, TableRowProperties } from "./table-row
  * @see {@link TableRow}
  */
 export type ITableRowOptions = {
-    /** Array of TableCell elements that make up the row */
+    /**
+     * Array of TableCell elements that make up the row. A row with no cells isn't written, as Word can't open a
+     * document with one, so give it a cell to keep it, such as an empty one for a row of space.
+     */
     readonly children: readonly TableCell[];
     /**
      * Keeps the row on the same page as the next row (keep with next), by setting `keepNext` on each paragraph in
@@ -60,7 +63,8 @@ const withKeepNext = (paragraph: IXmlableObject, keepNext: IXmlableObject): IXml
  * Represents a table row in a WordprocessingML document.
  *
  * A table row is a single row of cells within a table. Each row contains
- * one or more table cells that hold the actual content.
+ * one or more table cells that hold the actual content. A row with no cells
+ * isn't written, as Word can't open a document with one.
  *
  * Reference: http://officeopenxml.com/WPtableRow.php
  *
@@ -102,6 +106,12 @@ export class TableRow extends XmlComponent {
     }
 
     public prepForXml(context: IContext): IXmlableObject | undefined {
+        // Word can't open a document with a row that has no cells, and the row would show nothing. The cells the table
+        // adds below a cell merged down several rows (`rowSpan`) are added before this, so a row they fill is written
+        if (this.cells.length === 0) {
+            return undefined;
+        }
+
         const xml = super.prepForXml(context);
         if (!xml || this.options.keepNext === undefined) {
             return xml;

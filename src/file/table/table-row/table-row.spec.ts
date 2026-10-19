@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { Formatter } from "@export/formatter";
 import { Paragraph } from "@file/paragraph";
 import { HeightRule } from "@file/table/table-row/table-row-height";
-import { EMPTY_OBJECT } from "@file/xml-components";
+import { EMPTY_OBJECT, type IContext } from "@file/xml-components";
 
 import { Table } from "../table";
 import { TableCell } from "../table-cell";
@@ -25,14 +25,11 @@ describe("TableRow", () => {
     });
 
     describe("#constructor", () => {
-        it("should create with no cells", () => {
+        it("writes nothing with no cells, as Word can't open a document with a row that has none", () => {
             const tableRow = new TableRow({
                 children: [],
             });
-            const tree = new Formatter().format(tableRow);
-            expect(tree).to.deep.equal({
-                "w:tr": EMPTY_OBJECT,
-            });
+            expect(tableRow.prepForXml({ stack: [] } as unknown as IContext)).to.equal(undefined);
         });
 
         it("should create with one cell", () => {
@@ -59,7 +56,7 @@ describe("TableRow", () => {
 
         it("should create with cant split", () => {
             const tableRow = new TableRow({
-                children: [],
+                children: [new TableCell({ children: [] })],
                 cantSplit: true,
             });
             const tree = new Formatter().format(tableRow);
@@ -72,13 +69,14 @@ describe("TableRow", () => {
                             },
                         ],
                     },
+                    { "w:tc": [{ "w:p": EMPTY_OBJECT }] },
                 ],
             });
         });
 
         it("should create with table header", () => {
             const tableRow = new TableRow({
-                children: [],
+                children: [new TableCell({ children: [] })],
                 tableHeader: true,
             });
             const tree = new Formatter().format(tableRow);
@@ -91,13 +89,14 @@ describe("TableRow", () => {
                             },
                         ],
                     },
+                    { "w:tc": [{ "w:p": EMPTY_OBJECT }] },
                 ],
             });
         });
 
         it("should create with inserted revision", () => {
             const tableRow = new TableRow({
-                children: [],
+                children: [new TableCell({ children: [] })],
                 insertion: {
                     id: 1,
                     author: "Firstname Lastname",
@@ -120,13 +119,14 @@ describe("TableRow", () => {
                             },
                         ],
                     },
+                    { "w:tc": [{ "w:p": EMPTY_OBJECT }] },
                 ],
             });
         });
 
         it("should create with deleted revision", () => {
             const tableRow = new TableRow({
-                children: [],
+                children: [new TableCell({ children: [] })],
                 deletion: {
                     id: 1,
                     author: "Firstname Lastname",
@@ -149,13 +149,14 @@ describe("TableRow", () => {
                             },
                         ],
                     },
+                    { "w:tc": [{ "w:p": EMPTY_OBJECT }] },
                 ],
             });
         });
 
         it("should create with properties revision", () => {
             const run = new TableRow({
-                children: [],
+                children: [new TableCell({ children: [] })],
                 cantSplit: false,
                 tableHeader: false,
                 height: {
@@ -256,13 +257,14 @@ describe("TableRow", () => {
                             },
                         ],
                     },
+                    { "w:tc": [{ "w:p": EMPTY_OBJECT }] },
                 ],
             });
         });
 
         it("should set row height", () => {
             const tableRow = new TableRow({
-                children: [],
+                children: [new TableCell({ children: [] })],
                 height: {
                     value: 100,
                     rule: HeightRule.EXACT,
@@ -283,6 +285,7 @@ describe("TableRow", () => {
                             },
                         ],
                     },
+                    { "w:tc": [{ "w:p": EMPTY_OBJECT }] },
                 ],
             });
         });
