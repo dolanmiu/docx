@@ -545,6 +545,24 @@ export declare class BookmarkEnd extends XmlComponent {
 }
 
 /**
+ * The list number of a paragraph a bookmark starts, as its list writes it, which the paragraph's entry in a table of
+ * contents starts with, as Word writes the entry.
+ *
+ * @publicApi
+ */
+export declare type BookmarkListNumber = {
+    /** The number, as its list's level writes it, such as `"1.2"` or `"a)"` */
+    readonly text: string;
+    /** What follows the number in the paragraph: a tab, a space or nothing (`w:suff`) */
+    readonly separator: "tab" | "space" | "nothing";
+    /**
+     * The number's width as Word measures it for the tab stop after it in the entry, in twips: in Aptos 12 pt, the font
+     * of Word's Normal template, whatever the document's font
+     */
+    readonly width: number;
+};
+
+/**
  * Represents the start marker of a bookmark range.
  *
  * This element marks the beginning of a bookmarked region in the document.
@@ -10763,7 +10781,15 @@ export declare class PageNumberElement extends EmptyElement {
  *
  * @publicApi
  */
-export declare type PageNumberEstimator = (body: IXmlableObject, context: IContext) => EstimatedPageNumbers;
+export declare type PageNumberEstimator = ((body: IXmlableObject, context: IContext) => EstimatedPageNumbers) & {
+    /**
+     * Works out the list numbers of the paragraphs bookmarks start, by the bookmarks' names. A table of contents filled
+     * in from the headings starts the entry of a numbered heading with its number, as Word does, so `docx` asks for them
+     * once the headings are bookmarked, before it writes the entries and works out their pages. A bookmark of a paragraph
+     * whose number it didn't work out is left out, and the entry is written without a number.
+     */
+    readonly listNumbers?: (body: IXmlableObject, context: IContext) => ReadonlyMap<string, BookmarkListNumber>;
+};
 
 /**
  * Where a {@link PageNumberEstimator} guessed at something it can't lay out as Word does.

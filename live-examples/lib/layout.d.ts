@@ -66,7 +66,8 @@ export declare type DocumentLayout = {
  * own, such as `\* roman`, and so are numbers of pages. Page references, tables of contents and SEQ fields (caption
  * numbers, which are counted without laying out the pages) are written clean, so Word shows the numbers as they are
  * written, and the numbers left blank stay blank, without asking to update the fields, unless the document has
- * `updateFields` on.
+ * `updateFields` on. The entry of a numbered heading in a table of contents starts with the heading's number, and a tab
+ * to a tab stop past it, as Word writes it (`listNumbers`).
  *
  * @publicApi
  */

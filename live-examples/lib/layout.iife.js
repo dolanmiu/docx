@@ -42825,7 +42825,11 @@ var docxLayout = (function(exports) {
 			}),
 			alignment: text.length > 0 ? level.alignment : void 0,
 			legacy: level.legacy,
-			unsupported
+			unsupported,
+			listNumber: unsupported === void 0 && text.length > 0 ? {
+				text,
+				separator: level.suffix === "space" || level.suffix === "nothing" ? level.suffix : "tab"
+			} : void 0
 		}));
 	};
 	/**
@@ -43130,13 +43134,13 @@ var docxLayout = (function(exports) {
 		const otherDecimalSymbol = reader.decimalSymbol !== void 0 && reader.decimalSymbol !== "." && tabStops.some(({ alignment }) => alignment === "decimal");
 		const frame = readFrameOf(properties, styleChain(styles, style, "paragraph"), reader);
 		const unsupported = (_ref6 = (_ref7 = (_ref8 = (_ref9 = (_list$unsupported = list.unsupported) !== null && _list$unsupported !== void 0 ? _list$unsupported : ownCells) !== null && _ref9 !== void 0 ? _ref9 : unknownEastAsianRules(reader.eastAsianRules, own, combined.alignment)) !== null && _ref8 !== void 0 ? _ref8 : joinedAcrossRuns(own) ? "Arabic letters joined across runs" : void 0) !== null && _ref7 !== void 0 ? _ref7 : reader.down === true ? unknownDownOf(own, tabStops) : void 0) !== null && _ref6 !== void 0 ? _ref6 : typeof frame === "string" ? frame : otherDecimalSymbol ? "a decimal tab stop in a document whose decimal symbol isn't a full stop" : (division === null || division === void 0 ? void 0 : division.unsupported) !== void 0 ? division.unsupported : combined.alignment === "mediumKashida" || combined.alignment === "highKashida" ? "a paragraph justified for Arabic with a medium or high kashida" : forThaiOrArabic && typeof items !== "string" && items.some((item) => item.type === "text" && ARABIC.test(item.text)) ? "Arabic text justified for Thai or with a kashida" : (_ref10 = typeof format === "string" ? format : void 0) !== null && _ref10 !== void 0 ? _ref10 : typeof borders === "string" ? borders : void 0;
-		return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
+		return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
 			type: "paragraph",
 			items: content,
 			format: _objectSpread2(_objectSpread2({}, typeof format === "string" ? combined : format), lineSpacingFrom.length === 0 ? {} : { lineSpacingFrom }),
 			tabStops,
 			markFont
-		}, unsupported === void 0 && typeof items !== "string" && children.some((child) => isObject(child) && LEFT_OUT in child) ? { hidden: true } : {}), list.list ? { list: list.list } : {}), list.alignment ? { numberAlignment: list.alignment } : {}), list.legacy ? { numberLegacy: list.legacy } : {}), typeof borders === "object" ? { borders } : {}), paragraphGrid !== void 0 && Object.keys(paragraphGrid).length > 0 ? { grid: paragraphGrid } : {}), typeof frame === "object" ? { frame } : {}), (division === null || division === void 0 ? void 0 : division.division) === void 0 ? {} : { division: division.division }), {}, { style }, headingLevel === void 0 ? {} : { heading: _objectSpread2({ level: Number(headingLevel) }, withoutUndefined({ chapter: list.from === "style" ? list.chapter : void 0 })) }), typeof items === "string" || guessed || unsupported ? { unsupported: typeof items === "string" ? items : guessed !== null && guessed !== void 0 ? guessed : unsupported } : {});
+		}, unsupported === void 0 && typeof items !== "string" && children.some((child) => isObject(child) && LEFT_OUT in child) ? { hidden: true } : {}), list.list ? { list: list.list } : {}), list.listNumber ? { listNumber: list.listNumber } : {}), list.alignment ? { numberAlignment: list.alignment } : {}), list.legacy ? { numberLegacy: list.legacy } : {}), typeof borders === "object" ? { borders } : {}), paragraphGrid !== void 0 && Object.keys(paragraphGrid).length > 0 ? { grid: paragraphGrid } : {}), typeof frame === "object" ? { frame } : {}), (division === null || division === void 0 ? void 0 : division.division) === void 0 ? {} : { division: division.division }), {}, { style }, headingLevel === void 0 ? {} : { heading: _objectSpread2({ level: Number(headingLevel) }, withoutUndefined({ chapter: list.from === "style" ? list.chapter : void 0 })) }), typeof items === "string" || guessed || unsupported ? { unsupported: typeof items === "string" ? items : guessed !== null && guessed !== void 0 ? guessed : unsupported } : {});
 	};
 	/**
 	* The divisions of a web page in a document's web settings (`w:divs`), by their ids, each with the properties of those it
@@ -49866,6 +49870,29 @@ var docxLayout = (function(exports) {
 		return layOut(void 0, 1, void 0, /* @__PURE__ */ new Map());
 	};
 	//#endregion
+	//#region src/layout/list-numbers.ts
+	/**
+	* The font Word measures a list number in for the tab stop after it in a table of contents' entry: its Normal template's,
+	* Aptos 12 pt, whatever the document's font and size (`scripts/layout-probes/word-toc-numbers.ts` TN1, TN4)
+	*/
+	var NUMBER_FONT = {
+		font: "Aptos",
+		size: 12
+	};
+	/** The list number of each bookmark that starts in a numbered paragraph of the blocks, and of the tables in them */
+	var numbersIn = (blocks) => blocks.flatMap((block) => {
+		if (block.type === "table") return block.rows.flatMap((row) => row.cells.flatMap((cell) => numbersIn(cell.blocks)));
+		const { listNumber } = block;
+		if (!listNumber) return [];
+		const width = DEFAULT_MEASURER.measureWidth(listNumber.text, NUMBER_FONT) * 20;
+		return block.items.flatMap((item) => item.type === "marker" ? [[item.name, _objectSpread2(_objectSpread2({}, listNumber), {}, { width })]] : []);
+	});
+	/**
+	* Works out the list numbers of the paragraphs bookmarks start in a document's body, by the bookmarks' names, as its
+	* lists number them. Only those written as Word writes them are given.
+	*/
+	var listNumbersOf = (body, context) => new Map(context.file ? numbersIn(readDocument(body, context).blocks.map(({ block }) => block)) : []);
+	//#endregion
 	//#region src/layout/measure-width.ts
 	/**
 	* Measuring text with other widths than those of the width tables, such as with the fonts a browser has, through
@@ -50763,11 +50790,12 @@ var docxLayout = (function(exports) {
 	* own, such as `\* roman`, and so are numbers of pages. Page references, tables of contents and SEQ fields (caption
 	* numbers, which are counted without laying out the pages) are written clean, so Word shows the numbers as they are
 	* written, and the numbers left blank stay blank, without asking to update the fields, unless the document has
-	* `updateFields` on.
+	* `updateFields` on. The entry of a numbered heading in a table of contents starts with the heading's number, and a tab
+	* to a tab stop past it, as Word writes it (`listNumbers`).
 	*
 	* @publicApi
 	*/
-	var estimatePageNumbers = (document, context) => estimateWith(contentOf(document, context), DEFAULT_MEASURER);
+	var estimatePageNumbers = Object.assign((document, context) => estimateWith(contentOf(document, context), DEFAULT_MEASURER), { listNumbers: listNumbersOf });
 	/**
 	* Works out the page each bookmark of a document starts on, as {@link estimatePageNumbers} does, measuring text as the
 	* options say. Give what it returns to a document as its `pageNumbers`, or to `patchDocument` as its `pageNumbers`:
@@ -50787,7 +50815,7 @@ var docxLayout = (function(exports) {
 		const faces = fonts.flatMap(({ data, name }) => readFontFile(data).map((face) => name === void 0 ? face : _objectSpread2(_objectSpread2({}, face), {}, { name })));
 		const others = measureWidth ? measurerOf(measureWidth) : DEFAULT_MEASURER;
 		const measurer = faces.length === 0 ? others : createFontFileMeasurer(faces, others);
-		return (document, context) => estimateWith(contentOf(document, context, guess), measurer, guess);
+		return Object.assign((document, context) => estimateWith(contentOf(document, context, guess), measurer, guess), { listNumbers: listNumbersOf });
 	};
 	//#endregion
 	//#region src/layout/layout-document.ts

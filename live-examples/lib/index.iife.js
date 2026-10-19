@@ -9749,19 +9749,6 @@ EXTERNAL: "External" };
 	//#endregion
 	//#region src/file/table-of-contents/heading-entries.ts
 	/**
-	* Entries written into a table of contents from the headings of the document.
-	*
-	* A table of contents is a TOC field. Word fills in its entries when it updates the field. Until then, and in
-	* applications that don't update it, such as LibreOffice, it shows the entries it was last filled in with, and without
-	* any it is empty. So once the body is written, each table of contents that wasn't given `cachedEntries` or
-	* `contentChildren` is filled in from the headings its switches include, the way Word fills it in: each heading is
-	* bookmarked, and its entry links to the bookmark and gives its page with a PAGEREF field. The page numbers are left
-	* empty, because they depend on how the document is laid out. Word fills them in when it updates the field, unless the
-	* document's `pageNumbers` writes them.
-	*
-	* @module
-	*/
-	/**
 	* The beginning of a table of contents' field: dirty or clean, as the caller set it, or else dirty unless the document
 	* is given page numbers
 	*/
@@ -9994,6 +9981,21 @@ EXTERNAL: "External" };
 		}));
 	};
 	/**
+	* The runs of a heading's list number at the start of its entry: the number and a tab, or the number and a space, which
+	* Word writes after a number its list follows with a space or with nothing
+	*/
+	var numberRunsOf = ({ text, separator }) => separator === "tab" ? [new TextRun(text), new TextRun({ children: [new Tab()] })] : [new TextRun(`${text} `)];
+	/**
+	* The left tab stop after a heading's number in its entry, as Word places it, in twips: past the number, as wide as Word
+	* measures it, by 240 twips, and 240 more for each level of the table below the first, at the next multiple of 240 up to
+	* 1920, and where it falls past that. Word goes by its Normal template's 12 points here, not the document's font, size or
+	* indents (`scripts/layout-probes/word-toc-numbers.ts`)
+	*/
+	var numberTabStopOf = (level, width) => {
+		const end = 240 * (level - 1) + width + 240;
+		return end <= 1920 ? Math.ceil(end / 240) * 240 : Math.round(end);
+	};
+	/**
 	* The paragraph style of the entries at a level: the built-in TOC style, found by its name, "toc 1" to "toc 9". When
 	* the document doesn't have it, the entries are indented as Word's are, 220 twips a level.
 	*/
@@ -10015,13 +10017,21 @@ EXTERNAL: "External" };
 		const withoutPageNumbers = properties.pageNumbersEntryLevelsRange ? (_parseRange = parseRange(properties.pageNumbersEntryLevelsRange)) !== null && _parseRange !== void 0 ? _parseRange : [1, 9] : void 0;
 		const content = new StructuredDocumentTagContent();
 		entries.forEach((entry, index) => {
+			var _entry$listNumber;
 			const hasPageNumber = withoutPageNumbers === void 0 || !isWithin(entry.level, withoutPageNumbers);
-			const children = [...titleRunsOf(entry.title, properties), ...hasPageNumber ? [new TextRun({ children: [properties.entryAndPageNumberSeparator || new Tab()] }), new PageReference(entry.bookmark, { hyperlink: properties.hyperlink })] : []];
+			const children = [
+				...entry.listNumber ? numberRunsOf(entry.listNumber) : [],
+				...titleRunsOf(entry.title, properties),
+				...hasPageNumber ? [new TextRun({ children: [properties.entryAndPageNumberSeparator || new Tab()] }), new PageReference(entry.bookmark, { hyperlink: properties.hyperlink })] : []
+			];
 			const style = entryStyleOf(entry.level, styles);
 			content.addChildElement(new Paragraph({
 				style: style.id,
 				indent: style.indent === void 0 ? void 0 : { left: style.indent },
-				tabStops: [{
+				tabStops: [...((_entry$listNumber = entry.listNumber) === null || _entry$listNumber === void 0 ? void 0 : _entry$listNumber.separator) === "tab" ? [{
+					type: "left",
+					position: numberTabStopOf(entry.level, entry.listNumber.width)
+				}] : [], {
 					type: "right",
 					position: textWidth,
 					leader: "dot"
@@ -10052,9 +10062,10 @@ EXTERNAL: "External" };
 	};
 	/**
 	* Fills in the tables of contents in a formatted body from its headings, and bookmarks the headings they list. A
-	* table of contents that doesn't list any heading is left empty, for Word to fill in.
+	* table of contents that doesn't list any heading is left empty, for Word to fill in. Given how to work out the headings'
+	* list numbers, the entry of a numbered heading starts with its number, once the headings are bookmarked.
 	*/
-	var fillTablesOfContents = (body, context, bookmarkIds) => {
+	var fillTablesOfContents = (body, context, bookmarkIds, listNumbersOf) => {
 		const blocks = blocksOf(childrenOf$1(body));
 		const tables = blocks.flatMap((block) => {
 			const options = writtenTables.get(block);
@@ -10068,14 +10079,16 @@ EXTERNAL: "External" };
 			levels: tables.map(([, { properties }]) => levelIn(properties, paragraph, styles))
 		})).filter(({ levels }) => levels.some((level) => level !== void 0)).map((heading, index) => _objectSpread2(_objectSpread2({}, heading), {}, { id: bookmarkIds.get(index) }));
 		for (const { paragraph, id } of headings) bookmark(paragraph.element, `_Toc${id}`, id, context);
+		const listNumbers = headings.length > 0 ? listNumbersOf === null || listNumbersOf === void 0 ? void 0 : listNumbersOf(body) : void 0;
 		tables.forEach(([table, options], index) => {
 			const entries = headings.flatMap(({ paragraph, levels, id }) => {
 				const level = levels[index];
-				return level === void 0 ? [] : [{
+				const listNumber = listNumbers === null || listNumbers === void 0 ? void 0 : listNumbers.get(`_Toc${id}`);
+				return level === void 0 ? [] : [_objectSpread2({
 					title: paragraph.text,
 					level,
 					bookmark: `_Toc${id}`
-				}];
+				}, listNumber ? { listNumber } : {})];
 			});
 			if (entries.length === 0) return;
 			table["w:sdt"] = childrenOf$1(table).map((child) => nameOf$4(child) === "w:sdtContent" ? contentOf(options, entries, styles, context) : child);
@@ -16410,6 +16423,7 @@ MAX: 9026 };
 		* @returns The prepared XML object or undefined
 		*/
 		prepForXml(context) {
+			var _this$pageNumbers;
 			if (this.sections.length === 1) {
 				this.root.splice(0, 1);
 				this.root.push(this.sections.pop());
@@ -16421,7 +16435,8 @@ MAX: 9026 };
 			} finally {
 				for (const [paragraph, section] of this.sectionParagraphs) paragraph.removeSectionProperties(section);
 			}
-			fillTablesOfContents(xml, context, this.headingBookmarkIds);
+			const listNumbers = (_this$pageNumbers = this.pageNumbers) === null || _this$pageNumbers === void 0 ? void 0 : _this$pageNumbers.listNumbers;
+			fillTablesOfContents(xml, context, this.headingBookmarkIds, listNumbers && ((body) => listNumbers(body, context)));
 			if (this.pageNumbers) {
 				fillSequenceNumbers(xml, context);
 				fillPageNumbers(xml, context, this.pageNumbers);

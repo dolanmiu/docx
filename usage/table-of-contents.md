@@ -52,6 +52,46 @@ The entries are written for the paragraphs the options include, as Word includes
 
 With none of these, the headings Heading 1 to Heading 9 are included. Each entry uses the `TOC1` to `TOC9` paragraph style for its level. When the document doesn't define that style, the entry is indented as Word's is. A Table of Contents of captions or of TC fields (`captionLabel`, `captionLabelIncludingNumbers`, `tcFieldIdentifier` or `tcFieldLevelRange` alone) is left empty for Word to fill in.
 
+### Numbered headings
+
+When Word fills in the table, the entry of a numbered heading starts with the heading's number, such as `1.2`, then a tab and the heading. Counting the numbers of a document's lists takes `docx/layout`, so `docx` writes them when the document is given `pageNumbers: estimatePageNumbers`. Without it, the entries are written without the numbers, and Word adds them when it updates the table.
+
+Word gives each entry a tab stop after its number. It places it by its own Normal template, not by the document's font: past the number, measured in Aptos 12 pt, by 240 twips, and 240 more for each level below the first, at the next multiple of 240 twips, or just past the number once it is past 1920 twips. `docx` places it the same way. After the entries at levels 7 to 9, Word places the stops of the entries after them on multiples of 200 twips instead, which `docx` doesn't follow. A heading whose number is followed by a space or by nothing (`suffix`) has its number and a space in its entry, with no tab stop, as in Word.
+
+```ts live
+import { AlignmentType, Document, HeadingLevel, LevelFormat, Paragraph, TableOfContents } from "docx";
+import { estimatePageNumbers } from "docx/layout";
+
+const heading = (text: string, heading: (typeof HeadingLevel)[keyof typeof HeadingLevel], level: number) =>
+    new Paragraph({ text, heading, numbering: { reference: "headings", level }, pageBreakBefore: level === 0 });
+
+const doc = new Document({
+    pageNumbers: estimatePageNumbers,
+    numbering: {
+        config: [
+            {
+                reference: "headings",
+                levels: [
+                    { level: 0, format: LevelFormat.DECIMAL, text: "%1", alignment: AlignmentType.START },
+                    { level: 1, format: LevelFormat.DECIMAL, text: "%1.%2", alignment: AlignmentType.START },
+                ],
+            },
+        ],
+    },
+    sections: [
+        {
+            children: [
+                new TableOfContents("Contents", { hyperlink: true, headingStyleRange: "1-2" }),
+                heading("Introduction", HeadingLevel.HEADING_1, 0),
+                heading("Background", HeadingLevel.HEADING_2, 1),
+                heading("Method", HeadingLevel.HEADING_1, 0),
+                heading("Results", HeadingLevel.HEADING_2, 1),
+            ],
+        },
+    ],
+});
+```
+
 ## Styling the entries
 
 To change how the entries look, such as their size or spacing, define the `TOC1` to `TOC9` paragraph styles in `paragraphStyles`, with the names `toc 1` to `toc 9`.

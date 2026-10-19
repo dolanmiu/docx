@@ -11,7 +11,7 @@
 <li><a href="../modules/index.html">index</a></li>
 <li><a href="" aria-current="page">PageNumberEstimator</a></li></ul>
 <h1>Type Alias PageNumberEstimator</h1></div>
-<div class="tsd-signature"><span class="tsd-kind-type-alias">PageNumberEstimator</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">body</span><span class="tsd-signature-symbol">:</span> <a href="../interfaces/index.IXmlableObject.html" class="tsd-signature-type tsd-kind-interface">IXmlableObject</a><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">context</span><span class="tsd-signature-symbol">:</span> <a href="index.IContext.html" class="tsd-signature-type tsd-kind-type-alias">IContext</a><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <a href="index.EstimatedPageNumbers.html" class="tsd-signature-type tsd-kind-type-alias">EstimatedPageNumbers</a></div>
+<div class="tsd-signature"><span class="tsd-kind-type-alias">PageNumberEstimator</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">body</span><span class="tsd-signature-symbol">:</span> <a href="../interfaces/index.IXmlableObject.html" class="tsd-signature-type tsd-kind-interface">IXmlableObject</a><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">context</span><span class="tsd-signature-symbol">:</span> <a href="index.IContext.html" class="tsd-signature-type tsd-kind-type-alias">IContext</a><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <a href="index.EstimatedPageNumbers.html" class="tsd-signature-type tsd-kind-type-alias">EstimatedPageNumbers</a> <span class="tsd-signature-symbol">&amp;</span> <span class="tsd-signature-symbol">{</span><br/>    <span class="tsd-kind-property">listNumbers</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-symbol">(</span><br/>        <span class="tsd-kind-parameter">body</span><span class="tsd-signature-symbol">:</span> <a href="../interfaces/index.IXmlableObject.html" class="tsd-signature-type tsd-kind-interface">IXmlableObject</a><span class="tsd-signature-symbol">,</span><br/>        <span class="tsd-kind-parameter">context</span><span class="tsd-signature-symbol">:</span> <a href="index.IContext.html" class="tsd-signature-type tsd-kind-type-alias">IContext</a><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">ReadonlyMap</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <a href="index.BookmarkListNumber.html" class="tsd-signature-type tsd-kind-type-alias">BookmarkListNumber</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div>
 <div class="tsd-comment tsd-typography"><p>Works out which page each bookmark of a document starts on, and how many pages the document and its sections have,
 from the body of the document as it is written, so the page numbers of its tables of contents, page references and
 page counts can be written with it.</p>
@@ -22,23 +22,33 @@ page counts can be written with it.</p>
 <ul class="tsd-parameters">
 <li class="tsd-parameter-signature">
 <ul class="tsd-signatures">
-<li class="tsd-signature" id="__type"><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">body</span><span class="tsd-signature-symbol">:</span> <a href="../interfaces/index.IXmlableObject.html" class="tsd-signature-type tsd-kind-interface">IXmlableObject</a><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">context</span><span class="tsd-signature-symbol">:</span> <a href="index.IContext.html" class="tsd-signature-type tsd-kind-type-alias">IContext</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <a href="index.EstimatedPageNumbers.html" class="tsd-signature-type tsd-kind-type-alias">EstimatedPageNumbers</a></li>
+<li class="tsd-signature"><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">body</span><span class="tsd-signature-symbol">:</span> <a href="../interfaces/index.IXmlableObject.html" class="tsd-signature-type tsd-kind-interface">IXmlableObject</a><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">context</span><span class="tsd-signature-symbol">:</span> <a href="index.IContext.html" class="tsd-signature-type tsd-kind-type-alias">IContext</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <a href="index.EstimatedPageNumbers.html" class="tsd-signature-type tsd-kind-type-alias">EstimatedPageNumbers</a></li>
 <li class="tsd-description">
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
-<li><span><span class="tsd-kind-parameter">body</span>: <a href="../interfaces/index.IXmlableObject.html" class="tsd-signature-type tsd-kind-interface">IXmlableObject</a></span>
-<div class="tsd-comment tsd-typography"><p>The document's body, formatted to be written as XML</p>
-</div></li>
-<li><span><span class="tsd-kind-parameter">context</span>: <a href="index.IContext.html" class="tsd-signature-type tsd-kind-type-alias">IContext</a></span>
-<div class="tsd-comment tsd-typography"><p>The context the body was formatted in, with the document it is in</p>
+<li><span><span class="tsd-kind-parameter">body</span>: <a href="../interfaces/index.IXmlableObject.html" class="tsd-signature-type tsd-kind-interface">IXmlableObject</a></span></li>
+<li><span><span class="tsd-kind-parameter">context</span>: <a href="index.IContext.html" class="tsd-signature-type tsd-kind-type-alias">IContext</a></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <a href="index.EstimatedPageNumbers.html" class="tsd-signature-type tsd-kind-type-alias">EstimatedPageNumbers</a></h4></li></ul></li></ul>
+<ul class="tsd-parameters">
+<li class="tsd-parameter">
+<h5><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span class="tsd-kind-property">listNumbers</span><span class="tsd-signature-symbol">?: </span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">body</span><span class="tsd-signature-symbol">:</span> <a href="../interfaces/index.IXmlableObject.html" class="tsd-signature-type tsd-kind-interface">IXmlableObject</a><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">context</span><span class="tsd-signature-symbol">:</span> <a href="index.IContext.html" class="tsd-signature-type tsd-kind-type-alias">IContext</a><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">ReadonlyMap</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <a href="index.BookmarkListNumber.html" class="tsd-signature-type tsd-kind-type-alias">BookmarkListNumber</a><span class="tsd-signature-symbol">&gt;</span></h5>
+<div class="tsd-comment tsd-typography"><p>Works out the list numbers of the paragraphs bookmarks start, by the bookmarks' names. A table of contents filled
+in from the headings starts the entry of a numbered heading with its number, as Word does, so <code>docx</code> asks for them
+once the headings are bookmarked, before it writes the entries and works out their pages. A bookmark of a paragraph
+whose number it didn't work out is left out, and the entry is written without a number.</p>
 </div></li></ul></div>
-<h4 class="tsd-returns-title">Returns <a href="index.EstimatedPageNumbers.html" class="tsd-signature-type tsd-kind-type-alias">EstimatedPageNumbers</a></h4></li></ul></li></ul></div>
 <div class="tsd-comment tsd-typography">
+<div class="tsd-tag-param">
+<h4 class="tsd-anchor-link" id="param-body">Param: body<a href="#param-body" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>The document's body, formatted to be written as XML</p>
+</div>
+<div class="tsd-tag-param">
+<h4 class="tsd-anchor-link" id="param-context">Param: context<a href="#param-context" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>The context the body was formatted in, with the document it is in</p>
+</div>
 <div class="tsd-tag-publicApi">
 <h4 class="tsd-anchor-link" id="public-api">Public Api<a href="#public-api" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4></div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/f0a176ec0be327aeee5c65b0d8d1eaca00f0ad21/src/file/document/body/page-numbers.ts#L89">file/document/body/page-numbers.ts:89</a></li></ul></aside></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/3aaeff48b85b841e359a87953b0b63c1e348efb7/src/file/document/body/page-numbers.ts#L108">file/document/body/page-numbers.ts:108</a></li></ul></aside></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
