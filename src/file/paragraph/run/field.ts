@@ -25,6 +25,7 @@ const FieldCharacterType = {
 type IFieldCharAttributes = {
     readonly type: (typeof FieldCharacterType)[keyof typeof FieldCharacterType];
     readonly dirty?: boolean;
+    readonly locked?: boolean;
 };
 
 /**
@@ -45,12 +46,17 @@ type IFieldCharAttributes = {
  * ```
  * @internal
  */
-const createFieldChar = (type: (typeof FieldCharacterType)[keyof typeof FieldCharacterType], dirty?: boolean): XmlComponent =>
+const createFieldChar = (
+    type: (typeof FieldCharacterType)[keyof typeof FieldCharacterType],
+    dirty?: boolean,
+    locked?: boolean,
+): XmlComponent =>
     new BuilderElement<IFieldCharAttributes>({
         name: "w:fldChar",
         attributes: {
             type: { key: "w:fldCharType", value: type },
             dirty: { key: "w:dirty", value: dirty },
+            locked: { key: "w:fldLock", value: locked },
         },
     });
 
@@ -59,8 +65,9 @@ const createFieldChar = (type: (typeof FieldCharacterType)[keyof typeof FieldCha
  *
  * The Begin element marks the start of a field. A field consists of a begin character,
  * field instructions, an optional separate character, field result, and an end character.
+ * A locked field (`w:fldLock`) is not updated by Word.
  */
-export const createBegin = (dirty?: boolean): XmlComponent => createFieldChar(FieldCharacterType.BEGIN, dirty);
+export const createBegin = (dirty?: boolean, locked?: boolean): XmlComponent => createFieldChar(FieldCharacterType.BEGIN, dirty, locked);
 
 /** The formatted begin characters of the fields that are dirty only when the document isn't given page numbers */
 const dirtyWithoutPageNumbers = new WeakSet<object>();

@@ -37,6 +37,53 @@ describe("SimpleField", () => {
             expect(unset).to.deep.equal({ "w:fldSimple": { _attr: { "w:instr": "DATE" } } });
             expect(unlocked).to.deep.equal({ "w:fldSimple": { _attr: { "w:instr": "DATE" } } });
         });
+
+        it("writes an index entry as a complex field in a run, because Word moves the text around a w:fldSimple one", () => {
+            const tree = new Formatter().format(new SimpleField('XE "test"'));
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    { "w:fldChar": { _attr: { "w:fldCharType": "begin" } } },
+                    { "w:instrText": [{ _attr: { "xml:space": "preserve" } }, 'XE "test"'] },
+                    { "w:fldChar": { _attr: { "w:fldCharType": "end" } } },
+                ],
+            });
+        });
+
+        it.each([
+            ["a table of contents entry", 'TC "Apples" \\l 2'],
+            ["a table of authorities entry", 'TA \\l "Smith v. Jones"'],
+            ["a referenced document", 'RD "chapter-2.docx"'],
+            ["private data", "PRIVATE data"],
+            ["an index entry in lower case with spaces around it", ' xe "test" '],
+        ])("writes %s as a complex field, as it has no result either", (_, instruction) => {
+            const tree = new Formatter().format(new SimpleField(instruction));
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    { "w:fldChar": { _attr: { "w:fldCharType": "begin" } } },
+                    { "w:instrText": [{ _attr: { "xml:space": "preserve" } }, instruction] },
+                    { "w:fldChar": { _attr: { "w:fldCharType": "end" } } },
+                ],
+            });
+        });
+
+        it("doesn't write a cached value for a field with no result, and locks it on its beginning", () => {
+            const tree = new Formatter().format(new SimpleField('XE "test"', "ignored", { locked: true }));
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    { "w:fldChar": { _attr: { "w:fldCharType": "begin", "w:fldLock": true } } },
+                    { "w:instrText": [{ _attr: { "xml:space": "preserve" } }, 'XE "test"'] },
+                    { "w:fldChar": { _attr: { "w:fldCharType": "end" } } },
+                ],
+            });
+        });
+
+        it.each(["TOC \\o", "TIME", "RDX", "SET bookmark text", "ADVANCE \\r 10"])(
+            "keeps %s as a w:fldSimple, as only the fields with no result are misread",
+            (instruction) => {
+                const tree = new Formatter().format(new SimpleField(instruction));
+                expect(tree).to.deep.equal({ "w:fldSimple": { _attr: { "w:instr": instruction } } });
+            },
+        );
     });
 });
 
