@@ -9,9 +9,30 @@
  *
  * @module
  */
+import { SpaceType } from "@file/shared";
 import { XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
+import { createBegin, createEnd } from "./field";
+import { TextAttributes } from "./text-attributes";
 import { TextRun } from "./text-run";
+
+/**
+ * The fields that mark a place in the document and have no result: index entries (`XE`), table of contents entries
+ * (`TC`), table of authorities entries (`TA`), referenced documents (`RD`) and `PRIVATE`. Word misreads them as a
+ * `w:fldSimple`, moving the text around them to other places in the document, so they are written as a complex field.
+ */
+const MARKER_FIELD = /^\s*(?:XE|TC|TA|RD|PRIVATE)\b/i;
+
+/**
+ * @internal
+ */
+class FieldInstructionText extends XmlComponent {
+    public constructor(instruction: string) {
+        super("w:instrText");
+        this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
+        this.root.push(instruction);
+    }
+}
 
 /**
  * @internal
@@ -34,6 +55,10 @@ export type ISimpleFieldOptions = {
  * A simple field (fldSimple) contains both the field code and the optional cached value
  * in a single element, unlike complex fields which use separate begin/end markers.
  * Simple fields are typically used for fields that don't require complex nesting.
+ *
+ * Fields that mark a place and have no result, such as an index entry (`XE`) or a table of contents entry (`TC`), are
+ * written as a complex field in a run (`w:r`), as Word writes them, because Word moves the text around them when it
+ * reads them as a `w:fldSimple`. They have no cached value, so one given isn't written.
  *
  * Reference: http://www.datypic.com/sc/ooxml/e-w_fldSimple-1.html
  *
@@ -61,6 +86,9 @@ export type ISimpleFieldOptions = {
  *
  * // Locked field, Word keeps the cached value when fields are updated
  * new SimpleField("DATE", "2024-01-01", { locked: true });
+ *
+ * // Index entry, for an INDEX field to list
+ * new SimpleField('XE "Apples"');
  * ```
  */
 export class SimpleField extends XmlComponent {
@@ -68,7 +96,14 @@ export class SimpleField extends XmlComponent {
     declare private readonly brand: "SimpleField";
 
     public constructor(instruction: string, cachedValue?: string, options: ISimpleFieldOptions = {}) {
-        super("w:fldSimple");
+        const marker = MARKER_FIELD.test(instruction);
+        super(marker ? "w:r" : "w:fldSimple");
+        if (marker) {
+            this.root.push(createBegin(undefined, options.locked ? true : undefined));
+            this.root.push(new FieldInstructionText(instruction));
+            this.root.push(createEnd());
+            return;
+        }
         this.root.push(new FldSimpleAttrs({ instr: instruction, fldLock: options.locked ? true : undefined }));
         if (cachedValue !== undefined) {
             this.root.push(new TextRun(cachedValue));
