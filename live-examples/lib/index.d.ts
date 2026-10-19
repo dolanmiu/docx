@@ -12285,6 +12285,10 @@ export declare const signedTwipsMeasureValue: (val: UniversalMeasure | number) =
  * in a single element, unlike complex fields which use separate begin/end markers.
  * Simple fields are typically used for fields that don't require complex nesting.
  *
+ * Fields that mark a place and have no result, such as an index entry (`XE`) or a table of contents entry (`TC`), are
+ * written as a complex field in a run (`w:r`), as Word writes them, because Word moves the text around them when it
+ * reads them as a `w:fldSimple`. They have no cached value, so one given isn't written.
+ *
  * Reference: http://www.datypic.com/sc/ooxml/e-w_fldSimple-1.html
  *
  * @publicApi
@@ -12311,6 +12315,9 @@ export declare const signedTwipsMeasureValue: (val: UniversalMeasure | number) =
  *
  * // Locked field, Word keeps the cached value when fields are updated
  * new SimpleField("DATE", "2024-01-01", { locked: true });
+ *
+ * // Index entry, for an INDEX field to list
+ * new SimpleField('XE "Apples"');
  * ```
  */
 export declare class SimpleField extends XmlComponent {

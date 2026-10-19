@@ -2463,7 +2463,7 @@ var docx = (function(exports) {
 	* ```
 	* @internal
 	*/
-	var createFieldChar = (type, dirty) => new BuilderElement({
+	var createFieldChar = (type, dirty, locked) => new BuilderElement({
 		name: "w:fldChar",
 		attributes: {
 			type: {
@@ -2473,6 +2473,10 @@ var docx = (function(exports) {
 			dirty: {
 				key: "w:dirty",
 				value: dirty
+			},
+			locked: {
+				key: "w:fldLock",
+				value: locked
 			}
 		}
 	});
@@ -2481,8 +2485,9 @@ var docx = (function(exports) {
 	*
 	* The Begin element marks the start of a field. A field consists of a begin character,
 	* field instructions, an optional separate character, field result, and an end character.
+	* A locked field (`w:fldLock`) is not updated by Word.
 	*/
-	var createBegin = (dirty) => createFieldChar(FieldCharacterType.BEGIN, dirty);
+	var createBegin = (dirty, locked) => createFieldChar(FieldCharacterType.BEGIN, dirty, locked);
 	/** The formatted begin characters of the fields that are dirty only when the document isn't given page numbers */
 	var dirtyWithoutPageNumbers = /* @__PURE__ */ new WeakSet();
 	/** The beginning of a field that is dirty, so Word updates it, unless the document is given page numbers */
@@ -9199,6 +9204,22 @@ EXTERNAL: "External" };
 	* @module
 	*/
 	/**
+	* The fields that mark a place in the document and have no result: index entries (`XE`), table of contents entries
+	* (`TC`), table of authorities entries (`TA`), referenced documents (`RD`) and `PRIVATE`. Word misreads them as a
+	* `w:fldSimple`, moving the text around them to other places in the document, so they are written as a complex field.
+	*/
+	var MARKER_FIELD = /^\s*(?:XE|TC|TA|RD|PRIVATE)\b/i;
+	/**
+	* @internal
+	*/
+	var FieldInstructionText = class extends XmlComponent {
+		constructor(instruction) {
+			super("w:instrText");
+			this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
+			this.root.push(instruction);
+		}
+	};
+	/**
 	* @internal
 	*/
 	var FldSimpleAttrs = class extends XmlAttributeComponent {
@@ -9216,6 +9237,10 @@ EXTERNAL: "External" };
 	* A simple field (fldSimple) contains both the field code and the optional cached value
 	* in a single element, unlike complex fields which use separate begin/end markers.
 	* Simple fields are typically used for fields that don't require complex nesting.
+	*
+	* Fields that mark a place and have no result, such as an index entry (`XE`) or a table of contents entry (`TC`), are
+	* written as a complex field in a run (`w:r`), as Word writes them, because Word moves the text around them when it
+	* reads them as a `w:fldSimple`. They have no cached value, so one given isn't written.
 	*
 	* Reference: http://www.datypic.com/sc/ooxml/e-w_fldSimple-1.html
 	*
@@ -9243,11 +9268,21 @@ EXTERNAL: "External" };
 	*
 	* // Locked field, Word keeps the cached value when fields are updated
 	* new SimpleField("DATE", "2024-01-01", { locked: true });
+	*
+	* // Index entry, for an INDEX field to list
+	* new SimpleField('XE "Apples"');
 	* ```
 	*/
 	var SimpleField = class extends XmlComponent {
 		constructor(instruction, cachedValue, options = {}) {
-			super("w:fldSimple");
+			const marker = MARKER_FIELD.test(instruction);
+			super(marker ? "w:r" : "w:fldSimple");
+			if (marker) {
+				this.root.push(createBegin(void 0, options.locked ? true : void 0));
+				this.root.push(new FieldInstructionText(instruction));
+				this.root.push(createEnd());
+				return;
+			}
 			this.root.push(new FldSimpleAttrs({
 				instr: instruction,
 				fldLock: options.locked ? true : void 0
