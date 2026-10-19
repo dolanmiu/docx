@@ -8062,7 +8062,10 @@ export declare type ITablePropertiesOptionsBase = {
  * @see {@link TableRow}
  */
 export declare type ITableRowOptions = {
-    /** Array of TableCell elements that make up the row */
+    /**
+     * Array of TableCell elements that make up the row. A row with no cells isn't written, as Word can't open a
+     * document with one, so give it a cell to keep it, such as an empty one for a row of space.
+     */
     readonly children: readonly TableCell[];
     /**
      * Keeps the row on the same page as the next row (keep with next), by setting `keepNext` on each paragraph in
@@ -13048,7 +13051,8 @@ export declare class TableProperties extends IgnoreIfEmptyXmlComponent {
  * Represents a table row in a WordprocessingML document.
  *
  * A table row is a single row of cells within a table. Each row contains
- * one or more table cells that hold the actual content.
+ * one or more table cells that hold the actual content. A row with no cells
+ * isn't written, as Word can't open a document with one.
  *
  * Reference: http://officeopenxml.com/WPtableRow.php
  *

@@ -19,7 +19,8 @@
 <ul class="tsd-parameters">
 <li class="tsd-parameter">
 <h5><code class="tsd-tag">Readonly</code><span class="tsd-kind-property">children</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-keyword">readonly</span> <a href="../classes/index.TableCell.html" class="tsd-signature-type tsd-kind-class">TableCell</a><span class="tsd-signature-symbol">[]</span></h5>
-<div class="tsd-comment tsd-typography"><p>Array of TableCell elements that make up the row</p>
+<div class="tsd-comment tsd-typography"><p>Array of TableCell elements that make up the row. A row with no cells isn't written, as Word can't open a
+document with one, so give it a cell to keep it, such as an empty one for a row of space.</p>
 </div></li>
 <li class="tsd-parameter">
 <h5><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span class="tsd-kind-property">keepNext</span><span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span></h5>
@@ -34,7 +35,7 @@ the group on one page.</p>
 <h4 class="tsd-anchor-link" id="see">See<a href="#see" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p><a href="../classes/index.TableRow.html" class="tsd-kind-class">TableRow</a></p>
 </div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/69fc2da10d12915d94da12cd7558fc31f3fb8658/src/file/table/table-row/table-row.ts#L18">file/table/table-row/table-row.ts:18</a></li></ul></aside></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/f0a176ec0be327aeee5c65b0d8d1eaca00f0ad21/src/file/table/table-row/table-row.ts#L18">file/table/table-row/table-row.ts:18</a></li></ul></aside></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

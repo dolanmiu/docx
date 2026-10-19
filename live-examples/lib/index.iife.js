@@ -18428,7 +18428,8 @@ MAX: 9026 };
 	* Represents a table row in a WordprocessingML document.
 	*
 	* A table row is a single row of cells within a table. Each row contains
-	* one or more table cells that hold the actual content.
+	* one or more table cells that hold the actual content. A row with no cells
+	* isn't written, as Word can't open a document with one.
 	*
 	* Reference: http://officeopenxml.com/WPtableRow.php
 	*
@@ -18468,6 +18469,7 @@ MAX: 9026 };
 			for (const child of options.children) this.root.push(child);
 		}
 		prepForXml(context) {
+			if (this.cells.length === 0) return;
 			const xml = super.prepForXml(context);
 			if (!xml || this.options.keepNext === void 0) return xml;
 			const keepNext = new OnOffElement("w:keepNext", this.options.keepNext).prepForXml(context);
