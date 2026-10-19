@@ -175,7 +175,8 @@ export class Body extends XmlComponent {
                 paragraph.removeSectionProperties(section);
             }
         }
-        fillTablesOfContents(xml, context, this.headingBookmarkIds);
+        const listNumbers = this.pageNumbers?.listNumbers;
+        fillTablesOfContents(xml, context, this.headingBookmarkIds, listNumbers && ((body) => listNumbers(body, context)));
         if (this.pageNumbers) {
             fillSequenceNumbers(xml, context);
             fillPageNumbers(xml, context, this.pageNumbers);

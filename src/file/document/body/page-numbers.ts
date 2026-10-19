@@ -16,6 +16,7 @@
  *
  * @module
  */
+// cspell:ignore Aptos
 import { isDirtyWithoutPageNumbers } from "@file/paragraph/run/field";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 
@@ -75,6 +76,24 @@ export type PageNumberGuess = {
 };
 
 /**
+ * The list number of a paragraph a bookmark starts, as its list writes it, which the paragraph's entry in a table of
+ * contents starts with, as Word writes the entry.
+ *
+ * @publicApi
+ */
+export type BookmarkListNumber = {
+    /** The number, as its list's level writes it, such as `"1.2"` or `"a)"` */
+    readonly text: string;
+    /** What follows the number in the paragraph: a tab, a space or nothing (`w:suff`) */
+    readonly separator: "tab" | "space" | "nothing";
+    /**
+     * The number's width as Word measures it for the tab stop after it in the entry, in twips: in Aptos 12 pt, the font
+     * of Word's Normal template, whatever the document's font
+     */
+    readonly width: number;
+};
+
+/**
  * Works out which page each bookmark of a document starts on, and how many pages the document and its sections have,
  * from the body of the document as it is written, so the page numbers of its tables of contents, page references and
  * page counts can be written with it.
@@ -86,7 +105,15 @@ export type PageNumberGuess = {
  *
  * @publicApi
  */
-export type PageNumberEstimator = (body: IXmlableObject, context: IContext) => EstimatedPageNumbers;
+export type PageNumberEstimator = ((body: IXmlableObject, context: IContext) => EstimatedPageNumbers) & {
+    /**
+     * Works out the list numbers of the paragraphs bookmarks start, by the bookmarks' names. A table of contents filled
+     * in from the headings starts the entry of a numbered heading with its number, as Word does, so `docx` asks for them
+     * once the headings are bookmarked, before it writes the entries and works out their pages. A bookmark of a paragraph
+     * whose number it didn't work out is left out, and the entry is written without a number.
+     */
+    readonly listNumbers?: (body: IXmlableObject, context: IContext) => ReadonlyMap<string, BookmarkListNumber>;
+};
 
 /** A formatted element, such as `{ "w:r": [...] }`, or its attributes, or text */
 type Element = unknown;

@@ -1,7 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
-import { Body } from "@file/document/body";
+import { Body, type BookmarkListNumber, type PageNumberEstimator } from "@file/document/body";
 import { SectionType } from "@file/document/body/section-properties";
 import { File } from "@file/file";
 import {
@@ -567,5 +567,120 @@ describe("Table of contents filled in from the headings", () => {
 
         expect(entriesIn(tree)).to.deep.equal([{ style: "TOC1", title: "One" }]);
         expect(elementsNamed(tree, "w:tab")[0]["w:tab"]._attr["w:pos"]).to.equal(9026);
+    });
+});
+
+describe("Entries of numbered headings in a table of contents filled in from the headings", () => {
+    /**
+     * A page number estimator that gives no page numbers, and gives each heading the list number of its text, as
+     * `estimatePageNumbers` from `docx/layout` works the numbers out
+     */
+    const numbering = (numbers: Readonly<Record<string, BookmarkListNumber>>, asked = vi.fn()): PageNumberEstimator =>
+        Object.assign(() => ({ bookmarks: new Map<string, string>() }), {
+            listNumbers: (body: IXmlableObject) => {
+                asked();
+                return new Map(
+                    Object.entries(bookmarksIn(body["w:body"])).flatMap(([title, name]) =>
+                        numbers[title] ? [[name, numbers[title]] as const] : [],
+                    ),
+                );
+            },
+        });
+
+    /** What each entry shows, in order: the text of its runs, with TAB for a tab, and its left tab stop */
+    const shownIn = (body: readonly IXmlableObject[]) =>
+        tableOfContentsIn(body)
+            .slice(0, -1)
+            .map((paragraph) => ({
+                runs: elementsNamed(paragraph, "w:r")
+                    .flatMap((run) => [run["w:r"]].flat())
+                    .flatMap((content: IXmlableObject) => ("w:t" in content ? [textOf(content)] : "w:tab" in content ? ["TAB"] : [])),
+                left: elementsNamed(paragraph, "w:tab")
+                    .map((tab) => attributesOf(tab, "w:tab"))
+                    .find((attributes) => attributes?.["w:val"] === "left")?.["w:pos"],
+            }));
+
+    const ONE = 128.16;
+
+    it("starts a numbered heading's entry with its number and a tab, to a tab stop past the number, as Word writes it", () => {
+        const body = bodyOf({
+            pageNumbers: numbering({
+                Main: { text: "1", separator: "tab", width: ONE },
+                Components: { text: "1.1", separator: "tab", width: 324.96 },
+                CPU: { text: "1.1.1", separator: "tab", width: 521.76 },
+            }),
+            sections: [
+                {
+                    children: [
+                        new TableOfContents("Contents", { hyperlink: true, headingStyleRange: "1-3" }),
+                        heading("Main"),
+                        heading("Components", HeadingLevel.HEADING_2),
+                        heading("CPU", HeadingLevel.HEADING_3),
+                        heading("Unnumbered"),
+                    ],
+                },
+            ],
+        });
+
+        // Word for Mac 16.114 (word-toc-numbers.docx TN1)
+        expect(shownIn(body)).to.deep.equal([
+            { runs: ["1", "TAB", "Main", "TAB"], left: 480 },
+            { runs: ["1.1", "TAB", "Components", "TAB"], left: 960 },
+            { runs: ["1.1.1", "TAB", "CPU", "TAB"], left: 1440 },
+            { runs: ["Unnumbered", "TAB"], left: undefined },
+        ]);
+    });
+
+    it("puts the tab stop at the next multiple of 240 twips up to 1920, and where it falls past that", () => {
+        const body = bodyOf({
+            pageNumbers: numbering({
+                Thirteen: { text: "1".repeat(13), separator: "tab", width: 13 * ONE },
+                Fourteen: { text: "1".repeat(14), separator: "tab", width: 14 * ONE },
+                Eight: { text: "1", separator: "tab", width: ONE },
+            }),
+            sections: [
+                {
+                    children: [
+                        new TableOfContents("Contents", { headingStyleRange: "1-9" }),
+                        heading("Thirteen"),
+                        heading("Fourteen"),
+                        new Paragraph({ text: "Eight", style: "Heading8" }),
+                    ],
+                },
+            ],
+        });
+
+        // Word writes 1920, 2035 and 2048 (TN1, TN3), measuring "1" as 128.2 twips, where the width tables have 128.16
+        expect(shownIn(body).map(({ left }) => left)).to.deep.equal([1920, 2034, 2048]);
+    });
+
+    it("follows a number with a space, and no tab stop, when its list follows it with a space or with nothing, as Word does", () => {
+        const body = bodyOf({
+            pageNumbers: numbering({
+                Spaced: { text: "1", separator: "space", width: ONE },
+                Joined: { text: "2", separator: "nothing", width: ONE },
+            }),
+            sections: [{ children: [new TableOfContents("Contents", { headingStyleRange: "1-1" }), heading("Spaced"), heading("Joined")] }],
+        });
+
+        expect(shownIn(body)).to.deep.equal([
+            { runs: ["1 ", "Spaced", "TAB"], left: undefined },
+            { runs: ["2 ", "Joined", "TAB"], left: undefined },
+        ]);
+    });
+
+    it("asks for the numbers once the headings are bookmarked, and only when a table of contents lists a heading", () => {
+        const asked = vi.fn();
+        bodyOf({
+            pageNumbers: numbering({}, asked),
+            sections: [{ children: [new TableOfContents("Contents", { headingStyleRange: "1-1" }), new Paragraph("Not a heading")] }],
+        });
+        expect(asked).not.toHaveBeenCalled();
+
+        bodyOf({
+            pageNumbers: numbering({}, asked),
+            sections: [{ children: [new TableOfContents("Contents", { headingStyleRange: "1-1" }), heading("One")] }],
+        });
+        expect(asked).toHaveBeenCalledTimes(1);
     });
 });

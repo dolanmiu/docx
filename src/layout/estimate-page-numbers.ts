@@ -16,6 +16,7 @@ import type {
 
 import { DEFAULT_MEASURER, type FontData, type TextMeasurer, createFontFileMeasurer, readFontFile } from "../text-layout";
 import { knownPageCount, layOutPasses } from "./layout-passes";
+import { listNumbersOf } from "./list-numbers";
 import { type MeasureWidth, measurerOf } from "./measure-width";
 import { type DocumentContent, readDocument } from "./read-document";
 import { readDocx } from "./read-docx";
@@ -90,14 +91,16 @@ const estimateWith = (content: DocumentContent | undefined, measurer: TextMeasur
  * own, such as `\* roman`, and so are numbers of pages. Page references, tables of contents and SEQ fields (caption
  * numbers, which are counted without laying out the pages) are written clean, so Word shows the numbers as they are
  * written, and the numbers left blank stay blank, without asking to update the fields, unless the document has
- * `updateFields` on.
+ * `updateFields` on. The entry of a numbered heading in a table of contents starts with the heading's number, and a tab
+ * to a tab stop past it, as Word writes it (`listNumbers`).
  *
  * @publicApi
  */
-export const estimatePageNumbers: PageNumberEstimator & TemplatePageNumberEstimator = (
-    document: IXmlableObject | PatchedTemplate,
-    context?: IContext,
-): EstimatedPageNumbers => estimateWith(contentOf(document, context), DEFAULT_MEASURER);
+export const estimatePageNumbers: PageNumberEstimator & TemplatePageNumberEstimator = Object.assign(
+    (document: IXmlableObject | PatchedTemplate, context?: IContext): EstimatedPageNumbers =>
+        estimateWith(contentOf(document, context), DEFAULT_MEASURER),
+    { listNumbers: listNumbersOf },
+);
 
 /**
  * A font file to measure text in.
@@ -182,6 +185,9 @@ export const estimatePageNumbersWith = ({
     const others = measureWidth ? measurerOf(measureWidth) : DEFAULT_MEASURER;
     // One measurer for every document, so the lines laid out for one are kept for the passes after
     const measurer = faces.length === 0 ? others : createFontFileMeasurer(faces, others);
-    return (document: IXmlableObject | PatchedTemplate, context?: IContext) =>
-        estimateWith(contentOf(document, context, guess), measurer, guess);
+    return Object.assign(
+        (document: IXmlableObject | PatchedTemplate, context?: IContext) =>
+            estimateWith(contentOf(document, context, guess), measurer, guess),
+        { listNumbers: listNumbersOf },
+    );
 };
