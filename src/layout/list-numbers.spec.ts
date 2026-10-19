@@ -26,9 +26,9 @@ import { DEFAULT_MEASURER } from "../text-layout";
 import { estimatePageNumbers, estimatePageNumbersWith } from "./estimate-page-numbers";
 import { listNumbersOf } from "./list-numbers";
 // @ts-expect-error -- Vite reads the document as a data URL, which TypeScript has no type for
-import wordTocNumbersFont from "../../scripts/layout-probes/word-toc-numbers-font.word.docx?inline";
+import wordTocNumbersFont from "../../scripts/layout-probes/word-toc-numbers-font.docx?inline";
 // @ts-expect-error -- Vite reads the document as a data URL, which TypeScript has no type for
-import wordTocNumbers from "../../scripts/layout-probes/word-toc-numbers.word.docx?inline";
+import wordTocNumbers from "../../scripts/layout-probes/word-toc-numbers.docx?inline";
 
 /** The list numbers of the bookmarks of a document, as its body is written */
 const numbersOf = (options: IPropertiesOptions): Record<string, BookmarkListNumber> => {

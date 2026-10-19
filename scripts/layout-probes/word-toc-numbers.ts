@@ -1,6 +1,7 @@
 // Tables of contents of numbered headings, for Word to fill in: how Word starts each heading's entry with its number,
 // and where it puts the tab stop after the number. Open each document in Word, update the table (update entire table)
-// and save it: the committed .docx files are the ones Word saved. Word 16.114 for Mac, with its own Normal template.
+// and save it: the committed .docx files are the ones Word saved. They aren't named .word.docx, as they aren't laid out
+// documents for scripts/compare-layout.sh to compare with Word's pages. Word 16.114 for Mac, with its own Normal template.
 //
 // TN1: level 1 headings numbered with 1 to 22 figures ("1" to "1111111111111111111111"), each a list of its own
 // TN2: numbers of other characters and formats, such as "Chapter 1:", "1.1", "(1)", "a)", "I." and a bullet, at levels 1
