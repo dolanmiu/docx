@@ -581,6 +581,38 @@ describe("Table", () => {
         });
     });
 
+    describe("rows with no cells", () => {
+        // The rows of a table, as formatted
+        const rowsOf = (table: Table): readonly any[] => new Formatter().format(table)["w:tbl"].filter((child: any) => child["w:tr"]);
+        const row = (text: string): TableRow => new TableRow({ children: [new TableCell({ children: [new Paragraph(text)] })] });
+
+        it("leaves out a row with no cells, as Word can't open a document with one (#2724)", () => {
+            const rows = rowsOf(new Table({ rows: [row("1"), new TableRow({ children: [] }), row("2")] }));
+
+            expect(rows).to.deep.equal(rowsOf(new Table({ rows: [row("1"), row("2")] })));
+        });
+
+        it("leaves a table whose rows have no cells with no rows, which Word opens and shows nothing for", () => {
+            expect(rowsOf(new Table({ rows: [new TableRow({ children: [] }), new TableRow({ children: [] })] }))).to.deep.equal([]);
+        });
+
+        it("writes a row with no cells of its own that a cell merged down from the row above fills", () => {
+            const rows = rowsOf(
+                new Table({
+                    rows: [
+                        new TableRow({ children: [new TableCell({ rowSpan: 2, children: [new Paragraph("Merged")] })] }),
+                        new TableRow({ children: [] }),
+                    ],
+                }),
+            );
+
+            expect(rows).toHaveLength(2);
+            expect(rows[1]).to.deep.equal({
+                "w:tr": [{ "w:tc": [{ "w:tcPr": [{ "w:vMerge": { _attr: { "w:val": "continue" } } }] }, { "w:p": {} }] }],
+            });
+        });
+    });
+
     describe("#keepNext", () => {
         it("keeps the cells inserted below a cell merged down rows with the next row, in rows kept with the next", () => {
             // A group of three rows with its name merged down the first column, kept on one page

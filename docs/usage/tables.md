@@ -239,6 +239,8 @@ Here is a list of options you can add to the `table row`:
 | tableHeader | `boolean`                             | Optional |
 | height      | `{ value: number, rule: HeightRule }` | Optional |
 
+A row with no cells isn't written, because Word can't open a document with one. A table whose rows all have no cells is written with no rows, which Word shows nothing for. To keep an empty row, such as a row of space with a `height`, give it an empty cell: `new TableCell({ children: [] })`.
+
 ### Repeat row
 
 If a table is paginated on multiple pages, it is possible to repeat a row at the top of each new page by setting `tableHeader` to `true`:
