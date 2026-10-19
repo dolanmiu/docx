@@ -263,6 +263,11 @@ export type ParagraphBlock = {
      */
     readonly list?: { readonly id: string; readonly level: number; readonly definition: object };
     /**
+     * Its list number, such as "1.2", and what follows it, when it has one written as Word writes it, which its entry in a
+     * table of contents starts with
+     */
+    readonly listNumber?: { readonly text: string; readonly separator: "tab" | "space" | "nothing" };
+    /**
      * How its list number lines up at the start of its first line, when not to the left: right-aligned it ends there, and
      * centred its middle is there (`w:lvlJc`)
      */
@@ -2309,6 +2314,8 @@ const readListNumber = (
     readonly legacy?: LegacyNumbering;
     /** Why its number isn't written or placed as Word does, when it isn't */
     readonly unsupported?: string;
+    /** Its number and what follows it, when it has one written as Word writes it */
+    readonly listNumber?: ParagraphBlock["listNumber"];
 } => {
     const numbering = childrenOf(find(properties, "w:numPr"));
     const ownId = valueOf(numbering, "w:numId") ?? numberOf(attributesOf(find(numbering, "w:numId"))["w:val"])?.toString();
@@ -2394,6 +2401,10 @@ const readListNumber = (
             alignment: text.length > 0 ? level.alignment : undefined,
             legacy: level.legacy,
             unsupported,
+            listNumber:
+                unsupported === undefined && text.length > 0
+                    ? { text, separator: level.suffix === "space" || level.suffix === "nothing" ? level.suffix : ("tab" as const) }
+                    : undefined,
         }),
     };
 };
@@ -2858,6 +2869,7 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
             ? { hidden: true }
             : {}),
         ...(list.list ? { list: list.list } : {}),
+        ...(list.listNumber ? { listNumber: list.listNumber } : {}),
         ...(list.alignment ? { numberAlignment: list.alignment } : {}),
         ...(list.legacy ? { numberLegacy: list.legacy } : {}),
         ...(typeof borders === "object" ? { borders } : {}),

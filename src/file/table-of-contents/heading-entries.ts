@@ -7,10 +7,12 @@
  * `contentChildren` is filled in from the headings its switches include, the way Word fills it in: each heading is
  * bookmarked, and its entry links to the bookmark and gives its page with a PAGEREF field. The page numbers are left
  * empty, because they depend on how the document is laid out. Word fills them in when it updates the field, unless the
- * document's `pageNumbers` writes them.
+ * document's `pageNumbers` writes them. A numbered heading's entry starts with its number when the document's
+ * `pageNumbers` works the numbers out, as Word writes it; otherwise Word writes the number when it updates the field.
  *
  * @module
  */
+import type { BookmarkListNumber } from "@file/document/body/page-numbers";
 import { BookmarkEnd, BookmarkStart, InternalHyperlink, PageReference, Paragraph, type ParagraphChild } from "@file/paragraph";
 import { Run, Tab, TextRun } from "@file/paragraph/run";
 import { createBegin, createBeginDirtyWithoutPageNumbers, createEnd, createSeparate } from "@file/paragraph/run/field";
@@ -65,7 +67,12 @@ type Entry = {
     readonly title: string;
     readonly level: number;
     readonly bookmark: string;
+    /** The heading's list number, when it is numbered and the number was worked out */
+    readonly listNumber?: BookmarkListNumber;
 };
+
+/** Works out the list numbers of the paragraphs bookmarks start in a formatted body, by the bookmarks' names */
+export type ListNumbersOf = (body: IXmlableObject) => ReadonlyMap<string, BookmarkListNumber>;
 
 /** The formatted tables of contents, with what each is filled in with, or undefined when it was given its content */
 const writtenTables = new WeakMap<object, HeadingEntriesOptions | undefined>();
@@ -384,6 +391,24 @@ const titleRunsOf = (title: string, properties: ITableOfContentsOptions): readon
 };
 
 /**
+ * The runs of a heading's list number at the start of its entry: the number and a tab, or the number and a space, which
+ * Word writes after a number its list follows with a space or with nothing
+ */
+const numberRunsOf = ({ text, separator }: BookmarkListNumber): readonly TextRun[] =>
+    separator === "tab" ? [new TextRun(text), new TextRun({ children: [new Tab()] })] : [new TextRun(`${text} `)];
+
+/**
+ * The left tab stop after a heading's number in its entry, as Word places it, in twips: past the number, as wide as Word
+ * measures it, by 240 twips, and 240 more for each level of the table below the first, at the next multiple of 240 up to
+ * 1920, and where it falls past that. Word goes by its Normal template's 12 points here, not the document's font, size or
+ * indents (`scripts/layout-probes/word-toc-numbers.ts`)
+ */
+export const numberTabStopOf = (level: number, width: number): number => {
+    const end = 240 * (level - 1) + width + 240;
+    return end <= 1920 ? Math.ceil(end / 240) * 240 : Math.round(end);
+};
+
+/**
  * The paragraph style of the entries at a level: the built-in TOC style, found by its name, "toc 1" to "toc 9". When
  * the document doesn't have it, the entries are indented as Word's are, 220 twips a level.
  */
@@ -409,6 +434,7 @@ const contentOf = (
     entries.forEach((entry, index) => {
         const hasPageNumber = withoutPageNumbers === undefined || !isWithin(entry.level, withoutPageNumbers);
         const children: readonly ParagraphChild[] = [
+            ...(entry.listNumber ? numberRunsOf(entry.listNumber) : []),
             ...titleRunsOf(entry.title, properties),
             ...(hasPageNumber
                 ? [
@@ -423,7 +449,12 @@ const contentOf = (
             new Paragraph({
                 style: style.id,
                 indent: style.indent === undefined ? undefined : { left: style.indent },
-                tabStops: [{ type: "right", position: textWidth, leader: "dot" }],
+                tabStops: [
+                    ...(entry.listNumber?.separator === "tab"
+                        ? [{ type: "left" as const, position: numberTabStopOf(entry.level, entry.listNumber.width) }]
+                        : []),
+                    { type: "right", position: textWidth, leader: "dot" },
+                ],
                 children: [
                     ...(index === 0
                         ? [
@@ -458,9 +489,15 @@ const bookmark = (paragraph: Element, name: string, id: number, context: IContex
 
 /**
  * Fills in the tables of contents in a formatted body from its headings, and bookmarks the headings they list. A
- * table of contents that doesn't list any heading is left empty, for Word to fill in.
+ * table of contents that doesn't list any heading is left empty, for Word to fill in. Given how to work out the headings'
+ * list numbers, the entry of a numbered heading starts with its number, once the headings are bookmarked.
  */
-export const fillTablesOfContents = (body: IXmlableObject, context: IContext, bookmarkIds: HeadingBookmarkIds): void => {
+export const fillTablesOfContents = (
+    body: IXmlableObject,
+    context: IContext,
+    bookmarkIds: HeadingBookmarkIds,
+    listNumbersOf?: ListNumbersOf,
+): void => {
     const blocks = blocksOf(childrenOf(body));
     const tables = blocks.flatMap((block) => {
         const options = writtenTables.get(block);
@@ -485,11 +522,15 @@ export const fillTablesOfContents = (body: IXmlableObject, context: IContext, bo
     for (const { paragraph, id } of headings) {
         bookmark(paragraph.element, `_Toc${id}`, id, context);
     }
+    const listNumbers = headings.length > 0 ? listNumbersOf?.(body) : undefined;
 
     tables.forEach(([table, options], index) => {
         const entries = headings.flatMap(({ paragraph, levels, id }) => {
             const level = levels[index];
-            return level === undefined ? [] : [{ title: paragraph.text, level, bookmark: `_Toc${id}` }];
+            const listNumber = listNumbers?.get(`_Toc${id}`);
+            return level === undefined
+                ? []
+                : [{ title: paragraph.text, level, bookmark: `_Toc${id}`, ...(listNumber ? { listNumber } : {}) }];
         });
         if (entries.length === 0) {
             return;
