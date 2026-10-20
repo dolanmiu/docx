@@ -5619,6 +5619,7 @@ declare type ICustomPropertyOptions = {
  * @property footnoteReference - Footnote reference character style options
  * @property footnoteText - Footnote text paragraph style options
  * @property footnoteTextChar - Footnote text character style options
+ * @property lineNumber - Line number character style options
  */
 declare type IDefaultStylesOptions = {
     /** Document-wide default formatting */
@@ -5652,6 +5653,8 @@ declare type IDefaultStylesOptions = {
     readonly endnoteReference?: IBaseCharacterStyleOptions;
     readonly endnoteText?: IBaseParagraphStyleOptions;
     readonly endnoteTextChar?: IBaseCharacterStyleOptions;
+    /** The formatting of a section's line numbers (`lineNumbers`), such as their font, size and color */
+    readonly lineNumber?: IBaseCharacterStyleOptions;
 };
 
 /**

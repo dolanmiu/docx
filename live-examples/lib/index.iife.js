@@ -22875,6 +22875,22 @@ MAX: 9026 };
 		}
 	};
 	/**
+	* Represents the Line Number character style.
+	*
+	* Word draws a section's line numbers in the character style named "line number", whatever its id, so this style
+	* formats them. Like Word's, it has no formatting of its own, so line numbers take the document defaults.
+	*/
+	var LineNumberStyle = class extends StyleForCharacter {
+		constructor(options) {
+			super(_objectSpread2({
+				id: "LineNumber",
+				name: "line number",
+				basedOn: "DefaultParagraphFont",
+				semiHidden: true
+			}, options));
+		}
+	};
+	/**
 	* Represents the Normal Table style, the default style of tables.
 	*
 	* It gives cells the margins Word gives the tables it makes: 108 twips (0.075 inches) on the left and right. Without a
@@ -23231,7 +23247,8 @@ MAX: 9026 };
 			footnoteTextChar: new FootnoteTextChar(options.footnoteTextChar || {}),
 			endnoteReference: new EndnoteReferenceStyle(options.endnoteReference || {}),
 			endnoteText: new EndnoteText(options.endnoteText || {}),
-			endnoteTextChar: new EndnoteTextChar(options.endnoteTextChar || {})
+			endnoteTextChar: new EndnoteTextChar(options.endnoteTextChar || {}),
+			lineNumber: new LineNumberStyle(options.lineNumber || {})
 		};
 	};
 	/**
