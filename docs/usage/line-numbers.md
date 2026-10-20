@@ -155,6 +155,41 @@ const doc = new Document({
 
 This is useful for headings, titles, or any content that shouldn't be numbered.
 
+## Styling Line Numbers
+
+Word draws line numbers in its "line number" character style, so they take the document's default font and size unless that style says otherwise. Set their font, size and color with `lineNumber` in the default styles. It takes the same options as any [character style](usage/styling-with-js.md):
+
+```ts live
+import { Document, LineNumberRestartFormat, Paragraph } from "docx";
+
+const doc = new Document({
+    styles: {
+        default: {
+            lineNumber: {
+                run: {
+                    font: "Calibri",
+                    size: 18, // 9pt
+                    color: "808080",
+                },
+            },
+        },
+    },
+    sections: [
+        {
+            properties: {
+                lineNumbers: {
+                    countBy: 1,
+                    restart: LineNumberRestartFormat.CONTINUOUS,
+                },
+            },
+            children: [new Paragraph("Numbered in small grey Calibri"), new Paragraph("Numbered in small grey Calibri")],
+        },
+    ],
+});
+```
+
+The style is for the whole document, so every section's line numbers look the same.
+
 ## Complete Example
 
 Legal document with line numbers:

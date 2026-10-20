@@ -26,6 +26,7 @@ import {
     HyperlinkStyle,
     type IBaseCharacterStyleOptions,
     type IBaseParagraphStyleOptions,
+    LineNumberStyle,
     ListParagraph,
     NormalTableStyle,
     StrongStyle,
@@ -54,6 +55,7 @@ import { DocumentAttributes } from "../document/document-attributes";
  * @property footnoteReference - Footnote reference character style options
  * @property footnoteText - Footnote text paragraph style options
  * @property footnoteTextChar - Footnote text character style options
+ * @property lineNumber - Line number character style options
  */
 export type IDefaultStylesOptions = {
     /** Document-wide default formatting */
@@ -87,6 +89,8 @@ export type IDefaultStylesOptions = {
     readonly endnoteReference?: IBaseCharacterStyleOptions;
     readonly endnoteText?: IBaseParagraphStyleOptions;
     readonly endnoteTextChar?: IBaseCharacterStyleOptions;
+    /** The formatting of a section's line numbers (`lineNumbers`), such as their font, size and color */
+    readonly lineNumber?: IBaseCharacterStyleOptions;
 };
 
 /**
@@ -167,6 +171,7 @@ export const createDefaultStyles = (
     endnoteReference: new EndnoteReferenceStyle(options.endnoteReference || {}),
     endnoteText: new EndnoteText(options.endnoteText || {}),
     endnoteTextChar: new EndnoteTextChar(options.endnoteTextChar || {}),
+    lineNumber: new LineNumberStyle(options.lineNumber || {}),
 });
 
 /**

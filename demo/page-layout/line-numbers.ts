@@ -4,6 +4,18 @@ import * as fs from "fs";
 import { Document, HeadingLevel, LineNumberRestartFormat, Packer, Paragraph } from "docx";
 
 const doc = new Document({
+    styles: {
+        default: {
+            // The font, size and color of the line numbers
+            lineNumber: {
+                run: {
+                    font: "Calibri",
+                    size: 18,
+                    color: "808080",
+                },
+            },
+        },
+    },
     sections: [
         {
             properties: {
