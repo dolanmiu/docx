@@ -8,7 +8,7 @@ import type { XmlElement as Element } from "@util/xml";
 
 import { resolveTarget } from "./drawing-patch";
 import { appendRelationship, createRelationshipFile, getNextRelationshipIndex } from "./relationship-manager";
-import { getFirstLevelElements } from "./util";
+import { getFirstLevelElements, toJson } from "./util";
 
 /**
  * The properties of a document that `patchDocument` sets, with the names `Document` gives them. Word shows `keywords`
@@ -65,6 +65,43 @@ const prefixOf = (root: Element, namespace: keyof typeof NAMESPACES): string => 
 };
 
 /**
+ * The text of a part, in UTF-16, from its byte order mark, or else in UTF-8.
+ */
+const decode = (bytes: Uint8Array): string => {
+    const encoding = bytes[0] === 0xff && bytes[1] === 0xfe ? "utf-16le" : bytes[0] === 0xfe && bytes[1] === 0xff ? "utf-16be" : "utf-8";
+    return new TextDecoder(encoding).decode(bytes);
+};
+
+/**
+ * The package's part at a path, if it has one. The patcher keeps a part in UTF-16, or one whose name doesn't end in
+ * .xml, with its other parts, as it found it, so that is read and moved to its XML parts, to be written in UTF-8 with
+ * them, rather than written over them as it was.
+ */
+const readPart = (
+    // eslint-disable-next-line functional/prefer-readonly-type
+    parts: Map<string, Element>,
+    // eslint-disable-next-line functional/prefer-readonly-type
+    binaryParts: Map<string, Uint8Array>,
+    path: string,
+): Element | undefined => {
+    const bytes = binaryParts.get(path);
+    if (bytes === undefined) {
+        return parts.get(path);
+    }
+
+    const part = toJson(decode(bytes));
+    if (part.declaration?.attributes) {
+        // eslint-disable-next-line functional/immutable-data
+        part.declaration.attributes.encoding = "UTF-8";
+    }
+    // eslint-disable-next-line functional/immutable-data
+    binaryParts.delete(path);
+    // eslint-disable-next-line functional/immutable-data
+    parts.set(path, part);
+    return part;
+};
+
+/**
  * The path of the package's core properties part, found from its relationships. A package without one is given a
  * relationship to docProps/core.xml.
  */
@@ -89,16 +126,19 @@ const corePropertiesPathOf = (parts: Map<string, Element>): string => {
  * others as they are. A template without the part is given one.
  *
  * @param parts - The package's XML parts, by their paths, which the part is set in
+ * @param binaryParts - The package's other parts, by their paths, which the part is taken from if it's one of them
  * @param addContentTypeOverride - Adds the content type of the part, if it's new
  */
 export const patchCoreProperties = (
     // eslint-disable-next-line functional/prefer-readonly-type
     parts: Map<string, Element>,
+    // eslint-disable-next-line functional/prefer-readonly-type
+    binaryParts: Map<string, Uint8Array>,
     properties: PatchDocumentProperties,
     { addContentTypeOverride }: { readonly addContentTypeOverride: (contentType: string, partName: string) => void },
 ): void => {
     const path = corePropertiesPathOf(parts);
-    const existing = parts.get(path);
+    const existing = readPart(parts, binaryParts, path);
     const part: Element = existing ?? {
         declaration: { attributes: { version: "1.0", encoding: "UTF-8", standalone: "yes" } },
         elements: [{ type: "element", name: "cp:coreProperties", attributes: { "xmlns:cp": NAMESPACES.cp }, elements: [] }],

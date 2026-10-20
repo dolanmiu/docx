@@ -632,7 +632,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     }
 
     if (properties) {
-        patchCoreProperties(map, properties, { addContentTypeOverride });
+        patchCoreProperties(map, binaryContentMap, properties, { addContentTypeOverride });
     }
 
     // The parts that patches added to the package, such as charts, which add their own parts as they are written, such

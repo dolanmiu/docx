@@ -14,6 +14,28 @@ const CORE_PROPERTIES_RELATIONSHIP_TYPE = "http://schemas.openxmlformats.org/pac
 const patch = async (data: Buffer | JSZip, properties?: PatchDocumentProperties): Promise<JSZip> =>
     JSZip.loadAsync(await patchDocument({ outputType: "nodebuffer", data, patches: {}, properties }));
 
+// A template whose package relationships name its core properties part, at the path given
+const templateWithCoreProperties = (path: string, core: string | Uint8Array): JSZip =>
+    new JSZip()
+        .file("[Content_Types].xml", CONTENT_TYPES)
+        .file("word/document.xml", DOCUMENT)
+        .file(
+            "_rels/.rels",
+            `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${CORE_PROPERTIES_RELATIONSHIP_TYPE}" Target="${path}"/></Relationships>`,
+        )
+        .file(path, core);
+
+// Text in UTF-16, with its byte order mark
+const utf16 = (text: string, byteOrder: "little" | "big"): Uint8Array => {
+    const bytes = new Uint8Array(2 + text.length * 2);
+    const view = new DataView(bytes.buffer);
+    view.setUint16(0, 0xfeff, byteOrder === "little");
+    for (let i = 0; i < text.length; i++) {
+        view.setUint16(2 + i * 2, text.charCodeAt(i), byteOrder === "little");
+    }
+    return bytes;
+};
+
 const corePropertiesOf = async (zip: JSZip, path = "docProps/core.xml"): Promise<string> => (await zip.file(path)?.async("text")) ?? "";
 
 describe("patchDocument's properties", () => {
@@ -166,6 +188,25 @@ describe("patchDocument's properties", () => {
             `<Relationship Id="rId1" Type="${CORE_PROPERTIES_RELATIONSHIP_TYPE}" Target="docProps/core.xml"/>`,
         );
         expect(await corePropertiesOf(output)).to.contain("<dc:title>Report</dc:title>");
+    });
+
+    it.each(["little", "big"] as const)(
+        "should set the properties of a template whose core properties are in UTF-16, %s-endian, and write them in UTF-8",
+        async (byteOrder) => {
+            const core = `<?xml version="1.0" encoding="UTF-16" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Draft</dc:title><dc:creator>Ada</dc:creator></cp:coreProperties>`;
+            const output = await patch(templateWithCoreProperties("docProps/core.xml", utf16(core, byteOrder)), { title: "Report" });
+
+            expect(await corePropertiesOf(output)).to.equal(
+                `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Report</dc:title><dc:creator>Ada</dc:creator></cp:coreProperties>`,
+            );
+        },
+    );
+
+    it("should set the properties of a core properties part whose name doesn't end in .xml", async () => {
+        const core = `<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Draft</dc:title></cp:coreProperties>`;
+        const output = await patch(templateWithCoreProperties("docProps/core.props", core), { title: "Report" });
+
+        expect(await corePropertiesOf(output, "docProps/core.props")).to.contain("<dc:title>Report</dc:title>");
     });
 
     it("should throw if the template's core properties part has no core properties", async () => {
