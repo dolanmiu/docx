@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { type CompoundFileDirectoryEntry, readCompoundFile } from "tests/macros";
+import { type CompoundFileDirectoryEntry, readCompoundFile } from "tests/compound-file";
 
 import { createCompoundFile } from "./compound-file";
 
@@ -128,10 +128,41 @@ describe("createCompoundFile", () => {
         expect(file.entries.find((entry) => entry.name === "VBA")).toMatchObject({ type: 1, child: NO_STREAM });
     });
 
-    it("should throw for a file too large for the sectors of the FAT the header lists", () => {
-        // 109 sectors of the FAT, of 128 sector numbers each, are 109 × 128 sectors of 512 bytes
-        expect(() => createCompoundFile([{ name: "Large", data: new Uint8Array(109 * 128 * 512) }])).toThrow(
-            "A compound file of more than 7143424 bytes isn't supported",
+    it("should list the FAT's sectors after the first 109 in DIFAT sectors, for a file of more than about 7 MB", () => {
+        // 109 sectors of the FAT, of 128 sector numbers each, are 109 × 128 sectors of 512 bytes, and this stream needs
+        // 128 × 127 more, so the FAT has more than the 109 + 127 sectors one DIFAT sector lists
+        const data = new Uint8Array((109 + 128) * 128 * 512).map((_, index) => index % 251);
+        const compoundFile = createCompoundFile([
+            { name: "Large", data },
+            { name: "Small", data: bytes(10, 1) },
+        ]);
+        const view = new DataView(compoundFile.buffer);
+        const file = readCompoundFile(compoundFile);
+
+        // Two DIFAT sectors, the second ending the chain
+        expect(view.getUint32(72, true)).toBe(2);
+        const second = view.getUint32(512 + view.getUint32(68, true) * 512 + 127 * 4, true);
+        expect(view.getUint32(512 + second * 512 + 127 * 4, true)).toBe(0xfffffffe);
+        // Compared by hand, as comparing 15 MB with toEqual takes half a minute
+        const large = file.streams.get("Large")!;
+        expect(large.length).toBe(data.length);
+        expect(large.findIndex((byte, index) => byte !== data[index])).toBe(-1);
+        expect(file.streams.get("Small")).toEqual(bytes(10, 1));
+    });
+
+    it("should give the root the class id, and none without one", () => {
+        const withClassId = readCompoundFile(
+            createCompoundFile([{ name: "Data", data: bytes(1, 0) }], { classId: "0003000c-0000-0000-c000-000000000046" }),
+        );
+        const without = readCompoundFile(createCompoundFile([{ name: "Data", data: bytes(1, 0) }]));
+
+        expect(withClassId.entries[0].classId).toBe("0003000C-0000-0000-C000-000000000046");
+        expect(without.entries[0].classId).toBeUndefined();
+    });
+
+    it("should throw for a class id that isn't a GUID", () => {
+        expect(() => createCompoundFile([], { classId: "{0003000C-0000-0000-C000-000000000046}" })).toThrow(
+            'Invalid class id "{0003000C-0000-0000-C000-000000000046}". Expected a GUID such as "0003000C-0000-0000-C000-000000000046"',
         );
     });
 

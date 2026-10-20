@@ -3,4 +3,4 @@
  *
  * @module
  */
-export { type EmbeddedPackageFile, PackagePart, type PackagePartOptions } from "./package-part";
+export { type EmbeddedPackageFile, PackagePart, type PackagePartOptions, type PackagePartRelationshipType } from "./package-part";

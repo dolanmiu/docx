@@ -398,7 +398,8 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
     // internals, such as the Formatter. docx/math (src/math) re-exports docx's math, which docx still exports and keeps in
     // src/file/paragraph/math. src/text-layout measures text for docx/shapes and docx/layout, and each bundles a copy.
     // docx/html (src/html) imports docx/math by name too, for the math in HTML. docx/macros (src/macros) writes VBA
-    // projects for docx's macros
+    // projects for docx's macros, and docx/embedded-files (src/embedded-files) embeds files as OLE objects.
+    // src/compound-file writes the compound files both keep them in, and each bundles a copy
     {
         files: ["src/**/*.ts"],
         ignores: [
@@ -409,6 +410,8 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
             "src/layout/**",
             "src/html/**",
             "src/macros/**",
+            "src/embedded-files/**",
+            "src/compound-file/**",
             "src/text-layout/**",
             "**/*.spec.ts",
         ],
@@ -420,7 +423,7 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
                     patterns: [
                         { group: ["docx/*"], message: "docx doesn't import its optional entries, such as docx/shapes" },
                         {
-                            regex: "(^|/)(shapes|watermarks|charts|layout|html|macros|text-layout)(/|$)",
+                            regex: "(^|/)(shapes|watermarks|charts|layout|html|macros|embedded-files|compound-file|text-layout)(/|$)",
                             message: "docx doesn't import its optional entries, such as docx/shapes",
                         },
                     ],
@@ -437,6 +440,8 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
             "src/layout/*.ts",
             "src/html/*.ts",
             "src/macros/*.ts",
+            "src/embedded-files/*.ts",
+            "src/compound-file/*.ts",
             "src/text-layout/*.ts",
         ],
         ignores: ["**/*.spec.ts"],
@@ -449,7 +454,7 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
                             group: ["@file/*", "@util/*", "@export/*", "@shared", "@shared/*"],
                             message: 'Optional entries import docx from "docx"',
                         },
-                        { regex: "^\\.\\./(?!text-layout(/|$))", message: 'Optional entries import docx from "docx"' },
+                        { regex: "^\\.\\./(?!(text-layout|compound-file)(/|$))", message: 'Optional entries import docx from "docx"' },
                     ],
                 },
             ],

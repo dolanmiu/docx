@@ -8,7 +8,7 @@ import { Footer, Header } from "@file/header";
 import { Paragraph, Run, TextRun } from "@file/paragraph";
 import { BuilderElement, type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 
-import { PackagePart, type PackagePartOptions, PackageParts } from "./package-part";
+import { PackagePart, type PackagePartOptions, type PackagePartRelationshipType, PackageParts } from "./package-part";
 
 const CHART_TYPE = "application/vnd.openxmlformats-officedocument.drawingml.chart+xml";
 const CHART_RELATIONSHIP = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart";
@@ -16,7 +16,7 @@ const PACKAGE_RELATIONSHIP = "http://schemas.openxmlformats.org/officeDocument/2
 
 // Refers to a part by its relationship id, as a chart's c:chart does, and adds it to the package when it is written
 class PartReference extends XmlComponent {
-    public constructor(private readonly part: PackagePart) {
+    public constructor(private readonly part: PackagePart<PackagePartRelationshipType>) {
         super("c:chart");
         this.root.push(part.relationshipId);
     }
@@ -28,7 +28,7 @@ class PartReference extends XmlComponent {
 }
 
 class PartRun extends Run {
-    public constructor(part: PackagePart) {
+    public constructor(part: PackagePart<PackagePartRelationshipType>) {
         super({});
         this.root.push(new PartReference(part));
     }
@@ -54,7 +54,8 @@ const createWorkbook = (content: PackagePartOptions["content"] = new Uint8Array(
         content,
     });
 
-const paragraphWith = (...parts: readonly PackagePart[]): Paragraph => new Paragraph({ children: parts.map((part) => new PartRun(part)) });
+const paragraphWith = (...parts: readonly PackagePart<PackagePartRelationshipType>[]): Paragraph =>
+    new Paragraph({ children: parts.map((part) => new PartRun(part)) });
 
 const pack = async (file: File): Promise<JSZip> => JSZip.loadAsync(await Packer.toBuffer(file));
 
@@ -106,6 +107,23 @@ describe("PackagePart", () => {
             expect(await read(zip, "word/document.xml")).to.contain(`<c:chart>${chart.relationshipId}</c:chart>`);
             // A part whose XML refers to nothing has no relationships part
             expect(zip.file("word/charts/_rels/chart1.xml.rels")).to.equal(null);
+        });
+
+        it("should relate a part as an OLE object, which isn't one of the relationship types", async () => {
+            const oleObject = new PackagePart({
+                folder: "embeddings",
+                name: "oleObject",
+                extension: "bin",
+                contentType: "application/vnd.openxmlformats-officedocument.oleObject",
+                relationshipType: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject",
+                content: new Uint8Array([1, 2, 3]),
+            });
+            const zip = await pack(new File({ sections: [{ children: [paragraphWith(oleObject)] }] }));
+
+            expect(await read(zip, "word/_rels/document.xml.rels")).to.contain(
+                `<Relationship Id="${oleObject.relationshipId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject" Target="embeddings/oleObject1.bin"/>`,
+            );
+            expect(await zip.file("word/embeddings/oleObject1.bin")?.async("uint8array")).to.deep.equal(new Uint8Array([1, 2, 3]));
         });
 
         it("should give each part a relationship id of its own", () => {

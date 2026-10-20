@@ -42,6 +42,7 @@ import { patchStyles } from "./styles";
 import { patchTableRows } from "./table-rows";
 import { readThemeColors } from "./theme-colors";
 import { toJson } from "./util";
+import { removeShapeTypesIn } from "./vml-shape-types";
 
 /**
  * Supported input data types for document patching.
@@ -258,6 +259,9 @@ const imageReplacer = new ImageReplacer();
 const UTF16LE = new Uint8Array([0xff, 0xfe]);
 const UTF16BE = new Uint8Array([0xfe, 0xff]);
 
+// The root elements of the parts patches are written into, which are given the namespaces of what patches insert
+const PATCHED_PART_ROOTS: ReadonlySet<string> = new Set(["w:document", "w:hdr", "w:ftr", "w:footnotes", "w:endnotes", "w:comments"]);
+
 const compareByteArrays = (a: Uint8Array, b: Uint8Array): boolean => {
     if (a.length !== b.length) {
         return false;
@@ -386,19 +390,17 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
 
         const json = toJson(await value.async("text"));
 
-        if (key === "word/document.xml") {
-            const document = json.elements?.find((i) => i.name === "w:document");
-            if (document && document.attributes) {
-                // We could check all namespaces from Document, but we'll instead
-                // check only those that may be used by our element types.
+        // The root of a part patches are written into: the document, a header, a footer, the notes or the comments
+        const root = json.elements?.find((i) => PATCHED_PART_ROOTS.has(i.name ?? ""));
+        if (root && root.attributes) {
+            // We could check all namespaces from Document, but we'll instead
+            // check only those that may be used by our element types. VML (v) and Office's (o) are for legacy
+            // shapes, such as text boxes and the embedded files of docx/embedded-files
 
-                for (const ns of ["mc", "wp", "r", "w15", "m"] as const) {
-                    // eslint-disable-next-line functional/immutable-data
-                    document.attributes[`xmlns:${ns}`] = DocumentAttributeNamespaces[ns];
-                }
-                // eslint-disable-next-line functional/immutable-data
-                document.attributes["mc:Ignorable"] = `${document.attributes["mc:Ignorable"] || ""} w15`.trim();
+            for (const ns of ["mc", "wp", "r", "w15", "m", "v", "o"] as const) {
+                root.attributes[`xmlns:${ns}`] = DocumentAttributeNamespaces[ns];
             }
+            root.attributes["mc:Ignorable"] = `${root.attributes["mc:Ignorable"] || ""} w15`.trim();
         }
 
         // eslint-disable-next-line functional/immutable-data
@@ -486,6 +488,8 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
         const context = createContext(key);
         // eslint-disable-next-line functional/immutable-data
         contexts.set(key, context);
+        // The VML shape types the part has, such as the picture frame embedded files are drawn in, aren't inserted again
+        const removeShapeTypes = removeShapeTypesIn(json);
 
         // Patches a placeholder in an element of the part: its root, or a copy of the rows of a table that a patch repeats
         const patchPlaceholder = (element: Element, patchKey: string, patchValue: IPatch | TableRowsPatch): void => {
@@ -547,7 +551,8 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                 context,
                 keepOriginalStyles,
                 recursive,
-                renumberIds: (elements) => styles.use(lists.renumber(notes.renumber(renumberBookmarks(renumberDrawings(elements))))),
+                renumberIds: (elements) =>
+                    styles.use(lists.renumber(notes.renumber(renumberBookmarks(renumberDrawings(removeShapeTypes(elements)))))),
             });
 
             if (didFindOccurrence) {

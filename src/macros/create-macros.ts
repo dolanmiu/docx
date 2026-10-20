@@ -9,8 +9,8 @@
 import type { DocumentMacroEvent, DocumentMacros } from "docx";
 
 import { CODE_PAGE, encodeWindows1252 } from "./code-page";
-import { createCompoundFile } from "./compound-file";
 import { compress } from "./compression";
+import { createCompoundFile } from "../compound-file/compound-file";
 
 /**
  * A module of VBA code, as the VBA editor shows it.

@@ -69,6 +69,7 @@
         - [Math from LaTeX](usage/math-latex.md)
     - [HTML](usage/html.md)
     - [Macros](usage/macros.md)
+    - [Embedded Files](usage/embedded-files.md)
     - [Comments](usage/comments.md)
     - [Footnotes](usage/footnotes.md)
     - [Endnotes](usage/endnotes.md)

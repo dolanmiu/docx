@@ -7,7 +7,7 @@
 import JSZip from "jszip";
 
 import type { File } from "@file/file";
-import type { PackagePart } from "@file/package-part/package-part";
+import type { PackagePart, PackagePartRelationshipType } from "@file/package-part/package-part";
 import { Relationships } from "@file/relationships";
 import type { XmlComponent } from "@file/xml-components";
 import { encodeUtf8 } from "@util/convenience-functions";
@@ -38,7 +38,12 @@ const xmlifyPart = (file: File, content: XmlComponent, prettify: Prettify, relat
         declaration: standalone ? { standalone: "yes", encoding: "UTF-8" } : { encoding: "UTF-8" },
     });
 
-const xmlifyPackagePart = (file: File, part: PackagePart, path: string, prettify: Prettify): readonly PackagePartFile[] => {
+const xmlifyPackagePart = (
+    file: File,
+    part: PackagePart<PackagePartRelationshipType>,
+    path: string,
+    prettify: Prettify,
+): readonly PackagePartFile[] => {
     const { content } = part.options;
     if (content instanceof Uint8Array) {
         return [{ data: content, path: `word/${path}` }];

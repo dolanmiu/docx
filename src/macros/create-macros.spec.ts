@@ -2,7 +2,8 @@ import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
 
 import { Document, Packer, Paragraph } from "docx";
-import { decompress, readCompoundFile } from "tests/macros";
+import { readCompoundFile } from "tests/compound-file";
+import { decompress } from "tests/macros";
 
 import { createMacros } from "./create-macros";
 

@@ -1,6 +1,8 @@
 /**
- * Writes a compound file, the format a VBA project is kept in: a file system in a file, with storages, its folders, and
- * streams, its files.
+ * Writes a compound file, the format a VBA project and an OLE object are kept in: a file system in a file, with
+ * storages, its folders, and streams, its files.
+ *
+ * docx/macros and docx/embedded-files each bundle a copy.
  *
  * Reference: [MS-CFB] Compound File Binary File Format
  *
@@ -31,13 +33,16 @@ const SECTOR_SIZE = 512;
 const MINI_SECTOR_SIZE = 64;
 const MINI_STREAM_CUTOFF = 4096;
 const DIRECTORY_ENTRY_SIZE = 128;
-// The number of sector numbers a sector of the FAT holds, and the number of FAT sectors the header lists
+// The number of sector numbers a sector of the FAT holds, the number of FAT sectors the header lists, and the number a
+// DIFAT sector lists, before the number of the next DIFAT sector
 const SECTOR_NUMBERS_PER_SECTOR = SECTOR_SIZE / 4;
 const HEADER_FAT_SECTORS = 109;
+const DIFAT_SECTOR_FAT_SECTORS = SECTOR_NUMBERS_PER_SECTOR - 1;
 
 const FREE_SECTOR = 0xffffffff;
 const END_OF_CHAIN = 0xfffffffe;
 const FAT_SECTOR = 0xfffffffd;
+const DIFAT_SECTOR = 0xfffffffc;
 const NO_STREAM = 0xffffffff;
 
 const STORAGE = 1;
@@ -164,13 +169,32 @@ const addChain = (table: number[], count: number, value?: number): number => {
 };
 
 /**
- * Writes a compound file of version 3, as Office writes VBA projects.
+ * Writes a class id, a GUID such as "0003000C-0000-0000-C000-000000000046", as a directory entry holds it: its first
+ * three fields little-endian, and the rest in order.
+ */
+const writeClassId = (view: DataView, offset: number, classId: string): void => {
+    const match = /^([\da-f]{8})-([\da-f]{4})-([\da-f]{4})-([\da-f]{4})-([\da-f]{12})$/i.exec(classId);
+    if (match === null) {
+        throw new Error(`Invalid class id "${classId}". Expected a GUID such as "0003000C-0000-0000-C000-000000000046"`);
+    }
+    view.setUint32(offset, parseInt(match[1], 16), true);
+    view.setUint16(offset + 4, parseInt(match[2], 16), true);
+    view.setUint16(offset + 6, parseInt(match[3], 16), true);
+    const rest = match[4] + match[5];
+    for (let index = 0; index < 8; index++) {
+        view.setUint8(offset + 8 + index, parseInt(rest.slice(index * 2, index * 2 + 2), 16));
+    }
+};
+
+/**
+ * Writes a compound file of version 3, as Office writes VBA projects and OLE objects.
  *
  * @param children - The root storage's streams and storages
+ * @param options - The root storage's class id, which says what application an OLE object's data is for
  * @throws If two entries of a storage have the same name, ignoring case, or a name is empty, longer than 31 characters or
  * has "/", "\", ":" or "!"
  */
-export const createCompoundFile = (children: readonly CompoundFileEntry[]): Uint8Array => {
+export const createCompoundFile = (children: readonly CompoundFileEntry[], { classId }: { readonly classId?: string } = {}): Uint8Array => {
     const entries = createDirectory(children);
     const streams = entries.filter((entry) => entry.type === STREAM);
     const miniStreams = streams.filter((entry) => entry.data!.length < MINI_STREAM_CUTOFF);
@@ -203,16 +227,16 @@ export const createCompoundFile = (children: readonly CompoundFileEntry[]): Uint
         // eslint-disable-next-line functional/immutable-data
         stream.size = stream.data!.length;
     }
+    // The FAT has a number for each sector, its own and the DIFAT's too. The header lists its first 109 sectors, and DIFAT
+    // sectors list the rest, for a file of more than about 7 MB
     let fatSectors = 0;
-    while (fatSectors * SECTOR_NUMBERS_PER_SECTOR < fat.length + fatSectors) {
+    const difatSectorsFor = (count: number): number => Math.max(0, Math.ceil((count - HEADER_FAT_SECTORS) / DIFAT_SECTOR_FAT_SECTORS));
+    while (fatSectors * SECTOR_NUMBERS_PER_SECTOR < fat.length + fatSectors + difatSectorsFor(fatSectors)) {
         fatSectors++;
     }
-    if (fatSectors > HEADER_FAT_SECTORS) {
-        throw new Error(
-            `A compound file of more than ${HEADER_FAT_SECTORS * SECTOR_NUMBERS_PER_SECTOR * SECTOR_SIZE} bytes isn't supported`,
-        );
-    }
+    const difatSectors = difatSectorsFor(fatSectors);
     const fatStart = addChain(fat, fatSectors, FAT_SECTOR);
+    const difatStart = addChain(fat, difatSectors, DIFAT_SECTOR);
 
     const file = new Uint8Array(SECTOR_SIZE + fat.length * SECTOR_SIZE);
     const view = new DataView(file.buffer);
@@ -230,9 +254,20 @@ export const createCompoundFile = (children: readonly CompoundFileEntry[]): Uint
     view.setUint32(56, MINI_STREAM_CUTOFF, true);
     view.setUint32(60, miniFatStart, true);
     view.setUint32(64, miniFatSectors, true);
-    view.setUint32(68, END_OF_CHAIN, true);
+    view.setUint32(68, difatStart, true);
+    view.setUint32(72, difatSectors, true);
     for (let index = 0; index < HEADER_FAT_SECTORS; index++) {
         view.setUint32(76 + index * 4, index < fatSectors ? fatStart + index : FREE_SECTOR, true);
+    }
+
+    // The DIFAT, each sector ending with the next's number
+    for (let sector = 0; sector < difatSectors; sector++) {
+        const offset = sectorOffset(difatStart + sector);
+        for (let index = 0; index < DIFAT_SECTOR_FAT_SECTORS; index++) {
+            const fatSector = HEADER_FAT_SECTORS + sector * DIFAT_SECTOR_FAT_SECTORS + index;
+            view.setUint32(offset + index * 4, fatSector < fatSectors ? fatStart + fatSector : FREE_SECTOR, true);
+        }
+        view.setUint32(offset + DIFAT_SECTOR_FAT_SECTORS * 4, sector < difatSectors - 1 ? difatStart + sector + 1 : END_OF_CHAIN, true);
     }
 
     // The directory. Its unused entries are zeros, but for their links
@@ -251,6 +286,9 @@ export const createCompoundFile = (children: readonly CompoundFileEntry[]): Uint
         view.setUint16(offset + 64, (entry.name.length + 1) * 2, true);
         view.setUint8(offset + 66, entry.type);
         view.setUint8(offset + 67, entry.color);
+        if (index === 0 && classId !== undefined) {
+            writeClassId(view, offset + 80, classId);
+        }
         view.setUint32(offset + 68, entry.left, true);
         view.setUint32(offset + 72, entry.right, true);
         view.setUint32(offset + 76, entry.child, true);
