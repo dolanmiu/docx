@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
 import { File } from "@file/file";
-import { Document, FootnoteReferenceRun, Header, Packer, Paragraph, PatchType, Run, patchDocument } from "docx";
+import { Document, Footer, FootnoteReferenceRun, Header, Packer, Paragraph, PatchType, Run, TextRun, patchDocument } from "docx";
 import { readCompoundFile } from "tests/compound-file";
 
 import { EmbeddedFileRun, type EmbeddedFileRunOptions } from "./embedded-file-run";
@@ -323,23 +323,41 @@ describe("EmbeddedFileRun", () => {
             expect(document.split('<v:shape id="EmbeddedFile').length - 1).toBe(2);
         });
 
-        it("should declare the VML and Office namespaces when patchDocument inserts a file into a document without them", async () => {
-            // A template whose document doesn't declare them, as some applications write one
+        it("should declare the VML and Office namespaces in each part patchDocument inserts a file into, when it doesn't", async () => {
+            // A template whose parts don't declare them, as some applications write one
+            const parts = { document: "w:document", header1: "w:hdr", footer1: "w:ftr", footnotes: "w:footnotes" };
             const zip = await JSZip.loadAsync(
-                await Packer.toBuffer(new Document({ sections: [{ children: [new Paragraph("{{file}}")] }] })),
+                await Packer.toBuffer(
+                    new Document({
+                        footnotes: { 1: { children: [new Paragraph("{{file}}")] } },
+                        sections: [
+                            {
+                                headers: { default: new Header({ children: [new Paragraph("{{file}}")] }) },
+                                footers: { default: new Footer({ children: [new Paragraph("{{file}}")] }) },
+                                children: [new Paragraph({ children: [new TextRun("{{file}}"), new FootnoteReferenceRun(1)] })],
+                            },
+                        ],
+                    }),
+                ),
             );
-            const xml = (await read(zip, "word/document.xml")).replace(/ xmlns:[vo]="[^"]*"/g, "");
-            zip.file("word/document.xml", xml);
-            const patched = await patchDocument({
-                outputType: "uint8array",
-                data: await zip.generateAsync({ type: "uint8array" }),
-                patches: { file: { type: PatchType.PARAGRAPH, children: [new EmbeddedFileRun(workbook)] } },
-            });
-            const root = /<w:document [^>]*>/.exec(await read(await JSZip.loadAsync(patched), "word/document.xml"))![0];
+            for (const part of Object.keys(parts)) {
+                zip.file(`word/${part}.xml`, (await read(zip, `word/${part}.xml`)).replace(/ xmlns:[vo]="[^"]*"/g, ""));
+            }
+            const patched = await JSZip.loadAsync(
+                await patchDocument({
+                    outputType: "uint8array",
+                    data: await zip.generateAsync({ type: "uint8array" }),
+                    patches: { file: { type: PatchType.PARAGRAPH, children: [new EmbeddedFileRun(workbook)] } },
+                }),
+            );
 
-            expect(xml).not.toMatch(/xmlns:[vo]=/);
-            expect(root).toContain('xmlns:v="urn:schemas-microsoft-com:vml"');
-            expect(root).toContain('xmlns:o="urn:schemas-microsoft-com:office:office"');
+            for (const [part, rootName] of Object.entries(parts)) {
+                const xml = await read(patched, `word/${part}.xml`);
+                const root = new RegExp(`<${rootName} [^>]*>`).exec(xml)![0];
+                expect(xml, part).toContain('ProgID="Excel.Sheet.12"');
+                expect(root, part).toContain('xmlns:v="urn:schemas-microsoft-com:vml"');
+                expect(root, part).toContain('xmlns:o="urn:schemas-microsoft-com:office:office"');
+            }
         });
 
         it("should embed a file in a document patchDocument fills in", async () => {
