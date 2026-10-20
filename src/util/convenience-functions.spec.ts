@@ -12,6 +12,7 @@ import {
     docPropertiesUniqueNumericId,
     docPropertiesUniqueNumericIdGen,
     encodeUtf8,
+    fitTextUniqueNumericId,
     hashedId,
     uniqueId,
     uniqueNumericIdCreator,
@@ -83,6 +84,14 @@ describe("Utility", () => {
         it("should keep counting across calls instead of restarting", () => {
             const first = bookmarkUniqueNumericId();
             expect(bookmarkUniqueNumericId()).to.equal(first + 1);
+        });
+    });
+
+    describe("#fitTextUniqueNumericId", () => {
+        it("should keep counting down below 0 across calls instead of restarting", () => {
+            const first = fitTextUniqueNumericId();
+            expect(first).to.be.below(0);
+            expect(fitTextUniqueNumericId()).to.equal(first - 1);
         });
     });
 

@@ -15,6 +15,7 @@ export * from "./sequential-identifier";
 export * from "./underline";
 export * from "./emphasis-mark";
 export * from "./east-asian-layout";
+export * from "./fit-text";
 export * from "./simple-field";
 export * from "./comment-run";
 export * from "./comments-extended";
