@@ -11,7 +11,13 @@
 import { XmlComponent } from "@file/xml-components";
 
 import { RelationshipsAttributes } from "./attributes";
-import { type MacroRelationshipType, type RelationshipType, type TargetModeType, createRelationship } from "./relationship/relationship";
+import {
+    type MacroRelationshipType,
+    type OleObjectRelationshipType,
+    type RelationshipType,
+    type TargetModeType,
+    createRelationship,
+} from "./relationship/relationship";
 
 /**
  * Represents a collection of relationships in an OPC package.
@@ -51,7 +57,7 @@ export class Relationships extends XmlComponent {
      */
     public addRelationship(
         id: number | string,
-        type: RelationshipType | MacroRelationshipType,
+        type: RelationshipType | MacroRelationshipType | OleObjectRelationshipType,
         target: string,
         targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType],
     ): void {

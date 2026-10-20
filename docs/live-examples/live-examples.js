@@ -35,6 +35,7 @@
         // docx/html writes math with docx/math, so it is loaded after it
         "docx/html": { file: "html", global: "docxHtml", after: ["docx/math"] },
         "docx/macros": { file: "macros", global: "docxMacros" },
+        "docx/embedded-files": { file: "embedded-files", global: "docxEmbeddedFiles" },
     };
 
     // Packages from npm an example can import too, from jsDelivr at the version the docs are written for: where each is, and
@@ -46,8 +47,13 @@
         },
     };
 
-    // docx-preview draws these as empty space
-    const NOT_DRAWN = { "docx/shapes": "shapes", "docx/charts": "charts", "docx/watermarks": "watermarks" };
+    // docx-preview draws these as empty space, or, for embedded files, not at all
+    const NOT_DRAWN = {
+        "docx/shapes": "shapes",
+        "docx/charts": "charts",
+        "docx/watermarks": "watermarks",
+        "docx/embedded-files": "embedded files",
+    };
 
     // The type of a document with macros, a .docm, which Word doesn't open as a .docx. A blob's type is in lower case
     const DOCM = "application/vnd.ms-word.document.macroenabled.12";

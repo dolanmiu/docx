@@ -7,7 +7,7 @@
  */
 import type { ContentTypes } from "@file/content-types/content-types";
 import { Relationships } from "@file/relationships";
-import type { RelationshipType } from "@file/relationships/relationship/relationship";
+import type { OleObjectRelationshipType, RelationshipType } from "@file/relationships/relationship/relationship";
 import type { IContext, XmlComponent } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 
@@ -22,9 +22,17 @@ export type EmbeddedPackageFile = {
 };
 
 /**
- * Options for a {@link PackagePart}.
+ * The types of the relationships to package parts: a {@link RelationshipType}, or an OLE object's.
  */
-export type PackagePartOptions = {
+export type PackagePartRelationshipType = RelationshipType | OleObjectRelationshipType;
+
+/**
+ * Options for a {@link PackagePart}.
+ *
+ * @typeParam Relationship - The type of the relationship to the part. A part related as an OLE object, such as a file
+ * docx/embedded-files embeds, gives it, so the options of a part made without it have a {@link RelationshipType}
+ */
+export type PackagePartOptions<Relationship extends PackagePartRelationshipType = RelationshipType> = {
     /** The folder under word/ the part is written in, such as "charts" */
     readonly folder: string;
     /** The start of the part's file name, which is numbered in the order parts are added: "chart" for word/charts/chart1.xml */
@@ -34,7 +42,7 @@ export type PackagePartOptions = {
     /** The part's content type, such as "application/vnd.openxmlformats-officedocument.drawingml.chart+xml" */
     readonly contentType: string;
     /** The type of the relationship to the part from the part that refers to it, such as the chart relationship */
-    readonly relationshipType: RelationshipType;
+    readonly relationshipType: Relationship;
     /**
      * The part's content: XML, formatted as the document's parts are, its bytes, or the files of a package, such as an
      * embedded workbook, which are zipped. XML can refer to other parts by calling their {@link PackagePart.addTo} when
@@ -78,7 +86,7 @@ const RESERVED_FOLDERS = new Set(["_rels", "fonts", "media", "theme"]);
  * }
  * ```
  */
-export class PackagePart {
+export class PackagePart<Relationship extends PackagePartRelationshipType = RelationshipType> {
     private readonly id = uniqueId();
     /** The id of the relationship to the part, such as a chart's `r:id` in the document */
     public readonly relationshipId = `rId${this.id}`;
@@ -89,7 +97,7 @@ export class PackagePart {
      * @throws If the folder isn't a single folder name, or is one of the folders docx writes parts of its own in
      * @throws If the name or the extension isn't a single part of a file name, which could lead out of the folder
      */
-    public constructor(public readonly options: PackagePartOptions) {
+    public constructor(public readonly options: PackagePartOptions<Relationship>) {
         if (!PATH_PART.test(options.folder) || RESERVED_FOLDERS.has(options.folder)) {
             throw new Error(`Invalid package part folder "${options.folder}". Expected a folder name docx doesn't use, such as "charts"`);
         }
@@ -121,7 +129,7 @@ export class PackagePart {
  * added. Not part of the public API: `File` holds one, and the compiler writes its parts, as `patchDocument` does.
  */
 export class PackageParts {
-    private readonly paths = new Map<PackagePart, string>();
+    private readonly paths = new Map<PackagePart<PackagePartRelationshipType>, string>();
     // The folders of the parts whose XML is being written, by the relationships the XML is formatted with
     private readonly folders = new WeakMap<Relationships, string>();
 
@@ -140,7 +148,7 @@ export class PackageParts {
      *
      * @returns The part's path under word/, such as "charts/chart1.xml"
      */
-    public add(part: PackagePart): string {
+    public add(part: PackagePart<PackagePartRelationshipType>): string {
         const added = this.paths.get(part);
         if (added !== undefined) {
             return added;
@@ -162,9 +170,12 @@ export class PackageParts {
 
     /**
      * Each part added, with its path under word/, in the order they were added.
+     *
+     * A part related as an OLE object is listed too, though the parts are typed as they were before a part could be:
+     * `File`, whose type is public, has these parts, and the compiler only writes their content.
      */
     public get Array(): readonly { readonly part: PackagePart; readonly path: string }[] {
-        return [...this.paths].map(([part, path]) => ({ part, path }));
+        return [...this.paths].map(([part, path]) => ({ part: part as PackagePart, path }));
     }
 
     /**

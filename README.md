@@ -125,6 +125,37 @@ const doc = new Document({
 
 In a page without a bundler, load `dist/macros.umd.cjs` after `dist/index.umd.cjs`. It adds the `docxMacros` global. See the [macros](https://docx.js.org/#/usage/macros) documentation.
 
+# Embedded Files
+
+Workbooks, documents, presentations and any other file, such as a sound, a video or a PDF, are embedded in a document as OLE objects, which open from it, with `docx/embedded-files`:
+
+```ts
+import * as fs from "fs";
+import { Document, Paragraph } from "docx";
+import { EmbeddedFileRun } from "docx/embedded-files";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new EmbeddedFileRun({
+                            fileName: "budget.xlsx",
+                            data: fs.readFileSync("./budget.xlsx"),
+                            preview: { type: "png", data: fs.readFileSync("./budget.png") },
+                            transformation: { width: 240, height: 120 },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
+```
+
+In a page without a bundler, load `dist/embedded-files.umd.cjs` after `dist/index.umd.cjs`. It adds the `docxEmbeddedFiles` global. See the [embedded files](https://docx.js.org/#/usage/embedded-files) documentation.
+
 # Playground
 
 Experience `docx` in action through [Docx.js Editor][docxjs-editor-url], an interactive playground where you can code and preview the results in real-time.
