@@ -15,6 +15,8 @@ Get up and running with docx in under 5 minutes.
 npm install --save docx
 ```
 
+In Node, docx needs Node.js 16 or later. `docx/html` and `docx/embedded-files` need 16.9 or later, and `docx/layout` 18 or later.
+
 ## Your First Document
 
 Create a "Hello World" document in just a few lines:

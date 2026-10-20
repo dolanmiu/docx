@@ -4,7 +4,7 @@
 
 A document can have files embedded in it: a workbook, another document, a presentation, or any other file, such as a sound, a video or a PDF. Each is an OLE object, which the document shows as a picture, and which opens when it is double-clicked, as a file embedded with Word's **Insert > Object > Create from File** does.
 
-`EmbeddedFileRun` embeds a file. It comes with the `docx` package, from `docx/embedded-files`, and goes in a paragraph, as an `ImageRun` does:
+`EmbeddedFileRun` embeds a file. It comes with the `docx` package, from `docx/embedded-files` (in Node, Node.js 16.9 or later), and goes in a paragraph, as an `ImageRun` does:
 
 ```ts
 import { Document, Packer, Paragraph } from "docx";
