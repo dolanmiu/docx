@@ -305,6 +305,24 @@ describe("EmbeddedFileRun", () => {
             }
         });
 
+        it("should leave out the shape type when patchDocument inserts a file into a part that has it", async () => {
+            // A template with an embedded file of its own, so its body has the picture frame's shape type
+            const template = await Packer.toBuffer(
+                new Document({
+                    sections: [{ children: [new Paragraph({ children: [new EmbeddedFileRun(workbook)] }), new Paragraph("{{file}}")] }],
+                }),
+            );
+            const patched = await patchDocument({
+                outputType: "uint8array",
+                data: template,
+                patches: { file: { type: PatchType.PARAGRAPH, children: [new EmbeddedFileRun(workbook)] } },
+            });
+            const document = await read(await JSZip.loadAsync(patched), "word/document.xml");
+
+            expect(document.split('<v:shapetype id="_x0000_t75"').length - 1).toBe(1);
+            expect(document.split('<v:shape id="EmbeddedFile').length - 1).toBe(2);
+        });
+
         it("should embed a file in a document patchDocument fills in", async () => {
             const template = await Packer.toBuffer(new Document({ sections: [{ children: [new Paragraph("Before {{file}} after")] }] }));
             const patched = await patchDocument({

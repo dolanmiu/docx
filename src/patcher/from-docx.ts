@@ -42,6 +42,7 @@ import { patchStyles } from "./styles";
 import { patchTableRows } from "./table-rows";
 import { readThemeColors } from "./theme-colors";
 import { toJson } from "./util";
+import { removeShapeTypesIn } from "./vml-shape-types";
 
 /**
  * Supported input data types for document patching.
@@ -486,6 +487,8 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
         const context = createContext(key);
         // eslint-disable-next-line functional/immutable-data
         contexts.set(key, context);
+        // The VML shape types the part has, such as the picture frame embedded files are drawn in, aren't inserted again
+        const removeShapeTypes = removeShapeTypesIn(json);
 
         // Patches a placeholder in an element of the part: its root, or a copy of the rows of a table that a patch repeats
         const patchPlaceholder = (element: Element, patchKey: string, patchValue: IPatch | TableRowsPatch): void => {
@@ -547,7 +550,8 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                 context,
                 keepOriginalStyles,
                 recursive,
-                renumberIds: (elements) => styles.use(lists.renumber(notes.renumber(renumberBookmarks(renumberDrawings(elements))))),
+                renumberIds: (elements) =>
+                    styles.use(lists.renumber(notes.renumber(renumberBookmarks(renumberDrawings(removeShapeTypes(elements)))))),
             });
 
             if (didFindOccurrence) {
