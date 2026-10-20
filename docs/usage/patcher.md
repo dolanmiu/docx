@@ -85,6 +85,8 @@ It takes in `numbering` too, for the lists that the paragraphs in patches use wi
 
 Given `estimatePageNumbers` from `docx/layout` as its `pageNumbers`, it writes the page numbers of the template's tables of contents and page references, and its numbers of pages, once the patches are in. See [Page numbers](usage/templates.md#page-numbers).
 
+It also takes in `properties`, such as the document's title, tags and comments, which replace the template's. See [Document Properties](usage/templates.md#document-properties).
+
 A patch can also be for a drawing whose alt text holds the placeholder, rather than for text: `ChartDataPatch` from `docx/charts` gives a chart made in Word new data, keeping its look. See [Charts in Templates](usage/chart-templates.md).
 
 ### How to patch existing document
