@@ -11360,7 +11360,7 @@ declare type PatchDetectorOptions = {
  *
  * @publicApi
  */
-export declare const patchDocument: <T extends PatchDocumentOutputType = PatchDocumentOutputType>({ outputType, data, patches, keepOriginalStyles, placeholderDelimiters, recursive, footnotes, endnotes, numbering, pageNumbers, }: PatchDocumentOptions<T>) => Promise<OutputByType[T]>;
+export declare const patchDocument: <T extends PatchDocumentOutputType = PatchDocumentOutputType>({ outputType, data, patches, keepOriginalStyles, placeholderDelimiters, recursive, footnotes, endnotes, numbering, pageNumbers, properties, }: PatchDocumentOptions<T>) => Promise<OutputByType[T]>;
 
 /**
  * Options for patching a document.
@@ -11375,6 +11375,7 @@ export declare const patchDocument: <T extends PatchDocumentOutputType = PatchDo
  * @property endnotes - The endnotes that patches refer to with an `EndnoteReferenceRun`
  * @property numbering - The lists that the paragraphs in patches use, by their references
  * @property pageNumbers - Works out the page each bookmark is on, to write the page numbers of page references
+ * @property properties - The document's properties to set, such as its title
  */
 export declare type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocumentOutputType> = {
     /** Output format type */
@@ -11418,12 +11419,23 @@ export declare type PatchDocumentOptions<T extends PatchDocumentOutputType = Pat
      * were in the template. Give it `estimatePageNumbers` from `docx/layout`. See {@link TemplatePageNumberEstimator}
      */
     readonly pageNumbers?: TemplatePageNumberEstimator;
+    /**
+     * The document's properties to set, such as its title, tags (`keywords`) and comments (`description`), which Word
+     * shows in File > Info. They replace the template's, and the template's other properties are kept
+     */
+    readonly properties?: PatchDocumentProperties;
 };
 
 /**
  * Output format types for patched documents.
  */
 export declare type PatchDocumentOutputType = OutputType;
+
+/**
+ * The properties of a document that `patchDocument` sets, with the names `Document` gives them. Word shows `keywords`
+ * as the document's tags and `description` as its comments.
+ */
+export declare type PatchDocumentProperties = Pick<IPropertiesOptions, "title" | "subject" | "creator" | "keywords" | "description" | "lastModifiedBy" | "revision">;
 
 /**
  * A template once `patchDocument` has patched it, as a {@link TemplatePageNumberEstimator} reads it.

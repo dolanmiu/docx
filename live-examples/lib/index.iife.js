@@ -9902,7 +9902,7 @@ EXTERNAL: "External" };
 		}
 	};
 	/** The text of a paragraph. Of a field, only its result is text, not its instruction */
-	var textOf = (paragraph) => {
+	var textOf$1 = (paragraph) => {
 		const fields = [];
 		const read = (element) => {
 			const name = nameOf$4(element);
@@ -9956,7 +9956,7 @@ EXTERNAL: "External" };
 				element,
 				styleId: attributeOf(childOf(properties, "w:pStyle"), "w:val"),
 				outlineLevel: numberAttributeOf(childOf(properties, "w:outlineLvl"), "w:val"),
-				text: textOf(element),
+				text: textOf$1(element),
 				bookmarks: (_bookmarks$index = bookmarks[index]) !== null && _bookmarks$index !== void 0 ? _bookmarks$index : /* @__PURE__ */ new Set()
 			};
 		});
@@ -35400,81 +35400,6 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 		});
 	};
 	//#endregion
-	//#region src/patcher/drawing-ids.ts
-	var DRAWINGS = /* @__PURE__ */ new Set(["wp:inline", "wp:anchor"]);
-	var ID_ELEMENTS = /* @__PURE__ */ new Set([
-		"wp:docPr",
-		"wps:cNvPr",
-		"wpg:cNvPr"
-	]);
-	var REFERENCE_ELEMENTS = /* @__PURE__ */ new Set(["a:stCxn", "a:endCxn"]);
-	var idOf$1 = (element, names) => {
-		var _element$name, _element$attributes;
-		if (!names.has((_element$name = element.name) !== null && _element$name !== void 0 ? _element$name : "")) return;
-		const id = Number((_element$attributes = element.attributes) === null || _element$attributes === void 0 ? void 0 : _element$attributes.id);
-		return Number.isInteger(id) ? id : void 0;
-	};
-	/**
-	* Finds the id of every drawing in an element, at any depth, and of the shapes in them, such as in a group.
-	*
-	* @param element - The element to search, such as a part's root
-	* @returns The ids, once for each element that has one
-	*/
-	var findDrawingIds = (element) => {
-		var _element$elements;
-		const id = idOf$1(element, ID_ELEMENTS);
-		return [...id === void 0 ? [] : [id], ...((_element$elements = element.elements) !== null && _element$elements !== void 0 ? _element$elements : []).flatMap(findDrawingIds)];
-	};
-	var ownIdsOf = (drawing) => {
-		const idsIn = (element) => {
-			var _element$elements2;
-			const id = idOf$1(element, ID_ELEMENTS);
-			return [...id === void 0 ? [] : [id], ...((_element$elements2 = element.elements) !== null && _element$elements2 !== void 0 ? _element$elements2 : []).flatMap((child) => {
-				var _child$name;
-				return DRAWINGS.has((_child$name = child.name) !== null && _child$name !== void 0 ? _child$name : "") ? [] : idsIn(child);
-			})];
-		};
-		return idsIn(drawing);
-	};
-	/**
-	* Creates a function that renumbers the drawings in content being inserted, so none has an id another drawing in the
-	* document has. Word finds a document whose drawings share an id unreadable, even when they are in different parts,
-	* such as a header and the body. A drawing's id is chosen when it is created, without knowing which ids the template
-	* has, and content inserted more than once would have the same ids each time.
-	*
-	* A drawing keeps its ids if nothing in the document has them yet, and otherwise gets the next unused ones. The
-	* connectors in a drawing then still join the shapes they did.
-	*
-	* @param idsInDocument - The ids of the drawings already in the document, and of the shapes in them
-	* @returns A function that returns the elements with their drawings renumbered
-	*/
-	var renumberDrawingsAvoiding = (idsInDocument) => {
-		const usedIds = new Set(idsInDocument);
-		let highestId = idsInDocument.reduce((highest, id) => Math.max(highest, id), 0);
-		const newIdFor = (id) => {
-			const newId = usedIds.has(id) ? highestId + 1 : id;
-			highestId = Math.max(highestId, newId);
-			usedIds.add(newId);
-			return newId;
-		};
-		const renumberDrawing = (drawing) => {
-			const newIds = new Map([...new Set(ownIdsOf(drawing))].map((id) => [id, newIdFor(id)]));
-			const renumberIn = (element) => {
-				var _element$name2, _idOf;
-				if (element !== drawing && DRAWINGS.has((_element$name2 = element.name) !== null && _element$name2 !== void 0 ? _element$name2 : "")) return renumberDrawing(element);
-				const id = (_idOf = idOf$1(element, ID_ELEMENTS)) !== null && _idOf !== void 0 ? _idOf : idOf$1(element, REFERENCE_ELEMENTS);
-				const newId = id === void 0 ? void 0 : newIds.get(id);
-				return _objectSpread2(_objectSpread2(_objectSpread2({}, element), newId === void 0 ? {} : { attributes: _objectSpread2(_objectSpread2({}, element.attributes), {}, { id: String(newId) }) }), element.elements === void 0 ? {} : { elements: element.elements.map(renumberIn) });
-			};
-			return renumberIn(drawing);
-		};
-		const renumber = (element) => {
-			var _element$name3;
-			return DRAWINGS.has((_element$name3 = element.name) !== null && _element$name3 !== void 0 ? _element$name3 : "") ? renumberDrawing(element) : _objectSpread2(_objectSpread2({}, element), element.elements === void 0 ? {} : { elements: element.elements.map(renumber) });
-		};
-		return (elements) => elements.map(renumber);
-	};
-	//#endregion
 	//#region src/patcher/patch-type.ts
 	/**
 	* The types of patch `patchDocument` applies.
@@ -35810,6 +35735,224 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 			}));
 		}));
 		for (const { drawing, patch } of found) patch.patch(drawing, createTemplatePackage(parts, binaryParts, file, createContext(drawing.part.path)));
+	};
+	//#endregion
+	//#region src/patcher/core-properties.ts
+	var CORE_PROPERTIES_RELATIONSHIP_TYPE = "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties";
+	var CORE_PROPERTIES_CONTENT_TYPE = "application/vnd.openxmlformats-package.core-properties+xml";
+	var PACKAGE_RELATIONSHIPS_PATH = "_rels/.rels";
+	var CORE_PROPERTIES_PATH = "docProps/core.xml";
+	var NAMESPACES = {
+		cp: "http://schemas.openxmlformats.org/package/2006/metadata/core-properties",
+		dc: "http://purl.org/dc/elements/1.1/"
+	};
+	var ELEMENTS = {
+		title: {
+			namespace: "dc",
+			name: "title"
+		},
+		subject: {
+			namespace: "dc",
+			name: "subject"
+		},
+		creator: {
+			namespace: "dc",
+			name: "creator"
+		},
+		keywords: {
+			namespace: "cp",
+			name: "keywords"
+		},
+		description: {
+			namespace: "dc",
+			name: "description"
+		},
+		lastModifiedBy: {
+			namespace: "cp",
+			name: "lastModifiedBy"
+		},
+		revision: {
+			namespace: "cp",
+			name: "revision"
+		}
+	};
+	var textOf = (value) => value === "" ? [] : [{
+		type: "text",
+		text: String(value)
+	}];
+	var localName$1 = (element) => {
+		var _element$name;
+		return (_element$name = element.name) === null || _element$name === void 0 ? void 0 : _element$name.slice(element.name.indexOf(":") + 1);
+	};
+	/**
+	* The prefix, with its colon, that the root gives a namespace, or none if it's the default one. A root without the
+	* namespace is given it with its usual prefix.
+	*/
+	var prefixOf = (root, namespace) => {
+		var _Object$entries$find;
+		const declaration = (_Object$entries$find = Object.entries(_objectSpread2({}, root.attributes)).find(([name, value]) => (name === "xmlns" || name.startsWith("xmlns:")) && value === NAMESPACES[namespace])) === null || _Object$entries$find === void 0 ? void 0 : _Object$entries$find[0];
+		if (declaration === void 0) {
+			root.attributes = _objectSpread2(_objectSpread2({}, root.attributes), {}, { [`xmlns:${namespace}`]: NAMESPACES[namespace] });
+			return `${namespace}:`;
+		}
+		return declaration === "xmlns" ? "" : `${declaration.slice(6)}:`;
+	};
+	/**
+	* The text of a part, in UTF-16, from its byte order mark, or else in UTF-8.
+	*/
+	var decode = (bytes) => {
+		const encoding = bytes[0] === 255 && bytes[1] === 254 ? "utf-16le" : bytes[0] === 254 && bytes[1] === 255 ? "utf-16be" : "utf-8";
+		return new TextDecoder(encoding).decode(bytes);
+	};
+	/**
+	* The package's part at a path, if it has one. The patcher keeps a part in UTF-16, or one whose name doesn't end in
+	* .xml, with its other parts, as it found it, so that is read and moved to its XML parts, to be written in UTF-8 with
+	* them, rather than written over them as it was.
+	*/
+	var readPart$1 = (parts, binaryParts, path) => {
+		var _part$declaration;
+		const bytes = binaryParts.get(path);
+		if (bytes === void 0) return parts.get(path);
+		const part = toJson(decode(bytes));
+		if ((_part$declaration = part.declaration) === null || _part$declaration === void 0 ? void 0 : _part$declaration.attributes) part.declaration.attributes.encoding = "UTF-8";
+		binaryParts.delete(path);
+		parts.set(path, part);
+		return part;
+	};
+	/**
+	* The path of the package's core properties part, found from its relationships. A package without one is given a
+	* relationship to docProps/core.xml.
+	*/
+	var corePropertiesPathOf = (parts) => {
+		var _parts$get, _getFirstLevelElement;
+		const relationships = (_parts$get = parts.get(PACKAGE_RELATIONSHIPS_PATH)) !== null && _parts$get !== void 0 ? _parts$get : createRelationshipFile();
+		const target = (_getFirstLevelElement = getFirstLevelElements(relationships, "Relationships").find((relationship) => {
+			var _relationship$attribu;
+			return ((_relationship$attribu = relationship.attributes) === null || _relationship$attribu === void 0 ? void 0 : _relationship$attribu.Type) === CORE_PROPERTIES_RELATIONSHIP_TYPE;
+		})) === null || _getFirstLevelElement === void 0 || (_getFirstLevelElement = _getFirstLevelElement.attributes) === null || _getFirstLevelElement === void 0 ? void 0 : _getFirstLevelElement.Target;
+		if (typeof target === "string") return resolveTarget("", target);
+		appendRelationship(relationships, getNextRelationshipIndex(relationships), CORE_PROPERTIES_RELATIONSHIP_TYPE, CORE_PROPERTIES_PATH);
+		parts.set(PACKAGE_RELATIONSHIPS_PATH, relationships);
+		return CORE_PROPERTIES_PATH;
+	};
+	/**
+	* Sets the given properties of a document in its core properties part, replacing the template's, and leaves the
+	* others as they are. A template without the part is given one.
+	*
+	* @param parts - The package's XML parts, by their paths, which the part is set in
+	* @param binaryParts - The package's other parts, by their paths, which the part is taken from if it's one of them
+	* @param addContentTypeOverride - Adds the content type of the part, if it's new
+	*/
+	var patchCoreProperties = (parts, binaryParts, properties, { addContentTypeOverride }) => {
+		var _part$elements, _root$elements;
+		const path = corePropertiesPathOf(parts);
+		const existing = readPart$1(parts, binaryParts, path);
+		const part = existing !== null && existing !== void 0 ? existing : {
+			declaration: { attributes: {
+				version: "1.0",
+				encoding: "UTF-8",
+				standalone: "yes"
+			} },
+			elements: [{
+				type: "element",
+				name: "cp:coreProperties",
+				attributes: { "xmlns:cp": NAMESPACES.cp },
+				elements: []
+			}]
+		};
+		if (existing === void 0) {
+			parts.set(path, part);
+			addContentTypeOverride(CORE_PROPERTIES_CONTENT_TYPE, `/${path}`);
+		}
+		const root = (_part$elements = part.elements) === null || _part$elements === void 0 ? void 0 : _part$elements.find((element) => localName$1(element) === "coreProperties");
+		if (root === void 0) throw new Error(`Could not find the core properties in ${path}`);
+		(_root$elements = root.elements) !== null && _root$elements !== void 0 || (root.elements = []);
+		for (const [key, { namespace, name }] of Object.entries(ELEMENTS)) {
+			const value = properties[key];
+			if (value === void 0) continue;
+			const element = root.elements.find((item) => localName$1(item) === name);
+			if (element) element.elements = textOf(value);
+			else root.elements.push({
+				type: "element",
+				name: `${prefixOf(root, namespace)}${name}`,
+				elements: textOf(value)
+			});
+		}
+	};
+	//#endregion
+	//#region src/patcher/drawing-ids.ts
+	var DRAWINGS = /* @__PURE__ */ new Set(["wp:inline", "wp:anchor"]);
+	var ID_ELEMENTS = /* @__PURE__ */ new Set([
+		"wp:docPr",
+		"wps:cNvPr",
+		"wpg:cNvPr"
+	]);
+	var REFERENCE_ELEMENTS = /* @__PURE__ */ new Set(["a:stCxn", "a:endCxn"]);
+	var idOf$1 = (element, names) => {
+		var _element$name, _element$attributes;
+		if (!names.has((_element$name = element.name) !== null && _element$name !== void 0 ? _element$name : "")) return;
+		const id = Number((_element$attributes = element.attributes) === null || _element$attributes === void 0 ? void 0 : _element$attributes.id);
+		return Number.isInteger(id) ? id : void 0;
+	};
+	/**
+	* Finds the id of every drawing in an element, at any depth, and of the shapes in them, such as in a group.
+	*
+	* @param element - The element to search, such as a part's root
+	* @returns The ids, once for each element that has one
+	*/
+	var findDrawingIds = (element) => {
+		var _element$elements;
+		const id = idOf$1(element, ID_ELEMENTS);
+		return [...id === void 0 ? [] : [id], ...((_element$elements = element.elements) !== null && _element$elements !== void 0 ? _element$elements : []).flatMap(findDrawingIds)];
+	};
+	var ownIdsOf = (drawing) => {
+		const idsIn = (element) => {
+			var _element$elements2;
+			const id = idOf$1(element, ID_ELEMENTS);
+			return [...id === void 0 ? [] : [id], ...((_element$elements2 = element.elements) !== null && _element$elements2 !== void 0 ? _element$elements2 : []).flatMap((child) => {
+				var _child$name;
+				return DRAWINGS.has((_child$name = child.name) !== null && _child$name !== void 0 ? _child$name : "") ? [] : idsIn(child);
+			})];
+		};
+		return idsIn(drawing);
+	};
+	/**
+	* Creates a function that renumbers the drawings in content being inserted, so none has an id another drawing in the
+	* document has. Word finds a document whose drawings share an id unreadable, even when they are in different parts,
+	* such as a header and the body. A drawing's id is chosen when it is created, without knowing which ids the template
+	* has, and content inserted more than once would have the same ids each time.
+	*
+	* A drawing keeps its ids if nothing in the document has them yet, and otherwise gets the next unused ones. The
+	* connectors in a drawing then still join the shapes they did.
+	*
+	* @param idsInDocument - The ids of the drawings already in the document, and of the shapes in them
+	* @returns A function that returns the elements with their drawings renumbered
+	*/
+	var renumberDrawingsAvoiding = (idsInDocument) => {
+		const usedIds = new Set(idsInDocument);
+		let highestId = idsInDocument.reduce((highest, id) => Math.max(highest, id), 0);
+		const newIdFor = (id) => {
+			const newId = usedIds.has(id) ? highestId + 1 : id;
+			highestId = Math.max(highestId, newId);
+			usedIds.add(newId);
+			return newId;
+		};
+		const renumberDrawing = (drawing) => {
+			const newIds = new Map([...new Set(ownIdsOf(drawing))].map((id) => [id, newIdFor(id)]));
+			const renumberIn = (element) => {
+				var _element$name2, _idOf;
+				if (element !== drawing && DRAWINGS.has((_element$name2 = element.name) !== null && _element$name2 !== void 0 ? _element$name2 : "")) return renumberDrawing(element);
+				const id = (_idOf = idOf$1(element, ID_ELEMENTS)) !== null && _idOf !== void 0 ? _idOf : idOf$1(element, REFERENCE_ELEMENTS);
+				const newId = id === void 0 ? void 0 : newIds.get(id);
+				return _objectSpread2(_objectSpread2(_objectSpread2({}, element), newId === void 0 ? {} : { attributes: _objectSpread2(_objectSpread2({}, element.attributes), {}, { id: String(newId) }) }), element.elements === void 0 ? {} : { elements: element.elements.map(renumberIn) });
+			};
+			return renumberIn(drawing);
+		};
+		const renumber = (element) => {
+			var _element$name3;
+			return DRAWINGS.has((_element$name3 = element.name) !== null && _element$name3 !== void 0 ? _element$name3 : "") ? renumberDrawing(element) : _objectSpread2(_objectSpread2({}, element), element.elements === void 0 ? {} : { elements: element.elements.map(renumber) });
+		};
+		return (elements) => elements.map(renumber);
 	};
 	//#endregion
 	//#region src/patcher/load-zip.ts
@@ -37157,7 +37300,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 		var _ref = _asyncToGenerator(function* ({ outputType, data, patches, keepOriginalStyles, placeholderDelimiters = {
 			start: "{{",
 			end: "}}"
-		}, recursive = true, footnotes, endnotes, numbering = { config: [] }, pageNumbers }) {
+		}, recursive = true, footnotes, endnotes, numbering = { config: [] }, pageNumbers, properties }) {
 			const zipContent = yield loadZip(data);
 			const contexts = /* @__PURE__ */ new Map();
 			const themeColors = yield readThemeColors(zipContent);
@@ -37352,6 +37495,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 				appendRelationship(relationshipsJson, id, type, target, targetMode);
 			}
 			if (pageNumbers) yield fillTemplatePageNumbers(map, pageNumbers, binaryContentMap);
+			if (properties) patchCoreProperties(map, binaryContentMap, properties, { addContentTypeOverride });
 			const packageParts = xmlifyPackageParts(file, void 0);
 			if (hasMedia || contentTypeOverrides.length > 0) {
 				const contentTypesJson = map.get("[Content_Types].xml");
