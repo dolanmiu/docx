@@ -284,6 +284,28 @@ describe("Run", () => {
         });
     });
 
+    describe("#fitText()", () => {
+        it("should write w:fitText after w:shd and before w:vertAlign, as Word orders them", () => {
+            const run = new Run({
+                superScript: true,
+                fitText: { width: 2880, group: 4 },
+                shading: { type: ShadingType.CLEAR, fill: "FFFF00" },
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {
+                        "w:rPr": [
+                            { "w:shd": { _attr: { "w:val": "clear", "w:fill": "FFFF00" } } },
+                            { "w:fitText": { _attr: { "w:val": 2880, "w:id": 4 } } },
+                            { "w:vertAlign": { _attr: { "w:val": "superscript" } } },
+                        ],
+                    },
+                ],
+            });
+        });
+    });
+
     describe("#break()", () => {
         it("it should add break to the run", () => {
             const run = new Run({

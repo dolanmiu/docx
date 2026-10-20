@@ -371,6 +371,23 @@ describe("layoutDocument", () => {
         );
     });
 
+    it("should fit each run fitted to a width without a group on its own, and the runs of a group to the first one's width, as Word does", () => {
+        // Word for Mac 16.114 drew "Name" fitted to 1440 twips 72 points wide, "Bold " and "plain" fitted to 1440 each
+        // without a group 144, the two in one group of 2880 144, and in one group of 1440 and then 2880 72
+        const widthOf = (...children: readonly TextRun[]): number => {
+            const { pages, stoppedAt } = layoutDocument(new Document({ sections: [{ children: [new Paragraph({ children })] }] }));
+            expect(stoppedAt).to.equal(undefined);
+            return linesOf(pages[0].body)[0].textWidth;
+        };
+        const fitted = (text: string, width: number, group?: number): TextRun =>
+            new TextRun({ text, fitText: { width, ...(group === undefined ? {} : { group }) } });
+        // An inch is 1440 twips, and 96 pixels
+        expect(widthOf(fitted("Name", 1440))).to.be.closeTo(96, 0.001);
+        expect(widthOf(fitted("Bold ", 1440), fitted("plain", 1440))).to.be.closeTo(192, 0.001);
+        expect(widthOf(fitted("Bold ", 2880, 1), fitted("plain", 2880, 1))).to.be.closeTo(192, 0.001);
+        expect(widthOf(fitted("Bold ", 1440, 1), fitted("plain", 2880, 1))).to.be.closeTo(96, 0.001);
+    });
+
     it("should leave the document as it is written", () => {
         const options = (): IPropertiesOptions => ({
             footnotes: { 1: { children: [new Paragraph("A footnote.")] } },

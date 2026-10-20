@@ -166,6 +166,25 @@ export const bookmarkUniqueNumericIdGen = (): UniqueNumericIdCreator => uniqueNu
  */
 export const bookmarkUniqueNumericId: UniqueNumericIdCreator = bookmarkUniqueNumericIdGen();
 
+const fitTextUniqueNumericIdGen = uniqueNumericIdCreator();
+
+/**
+ * Returns the next ID for text fitted to a width on its own (`w:fitText`), from a single counter shared by every run.
+ *
+ * Word fits runs one after the other with the same ID together, and runs without one unreliably, so a run fitted
+ * without a group is given an ID no other run has. The IDs count down from -1, as Word's own are negative, so they
+ * don't meet the groups people give, which count up.
+ *
+ * @returns A negative number no earlier call has returned
+ *
+ * @example
+ * ```typescript
+ * const first = fitTextUniqueNumericId(); // -1
+ * const second = fitTextUniqueNumericId(); // -2
+ * ```
+ */
+export const fitTextUniqueNumericId: UniqueNumericIdCreator = (): number => -fitTextUniqueNumericIdGen();
+
 /**
  * Generates a unique lowercase alphanumeric ID using nanoid.
  *

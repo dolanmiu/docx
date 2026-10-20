@@ -27,6 +27,7 @@ import type { PositiveUniversalMeasure, UniversalMeasure } from "@util/values";
 
 import { type IEastAsianLayoutOptions, createEastAsianLayout } from "./east-asian-layout";
 import { type EmphasisMarkType, createEmphasisMark } from "./emphasis-mark";
+import { type IFitTextOptions, createFitText } from "./fit-text";
 import { CharacterSpacing, Color, Highlight } from "./formatting";
 import { type ILanguageOptions, createLanguageComponent } from "./language";
 import { type IFontAttributesProperties, type IThemeFontReference, createRunFonts } from "./run-fonts";
@@ -197,6 +198,11 @@ export type IRunStylePropertiesOptions = {
     readonly highlightComplexScript?: boolean | string;
     readonly characterSpacing?: number;
     readonly shading?: IShadingAttributesProperties;
+    /**
+     * Squeezes or spreads the run's text so that it takes up the width given, as Word's Fit Text does. Runs next to each
+     * other with the same `group` are fitted to it together.
+     */
+    readonly fitText?: IFitTextOptions;
     readonly emboss?: boolean;
     readonly imprint?: boolean;
     readonly revision?: IRunPropertiesChangeOptions;
@@ -387,6 +393,10 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.shading) {
             this.push(createShading(options.shading));
+        }
+
+        if (options.fitText) {
+            this.push(createFitText(options.fitText));
         }
 
         if (options.subScript) {

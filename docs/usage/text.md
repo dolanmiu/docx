@@ -223,6 +223,37 @@ const doc = new Document({
 });
 ```
 
+### Fit Text
+
+`fitText` squeezes or spreads a run's text so that it takes up the `width` given, in twips (1440 is an inch) or as a measure such as `"1in"`, as Word's Fit Text does (`w:fitText`). Labels fitted to one width line up what comes after them. Runs next to each other with the same `group` are fitted together, as one piece of text, to the first one's width, so it can be formatted differently. A run without a `group` is fitted on its own.
+
+```ts live
+import { Document, Paragraph, TextRun } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({ children: [new TextRun({ text: "Name", fitText: { width: 1440 } }), new TextRun(": Jane Smith")] }),
+                new Paragraph({ children: [new TextRun({ text: "Address", fitText: { width: 1440 } }), new TextRun(": 1 Harbour Road")] }),
+                new Paragraph({
+                    children: [new TextRun({ text: "Telephone number", fitText: { width: 1440 } }), new TextRun(": 01234 567890")],
+                }),
+                new Paragraph({
+                    children: [
+                        new TextRun({ text: "Date of ", fitText: { width: 1440, group: 1 } }),
+                        new TextRun({ text: "birth", bold: true, fitText: { width: 1440, group: 1 } }),
+                        new TextRun(": 1 April 1990"),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
+```
+
+Word fits the text as it lays the page out. LibreOffice ignores `fitText`, and shows the text at its own width.
+
 ### Shading and Highlighting
 
 ```ts live
