@@ -391,9 +391,10 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
             const document = json.elements?.find((i) => i.name === "w:document");
             if (document && document.attributes) {
                 // We could check all namespaces from Document, but we'll instead
-                // check only those that may be used by our element types.
+                // check only those that may be used by our element types. VML (v) and Office's (o) are for legacy
+                // shapes, such as text boxes and the embedded files of docx/embedded-files
 
-                for (const ns of ["mc", "wp", "r", "w15", "m"] as const) {
+                for (const ns of ["mc", "wp", "r", "w15", "m", "v", "o"] as const) {
                     // eslint-disable-next-line functional/immutable-data
                     document.attributes[`xmlns:${ns}`] = DocumentAttributeNamespaces[ns];
                 }

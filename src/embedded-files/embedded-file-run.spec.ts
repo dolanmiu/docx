@@ -323,6 +323,25 @@ describe("EmbeddedFileRun", () => {
             expect(document.split('<v:shape id="EmbeddedFile').length - 1).toBe(2);
         });
 
+        it("should declare the VML and Office namespaces when patchDocument inserts a file into a document without them", async () => {
+            // A template whose document doesn't declare them, as some applications write one
+            const zip = await JSZip.loadAsync(
+                await Packer.toBuffer(new Document({ sections: [{ children: [new Paragraph("{{file}}")] }] })),
+            );
+            const xml = (await read(zip, "word/document.xml")).replace(/ xmlns:[vo]="[^"]*"/g, "");
+            zip.file("word/document.xml", xml);
+            const patched = await patchDocument({
+                outputType: "uint8array",
+                data: await zip.generateAsync({ type: "uint8array" }),
+                patches: { file: { type: PatchType.PARAGRAPH, children: [new EmbeddedFileRun(workbook)] } },
+            });
+            const root = /<w:document [^>]*>/.exec(await read(await JSZip.loadAsync(patched), "word/document.xml"))![0];
+
+            expect(xml).not.toMatch(/xmlns:[vo]=/);
+            expect(root).toContain('xmlns:v="urn:schemas-microsoft-com:vml"');
+            expect(root).toContain('xmlns:o="urn:schemas-microsoft-com:office:office"');
+        });
+
         it("should embed a file in a document patchDocument fills in", async () => {
             const template = await Packer.toBuffer(new Document({ sections: [{ children: [new Paragraph("Before {{file}} after")] }] }));
             const patched = await patchDocument({
