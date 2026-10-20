@@ -14,7 +14,7 @@ It can also give what is on each page, with [`layoutDocument`](#what-is-on-each-
 
 ## Importing
 
-Layout comes with the `docx` package. Import it from `docx/layout`, and everything else from `docx`:
+Layout comes with the `docx` package. Import it from `docx/layout`, and everything else from `docx`. In Node, it needs Node.js 18 or later:
 
 ```ts
 import { Document, TableOfContents } from "docx";

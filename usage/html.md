@@ -6,7 +6,7 @@
 
 They are for HTML that comes from somewhere else, such as what people write in a rich-text editor and an app keeps, a page of a content management system, or the answer of a language model. For a document you write yourself, docx's own components say what you mean more clearly.
 
-They come with the `docx` package, from `docx/html`.
+They come with the `docx` package, from `docx/html`. In Node, they need Node.js 16.9 or later.
 
 ## Example
 
