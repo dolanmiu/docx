@@ -1113,7 +1113,7 @@ describe("ImageRun", () => {
                 },
             });
 
-            expect(spy).toBeCalledWith("");
+            expect(spy).toHaveBeenCalledWith("");
         });
 
         it("should work with svgs", () => {

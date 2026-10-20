@@ -12,7 +12,7 @@ describe("FooterWrapper", () => {
             const spy = vi.spyOn(file.View, "add");
             file.add(new Paragraph({}));
 
-            expect(spy).toBeCalled();
+            expect(spy).toHaveBeenCalled();
         });
 
         it("should call the underlying footer's addParagraph", () => {
@@ -32,7 +32,7 @@ describe("FooterWrapper", () => {
                 }),
             );
 
-            expect(spy).toBeCalled();
+            expect(spy).toHaveBeenCalled();
         });
     });
 
@@ -43,7 +43,7 @@ describe("FooterWrapper", () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             file.addChildElement({} as any);
 
-            expect(spy).toBeCalled();
+            expect(spy).toHaveBeenCalled();
         });
     });
 
