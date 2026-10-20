@@ -360,6 +360,24 @@ export class HyperlinkStyle extends StyleForCharacter {
 }
 
 /**
+ * Represents the Line Number character style.
+ *
+ * Word draws a section's line numbers in the character style named "line number", whatever its id, so this style
+ * formats them. Like Word's, it has no formatting of its own, so line numbers take the document defaults.
+ */
+export class LineNumberStyle extends StyleForCharacter {
+    public constructor(options: IBaseCharacterStyleOptions) {
+        super({
+            id: "LineNumber",
+            name: "line number",
+            basedOn: "DefaultParagraphFont",
+            semiHidden: true,
+            ...options,
+        });
+    }
+}
+
+/**
  * Represents the Normal Table style, the default style of tables.
  *
  * It gives cells the margins Word gives the tables it makes: 108 twips (0.075 inches) on the left and right. Without a

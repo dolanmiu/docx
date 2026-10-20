@@ -421,6 +421,25 @@ describe("File", () => {
         });
     });
 
+    it("should format line numbers with the lineNumber style given in styles.default", () => {
+        const doc = new File({
+            styles: {
+                default: {
+                    lineNumber: { run: { font: "Calibri", size: 20 } },
+                },
+            },
+            sections: [],
+        });
+
+        const tree = new Formatter().format(doc.Styles)["w:styles"];
+        const lineNumberStyles = tree.filter((child: { readonly "w:style"?: readonly { readonly _attr?: Record<string, string> }[] }) =>
+            child["w:style"]?.some((part) => part._attr?.["w:styleId"] === "LineNumber"),
+        );
+        expect(lineNumberStyles).to.deep.equal([
+            new Formatter().format(createDefaultStyles({ lineNumber: { run: { font: "Calibri", size: 20 } } }).lineNumber),
+        ]);
+    });
+
     it("should create with even and odd headers and footers", () => {
         const doc = new File({
             evenAndOddHeaderAndFooters: true,

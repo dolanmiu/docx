@@ -360,6 +360,46 @@ describe("Default Styles", () => {
         });
     });
 
+    it("LineNumberStyle#constructor is Word's line number style, with no formatting of its own", () => {
+        expect(new Formatter().format(new defaultStyles.LineNumberStyle({}))).to.deep.equal({
+            "w:style": [
+                { _attr: { "w:type": "character", "w:styleId": "LineNumber" } },
+                { "w:name": { _attr: { "w:val": "line number" } } },
+                { "w:basedOn": { _attr: { "w:val": "DefaultParagraphFont" } } },
+                { "w:uiPriority": { _attr: { "w:val": 99 } } },
+                { "w:semiHidden": EMPTY_OBJECT },
+                { "w:unhideWhenUsed": EMPTY_OBJECT },
+            ],
+        });
+    });
+
+    it("LineNumberStyle#constructor formats line numbers with the run options given", () => {
+        expect(
+            new Formatter().format(new defaultStyles.LineNumberStyle({ run: { font: "Calibri", size: 20, color: "808080" } })),
+        ).to.deep.equal({
+            "w:style": [
+                { _attr: { "w:type": "character", "w:styleId": "LineNumber" } },
+                { "w:name": { _attr: { "w:val": "line number" } } },
+                { "w:basedOn": { _attr: { "w:val": "DefaultParagraphFont" } } },
+                { "w:uiPriority": { _attr: { "w:val": 99 } } },
+                { "w:semiHidden": EMPTY_OBJECT },
+                { "w:unhideWhenUsed": EMPTY_OBJECT },
+                {
+                    "w:rPr": [
+                        {
+                            "w:rFonts": {
+                                _attr: { "w:ascii": "Calibri", "w:cs": "Calibri", "w:eastAsia": "Calibri", "w:hAnsi": "Calibri" },
+                            },
+                        },
+                        { "w:color": { _attr: { "w:val": "808080" } } },
+                        { "w:sz": { _attr: { "w:val": 20 } } },
+                        { "w:szCs": { _attr: { "w:val": 20 } } },
+                    ],
+                },
+            ],
+        });
+    });
+
     it("NormalTableStyle#constructor gives tables the cell margins Word gives the tables it makes", () => {
         expect(new Formatter().format(new defaultStyles.NormalTableStyle())).to.deep.equal({
             "w:style": [
