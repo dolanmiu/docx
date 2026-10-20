@@ -14,8 +14,8 @@ You are a skeptical second opinion on PR review comments, most of them written b
 The input is `$ARGUMENTS`, or whatever the user gave:
 
 - **Pasted text or a screenshot.** Evaluate it (step 2) and fix what's valid (step 3). There are no threads to reply to unless the user also names the PR.
-- **A PR number or link.** Fetch that PR's unresolved review threads.
-- **"merged", or "recent PRs".** Fetch the unresolved review threads on recently merged PRs. By default, go back to where activity picks up after a gap. Say what cut-off you used, and mention any older unresolved threads you left out.
+- **A PR number or link.** Fetch that PR's unresolved review threads, and CodeRabbit's comments in its reviews' bodies.
+- **"merged", or "recent PRs".** Fetch the unresolved review threads, and CodeRabbit's comments in its reviews' bodies, on recently merged PRs. By default, go back to where activity picks up after a gap. Say what cut-off you used, and mention any older unresolved threads you left out.
 
 ```bash
 # PRs to look at
@@ -29,7 +29,15 @@ query($n: Int!) { repository(owner: "dolanmiu", name: "docx") { pullRequest(numb
   --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false)'
 ```
 
-Save the raw JSON in the scratchpad. CodeRabbit bodies are long, so strip the `<details>` blocks ("🤖 Prompt for AI Agents", "🧩 Analysis chain", "🔎 Supported by static analysis", "📝 Committable suggestion") and HTML comments before reading. Number the threads and keep each one's thread id (`PRRT_…`), PR number and first comment's `databaseId`. You'll need them to reply and to link.
+CodeRabbit also writes comments that aren't in threads. They are in the body of its reviews, each in a `<details>` block under a heading such as "⚠️ Outside diff range comments", for lines the PR didn't change, or "🧹 Nitpick comments". It writes a review for each commit pushed, so fetch the bodies of all of them:
+
+```bash
+# CodeRabbit's comments in its reviews' bodies, on one PR (repeat for each)
+gh api repos/dolanmiu/docx/pulls/$PR/reviews \
+  --jq '.[] | select(.user.login == "coderabbitai[bot]") | {html_url, submitted_at, body}'
+```
+
+Save the raw JSON in the scratchpad. CodeRabbit bodies are long, so strip the `<details>` blocks that aren't comments ("🤖 Prompt for AI Agents", "🤖 Prompt to fix review comments", "🧩 Analysis chain", "🔎 Supported by static analysis", "📝 Committable suggestion", "ℹ️ Review info") and HTML comments before reading. Keep the blocks under the comment headings in reviews' bodies. Number the threads and the comments in reviews' bodies together. For a thread, keep its thread id (`PRRT_…`), PR number and first comment's `databaseId`. For a comment in a review's body, keep the review's `html_url` and the comment's title. You'll need them to reply and to link.
 
 ## 2. Evaluate each comment
 
@@ -99,7 +107,7 @@ npm run build
 
 Push, then open the PR if there's a new branch. Its description lists:
 
-- the fixes, each linking to its thread (`https://github.com/dolanmiu/docx/pull/<n>#discussion_r<databaseId>`)
+- the fixes, each linking to its thread (`https://github.com/dolanmiu/docx/pull/<n>#discussion_r<databaseId>`), or to the review whose body has the comment
 - the docs changes
 - the declined suggestions, each with a one-line reason
 - how many threads were already fixed
@@ -131,7 +139,9 @@ while IFS= read -r line; do
 done < replies.jsonl
 ```
 
-Afterwards, fetch the threads again and check that none of those PRs has an unresolved thread left.
+A comment in a review's body has no thread to reply to or resolve. Answer those on each PR in one PR comment (`gh pr comment <n> --body-file <file>`), written the same way. Name each comment by its title, and link to the review's `html_url`.
+
+CodeRabbit reviews the commits you push, and may comment on them, in a thread or in its review's body. Wait until its check on the PR's last commit has finished. Then fetch the threads and the reviews' bodies again, and check that none of those PRs has an unresolved thread, or a comment in a review's body you haven't answered.
 
 ## 5. Report
 
