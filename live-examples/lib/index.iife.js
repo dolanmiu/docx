@@ -3175,975 +3175,6 @@ DOT: "dot" };
 	*/
 	var createDotEmphasisMark = () => createEmphasisMark(EmphasisMarkType.DOT);
 	//#endregion
-	//#region src/file/paragraph/run/formatting.ts
-	/**
-	* Run formatting module for WordprocessingML documents.
-	*
-	* This module provides character-level formatting elements including
-	* spacing, color, and highlighting.
-	*
-	* Reference: http://officeopenxml.com/WPtextFormatting.php
-	*
-	* @module
-	*/
-	/**
-	* Represents character spacing (tracking) in a run.
-	*
-	* Adjusts the space between characters in the text.
-	*
-	* ## XSD Schema
-	* ```xml
-	* <xsd:complexType name="CT_SignedTwipsMeasure">
-	*   <xsd:attribute name="val" type="ST_SignedTwipsMeasure" use="required"/>
-	* </xsd:complexType>
-	* ```
-	*
-	* @example
-	* ```typescript
-	* new CharacterSpacing(20); // 20 twips (1 point)
-	* new CharacterSpacing("0.5pt"); // Half point
-	* ```
-	*
-	* @internal
-	*/
-	var CharacterSpacing = class extends XmlComponent {
-		constructor(value) {
-			super("w:spacing");
-			this.root.push(new Attributes({ val: signedTwipsMeasureValue(value) }));
-		}
-	};
-	/**
-	* Represents text color in a run.
-	*
-	* ## XSD Schema
-	* ```xml
-	* <xsd:complexType name="CT_Color">
-	*   <xsd:attribute name="val" type="ST_HexColor" use="required"/>
-	*   <xsd:attribute name="themeColor" type="ST_ThemeColor" use="optional"/>
-	*   <xsd:attribute name="themeTint" type="ST_UcharHexNumber" use="optional"/>
-	*   <xsd:attribute name="themeShade" type="ST_UcharHexNumber" use="optional"/>
-	* </xsd:complexType>
-	* ```
-	*
-	* @example
-	* ```typescript
-	* new Color("FF0000"); // Red text
-	* new Color("auto"); // Automatic color
-	* new Color({ theme: "accent1", darker: 25 }); // The theme's first accent color, 25% darker
-	* ```
-	*
-	* @internal
-	*/
-	var Color = class extends XmlComponent {
-		constructor(color) {
-			super("w:color");
-			this.root.push(new ColorAttributeComponent([{
-				keys: _objectSpread2(_objectSpread2({}, COLOR_ATTRIBUTES), {}, { color: "w:val" }),
-				color
-			}]));
-		}
-	};
-	/**
-	* Represents text highlighting in a run.
-	*
-	* ## XSD Schema
-	* ```xml
-	* <xsd:simpleType name="ST_HighlightColor">
-	*   <xsd:restriction base="xsd:string">
-	*     <xsd:enumeration value="black"/>
-	*     <xsd:enumeration value="blue"/>
-	*     <xsd:enumeration value="cyan"/>
-	*     <xsd:enumeration value="green"/>
-	*     <xsd:enumeration value="magenta"/>
-	*     <xsd:enumeration value="red"/>
-	*     <xsd:enumeration value="yellow"/>
-	*     <xsd:enumeration value="white"/>
-	*     <xsd:enumeration value="darkBlue"/>
-	*     <xsd:enumeration value="darkCyan"/>
-	*     <xsd:enumeration value="darkGreen"/>
-	*     <xsd:enumeration value="darkMagenta"/>
-	*     <xsd:enumeration value="darkRed"/>
-	*     <xsd:enumeration value="darkYellow"/>
-	*     <xsd:enumeration value="darkGray"/>
-	*     <xsd:enumeration value="lightGray"/>
-	*     <xsd:enumeration value="none"/>
-	*   </xsd:restriction>
-	* </xsd:simpleType>
-	* ```
-	*
-	* @example
-	* ```typescript
-	* new Highlight("yellow"); // Yellow highlight
-	* new Highlight("cyan"); // Cyan highlight
-	* ```
-	*
-	* @internal
-	*/
-	var Highlight = class extends XmlComponent {
-		constructor(color) {
-			super("w:highlight");
-			this.root.push(new Attributes({ val: color }));
-		}
-	};
-	//#endregion
-	//#region src/file/paragraph/run/language.ts
-	/**
-	* Language module for WordprocessingML run properties.
-	*
-	* This module provides support for specifying the language of text content,
-	* which affects spell checking, grammar checking, and hyphenation.
-	*
-	* Reference: http://officeopenxml.com/WPrun.php
-	*
-	* @module
-	*/
-	/**
-	* Creates a language component for run properties.
-	*
-	* This function creates a language element that specifies the language for text content.
-	* The language setting affects spell checking, grammar checking, and hyphenation.
-	*
-	* Reference: http://officeopenxml.com/WPrun.php
-	*
-	* @param options - Language options for different text types
-	* @returns XmlComponent representing the language element
-	*
-	* @example
-	* ```typescript
-	* // Set language for English (US)
-	* createLanguageComponent({ value: "en-US" });
-	*
-	* // Set different languages for different scripts
-	* createLanguageComponent({
-	*   value: "en-US",
-	*   eastAsia: "ja-JP",
-	*   bidirectional: "ar-SA",
-	* });
-	* ```
-	*/
-	var createLanguageComponent = (options) => new BuilderElement({
-		name: "w:lang",
-		attributes: {
-			value: {
-				key: "w:val",
-				value: options.value
-			},
-			eastAsia: {
-				key: "w:eastAsia",
-				value: options.eastAsia
-			},
-			bidirectional: {
-				key: "w:bidi",
-				value: options.bidirectional
-			}
-		}
-	});
-	//#endregion
-	//#region src/file/paragraph/run/run-fonts.ts
-	/**
-	* Run fonts module for WordprocessingML documents.
-	*
-	* This module provides support for specifying fonts for different character sets
-	* within a run. Fonts can be specified separately for ASCII, complex script (CS),
-	* East Asian, and high ANSI character ranges.
-	*
-	* Reference: http://officeopenxml.com/WPrun.php
-	*
-	* @module
-	*/
-	/**
-	* Creates font settings for a run in a WordprocessingML document.
-	*
-	* The rFonts element specifies which fonts should be used for different character
-	* ranges in a run. This allows documents to use different fonts for ASCII, complex
-	* script, East Asian, and high ANSI characters.
-	*
-	* Reference: http://officeopenxml.com/WPrun.php
-	*
-	* ## XSD Schema
-	* ```xml
-	* <xsd:complexType name="CT_Fonts">
-	*   <xsd:attribute name="hint" type="ST_Hint"/>
-	*   <xsd:attribute name="ascii" type="s:ST_String"/>
-	*   <xsd:attribute name="hAnsi" type="s:ST_String"/>
-	*   <xsd:attribute name="eastAsia" type="s:ST_String"/>
-	*   <xsd:attribute name="cs" type="s:ST_String"/>
-	*   <xsd:attribute name="asciiTheme" type="ST_Theme"/>
-	*   <xsd:attribute name="hAnsiTheme" type="ST_Theme"/>
-	*   <xsd:attribute name="eastAsiaTheme" type="ST_Theme"/>
-	*   <xsd:attribute name="cstheme" type="ST_Theme"/>
-	* </xsd:complexType>
-	* ```
-	*
-	* @example
-	* ```typescript
-	* // Use same font for all character sets
-	* createRunFonts("Arial");
-	*
-	* // Specify different fonts for different character sets
-	* createRunFonts({
-	*   ascii: "Arial",
-	*   eastAsia: "MS Mincho",
-	*   cs: "Arial",
-	*   hAnsi: "Arial",
-	* });
-	*
-	* // Use the theme's font for body text, in every character set
-	* createRunFonts({ theme: "body" });
-	* ```
-	*/
-	var createRunFonts = (nameOrAttrs, hint) => {
-		if (typeof nameOrAttrs === "string") {
-			const name = nameOrAttrs;
-			return new BuilderElement({
-				name: "w:rFonts",
-				attributes: {
-					ascii: {
-						key: "w:ascii",
-						value: name
-					},
-					cs: {
-						key: "w:cs",
-						value: name
-					},
-					eastAsia: {
-						key: "w:eastAsia",
-						value: name
-					},
-					hAnsi: {
-						key: "w:hAnsi",
-						value: name
-					},
-					hint: {
-						key: "w:hint",
-						value: hint
-					}
-				}
-			});
-		}
-		if ("theme" in nameOrAttrs) {
-			const theme = nameOrAttrs.theme === "headings" ? "major" : "minor";
-			return new BuilderElement({
-				name: "w:rFonts",
-				attributes: {
-					ascii: {
-						key: "w:asciiTheme",
-						value: `${theme}HAnsi`
-					},
-					eastAsia: {
-						key: "w:eastAsiaTheme",
-						value: `${theme}EastAsia`
-					},
-					hAnsi: {
-						key: "w:hAnsiTheme",
-						value: `${theme}HAnsi`
-					},
-					cs: {
-						key: "w:cstheme",
-						value: `${theme}Bidi`
-					}
-				}
-			});
-		}
-		const attrs = nameOrAttrs;
-		return new BuilderElement({
-			name: "w:rFonts",
-			attributes: {
-				ascii: {
-					key: "w:ascii",
-					value: attrs.ascii
-				},
-				cs: {
-					key: "w:cs",
-					value: attrs.cs
-				},
-				eastAsia: {
-					key: "w:eastAsia",
-					value: attrs.eastAsia
-				},
-				hAnsi: {
-					key: "w:hAnsi",
-					value: attrs.hAnsi
-				},
-				hint: {
-					key: "w:hint",
-					value: attrs.hint
-				}
-			}
-		});
-	};
-	//#endregion
-	//#region src/file/paragraph/run/script.ts
-	/**
-	* Subscript and superscript module for WordprocessingML documents.
-	*
-	* This module provides vertical alignment elements for subscript
-	* and superscript text formatting.
-	*
-	* Reference: http://officeopenxml.com/WPtextFormatting.php
-	*
-	* ## XSD Schema
-	* ```xml
-	* <xsd:complexType name="CT_VerticalAlignRun">
-	*   <xsd:attribute name="val" type="ST_VerticalAlignRun" use="required"/>
-	* </xsd:complexType>
-	* <xsd:simpleType name="ST_VerticalAlignRun">
-	*   <xsd:restriction base="xsd:string">
-	*     <xsd:enumeration value="baseline"/>
-	*     <xsd:enumeration value="superscript"/>
-	*     <xsd:enumeration value="subscript"/>
-	*   </xsd:restriction>
-	* </xsd:simpleType>
-	* ```
-	*
-	* @module
-	*/
-	/**
-	* Creates a vertical alignment run element.
-	* @internal
-	*/
-	var createVerticalAlignRun = (type) => new BuilderElement({
-		name: "w:vertAlign",
-		attributes: { val: {
-			key: "w:val",
-			value: type
-		} }
-	});
-	/**
-	* Creates superscript text formatting.
-	*
-	* Raises text above the baseline, commonly used for exponents
-	* and ordinal indicators.
-	*/
-	var createSuperScript = () => createVerticalAlignRun("superscript");
-	/**
-	* Creates subscript text formatting.
-	*
-	* Lowers text below the baseline, commonly used for chemical
-	* formulas and footnote references.
-	*/
-	var createSubScript = () => createVerticalAlignRun("subscript");
-	//#endregion
-	//#region src/file/paragraph/run/underline.ts
-	/**
-	* Underline module for WordprocessingML documents.
-	*
-	* This module provides support for underlining text with various styles and colors.
-	*
-	* Reference: http://officeopenxml.com/WPrun.php
-	*
-	* @module
-	*/
-	/**
-	* Underline style types for text.
-	*
-	* Defines the various underline patterns that can be applied to text runs.
-	*
-	* Reference: http://officeopenxml.com/WPrun.php
-	*
-	* ## XSD Schema
-	* ```xml
-	* <xsd:simpleType name="ST_Underline">
-	*   <xsd:restriction base="xsd:string">
-	*     <xsd:enumeration value="single"/>
-	*     <xsd:enumeration value="words"/>
-	*     <xsd:enumeration value="double"/>
-	*     <xsd:enumeration value="thick"/>
-	*     <xsd:enumeration value="dotted"/>
-	*     <xsd:enumeration value="dottedHeavy"/>
-	*     <xsd:enumeration value="dash"/>
-	*     <xsd:enumeration value="dashedHeavy"/>
-	*     <xsd:enumeration value="dashLong"/>
-	*     <xsd:enumeration value="dashLongHeavy"/>
-	*     <xsd:enumeration value="dotDash"/>
-	*     <xsd:enumeration value="dashDotHeavy"/>
-	*     <xsd:enumeration value="dotDotDash"/>
-	*     <xsd:enumeration value="dashDotDotHeavy"/>
-	*     <xsd:enumeration value="wave"/>
-	*     <xsd:enumeration value="wavyHeavy"/>
-	*     <xsd:enumeration value="wavyDouble"/>
-	*     <xsd:enumeration value="none"/>
-	*   </xsd:restriction>
-	* </xsd:simpleType>
-	* ```
-	*
-	* @publicApi
-	*/
-	var UnderlineType = {
-		/** Single underline */
-		SINGLE: "single",
-		/** Underline words only (not spaces) */
-		WORDS: "words",
-		/** Double underline */
-		DOUBLE: "double",
-		/** Thick single underline */
-		THICK: "thick",
-		/** Dotted underline */
-		DOTTED: "dotted",
-		/** Heavy dotted underline */
-		DOTTEDHEAVY: "dottedHeavy",
-		/** Dashed underline */
-		DASH: "dash",
-		/** Heavy dashed underline */
-		DASHEDHEAVY: "dashedHeavy",
-		/** Long dashed underline */
-		DASHLONG: "dashLong",
-		/** Heavy long dashed underline */
-		DASHLONGHEAVY: "dashLongHeavy",
-		/** Dot-dash underline */
-		DOTDASH: "dotDash",
-		/** Heavy dot-dash underline */
-		DASHDOTHEAVY: "dashDotHeavy",
-		/** Dot-dot-dash underline */
-		DOTDOTDASH: "dotDotDash",
-		/** Heavy dot-dot-dash underline */
-		DASHDOTDOTHEAVY: "dashDotDotHeavy",
-		/** Wave underline */
-		WAVE: "wave",
-		/** Heavy wave underline */
-		WAVYHEAVY: "wavyHeavy",
-		/** Double wave underline */
-		WAVYDOUBLE: "wavyDouble",
-		/** No underline */
-		NONE: "none"
-	};
-	/**
-	* Creates underline formatting for a run in a WordprocessingML document.
-	*
-	* The u element specifies the style and optional color of underline
-	* formatting applied to text.
-	*
-	* Reference: http://officeopenxml.com/WPrun.php
-	*
-	* ## XSD Schema
-	* ```xml
-	* <xsd:complexType name="CT_Underline">
-	*   <xsd:attribute name="val" type="ST_Underline" use="required"/>
-	*   <xsd:attribute name="color" type="ST_HexColor"/>
-	*   <xsd:attribute name="themeColor" type="ST_ThemeColor"/>
-	*   <xsd:attribute name="themeTint" type="ST_UcharHexNumber"/>
-	*   <xsd:attribute name="themeShade" type="ST_UcharHexNumber"/>
-	* </xsd:complexType>
-	* ```
-	*
-	* @example
-	* ```typescript
-	* // Simple single underline
-	* createUnderline();
-	*
-	* // Double underline
-	* createUnderline(UnderlineType.DOUBLE);
-	*
-	* // Red wavy underline
-	* createUnderline(UnderlineType.WAVE, "FF0000");
-	*
-	* // Underline in the theme's first accent color
-	* createUnderline(UnderlineType.SINGLE, { theme: "accent1" });
-	* ```
-	*/
-	var createUnderline = (underlineType = UnderlineType.SINGLE, color) => createColorElement("w:u", [{
-		key: "w:val",
-		value: underlineType
-	}, {
-		keys: COLOR_ATTRIBUTES,
-		color
-	}]);
-	//#endregion
-	//#region src/file/paragraph/run/properties.ts
-	/**
-	* Run properties module for WordprocessingML documents.
-	*
-	* This module provides the run properties (rPr) element which specifies
-	* the formatting applied to a run of text.
-	*
-	* Reference: https://www.ecma-international.org/wp-content/uploads/ECMA-376-1_5th_edition_december_2016.zip
-	* Section 17.3.2.21 (page 297)
-	*
-	* @module
-	*/
-	/**
-	* Text animation effect types.
-	*
-	* These effects specify animations that can be applied to text. Note that
-	* these effects are deprecated and may not be supported by all applications.
-	*
-	* Reference: http://officeopenxml.com/WPtextFormatting.php
-	*
-	* ## XSD Schema
-	* ```xml
-	* <xsd:simpleType name="ST_TextEffect">
-	*   <xsd:restriction base="xsd:string">
-	*     <xsd:enumeration value="blinkBackground"/>
-	*     <xsd:enumeration value="lights"/>
-	*     <xsd:enumeration value="antsBlack"/>
-	*     <xsd:enumeration value="antsRed"/>
-	*     <xsd:enumeration value="shimmer"/>
-	*     <xsd:enumeration value="sparkle"/>
-	*     <xsd:enumeration value="none"/>
-	*   </xsd:restriction>
-	* </xsd:simpleType>
-	* ```
-	*
-	* @publicApi
-	*/
-	var TextEffect = {
-		/** Blinking background animation */
-		BLINK_BACKGROUND: "blinkBackground",
-		/** Lights animation effect */
-		LIGHTS: "lights",
-		/** Black marching ants animation */
-		ANTS_BLACK: "antsBlack",
-		/** Red marching ants animation */
-		ANTS_RED: "antsRed",
-		/** Shimmer animation effect */
-		SHIMMER: "shimmer",
-		/** Sparkle animation effect */
-		SPARKLE: "sparkle",
-		/** No text effect */
-		NONE: "none"
-	};
-	/**
-	* Highlight color values for text highlighting.
-	*
-	* These colors specify the background highlight color that can be applied to text.
-	*
-	* Reference: http://officeopenxml.com/WPtextShading.php
-	*
-	* ## XSD Schema
-	* ```xml
-	* <xsd:simpleType name="ST_HighlightColor">
-	*   <xsd:restriction base="xsd:string">
-	*     <xsd:enumeration value="black"/>
-	*     <xsd:enumeration value="blue"/>
-	*     <xsd:enumeration value="cyan"/>
-	*     <xsd:enumeration value="green"/>
-	*     <xsd:enumeration value="magenta"/>
-	*     <xsd:enumeration value="red"/>
-	*     <xsd:enumeration value="yellow"/>
-	*     <xsd:enumeration value="white"/>
-	*     <xsd:enumeration value="darkBlue"/>
-	*     <xsd:enumeration value="darkCyan"/>
-	*     <xsd:enumeration value="darkGreen"/>
-	*     <xsd:enumeration value="darkMagenta"/>
-	*     <xsd:enumeration value="darkRed"/>
-	*     <xsd:enumeration value="darkYellow"/>
-	*     <xsd:enumeration value="darkGray"/>
-	*     <xsd:enumeration value="lightGray"/>
-	*     <xsd:enumeration value="none"/>
-	*   </xsd:restriction>
-	* </xsd:simpleType>
-	* ```
-	*/
-	var HighlightColor = {
-		/** Black highlight */
-		BLACK: "black",
-		/** Blue highlight */
-		BLUE: "blue",
-		/** Cyan highlight */
-		CYAN: "cyan",
-		/** Dark blue highlight */
-		DARK_BLUE: "darkBlue",
-		/** Dark cyan highlight */
-		DARK_CYAN: "darkCyan",
-		/** Dark gray highlight */
-		DARK_GRAY: "darkGray",
-		/** Dark green highlight */
-		DARK_GREEN: "darkGreen",
-		/** Dark magenta highlight */
-		DARK_MAGENTA: "darkMagenta",
-		/** Dark red highlight */
-		DARK_RED: "darkRed",
-		/** Dark yellow highlight */
-		DARK_YELLOW: "darkYellow",
-		/** Green highlight */
-		GREEN: "green",
-		/** Light gray highlight */
-		LIGHT_GRAY: "lightGray",
-		/** Magenta highlight */
-		MAGENTA: "magenta",
-		/** No highlight */
-		NONE: "none",
-		/** Red highlight */
-		RED: "red",
-		/** White highlight */
-		WHITE: "white",
-		/** Yellow highlight */
-		YELLOW: "yellow"
-	};
-	/**
-	* Represents run properties (rPr) in a WordprocessingML document.
-	*
-	* Run properties specify all character-level formatting applied to text,
-	* such as bold, italic, font, size, color, underline, and other text effects.
-	*
-	* Reference: http://officeopenxml.com/WPtextFormatting.php
-	*
-	* ## XSD Schema
-	* ```xml
-	* <xsd:complexType name="CT_RPr">
-	*   <xsd:sequence>
-	*     <xsd:group ref="EG_RPrContent" minOccurs="0"/>
-	*   </xsd:sequence>
-	* </xsd:complexType>
-	* ```
-	*
-	* The EG_RPrBase group includes elements like rStyle, rFonts, b, bCs, i, iCs,
-	* caps, smallCaps, strike, dstrike, outline, shadow, emboss, imprint, noProof,
-	* snapToGrid, vanish, color, spacing, w, kern, position, sz, szCs, highlight,
-	* u, effect, bdr, shd, vertAlign, rtl, em, lang, and more.
-	*/
-	var RunProperties = class extends IgnoreIfEmptyXmlComponent {
-		constructor(options) {
-			super("w:rPr");
-			if (!options) return;
-			if (options.style) this.push(new StringValueElement("w:rStyle", options.style));
-			if (options.font) {
-				if (typeof options.font === "string") this.push(createRunFonts(options.font));
-				else if ("name" in options.font) this.push(createRunFonts(options.font.name, options.font.hint));
-				else this.push(createRunFonts(options.font));
-			}
-			if (options.bold !== void 0) this.push(new OnOffElement("w:b", options.bold));
-			if (options.boldComplexScript === void 0 && options.bold !== void 0 || options.boldComplexScript) {
-				var _options$boldComplexS;
-				this.push(new OnOffElement("w:bCs", (_options$boldComplexS = options.boldComplexScript) !== null && _options$boldComplexS !== void 0 ? _options$boldComplexS : options.bold));
-			}
-			if (options.italics !== void 0) this.push(new OnOffElement("w:i", options.italics));
-			if (options.italicsComplexScript === void 0 && options.italics !== void 0 || options.italicsComplexScript) {
-				var _options$italicsCompl;
-				this.push(new OnOffElement("w:iCs", (_options$italicsCompl = options.italicsComplexScript) !== null && _options$italicsCompl !== void 0 ? _options$italicsCompl : options.italics));
-			}
-			if (options.smallCaps !== void 0) this.push(new OnOffElement("w:smallCaps", options.smallCaps));
-			else if (options.allCaps !== void 0) this.push(new OnOffElement("w:caps", options.allCaps));
-			if (options.strike !== void 0) this.push(new OnOffElement("w:strike", options.strike));
-			if (options.doubleStrike !== void 0) this.push(new OnOffElement("w:dstrike", options.doubleStrike));
-			if (options.emboss !== void 0) this.push(new OnOffElement("w:emboss", options.emboss));
-			if (options.imprint !== void 0) this.push(new OnOffElement("w:imprint", options.imprint));
-			if (options.noProof !== void 0) this.push(new OnOffElement("w:noProof", options.noProof));
-			if (options.snapToGrid !== void 0) this.push(new OnOffElement("w:snapToGrid", options.snapToGrid));
-			if (options.vanish !== void 0) this.push(new OnOffElement("w:vanish", options.vanish));
-			if (options.color) this.push(new Color(options.color));
-			if (options.characterSpacing) this.push(new CharacterSpacing(options.characterSpacing));
-			if (options.scale !== void 0) this.push(new NumberValueElement("w:w", options.scale));
-			if (options.kern) this.push(new HpsMeasureElement("w:kern", options.kern));
-			if (options.position) this.push(new StringValueElement("w:position", options.position));
-			if (options.size !== void 0) this.push(new HpsMeasureElement("w:sz", options.size));
-			const szCs = options.sizeComplexScript === void 0 || options.sizeComplexScript === true ? options.size : options.sizeComplexScript;
-			if (szCs) this.push(new HpsMeasureElement("w:szCs", szCs));
-			if (options.highlight) this.push(new Highlight(options.highlight));
-			if (options.underline) this.push(createUnderline(options.underline.type, options.underline.color));
-			if (options.effect) this.push(new StringValueElement("w:effect", options.effect));
-			if (options.border) this.push(createBorderElement("w:bdr", options.border));
-			if (options.shading) this.push(createShading(options.shading));
-			if (options.subScript) this.push(createSubScript());
-			if (options.superScript) this.push(createSuperScript());
-			if (options.rightToLeft !== void 0) this.push(new OnOffElement("w:rtl", options.rightToLeft));
-			if (options.emphasisMark) this.push(createEmphasisMark(options.emphasisMark.type));
-			if (options.language) this.push(createLanguageComponent(options.language));
-			if (options.eastAsianLayout) this.push(createEastAsianLayout(options.eastAsianLayout));
-			if (options.specVanish !== void 0) this.push(new OnOffElement("w:specVanish", options.specVanish));
-			if (options.math !== void 0) this.push(new OnOffElement("w:oMath", options.math));
-			if (options.revision) this.push(new RunPropertiesChange(options.revision));
-		}
-		push(item) {
-			this.root.push(item);
-		}
-	};
-	var ParagraphRunProperties = class extends RunProperties {
-		constructor(options) {
-			super(options);
-			if (options === null || options === void 0 ? void 0 : options.insertion) this.push(new InsertionTrackChange(options.insertion));
-			if (options === null || options === void 0 ? void 0 : options.deletion) this.push(new DeletionTrackChange(options.deletion));
-		}
-	};
-	/**
-	* Represents a run properties change element for revision tracking.
-	*
-	* This element is used to track changes to run properties when revision
-	* tracking is enabled in the document.
-	*/
-	var RunPropertiesChange = class extends XmlComponent {
-		constructor(options) {
-			super("w:rPrChange");
-			this.root.push(new ChangeAttributes({
-				id: options.id,
-				author: options.author,
-				date: options.date
-			}));
-			this.addChildElement(new RunProperties(options));
-		}
-	};
-	//#endregion
-	//#region src/file/paragraph/run/run-components/text.ts
-	/**
-	* Text module for WordprocessingML run content.
-	*
-	* This module provides the Text class for text content within runs.
-	*
-	* @module
-	*/
-	/**
-	* Represents a text element within a run.
-	*
-	* Text is the container for actual character content in a Word document.
-	* It corresponds to the `<w:t>` element.
-	*
-	* ## XSD Schema
-	* ```xml
-	* <xsd:complexType name="CT_Text">
-	*   <xsd:simpleContent>
-	*     <xsd:extension base="s:ST_String">
-	*       <xsd:attribute ref="xml:space" use="optional"/>
-	*     </xsd:extension>
-	*   </xsd:simpleContent>
-	* </xsd:complexType>
-	* ```
-	*/
-	var Text = class extends XmlComponent {
-		constructor(options) {
-			super("w:t");
-			if (typeof options === "string") {
-				this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
-				this.root.push(options);
-			} else {
-				var _options$space;
-				this.root.push(new TextAttributes({ space: (_options$space = options.space) !== null && _options$space !== void 0 ? _options$space : SpaceType.DEFAULT }));
-				this.root.push(options.text);
-			}
-		}
-	};
-	//#endregion
-	//#region src/file/paragraph/run/run.ts
-	/**
-	* Constants for page number field types.
-	*
-	* These values are used to insert dynamic page number fields into a document.
-	*
-	* Reference: http://officeopenxml.com/WPfields.php
-	*
-	* @publicApi
-	*/
-	var PageNumber = {
-		/** Inserts the current page number */
-		CURRENT: "CURRENT",
-		/** Inserts the total number of pages in the document */
-		TOTAL_PAGES: "TOTAL_PAGES",
-		/** Inserts the total number of pages in the current section */
-		TOTAL_PAGES_IN_SECTION: "TOTAL_PAGES_IN_SECTION",
-		/** Inserts the current section number */
-		CURRENT_SECTION: "SECTION"
-	};
-	/** The parts of the field a page number child shows, in order, or undefined when the child is text */
-	var pageNumberFieldOf = (child) => {
-		switch (child) {
-			case PageNumber.CURRENT: return [
-				createBegin(),
-				new Page(),
-				createSeparate(),
-				createEnd()
-			];
-			case PageNumber.TOTAL_PAGES: return [
-				createBegin(),
-				new NumberOfPages(),
-				createSeparate(),
-				createEnd()
-			];
-			case PageNumber.TOTAL_PAGES_IN_SECTION: return [
-				createBegin(),
-				new NumberOfPagesSection(),
-				createSeparate(),
-				createEnd()
-			];
-			case PageNumber.CURRENT_SECTION: return [
-				createBegin(),
-				new CurrentSection(),
-				createSeparate(),
-				createEnd()
-			];
-			default: return;
-		}
-	};
-	/**
-	* Represents a run of text with uniform formatting in a WordprocessingML document.
-	*
-	* A run is the lowest level unit of text in a paragraph. All content within a run
-	* shares the same formatting properties (bold, italic, font, size, etc.).
-	*
-	* Reference: http://officeopenxml.com/WPtext.php
-	*
-	* ## XSD Schema
-	* ```xml
-	* <xsd:complexType name="CT_R">
-	*   <xsd:sequence>
-	*     <xsd:group ref="EG_RPr" minOccurs="0"/>
-	*     <xsd:group ref="EG_RunInnerContent" minOccurs="0" maxOccurs="unbounded"/>
-	*   </xsd:sequence>
-	*   <xsd:attribute name="rsidRPr" type="ST_LongHexNumber"/>
-	*   <xsd:attribute name="rsidDel" type="ST_LongHexNumber"/>
-	*   <xsd:attribute name="rsidR" type="ST_LongHexNumber"/>
-	* </xsd:complexType>
-	* ```
-	*
-	* @example
-	* ```typescript
-	* // Simple run with text
-	* new Run({ text: "Hello World" });
-	*
-	* // Bold and italic run
-	* new Run({ text: "Formatted", bold: true, italics: true });
-	*
-	* // Run with page number
-	* new Run({ children: [PageNumber.CURRENT] });
-	* ```
-	*/
-	var Run = class Run extends XmlComponent {
-		constructor(options) {
-			super("w:r");
-			_defineProperty(this, "properties", void 0);
-			_defineProperty(this, "following", []);
-			this.properties = new RunProperties(options);
-			this.root.push(this.properties);
-			if (options.break) for (let i = 0; i < options.break; i++) this.root.push(createBreak());
-			if (options.children) for (const [index, child] of options.children.entries()) {
-				if (elementOf(child) === "w:r") {
-					const rest = options.children.slice(index + 1);
-					this.following = [child, ...rest.length > 0 ? [new Run(_objectSpread2(_objectSpread2({}, options), {}, {
-						break: void 0,
-						children: rest
-					}))] : []];
-					break;
-				}
-				if (typeof child === "string") {
-					const field = pageNumberFieldOf(child);
-					if (field) {
-						const rest = options.children.slice(index + 1);
-						const runOf = (children) => new Run(_objectSpread2(_objectSpread2({}, options), {}, {
-							break: void 0,
-							children
-						}));
-						const beginsHere = this.root.length === 1;
-						if (beginsHere) this.root.push(field[0]);
-						const parts = beginsHere ? field.slice(1) : field;
-						this.following = [...parts.map((part) => runOf([part])), ...rest.length > 0 ? [runOf(rest)] : []];
-						break;
-					}
-					this.root.push(new Text(child));
-					continue;
-				}
-				this.root.push(child);
-			}
-			else if (options.text !== void 0) this.root.push(new Text(options.text));
-		}
-		get writtenAs() {
-			return this.following.length > 0 ? [this, ...this.following.flatMap((run) => {
-				var _run$writtenAs;
-				return (_run$writtenAs = run.writtenAs) !== null && _run$writtenAs !== void 0 ? _run$writtenAs : run;
-			})] : void 0;
-		}
-	};
-	//#endregion
-	//#region src/file/paragraph/run/text-run.ts
-	/**
-	* Represents a text run in a WordprocessingML document.
-	*
-	* TextRun is a convenience class that extends Run, allowing you to pass
-	* either a string or full run options. This is the most common way to
-	* add text content to a paragraph.
-	*
-	* Reference: http://officeopenxml.com/WPtext.php
-	*
-	* @publicApi
-	*
-	* @example
-	* ```typescript
-	* // Simple text
-	* new TextRun("Hello World");
-	*
-	* // Formatted text
-	* new TextRun({ text: "Bold Text", bold: true });
-	* ```
-	*/
-	var TextRun = class extends Run {
-		constructor(options) {
-			super(typeof options === "string" ? { text: options } : options);
-		}
-	};
-	//#endregion
-	//#region src/file/paragraph/run/run-components/symbol.ts
-	/**
-	* Symbol module for WordprocessingML run content.
-	*
-	* This module provides support for inserting symbol characters
-	* from symbol fonts like Wingdings or Symbol.
-	*
-	* @module
-	*/
-	/**
-	* Attributes for the symbol element.
-	* @internal
-	*/
-	var SymbolAttributes = class extends XmlAttributeComponent {
-		constructor(..._args) {
-			super(..._args);
-			_defineProperty(this, "xmlKeys", {
-				char: "w:char",
-				symbolfont: "w:font"
-			});
-		}
-	};
-	/**
-	* Represents a symbol character in a run.
-	*
-	* Symbol inserts a character from a symbol font using its
-	* character code (hex value).
-	*
-	* ## XSD Schema
-	* ```xml
-	* <xsd:complexType name="CT_Sym">
-	*   <xsd:attribute name="font" type="s:ST_String"/>
-	*   <xsd:attribute name="char" type="s:ST_ShortHexNumber"/>
-	* </xsd:complexType>
-	* ```
-	*/
-	var Symbol$1 = class extends XmlComponent {
-		constructor(char = "", symbolfont = "Wingdings") {
-			super("w:sym");
-			this.root.push(new SymbolAttributes({
-				char,
-				symbolfont
-			}));
-		}
-	};
-	//#endregion
-	//#region src/file/paragraph/run/symbol-run.ts
-	/**
-	* SymbolRun module for WordprocessingML documents.
-	*
-	* This module provides support for inserting symbol characters into documents.
-	*
-	* @module
-	*/
-	/**
-	* Represents a symbol character in a WordprocessingML document.
-	*
-	* SymbolRun is used to insert special characters from symbol fonts.
-	*
-	* @publicApi
-	*
-	* @example
-	* ```typescript
-	* new SymbolRun({
-	*   char: "F04A",
-	*   symbolfont: "Wingdings",
-	* });
-	* ```
-	*/
-	var SymbolRun = class extends Run {
-		constructor(options) {
-			super(typeof options === "string" ? {} : options);
-			this.root.push(typeof options === "string" ? new Symbol$1(options) : new Symbol$1(options.char, options.symbolfont));
-		}
-	};
-	//#endregion
 	//#region node_modules/minimalistic-assert/index.js
 	var require_minimalistic_assert = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 		module.exports = assert;
@@ -5785,6 +4816,23 @@ DOT: "dot" };
 	* ```
 	*/
 	var bookmarkUniqueNumericId = bookmarkUniqueNumericIdGen();
+	var fitTextUniqueNumericIdGen = uniqueNumericIdCreator();
+	/**
+	* Returns the next ID for text fitted to a width on its own (`w:fitText`), from a single counter shared by every run.
+	*
+	* Word fits runs one after the other with the same ID together, and runs without one unreliably, so a run fitted
+	* without a group is given an ID no other run has. The IDs count down from -1, as Word's own are negative, so they
+	* don't meet the groups people give, which count up.
+	*
+	* @returns A negative number no earlier call has returned
+	*
+	* @example
+	* ```typescript
+	* const first = fitTextUniqueNumericId(); // -1
+	* const second = fitTextUniqueNumericId(); // -2
+	* ```
+	*/
+	var fitTextUniqueNumericId = () => -fitTextUniqueNumericIdGen();
 	/**
 	* Generates a unique lowercase alphanumeric ID using nanoid.
 	*
@@ -5844,6 +4892,1022 @@ DOT: "dot" };
 	* @see https://github.com/Stuk/jszip/pull/963
 	*/
 	var encodeUtf8 = (str) => new Uint8Array(new TextEncoder().encode(str));
+	//#endregion
+	//#region src/file/paragraph/run/fit-text.ts
+	/**
+	* Fit text module for WordprocessingML run properties.
+	*
+	* This module provides Word's Fit Text, which squeezes or spreads a run's text so that it takes up a width given for it.
+	*
+	* Reference: ISO/IEC 29500-1, 17.3.2.14 fitText
+	*
+	* @module
+	*/
+	/**
+	* Creates the fitting of a run's text to a width (`w:fitText`).
+	*
+	* Word writes an ID for each piece of fitted text, and fits runs without one unreliably: two of them next to each other
+	* together, and some not at all. So a run without a group is given an ID of its own.
+	*
+	* A width given as a measure is written in twips, as Office's schemas allow only a whole number of them, though the
+	* standard's allow a measure.
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:complexType name="CT_FitText">
+	*   <xsd:attribute name="val" type="s:ST_TwipsMeasure" use="required"/>
+	*   <xsd:attribute name="id" type="ST_DecimalNumber" use="optional"/>
+	* </xsd:complexType>
+	* ```
+	*
+	* @example
+	* ```typescript
+	* createFitText({ width: 1440, group: 1 });
+	* ```
+	*/
+	var createFitText = ({ width, group }) => new BuilderElement({
+		name: "w:fitText",
+		attributes: {
+			val: {
+				key: "w:val",
+				value: Math.round(universalMeasureToTwips(twipsMeasureValue(width)))
+			},
+			id: {
+				key: "w:id",
+				value: group === void 0 ? fitTextUniqueNumericId() : decimalNumber(group)
+			}
+		}
+	});
+	//#endregion
+	//#region src/file/paragraph/run/formatting.ts
+	/**
+	* Run formatting module for WordprocessingML documents.
+	*
+	* This module provides character-level formatting elements including
+	* spacing, color, and highlighting.
+	*
+	* Reference: http://officeopenxml.com/WPtextFormatting.php
+	*
+	* @module
+	*/
+	/**
+	* Represents character spacing (tracking) in a run.
+	*
+	* Adjusts the space between characters in the text.
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:complexType name="CT_SignedTwipsMeasure">
+	*   <xsd:attribute name="val" type="ST_SignedTwipsMeasure" use="required"/>
+	* </xsd:complexType>
+	* ```
+	*
+	* @example
+	* ```typescript
+	* new CharacterSpacing(20); // 20 twips (1 point)
+	* new CharacterSpacing("0.5pt"); // Half point
+	* ```
+	*
+	* @internal
+	*/
+	var CharacterSpacing = class extends XmlComponent {
+		constructor(value) {
+			super("w:spacing");
+			this.root.push(new Attributes({ val: signedTwipsMeasureValue(value) }));
+		}
+	};
+	/**
+	* Represents text color in a run.
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:complexType name="CT_Color">
+	*   <xsd:attribute name="val" type="ST_HexColor" use="required"/>
+	*   <xsd:attribute name="themeColor" type="ST_ThemeColor" use="optional"/>
+	*   <xsd:attribute name="themeTint" type="ST_UcharHexNumber" use="optional"/>
+	*   <xsd:attribute name="themeShade" type="ST_UcharHexNumber" use="optional"/>
+	* </xsd:complexType>
+	* ```
+	*
+	* @example
+	* ```typescript
+	* new Color("FF0000"); // Red text
+	* new Color("auto"); // Automatic color
+	* new Color({ theme: "accent1", darker: 25 }); // The theme's first accent color, 25% darker
+	* ```
+	*
+	* @internal
+	*/
+	var Color = class extends XmlComponent {
+		constructor(color) {
+			super("w:color");
+			this.root.push(new ColorAttributeComponent([{
+				keys: _objectSpread2(_objectSpread2({}, COLOR_ATTRIBUTES), {}, { color: "w:val" }),
+				color
+			}]));
+		}
+	};
+	/**
+	* Represents text highlighting in a run.
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:simpleType name="ST_HighlightColor">
+	*   <xsd:restriction base="xsd:string">
+	*     <xsd:enumeration value="black"/>
+	*     <xsd:enumeration value="blue"/>
+	*     <xsd:enumeration value="cyan"/>
+	*     <xsd:enumeration value="green"/>
+	*     <xsd:enumeration value="magenta"/>
+	*     <xsd:enumeration value="red"/>
+	*     <xsd:enumeration value="yellow"/>
+	*     <xsd:enumeration value="white"/>
+	*     <xsd:enumeration value="darkBlue"/>
+	*     <xsd:enumeration value="darkCyan"/>
+	*     <xsd:enumeration value="darkGreen"/>
+	*     <xsd:enumeration value="darkMagenta"/>
+	*     <xsd:enumeration value="darkRed"/>
+	*     <xsd:enumeration value="darkYellow"/>
+	*     <xsd:enumeration value="darkGray"/>
+	*     <xsd:enumeration value="lightGray"/>
+	*     <xsd:enumeration value="none"/>
+	*   </xsd:restriction>
+	* </xsd:simpleType>
+	* ```
+	*
+	* @example
+	* ```typescript
+	* new Highlight("yellow"); // Yellow highlight
+	* new Highlight("cyan"); // Cyan highlight
+	* ```
+	*
+	* @internal
+	*/
+	var Highlight = class extends XmlComponent {
+		constructor(color) {
+			super("w:highlight");
+			this.root.push(new Attributes({ val: color }));
+		}
+	};
+	//#endregion
+	//#region src/file/paragraph/run/language.ts
+	/**
+	* Language module for WordprocessingML run properties.
+	*
+	* This module provides support for specifying the language of text content,
+	* which affects spell checking, grammar checking, and hyphenation.
+	*
+	* Reference: http://officeopenxml.com/WPrun.php
+	*
+	* @module
+	*/
+	/**
+	* Creates a language component for run properties.
+	*
+	* This function creates a language element that specifies the language for text content.
+	* The language setting affects spell checking, grammar checking, and hyphenation.
+	*
+	* Reference: http://officeopenxml.com/WPrun.php
+	*
+	* @param options - Language options for different text types
+	* @returns XmlComponent representing the language element
+	*
+	* @example
+	* ```typescript
+	* // Set language for English (US)
+	* createLanguageComponent({ value: "en-US" });
+	*
+	* // Set different languages for different scripts
+	* createLanguageComponent({
+	*   value: "en-US",
+	*   eastAsia: "ja-JP",
+	*   bidirectional: "ar-SA",
+	* });
+	* ```
+	*/
+	var createLanguageComponent = (options) => new BuilderElement({
+		name: "w:lang",
+		attributes: {
+			value: {
+				key: "w:val",
+				value: options.value
+			},
+			eastAsia: {
+				key: "w:eastAsia",
+				value: options.eastAsia
+			},
+			bidirectional: {
+				key: "w:bidi",
+				value: options.bidirectional
+			}
+		}
+	});
+	//#endregion
+	//#region src/file/paragraph/run/run-fonts.ts
+	/**
+	* Run fonts module for WordprocessingML documents.
+	*
+	* This module provides support for specifying fonts for different character sets
+	* within a run. Fonts can be specified separately for ASCII, complex script (CS),
+	* East Asian, and high ANSI character ranges.
+	*
+	* Reference: http://officeopenxml.com/WPrun.php
+	*
+	* @module
+	*/
+	/**
+	* Creates font settings for a run in a WordprocessingML document.
+	*
+	* The rFonts element specifies which fonts should be used for different character
+	* ranges in a run. This allows documents to use different fonts for ASCII, complex
+	* script, East Asian, and high ANSI characters.
+	*
+	* Reference: http://officeopenxml.com/WPrun.php
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:complexType name="CT_Fonts">
+	*   <xsd:attribute name="hint" type="ST_Hint"/>
+	*   <xsd:attribute name="ascii" type="s:ST_String"/>
+	*   <xsd:attribute name="hAnsi" type="s:ST_String"/>
+	*   <xsd:attribute name="eastAsia" type="s:ST_String"/>
+	*   <xsd:attribute name="cs" type="s:ST_String"/>
+	*   <xsd:attribute name="asciiTheme" type="ST_Theme"/>
+	*   <xsd:attribute name="hAnsiTheme" type="ST_Theme"/>
+	*   <xsd:attribute name="eastAsiaTheme" type="ST_Theme"/>
+	*   <xsd:attribute name="cstheme" type="ST_Theme"/>
+	* </xsd:complexType>
+	* ```
+	*
+	* @example
+	* ```typescript
+	* // Use same font for all character sets
+	* createRunFonts("Arial");
+	*
+	* // Specify different fonts for different character sets
+	* createRunFonts({
+	*   ascii: "Arial",
+	*   eastAsia: "MS Mincho",
+	*   cs: "Arial",
+	*   hAnsi: "Arial",
+	* });
+	*
+	* // Use the theme's font for body text, in every character set
+	* createRunFonts({ theme: "body" });
+	* ```
+	*/
+	var createRunFonts = (nameOrAttrs, hint) => {
+		if (typeof nameOrAttrs === "string") {
+			const name = nameOrAttrs;
+			return new BuilderElement({
+				name: "w:rFonts",
+				attributes: {
+					ascii: {
+						key: "w:ascii",
+						value: name
+					},
+					cs: {
+						key: "w:cs",
+						value: name
+					},
+					eastAsia: {
+						key: "w:eastAsia",
+						value: name
+					},
+					hAnsi: {
+						key: "w:hAnsi",
+						value: name
+					},
+					hint: {
+						key: "w:hint",
+						value: hint
+					}
+				}
+			});
+		}
+		if ("theme" in nameOrAttrs) {
+			const theme = nameOrAttrs.theme === "headings" ? "major" : "minor";
+			return new BuilderElement({
+				name: "w:rFonts",
+				attributes: {
+					ascii: {
+						key: "w:asciiTheme",
+						value: `${theme}HAnsi`
+					},
+					eastAsia: {
+						key: "w:eastAsiaTheme",
+						value: `${theme}EastAsia`
+					},
+					hAnsi: {
+						key: "w:hAnsiTheme",
+						value: `${theme}HAnsi`
+					},
+					cs: {
+						key: "w:cstheme",
+						value: `${theme}Bidi`
+					}
+				}
+			});
+		}
+		const attrs = nameOrAttrs;
+		return new BuilderElement({
+			name: "w:rFonts",
+			attributes: {
+				ascii: {
+					key: "w:ascii",
+					value: attrs.ascii
+				},
+				cs: {
+					key: "w:cs",
+					value: attrs.cs
+				},
+				eastAsia: {
+					key: "w:eastAsia",
+					value: attrs.eastAsia
+				},
+				hAnsi: {
+					key: "w:hAnsi",
+					value: attrs.hAnsi
+				},
+				hint: {
+					key: "w:hint",
+					value: attrs.hint
+				}
+			}
+		});
+	};
+	//#endregion
+	//#region src/file/paragraph/run/script.ts
+	/**
+	* Subscript and superscript module for WordprocessingML documents.
+	*
+	* This module provides vertical alignment elements for subscript
+	* and superscript text formatting.
+	*
+	* Reference: http://officeopenxml.com/WPtextFormatting.php
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:complexType name="CT_VerticalAlignRun">
+	*   <xsd:attribute name="val" type="ST_VerticalAlignRun" use="required"/>
+	* </xsd:complexType>
+	* <xsd:simpleType name="ST_VerticalAlignRun">
+	*   <xsd:restriction base="xsd:string">
+	*     <xsd:enumeration value="baseline"/>
+	*     <xsd:enumeration value="superscript"/>
+	*     <xsd:enumeration value="subscript"/>
+	*   </xsd:restriction>
+	* </xsd:simpleType>
+	* ```
+	*
+	* @module
+	*/
+	/**
+	* Creates a vertical alignment run element.
+	* @internal
+	*/
+	var createVerticalAlignRun = (type) => new BuilderElement({
+		name: "w:vertAlign",
+		attributes: { val: {
+			key: "w:val",
+			value: type
+		} }
+	});
+	/**
+	* Creates superscript text formatting.
+	*
+	* Raises text above the baseline, commonly used for exponents
+	* and ordinal indicators.
+	*/
+	var createSuperScript = () => createVerticalAlignRun("superscript");
+	/**
+	* Creates subscript text formatting.
+	*
+	* Lowers text below the baseline, commonly used for chemical
+	* formulas and footnote references.
+	*/
+	var createSubScript = () => createVerticalAlignRun("subscript");
+	//#endregion
+	//#region src/file/paragraph/run/underline.ts
+	/**
+	* Underline module for WordprocessingML documents.
+	*
+	* This module provides support for underlining text with various styles and colors.
+	*
+	* Reference: http://officeopenxml.com/WPrun.php
+	*
+	* @module
+	*/
+	/**
+	* Underline style types for text.
+	*
+	* Defines the various underline patterns that can be applied to text runs.
+	*
+	* Reference: http://officeopenxml.com/WPrun.php
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:simpleType name="ST_Underline">
+	*   <xsd:restriction base="xsd:string">
+	*     <xsd:enumeration value="single"/>
+	*     <xsd:enumeration value="words"/>
+	*     <xsd:enumeration value="double"/>
+	*     <xsd:enumeration value="thick"/>
+	*     <xsd:enumeration value="dotted"/>
+	*     <xsd:enumeration value="dottedHeavy"/>
+	*     <xsd:enumeration value="dash"/>
+	*     <xsd:enumeration value="dashedHeavy"/>
+	*     <xsd:enumeration value="dashLong"/>
+	*     <xsd:enumeration value="dashLongHeavy"/>
+	*     <xsd:enumeration value="dotDash"/>
+	*     <xsd:enumeration value="dashDotHeavy"/>
+	*     <xsd:enumeration value="dotDotDash"/>
+	*     <xsd:enumeration value="dashDotDotHeavy"/>
+	*     <xsd:enumeration value="wave"/>
+	*     <xsd:enumeration value="wavyHeavy"/>
+	*     <xsd:enumeration value="wavyDouble"/>
+	*     <xsd:enumeration value="none"/>
+	*   </xsd:restriction>
+	* </xsd:simpleType>
+	* ```
+	*
+	* @publicApi
+	*/
+	var UnderlineType = {
+		/** Single underline */
+		SINGLE: "single",
+		/** Underline words only (not spaces) */
+		WORDS: "words",
+		/** Double underline */
+		DOUBLE: "double",
+		/** Thick single underline */
+		THICK: "thick",
+		/** Dotted underline */
+		DOTTED: "dotted",
+		/** Heavy dotted underline */
+		DOTTEDHEAVY: "dottedHeavy",
+		/** Dashed underline */
+		DASH: "dash",
+		/** Heavy dashed underline */
+		DASHEDHEAVY: "dashedHeavy",
+		/** Long dashed underline */
+		DASHLONG: "dashLong",
+		/** Heavy long dashed underline */
+		DASHLONGHEAVY: "dashLongHeavy",
+		/** Dot-dash underline */
+		DOTDASH: "dotDash",
+		/** Heavy dot-dash underline */
+		DASHDOTHEAVY: "dashDotHeavy",
+		/** Dot-dot-dash underline */
+		DOTDOTDASH: "dotDotDash",
+		/** Heavy dot-dot-dash underline */
+		DASHDOTDOTHEAVY: "dashDotDotHeavy",
+		/** Wave underline */
+		WAVE: "wave",
+		/** Heavy wave underline */
+		WAVYHEAVY: "wavyHeavy",
+		/** Double wave underline */
+		WAVYDOUBLE: "wavyDouble",
+		/** No underline */
+		NONE: "none"
+	};
+	/**
+	* Creates underline formatting for a run in a WordprocessingML document.
+	*
+	* The u element specifies the style and optional color of underline
+	* formatting applied to text.
+	*
+	* Reference: http://officeopenxml.com/WPrun.php
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:complexType name="CT_Underline">
+	*   <xsd:attribute name="val" type="ST_Underline" use="required"/>
+	*   <xsd:attribute name="color" type="ST_HexColor"/>
+	*   <xsd:attribute name="themeColor" type="ST_ThemeColor"/>
+	*   <xsd:attribute name="themeTint" type="ST_UcharHexNumber"/>
+	*   <xsd:attribute name="themeShade" type="ST_UcharHexNumber"/>
+	* </xsd:complexType>
+	* ```
+	*
+	* @example
+	* ```typescript
+	* // Simple single underline
+	* createUnderline();
+	*
+	* // Double underline
+	* createUnderline(UnderlineType.DOUBLE);
+	*
+	* // Red wavy underline
+	* createUnderline(UnderlineType.WAVE, "FF0000");
+	*
+	* // Underline in the theme's first accent color
+	* createUnderline(UnderlineType.SINGLE, { theme: "accent1" });
+	* ```
+	*/
+	var createUnderline = (underlineType = UnderlineType.SINGLE, color) => createColorElement("w:u", [{
+		key: "w:val",
+		value: underlineType
+	}, {
+		keys: COLOR_ATTRIBUTES,
+		color
+	}]);
+	//#endregion
+	//#region src/file/paragraph/run/properties.ts
+	/**
+	* Run properties module for WordprocessingML documents.
+	*
+	* This module provides the run properties (rPr) element which specifies
+	* the formatting applied to a run of text.
+	*
+	* Reference: https://www.ecma-international.org/wp-content/uploads/ECMA-376-1_5th_edition_december_2016.zip
+	* Section 17.3.2.21 (page 297)
+	*
+	* @module
+	*/
+	/**
+	* Text animation effect types.
+	*
+	* These effects specify animations that can be applied to text. Note that
+	* these effects are deprecated and may not be supported by all applications.
+	*
+	* Reference: http://officeopenxml.com/WPtextFormatting.php
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:simpleType name="ST_TextEffect">
+	*   <xsd:restriction base="xsd:string">
+	*     <xsd:enumeration value="blinkBackground"/>
+	*     <xsd:enumeration value="lights"/>
+	*     <xsd:enumeration value="antsBlack"/>
+	*     <xsd:enumeration value="antsRed"/>
+	*     <xsd:enumeration value="shimmer"/>
+	*     <xsd:enumeration value="sparkle"/>
+	*     <xsd:enumeration value="none"/>
+	*   </xsd:restriction>
+	* </xsd:simpleType>
+	* ```
+	*
+	* @publicApi
+	*/
+	var TextEffect = {
+		/** Blinking background animation */
+		BLINK_BACKGROUND: "blinkBackground",
+		/** Lights animation effect */
+		LIGHTS: "lights",
+		/** Black marching ants animation */
+		ANTS_BLACK: "antsBlack",
+		/** Red marching ants animation */
+		ANTS_RED: "antsRed",
+		/** Shimmer animation effect */
+		SHIMMER: "shimmer",
+		/** Sparkle animation effect */
+		SPARKLE: "sparkle",
+		/** No text effect */
+		NONE: "none"
+	};
+	/**
+	* Highlight color values for text highlighting.
+	*
+	* These colors specify the background highlight color that can be applied to text.
+	*
+	* Reference: http://officeopenxml.com/WPtextShading.php
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:simpleType name="ST_HighlightColor">
+	*   <xsd:restriction base="xsd:string">
+	*     <xsd:enumeration value="black"/>
+	*     <xsd:enumeration value="blue"/>
+	*     <xsd:enumeration value="cyan"/>
+	*     <xsd:enumeration value="green"/>
+	*     <xsd:enumeration value="magenta"/>
+	*     <xsd:enumeration value="red"/>
+	*     <xsd:enumeration value="yellow"/>
+	*     <xsd:enumeration value="white"/>
+	*     <xsd:enumeration value="darkBlue"/>
+	*     <xsd:enumeration value="darkCyan"/>
+	*     <xsd:enumeration value="darkGreen"/>
+	*     <xsd:enumeration value="darkMagenta"/>
+	*     <xsd:enumeration value="darkRed"/>
+	*     <xsd:enumeration value="darkYellow"/>
+	*     <xsd:enumeration value="darkGray"/>
+	*     <xsd:enumeration value="lightGray"/>
+	*     <xsd:enumeration value="none"/>
+	*   </xsd:restriction>
+	* </xsd:simpleType>
+	* ```
+	*/
+	var HighlightColor = {
+		/** Black highlight */
+		BLACK: "black",
+		/** Blue highlight */
+		BLUE: "blue",
+		/** Cyan highlight */
+		CYAN: "cyan",
+		/** Dark blue highlight */
+		DARK_BLUE: "darkBlue",
+		/** Dark cyan highlight */
+		DARK_CYAN: "darkCyan",
+		/** Dark gray highlight */
+		DARK_GRAY: "darkGray",
+		/** Dark green highlight */
+		DARK_GREEN: "darkGreen",
+		/** Dark magenta highlight */
+		DARK_MAGENTA: "darkMagenta",
+		/** Dark red highlight */
+		DARK_RED: "darkRed",
+		/** Dark yellow highlight */
+		DARK_YELLOW: "darkYellow",
+		/** Green highlight */
+		GREEN: "green",
+		/** Light gray highlight */
+		LIGHT_GRAY: "lightGray",
+		/** Magenta highlight */
+		MAGENTA: "magenta",
+		/** No highlight */
+		NONE: "none",
+		/** Red highlight */
+		RED: "red",
+		/** White highlight */
+		WHITE: "white",
+		/** Yellow highlight */
+		YELLOW: "yellow"
+	};
+	/**
+	* Represents run properties (rPr) in a WordprocessingML document.
+	*
+	* Run properties specify all character-level formatting applied to text,
+	* such as bold, italic, font, size, color, underline, and other text effects.
+	*
+	* Reference: http://officeopenxml.com/WPtextFormatting.php
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:complexType name="CT_RPr">
+	*   <xsd:sequence>
+	*     <xsd:group ref="EG_RPrContent" minOccurs="0"/>
+	*   </xsd:sequence>
+	* </xsd:complexType>
+	* ```
+	*
+	* The EG_RPrBase group includes elements like rStyle, rFonts, b, bCs, i, iCs,
+	* caps, smallCaps, strike, dstrike, outline, shadow, emboss, imprint, noProof,
+	* snapToGrid, vanish, color, spacing, w, kern, position, sz, szCs, highlight,
+	* u, effect, bdr, shd, vertAlign, rtl, em, lang, and more.
+	*/
+	var RunProperties = class extends IgnoreIfEmptyXmlComponent {
+		constructor(options) {
+			super("w:rPr");
+			if (!options) return;
+			if (options.style) this.push(new StringValueElement("w:rStyle", options.style));
+			if (options.font) {
+				if (typeof options.font === "string") this.push(createRunFonts(options.font));
+				else if ("name" in options.font) this.push(createRunFonts(options.font.name, options.font.hint));
+				else this.push(createRunFonts(options.font));
+			}
+			if (options.bold !== void 0) this.push(new OnOffElement("w:b", options.bold));
+			if (options.boldComplexScript === void 0 && options.bold !== void 0 || options.boldComplexScript) {
+				var _options$boldComplexS;
+				this.push(new OnOffElement("w:bCs", (_options$boldComplexS = options.boldComplexScript) !== null && _options$boldComplexS !== void 0 ? _options$boldComplexS : options.bold));
+			}
+			if (options.italics !== void 0) this.push(new OnOffElement("w:i", options.italics));
+			if (options.italicsComplexScript === void 0 && options.italics !== void 0 || options.italicsComplexScript) {
+				var _options$italicsCompl;
+				this.push(new OnOffElement("w:iCs", (_options$italicsCompl = options.italicsComplexScript) !== null && _options$italicsCompl !== void 0 ? _options$italicsCompl : options.italics));
+			}
+			if (options.smallCaps !== void 0) this.push(new OnOffElement("w:smallCaps", options.smallCaps));
+			else if (options.allCaps !== void 0) this.push(new OnOffElement("w:caps", options.allCaps));
+			if (options.strike !== void 0) this.push(new OnOffElement("w:strike", options.strike));
+			if (options.doubleStrike !== void 0) this.push(new OnOffElement("w:dstrike", options.doubleStrike));
+			if (options.emboss !== void 0) this.push(new OnOffElement("w:emboss", options.emboss));
+			if (options.imprint !== void 0) this.push(new OnOffElement("w:imprint", options.imprint));
+			if (options.noProof !== void 0) this.push(new OnOffElement("w:noProof", options.noProof));
+			if (options.snapToGrid !== void 0) this.push(new OnOffElement("w:snapToGrid", options.snapToGrid));
+			if (options.vanish !== void 0) this.push(new OnOffElement("w:vanish", options.vanish));
+			if (options.color) this.push(new Color(options.color));
+			if (options.characterSpacing) this.push(new CharacterSpacing(options.characterSpacing));
+			if (options.scale !== void 0) this.push(new NumberValueElement("w:w", options.scale));
+			if (options.kern) this.push(new HpsMeasureElement("w:kern", options.kern));
+			if (options.position) this.push(new StringValueElement("w:position", options.position));
+			if (options.size !== void 0) this.push(new HpsMeasureElement("w:sz", options.size));
+			const szCs = options.sizeComplexScript === void 0 || options.sizeComplexScript === true ? options.size : options.sizeComplexScript;
+			if (szCs) this.push(new HpsMeasureElement("w:szCs", szCs));
+			if (options.highlight) this.push(new Highlight(options.highlight));
+			if (options.underline) this.push(createUnderline(options.underline.type, options.underline.color));
+			if (options.effect) this.push(new StringValueElement("w:effect", options.effect));
+			if (options.border) this.push(createBorderElement("w:bdr", options.border));
+			if (options.shading) this.push(createShading(options.shading));
+			if (options.fitText) this.push(createFitText(options.fitText));
+			if (options.subScript) this.push(createSubScript());
+			if (options.superScript) this.push(createSuperScript());
+			if (options.rightToLeft !== void 0) this.push(new OnOffElement("w:rtl", options.rightToLeft));
+			if (options.emphasisMark) this.push(createEmphasisMark(options.emphasisMark.type));
+			if (options.language) this.push(createLanguageComponent(options.language));
+			if (options.eastAsianLayout) this.push(createEastAsianLayout(options.eastAsianLayout));
+			if (options.specVanish !== void 0) this.push(new OnOffElement("w:specVanish", options.specVanish));
+			if (options.math !== void 0) this.push(new OnOffElement("w:oMath", options.math));
+			if (options.revision) this.push(new RunPropertiesChange(options.revision));
+		}
+		push(item) {
+			this.root.push(item);
+		}
+	};
+	var ParagraphRunProperties = class extends RunProperties {
+		constructor(options) {
+			super(options);
+			if (options === null || options === void 0 ? void 0 : options.insertion) this.push(new InsertionTrackChange(options.insertion));
+			if (options === null || options === void 0 ? void 0 : options.deletion) this.push(new DeletionTrackChange(options.deletion));
+		}
+	};
+	/**
+	* Represents a run properties change element for revision tracking.
+	*
+	* This element is used to track changes to run properties when revision
+	* tracking is enabled in the document.
+	*/
+	var RunPropertiesChange = class extends XmlComponent {
+		constructor(options) {
+			super("w:rPrChange");
+			this.root.push(new ChangeAttributes({
+				id: options.id,
+				author: options.author,
+				date: options.date
+			}));
+			this.addChildElement(new RunProperties(options));
+		}
+	};
+	//#endregion
+	//#region src/file/paragraph/run/run-components/text.ts
+	/**
+	* Text module for WordprocessingML run content.
+	*
+	* This module provides the Text class for text content within runs.
+	*
+	* @module
+	*/
+	/**
+	* Represents a text element within a run.
+	*
+	* Text is the container for actual character content in a Word document.
+	* It corresponds to the `<w:t>` element.
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:complexType name="CT_Text">
+	*   <xsd:simpleContent>
+	*     <xsd:extension base="s:ST_String">
+	*       <xsd:attribute ref="xml:space" use="optional"/>
+	*     </xsd:extension>
+	*   </xsd:simpleContent>
+	* </xsd:complexType>
+	* ```
+	*/
+	var Text = class extends XmlComponent {
+		constructor(options) {
+			super("w:t");
+			if (typeof options === "string") {
+				this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
+				this.root.push(options);
+			} else {
+				var _options$space;
+				this.root.push(new TextAttributes({ space: (_options$space = options.space) !== null && _options$space !== void 0 ? _options$space : SpaceType.DEFAULT }));
+				this.root.push(options.text);
+			}
+		}
+	};
+	//#endregion
+	//#region src/file/paragraph/run/run.ts
+	/**
+	* Constants for page number field types.
+	*
+	* These values are used to insert dynamic page number fields into a document.
+	*
+	* Reference: http://officeopenxml.com/WPfields.php
+	*
+	* @publicApi
+	*/
+	var PageNumber = {
+		/** Inserts the current page number */
+		CURRENT: "CURRENT",
+		/** Inserts the total number of pages in the document */
+		TOTAL_PAGES: "TOTAL_PAGES",
+		/** Inserts the total number of pages in the current section */
+		TOTAL_PAGES_IN_SECTION: "TOTAL_PAGES_IN_SECTION",
+		/** Inserts the current section number */
+		CURRENT_SECTION: "SECTION"
+	};
+	/** The parts of the field a page number child shows, in order, or undefined when the child is text */
+	var pageNumberFieldOf = (child) => {
+		switch (child) {
+			case PageNumber.CURRENT: return [
+				createBegin(),
+				new Page(),
+				createSeparate(),
+				createEnd()
+			];
+			case PageNumber.TOTAL_PAGES: return [
+				createBegin(),
+				new NumberOfPages(),
+				createSeparate(),
+				createEnd()
+			];
+			case PageNumber.TOTAL_PAGES_IN_SECTION: return [
+				createBegin(),
+				new NumberOfPagesSection(),
+				createSeparate(),
+				createEnd()
+			];
+			case PageNumber.CURRENT_SECTION: return [
+				createBegin(),
+				new CurrentSection(),
+				createSeparate(),
+				createEnd()
+			];
+			default: return;
+		}
+	};
+	/**
+	* Represents a run of text with uniform formatting in a WordprocessingML document.
+	*
+	* A run is the lowest level unit of text in a paragraph. All content within a run
+	* shares the same formatting properties (bold, italic, font, size, etc.).
+	*
+	* Reference: http://officeopenxml.com/WPtext.php
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:complexType name="CT_R">
+	*   <xsd:sequence>
+	*     <xsd:group ref="EG_RPr" minOccurs="0"/>
+	*     <xsd:group ref="EG_RunInnerContent" minOccurs="0" maxOccurs="unbounded"/>
+	*   </xsd:sequence>
+	*   <xsd:attribute name="rsidRPr" type="ST_LongHexNumber"/>
+	*   <xsd:attribute name="rsidDel" type="ST_LongHexNumber"/>
+	*   <xsd:attribute name="rsidR" type="ST_LongHexNumber"/>
+	* </xsd:complexType>
+	* ```
+	*
+	* @example
+	* ```typescript
+	* // Simple run with text
+	* new Run({ text: "Hello World" });
+	*
+	* // Bold and italic run
+	* new Run({ text: "Formatted", bold: true, italics: true });
+	*
+	* // Run with page number
+	* new Run({ children: [PageNumber.CURRENT] });
+	* ```
+	*/
+	var Run = class Run extends XmlComponent {
+		constructor(options) {
+			super("w:r");
+			_defineProperty(this, "properties", void 0);
+			_defineProperty(this, "following", []);
+			this.properties = new RunProperties(options);
+			this.root.push(this.properties);
+			if (options.break) for (let i = 0; i < options.break; i++) this.root.push(createBreak());
+			if (options.children) for (const [index, child] of options.children.entries()) {
+				if (elementOf(child) === "w:r") {
+					const rest = options.children.slice(index + 1);
+					this.following = [child, ...rest.length > 0 ? [new Run(_objectSpread2(_objectSpread2({}, options), {}, {
+						break: void 0,
+						children: rest
+					}))] : []];
+					break;
+				}
+				if (typeof child === "string") {
+					const field = pageNumberFieldOf(child);
+					if (field) {
+						const rest = options.children.slice(index + 1);
+						const runOf = (children) => new Run(_objectSpread2(_objectSpread2({}, options), {}, {
+							break: void 0,
+							children
+						}));
+						const beginsHere = this.root.length === 1;
+						if (beginsHere) this.root.push(field[0]);
+						const parts = beginsHere ? field.slice(1) : field;
+						this.following = [...parts.map((part) => runOf([part])), ...rest.length > 0 ? [runOf(rest)] : []];
+						break;
+					}
+					this.root.push(new Text(child));
+					continue;
+				}
+				this.root.push(child);
+			}
+			else if (options.text !== void 0) this.root.push(new Text(options.text));
+		}
+		get writtenAs() {
+			return this.following.length > 0 ? [this, ...this.following.flatMap((run) => {
+				var _run$writtenAs;
+				return (_run$writtenAs = run.writtenAs) !== null && _run$writtenAs !== void 0 ? _run$writtenAs : run;
+			})] : void 0;
+		}
+	};
+	//#endregion
+	//#region src/file/paragraph/run/text-run.ts
+	/**
+	* Represents a text run in a WordprocessingML document.
+	*
+	* TextRun is a convenience class that extends Run, allowing you to pass
+	* either a string or full run options. This is the most common way to
+	* add text content to a paragraph.
+	*
+	* Reference: http://officeopenxml.com/WPtext.php
+	*
+	* @publicApi
+	*
+	* @example
+	* ```typescript
+	* // Simple text
+	* new TextRun("Hello World");
+	*
+	* // Formatted text
+	* new TextRun({ text: "Bold Text", bold: true });
+	* ```
+	*/
+	var TextRun = class extends Run {
+		constructor(options) {
+			super(typeof options === "string" ? { text: options } : options);
+		}
+	};
+	//#endregion
+	//#region src/file/paragraph/run/run-components/symbol.ts
+	/**
+	* Symbol module for WordprocessingML run content.
+	*
+	* This module provides support for inserting symbol characters
+	* from symbol fonts like Wingdings or Symbol.
+	*
+	* @module
+	*/
+	/**
+	* Attributes for the symbol element.
+	* @internal
+	*/
+	var SymbolAttributes = class extends XmlAttributeComponent {
+		constructor(..._args) {
+			super(..._args);
+			_defineProperty(this, "xmlKeys", {
+				char: "w:char",
+				symbolfont: "w:font"
+			});
+		}
+	};
+	/**
+	* Represents a symbol character in a run.
+	*
+	* Symbol inserts a character from a symbol font using its
+	* character code (hex value).
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:complexType name="CT_Sym">
+	*   <xsd:attribute name="font" type="s:ST_String"/>
+	*   <xsd:attribute name="char" type="s:ST_ShortHexNumber"/>
+	* </xsd:complexType>
+	* ```
+	*/
+	var Symbol$1 = class extends XmlComponent {
+		constructor(char = "", symbolfont = "Wingdings") {
+			super("w:sym");
+			this.root.push(new SymbolAttributes({
+				char,
+				symbolfont
+			}));
+		}
+	};
+	//#endregion
+	//#region src/file/paragraph/run/symbol-run.ts
+	/**
+	* SymbolRun module for WordprocessingML documents.
+	*
+	* This module provides support for inserting symbol characters into documents.
+	*
+	* @module
+	*/
+	/**
+	* Represents a symbol character in a WordprocessingML document.
+	*
+	* SymbolRun is used to insert special characters from symbol fonts.
+	*
+	* @publicApi
+	*
+	* @example
+	* ```typescript
+	* new SymbolRun({
+	*   char: "F04A",
+	*   symbolfont: "Wingdings",
+	* });
+	* ```
+	*/
+	var SymbolRun = class extends Run {
+		constructor(options) {
+			super(typeof options === "string" ? {} : options);
+			this.root.push(typeof options === "string" ? new Symbol$1(options) : new Symbol$1(options.char, options.symbolfont));
+		}
+	};
 	//#endregion
 	//#region src/file/drawing/floating/floating-position.ts
 	/**
@@ -37572,6 +37636,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	exports.createEastAsianLayout = createEastAsianLayout;
 	exports.createEmphasisMark = createEmphasisMark;
 	exports.createEndnoteProperties = createEndnoteProperties;
+	exports.createFitText = createFitText;
 	exports.createFootnoteProperties = createFootnoteProperties;
 	exports.createFrameProperties = createFrameProperties;
 	exports.createHeaderFooterReference = createHeaderFooterReference;
@@ -37626,6 +37691,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	exports.fillPageNumbers = fillPageNumbers;
 	exports.fillPartPageNumbers = fillPartPageNumbers;
 	exports.fillSequenceNumbers = fillSequenceNumbers;
+	exports.fitTextUniqueNumericId = fitTextUniqueNumericId;
 	exports.hashedId = hashedId;
 	exports.hexColorValue = hexColorValue;
 	exports.hpsMeasureValue = hpsMeasureValue;

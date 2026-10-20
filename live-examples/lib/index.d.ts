@@ -1831,6 +1831,30 @@ export declare const createEmphasisMark: (emphasisMarkType?: (typeof EmphasisMar
 export declare const createEndnoteProperties: (options: IEndnotePropertiesOptions) => XmlComponent;
 
 /**
+ * Creates the fitting of a run's text to a width (`w:fitText`).
+ *
+ * Word writes an ID for each piece of fitted text, and fits runs without one unreliably: two of them next to each other
+ * together, and some not at all. So a run without a group is given an ID of its own.
+ *
+ * A width given as a measure is written in twips, as Office's schemas allow only a whole number of them, though the
+ * standard's allow a measure.
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_FitText">
+ *   <xsd:attribute name="val" type="s:ST_TwipsMeasure" use="required"/>
+ *   <xsd:attribute name="id" type="ST_DecimalNumber" use="optional"/>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * createFitText({ width: 1440, group: 1 });
+ * ```
+ */
+export declare const createFitText: ({ width, group }: IFitTextOptions) => XmlComponent;
+
+/**
  * Creates the footnote properties (footnotePr) of a section.
  *
  * ## XSD Schema
@@ -4097,6 +4121,23 @@ export declare const fillPartPageNumbers: (part: IXmlableObject | undefined, con
 export declare const fillSequenceNumbers: (body: IXmlableObject, context: IContext) => void;
 
 /**
+ * Returns the next ID for text fitted to a width on its own (`w:fitText`), from a single counter shared by every run.
+ *
+ * Word fits runs one after the other with the same ID together, and runs without one unreliably, so a run fitted
+ * without a group is given an ID no other run has. The IDs count down from -1, as Word's own are negative, so they
+ * don't meet the groups people give, which count up.
+ *
+ * @returns A negative number no earlier call has returned
+ *
+ * @example
+ * ```typescript
+ * const first = fitTextUniqueNumericId(); // -1
+ * const second = fitTextUniqueNumericId(); // -2
+ * ```
+ */
+export declare const fitTextUniqueNumericId: UniqueNumericIdCreator;
+
+/**
  * Options for embedding a font in the document.
  */
 declare type FontOptions = {
@@ -5844,6 +5885,22 @@ export declare type IExternalHyperlinkOptions = {
 };
 
 /**
+ * Options for fitting a run's text to a width.
+ *
+ * @publicApi
+ */
+export declare type IFitTextOptions = {
+    /** The width the text is squeezed or spread to fill, in twips (1440 is an inch) or as a measure such as `"1in"` (`w:val`) */
+    readonly width: number | PositiveUniversalMeasure;
+    /**
+     * Runs next to each other with the same group are fitted to the width together, as one piece of text, so it can be
+     * made of runs formatted differently (`w:id`). Word fits them to the first one's width. Without a group, the run is
+     * fitted to its width on its own.
+     */
+    readonly group?: number;
+};
+
+/**
  * Configuration options for a floating/anchored drawing.
  *
  * @see {@link Anchor}
@@ -7287,6 +7344,11 @@ export declare type IRunStylePropertiesOptions = {
     readonly highlightComplexScript?: boolean | string;
     readonly characterSpacing?: number;
     readonly shading?: IShadingAttributesProperties;
+    /**
+     * Squeezes or spreads the run's text so that it takes up the width given, as Word's Fit Text does. Runs next to each
+     * other with the same `group` are fitted to it together.
+     */
+    readonly fitText?: IFitTextOptions;
     readonly emboss?: boolean;
     readonly imprint?: boolean;
     readonly revision?: IRunPropertiesChangeOptions;
