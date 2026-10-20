@@ -521,6 +521,36 @@ const doc = await patchDocument({
 fs.writeFileSync("My Document.docx", doc);
 ```
 
+## Document Properties
+
+Give `patchDocument` the document's `properties`, such as its title, author, tags and comments, which Word shows in File > Info:
+
+```ts live
+import * as fs from "fs";
+import { patchDocument, PatchType, TextRun } from "docx";
+
+const doc = await patchDocument({
+    outputType: "nodebuffer",
+    data: fs.readFileSync("./demo/assets/simple-template.docx"),
+    patches: {
+        name: {
+            type: PatchType.PARAGRAPH,
+            children: [new TextRun("John Doe")],
+        },
+    },
+    properties: {
+        title: "Letter to John Doe",
+        creator: "Dolan Miu",
+        keywords: "letter, customer",
+        description: "Made from simple-template.docx",
+    },
+});
+
+fs.writeFileSync("My Document.docx", doc);
+```
+
+They have the names that `Document` gives them (see [Document Properties](usage/document.md#metadata-properties)): `title`, `subject`, `creator` (the author), `keywords` (the tags), `description` (the comments), `lastModifiedBy` and `revision`. Each one replaces the template's, and an empty string clears it. The template's other properties, such as when it was created, are kept.
+
 ## Complete Example
 
 Invoice template:

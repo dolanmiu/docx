@@ -37,7 +37,7 @@ const doc = new Document({
 });
 ```
 
-These properties appear in Word's File > Info panel and in file properties.
+These properties appear in Word's File > Info panel and in file properties. Word shows `keywords` as the document's tags and `description` as its comments. To set them on a document made from a template, see [Document Properties](usage/templates.md#document-properties) in Templates.
 
 ## Options by Category
 

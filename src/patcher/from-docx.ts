@@ -29,6 +29,7 @@ import { type XmlElement as Element, stringifyElement } from "@util/xml";
 
 import { findBookmarkIds, renumberBookmarksAvoiding } from "./bookmark-ids";
 import { appendContentType, appendContentTypeOverride } from "./content-types-manager";
+import { type PatchDocumentProperties, patchCoreProperties } from "./core-properties";
 import { findDrawingIds, renumberDrawingsAvoiding } from "./drawing-ids";
 import { type DrawingPatch, patchDrawings, relationshipsPathOf } from "./drawing-patch";
 import { loadZip } from "./load-zip";
@@ -57,6 +58,7 @@ export { PatchType } from "./patch-type";
 export { DrawingPatch } from "./drawing-patch";
 export type { TemplateDrawing, TemplatePackage, TemplatePart } from "./drawing-patch";
 export type { PatchedTemplate, TemplatePageNumberEstimator } from "./page-numbers";
+export type { PatchDocumentProperties } from "./core-properties";
 
 /**
  * Patch definition for paragraph-level replacement.
@@ -175,6 +177,7 @@ export type PatchDocumentOutputType = OutputType;
  * @property endnotes - The endnotes that patches refer to with an `EndnoteReferenceRun`
  * @property numbering - The lists that the paragraphs in patches use, by their references
  * @property pageNumbers - Works out the page each bookmark is on, to write the page numbers of page references
+ * @property properties - The document's properties to set, such as its title
  */
 export type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocumentOutputType> = {
     /** Output format type */
@@ -214,6 +217,11 @@ export type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocume
      * were in the template. Give it `estimatePageNumbers` from `docx/layout`. See {@link TemplatePageNumberEstimator}
      */
     readonly pageNumbers?: TemplatePageNumberEstimator;
+    /**
+     * The document's properties to set, such as its title, tags (`keywords`) and comments (`description`), which Word
+     * shows in File > Info. They replace the template's, and the template's other properties are kept
+     */
+    readonly properties?: PatchDocumentProperties;
 };
 
 /**
@@ -320,6 +328,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     endnotes,
     numbering = { config: [] },
     pageNumbers,
+    properties,
 }: PatchDocumentOptions<T>): Promise<OutputByType[T]> => {
     const zipContent = await loadZip(data);
     const contexts = new Map<string, IContext>();
@@ -620,6 +629,10 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     // The pages are worked out once everything is patched in
     if (pageNumbers) {
         await fillTemplatePageNumbers(map, pageNumbers, binaryContentMap);
+    }
+
+    if (properties) {
+        patchCoreProperties(map, binaryContentMap, properties, { addContentTypeOverride });
     }
 
     // The parts that patches added to the package, such as charts, which add their own parts as they are written, such
