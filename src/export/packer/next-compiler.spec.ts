@@ -556,7 +556,7 @@ describe("Compiler", () => {
             const spy = vi.spyOn(compiler["formatter"], "format");
 
             compiler.compile(file);
-            expect(spy).toBeCalledTimes(18);
+            expect(spy).toHaveBeenCalledTimes(18);
         });
 
         it("should work with media datas", () => {

@@ -111,7 +111,7 @@ describe("Formatter", () => {
             const spy = vi.spyOn(paragraph, "prepForXml");
 
             formatter.format(paragraph);
-            expect(spy).toBeCalledTimes(1);
+            expect(spy).toHaveBeenCalledTimes(1);
         });
     });
 });

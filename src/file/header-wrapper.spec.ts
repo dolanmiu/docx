@@ -12,7 +12,7 @@ describe("HeaderWrapper", () => {
             const spy = vi.spyOn(wrapper.View, "add");
             wrapper.add(new Paragraph({}));
 
-            expect(spy).toBeCalled();
+            expect(spy).toHaveBeenCalled();
         });
 
         it("should call the underlying header's addChildElement for Table", () => {
@@ -32,7 +32,7 @@ describe("HeaderWrapper", () => {
                 }),
             );
 
-            expect(spy).toBeCalled();
+            expect(spy).toHaveBeenCalled();
         });
     });
 
@@ -43,7 +43,7 @@ describe("HeaderWrapper", () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             file.addChildElement({} as any);
 
-            expect(spy).toBeCalled();
+            expect(spy).toHaveBeenCalled();
         });
     });
 
