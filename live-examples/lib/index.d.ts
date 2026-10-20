@@ -10259,6 +10259,13 @@ export declare class NumberValueElement extends XmlComponent {
 }
 
 /**
+ * The type of the relationship to an OLE object that isn't a package, such as a file docx/embedded-files embeds in an
+ * OLE package. It isn't one of the {@link RelationshipType}s, as a {@link PackagePart} gives its relationship type in its
+ * options, which a part made with a relationship type of that union can be read for.
+ */
+export declare type OleObjectRelationshipType = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject";
+
+/**
  * XML element representing a boolean on/off value (CT_OnOff).
  *
  * This element type is used throughout WordprocessingML to represent boolean properties.
@@ -10464,8 +10471,8 @@ export declare const OverlapType: {
  * }
  * ```
  */
-export declare class PackagePart {
-    readonly options: PackagePartOptions;
+export declare class PackagePart<Relationship extends PackagePartRelationshipType = RelationshipType> {
+    readonly options: PackagePartOptions<Relationship>;
     private readonly id;
     /** The id of the relationship to the part, such as a chart's `r:id` in the document */
     readonly relationshipId: string;
@@ -10474,7 +10481,7 @@ export declare class PackagePart {
      * @throws If the folder isn't a single folder name, or is one of the folders docx writes parts of its own in
      * @throws If the name or the extension isn't a single part of a file name, which could lead out of the folder
      */
-    constructor(options: PackagePartOptions);
+    constructor(options: PackagePartOptions<Relationship>);
     /**
      * Adds the part to the package being written, once, and a relationship to it from the part being written.
      */
@@ -10483,8 +10490,11 @@ export declare class PackagePart {
 
 /**
  * Options for a {@link PackagePart}.
+ *
+ * @typeParam Relationship - The type of the relationship to the part. A part related as an OLE object, such as a file
+ * docx/embedded-files embeds, gives it, so the options of a part made without it have a {@link RelationshipType}
  */
-export declare type PackagePartOptions = {
+export declare type PackagePartOptions<Relationship extends PackagePartRelationshipType = RelationshipType> = {
     /** The folder under word/ the part is written in, such as "charts" */
     readonly folder: string;
     /** The start of the part's file name, which is numbered in the order parts are added: "chart" for word/charts/chart1.xml */
@@ -10494,7 +10504,7 @@ export declare type PackagePartOptions = {
     /** The part's content type, such as "application/vnd.openxmlformats-officedocument.drawingml.chart+xml" */
     readonly contentType: string;
     /** The type of the relationship to the part from the part that refers to it, such as the chart relationship */
-    readonly relationshipType: RelationshipType;
+    readonly relationshipType: Relationship;
     /**
      * The part's content: XML, formatted as the document's parts are, its bytes, or the files of a package, such as an
      * embedded workbook, which are zipped. XML can refer to other parts by calling their {@link PackagePart.addTo} when
@@ -10504,6 +10514,11 @@ export declare type PackagePartOptions = {
         readonly files: readonly EmbeddedPackageFile[];
     };
 };
+
+/**
+ * The types of the relationships to package parts: a {@link RelationshipType}, or an OLE object's.
+ */
+export declare type PackagePartRelationshipType = RelationshipType | OleObjectRelationshipType;
 
 /**
  * The parts added to a document's package when it is written, with their paths under word/, in the order they were
@@ -10525,9 +10540,12 @@ declare class PackageParts {
      *
      * @returns The part's path under word/, such as "charts/chart1.xml"
      */
-    add(part: PackagePart): string;
+    add(part: PackagePart<PackagePartRelationshipType>): string;
     /**
      * Each part added, with its path under word/, in the order they were added.
+     *
+     * A part related as an OLE object is listed too, though the parts are typed as they were before a part could be:
+     * `File`, whose type is public, has these parts, and the compiler only writes their content.
      */
     get Array(): readonly {
         readonly part: PackagePart;
@@ -11753,7 +11771,7 @@ declare class Relationships extends XmlComponent {
      * @param target - Path to the target part
      * @param targetMode - Optional mode indicating if target is external
      */
-    addRelationship(id: number | string, type: RelationshipType | MacroRelationshipType, target: string, targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType]): void;
+    addRelationship(id: number | string, type: RelationshipType | MacroRelationshipType | OleObjectRelationshipType, target: string, targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType]): void;
     /**
      * Creates a copy of the relationships given. Relationships added to the copy aren't added to them, so the compiler
      * adds the ones it writes for a part, such as to its images, to a copy, and packing a document again doesn't add

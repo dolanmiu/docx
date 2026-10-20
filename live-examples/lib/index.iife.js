@@ -21950,6 +21950,9 @@ MAX: 9026 };
 		}
 		/**
 		* Each part added, with its path under word/, in the order they were added.
+		*
+		* A part related as an OLE object is listed too, though the parts are typed as they were before a part could be:
+		* `File`, whose type is public, has these parts, and the compiler only writes their content.
 		*/
 		get Array() {
 			return [...this.paths].map(([part, path]) => ({
@@ -37030,6 +37033,49 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 		};
 	}();
 	//#endregion
+	//#region src/patcher/vml-shape-types.ts
+	var shapeTypeIdOf = (element) => {
+		var _element$attributes;
+		return element.name === "v:shapetype" && ((_element$attributes = element.attributes) === null || _element$attributes === void 0 ? void 0 : _element$attributes.id) !== void 0 ? String(element.attributes.id) : void 0;
+	};
+	/**
+	* Finds the id of every VML shape type (`v:shapetype`) in an element, at any depth.
+	*
+	* @param element - The element to search, such as a part's root
+	* @returns The ids, once for each shape type
+	*/
+	var findShapeTypeIds = (element) => {
+		var _element$elements;
+		const id = shapeTypeIdOf(element);
+		return [...id === void 0 ? [] : [id], ...((_element$elements = element.elements) !== null && _element$elements !== void 0 ? _element$elements : []).flatMap(findShapeTypeIds)];
+	};
+	/**
+	* Creates a function that leaves out of the content inserted into a part each VML shape type (`v:shapetype`) the part
+	* has already, such as the picture frame (`_x0000_t75`) an embedded file or a picture watermark is drawn in. Content is
+	* written with the shape types its shapes use, without knowing which the template has, but a part can't have two
+	* elements with the same id. The shapes inserted use the part's own, which Word and LibreOffice find anywhere in the
+	* part, as Word writes each shape type once in a part, in its first shape.
+	*
+	* A shape type with the id of one the part has is the same shape type: docx writes Office's preset ones, whose ids, such
+	* as `_x0000_t75` for preset 75, name the preset.
+	*
+	* @param part - The root of the part the content is inserted into
+	* @returns A function that returns the elements without the shape types the part has, including those inserted before
+	*/
+	var removeShapeTypesIn = (part) => {
+		const idsInPart = new Set(findShapeTypeIds(part));
+		const remove = (element) => {
+			const id = shapeTypeIdOf(element);
+			if (id !== void 0) {
+				if (idsInPart.has(id)) return [];
+				idsInPart.add(id);
+				return [element];
+			}
+			return [element.elements === void 0 ? element : _objectSpread2(_objectSpread2({}, element), {}, { elements: element.elements.flatMap(remove) })];
+		};
+		return (elements) => elements.flatMap(remove);
+	};
+	//#endregion
 	//#region src/patcher/from-docx.ts
 	/**
 	* Document patching module for modifying existing .docx files.
@@ -37059,6 +37105,14 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	var imageReplacer = new ImageReplacer();
 	var UTF16LE = new Uint8Array([255, 254]);
 	var UTF16BE = new Uint8Array([254, 255]);
+	var PATCHED_PART_ROOTS = /* @__PURE__ */ new Set([
+		"w:document",
+		"w:hdr",
+		"w:ftr",
+		"w:footnotes",
+		"w:endnotes",
+		"w:comments"
+	]);
 	var compareByteArrays = (a, b) => {
 		if (a.length !== b.length) return false;
 		for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
@@ -37128,6 +37182,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 			const { start, end } = placeholderDelimiters;
 			for (const [key, patch] of Object.entries(patches)) assertValidPatch(key, patch, { inTableRow: false });
 			for (const [key, value] of Object.entries(zipContent.files)) {
+				var _json$elements;
 				const binaryValue = yield value.async("uint8array");
 				const startBytes = binaryValue.slice(0, 2);
 				if (compareByteArrays(startBytes, UTF16LE) || compareByteArrays(startBytes, UTF16BE)) {
@@ -37139,19 +37194,21 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 					continue;
 				}
 				const json = toJson(yield value.async("text"));
-				if (key === "word/document.xml") {
-					var _json$elements;
-					const document = (_json$elements = json.elements) === null || _json$elements === void 0 ? void 0 : _json$elements.find((i) => i.name === "w:document");
-					if (document && document.attributes) {
-						for (const ns of [
-							"mc",
-							"wp",
-							"r",
-							"w15",
-							"m"
-						]) document.attributes[`xmlns:${ns}`] = DocumentAttributeNamespaces[ns];
-						document.attributes["mc:Ignorable"] = `${document.attributes["mc:Ignorable"] || ""} w15`.trim();
-					}
+				const root = (_json$elements = json.elements) === null || _json$elements === void 0 ? void 0 : _json$elements.find((i) => {
+					var _i$name;
+					return PATCHED_PART_ROOTS.has((_i$name = i.name) !== null && _i$name !== void 0 ? _i$name : "");
+				});
+				if (root && root.attributes) {
+					for (const ns of [
+						"mc",
+						"wp",
+						"r",
+						"w15",
+						"m",
+						"v",
+						"o"
+					]) root.attributes[`xmlns:${ns}`] = DocumentAttributeNamespaces[ns];
+					root.attributes["mc:Ignorable"] = `${root.attributes["mc:Ignorable"] || ""} w15`.trim();
 				}
 				map.set(key, json);
 			}
@@ -37217,6 +37274,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 				if (!key.startsWith("word/") || key.endsWith(".xml.rels")) continue;
 				const context = createContext(key);
 				contexts.set(key, context);
+				const removeShapeTypes = removeShapeTypesIn(json);
 				const patchPlaceholder = (element, patchKey, patchValue) => {
 					if (patchValue.type === PatchType.TABLE_ROWS) {
 						patchTableRows({
@@ -37253,7 +37311,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 						context,
 						keepOriginalStyles,
 						recursive,
-						renumberIds: (elements) => styles.use(lists.renumber(notes.renumber(renumberBookmarks(renumberDrawings(elements)))))
+						renumberIds: (elements) => styles.use(lists.renumber(notes.renumber(renumberBookmarks(renumberDrawings(removeShapeTypes(elements))))))
 					});
 					if (didFindOccurrence) relationshipAdditions.push(...hyperlinkRelationships);
 				};
