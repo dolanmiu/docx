@@ -45,10 +45,6 @@ describe("FontWrapper", () => {
             ["Other", "other", false, false],
         ]);
         expect(new Set(wrapper.files.map(({ fontKey }) => fontKey)).size).to.equal(5);
-        expect(wrapper.fontOptionsWithKey.map(({ fontKey }) => fontKey)).to.deep.equal([
-            wrapper.files[0].fontKey,
-            wrapper.files[4].fontKey,
-        ]);
 
         const targets = JSON.stringify(new Formatter().format(wrapper.Relationships)).match(/fonts\/font\d+\.odttf/g);
         expect(targets).to.deep.equal([

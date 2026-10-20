@@ -15,11 +15,6 @@ import { uniqueUuid } from "@util/convenience-functions";
 import { type FontOptions, createFontTable } from "./font-table";
 
 /**
- * Font options extended with the unique key of the regular face's file.
- */
-export type FontOptionsWithKey = FontOptions & { readonly fontKey: string };
-
-/**
  * A font file the document embeds: one face of one of its fonts, with the unique key it is obfuscated with.
  *
  * @property name - Font family name
@@ -61,8 +56,6 @@ const FACES = [
 export class FontWrapper implements IViewWrapper {
     private readonly fontTable: XmlComponent;
     private readonly relationships: Relationships;
-    /** @deprecated Use `files`, which has the file and key of each face a font embeds, not only the regular face's key */
-    public readonly fontOptionsWithKey: readonly FontOptionsWithKey[] = [];
     /** The files of the faces the fonts embed, in order: the Nth is `fonts/font<N>.odttf`, with the relationship `rId<N>` */
     public readonly files: readonly EmbeddedFontFile[] = [];
 
@@ -74,8 +67,6 @@ export class FontWrapper implements IViewWrapper {
             }),
         );
         this.files = faces.flatMap((ofFont) => ofFont.map(({ file }) => file));
-        // The regular face is the first face of each font
-        this.fontOptionsWithKey = options.map((font, index) => ({ ...font, fontKey: faces[index][0].file.fontKey }));
         this.fontTable = createFontTable(
             options.map((font, index) => ({
                 name: font.name,
