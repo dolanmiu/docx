@@ -440,6 +440,51 @@ describe("File", () => {
         ]);
     });
 
+    it("should write Word's caption style, so paragraphs with the style Caption are captions", () => {
+        const doc = new File({ sections: [] });
+
+        const tree = new Formatter().format(doc.Styles)["w:styles"];
+        const captionStyles = tree.filter((child: { readonly "w:style"?: readonly { readonly _attr?: Record<string, string> }[] }) =>
+            child["w:style"]?.some((part) => part._attr?.["w:styleId"] === "Caption"),
+        );
+        expect(captionStyles).to.deep.equal([new Formatter().format(createDefaultStyles().caption)]);
+    });
+
+    it("should format captions with the caption style given in styles.default", () => {
+        const doc = new File({
+            styles: {
+                default: {
+                    caption: { run: { color: "FF0000", size: 20 } },
+                },
+            },
+            sections: [],
+        });
+
+        const tree = new Formatter().format(doc.Styles)["w:styles"];
+        const captionStyles = tree.filter((child: { readonly "w:style"?: readonly { readonly _attr?: Record<string, string> }[] }) =>
+            child["w:style"]?.some((part) => part._attr?.["w:styleId"] === "Caption"),
+        );
+        expect(captionStyles).to.deep.equal([
+            new Formatter().format(createDefaultStyles({ caption: { run: { color: "FF0000", size: 20 } } }).caption),
+        ]);
+    });
+
+    it("should write a paragraph style with the id Caption in place of docx's caption style", () => {
+        const doc = new File({
+            styles: {
+                paragraphStyles: [{ id: "Caption", name: "caption", run: { bold: true } }],
+            },
+            sections: [],
+        });
+
+        const tree = new Formatter().format(doc.Styles)["w:styles"];
+        const captionStyles = tree.filter((child: { readonly "w:style"?: readonly { readonly _attr?: Record<string, string> }[] }) =>
+            child["w:style"]?.some((part) => part._attr?.["w:styleId"] === "Caption"),
+        );
+        expect(captionStyles).to.have.length(1);
+        expect(captionStyles[0]["w:style"]).to.deep.include({ "w:rPr": [{ "w:b": {} }, { "w:bCs": {} }] });
+    });
+
     it("should create with even and odd headers and footers", () => {
         const doc = new File({
             evenAndOddHeaderAndFooters: true,
