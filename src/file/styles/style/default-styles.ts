@@ -228,6 +228,27 @@ export class CaptionStyle extends StyleForParagraph {
 }
 
 /**
+ * Represents the Bibliography paragraph style.
+ *
+ * Word gives the paragraphs of the bibliographies it writes (References > Bibliography) the paragraph style named
+ * "Bibliography", and this is that style as Word writes it. It has no formatting of its own: each style of citation,
+ * such as APA, indents the paragraphs of its bibliography itself.
+ */
+export class BibliographyStyle extends StyleForParagraph {
+    public constructor(options: IBaseParagraphStyleOptions) {
+        super({
+            id: "Bibliography",
+            name: "Bibliography",
+            basedOn: "Normal",
+            next: "Normal",
+            uiPriority: 37,
+            unhideWhenUsed: true,
+            ...options,
+        });
+    }
+}
+
+/**
  * Represents the Footnote Text paragraph style.
  *
  * Used for the text content of footnotes with smaller font size and tighter spacing.

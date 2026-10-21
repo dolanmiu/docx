@@ -18,6 +18,7 @@ import { dateTimeValue } from "@util/values";
 import type { ICustomPropertyOptions } from "../custom-properties";
 import type { IDocumentBackgroundOptions, PageNumberEstimator } from "../document";
 import { DocumentAttributes } from "../document/document-attributes";
+import type { DocumentBibliography } from "../document-bibliography";
 import type { DocumentMacros } from "../document-macros";
 import type { ISectionOptions } from "../file";
 import type { INumberingOptions } from "../numbering";
@@ -54,6 +55,7 @@ import type { IThemeOptions } from "../theme";
  * @property pageNumbers - Works out the page each bookmark is on, so the page numbers of tables of contents and page references are written with the document
  * @property macros - The document's VBA macros, which make it a macro-enabled document (.docm)
  * @property protection - What people can change in the document in Word, and the password that turns that protection off
+ * @property bibliography - The sources the document's citations and bibliographies refer to
  */
 export type IPropertiesOptions = {
     readonly sections: readonly ISectionOptions[];
@@ -118,6 +120,11 @@ export type IPropertiesOptions = {
      * between `EditableRangeStart` and `EditableRangeEnd` can still be changed by anyone
      */
     readonly protection?: IDocumentProtectionOptions;
+    /**
+     * The sources that the document's citations and bibliographies refer to, and the style they're written in, such as
+     * APA. `createBibliography` from `docx/bibliography` writes them. Word lists them in its Source Manager
+     */
+    readonly bibliography?: DocumentBibliography;
 };
 
 /**

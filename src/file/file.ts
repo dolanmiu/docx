@@ -6,11 +6,14 @@
  *
  * @module
  */
+import { uniqueUuid } from "@util/convenience-functions";
+
 import { AppProperties } from "./app-properties/app-properties";
 import { ContentTypes } from "./content-types/content-types";
 import { CoreProperties, type IPropertiesOptions } from "./core-properties";
 import { CustomProperties } from "./custom-properties";
 import { HeaderFooterReferenceType, type ISectionPropertiesOptions } from "./document/body/section-properties";
+import { createSourcesProperties } from "./document-bibliography/document-bibliography";
 import { createMacroEvents } from "./document-macros/document-macros";
 import { DocumentWrapper } from "./document-wrapper";
 import { EndnotesWrapper } from "./endnotes-wrapper";
@@ -86,6 +89,18 @@ type FileMacros = {
     /** The events of the document the project handles (word/vbaData.xml), if it handles any */
     readonly events?: XmlComponent;
     /** The project's relationships (word/_rels/vbaProject.bin.rels), to its events */
+    readonly relationships: Relationships;
+};
+
+/**
+ * A document's sources, as the document writes them.
+ */
+type FileBibliography = {
+    /** The sources (customXml/item1.xml) */
+    readonly sources: XmlComponent;
+    /** The properties of their part (customXml/itemProps1.xml) */
+    readonly properties: XmlComponent;
+    /** Their part's relationships (customXml/_rels/item1.xml.rels), to its properties */
     readonly relationships: Relationships;
 };
 
@@ -192,6 +207,7 @@ export class File {
     private readonly theme: Theme;
     private readonly packageParts: PackageParts;
     private readonly macros?: FileMacros;
+    private readonly bibliography?: FileBibliography;
 
     public constructor(options: IPropertiesOptions) {
         if (options.macros !== undefined) {
@@ -238,6 +254,23 @@ export class File {
         this.contentTypes = new ContentTypes({ macros: this.macros !== undefined });
         if (this.macros?.events !== undefined) {
             this.contentTypes.addOverride("application/vnd.ms-word.vbaData+xml", "/word/vbaData.xml");
+        }
+        if (options.bibliography !== undefined) {
+            const relationships = new Relationships();
+            relationships.addRelationship(
+                1,
+                "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXmlProps",
+                "itemProps1.xml",
+            );
+            this.bibliography = {
+                sources: options.bibliography.sources,
+                properties: createSourcesProperties(`{${uniqueUuid().toUpperCase()}}`),
+                relationships,
+            };
+            this.contentTypes.addOverride(
+                "application/vnd.openxmlformats-officedocument.customXmlProperties+xml",
+                "/customXml/itemProps1.xml",
+            );
         }
         this.packageParts = new PackageParts(this.contentTypes);
         this.documentWrapper = new DocumentWrapper({ background: options.background, pageNumbers: options.pageNumbers });
@@ -332,6 +365,14 @@ export class File {
                 this.currentRelationshipId++,
                 "http://schemas.microsoft.com/office/2006/relationships/vbaProject",
                 "vbaProject.bin",
+            );
+        }
+        if (this.bibliography !== undefined) {
+            this.documentWrapper.Relationships.addRelationship(
+                // eslint-disable-next-line functional/immutable-data
+                this.currentRelationshipId++,
+                "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml",
+                "../customXml/item1.xml",
             );
         }
     }
@@ -582,5 +623,13 @@ export class File {
      */
     public get Macros(): FileMacros | undefined {
         return this.macros;
+    }
+
+    /**
+     * The document's sources, when it has a bibliography: the part they're in (customXml/item1.xml), its properties
+     * (customXml/itemProps1.xml), and its relationships, to its properties.
+     */
+    public get Bibliography(): FileBibliography | undefined {
+        return this.bibliography;
     }
 }

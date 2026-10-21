@@ -12,6 +12,7 @@ import { XmlComponent } from "@file/xml-components";
 
 import { RelationshipsAttributes } from "./attributes";
 import {
+    type CustomXmlRelationshipType,
     type MacroRelationshipType,
     type OleObjectRelationshipType,
     type RelationshipType,
@@ -57,7 +58,7 @@ export class Relationships extends XmlComponent {
      */
     public addRelationship(
         id: number | string,
-        type: RelationshipType | MacroRelationshipType | OleObjectRelationshipType,
+        type: RelationshipType | MacroRelationshipType | OleObjectRelationshipType | CustomXmlRelationshipType,
         target: string,
         targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType],
     ): void {
