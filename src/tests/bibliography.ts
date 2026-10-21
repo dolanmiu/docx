@@ -8,12 +8,17 @@
  */
 import { describe, expect, it } from "vitest";
 
+import { Formatter } from "@export/formatter";
+import type { File } from "@file/file";
+import type { BaseXmlComponent } from "@file/xml-components";
+import { stringifyXmlable } from "@util/xml";
+
 import { type CitedSourceOptions, citationOrderOf, formatBibliography, formatCitation } from "../bibliography/format";
 import type { Source } from "../bibliography/source";
 import corpora from "../bibliography/styles/fixtures/corpora.json";
-import type { FormattedText } from "../bibliography/styles/formatted-text";
+import { type FormattedText, italic, join } from "../bibliography/styles/formatted-text";
 import type { StyleDefinition } from "../bibliography/styles/style";
-import { wordSourceOf } from "../bibliography/word-source";
+import { fieldOf, wordSourceOf } from "../bibliography/word-source";
 
 /** A corpus: its sources, as docx's options, and its citations, each the sources it cites */
 type Corpus = { readonly sources: readonly Source[]; readonly citations: readonly (readonly CitedSourceOptions[])[] };
@@ -88,3 +93,43 @@ export const describeWordOutput = (style: StyleDefinition, expected: Readonly<Re
         });
     }
 };
+
+/**
+ * A style for testing citations and bibliographies. A citation is each source's tag, the flags Word works out for it and
+ * the switches it is cited with, in brackets, and a bibliography is each source's tag and title, in italics, sorted by
+ * tag: in paragraphs with a hanging indent, or in a table of each source's order and entry.
+ */
+export const testStyle = (layout: "paragraphs" | "rows" = "paragraphs"): StyleDefinition => ({
+    name: "Test",
+    file: "TEST.XSL",
+    version: "1",
+    citation: (cited) =>
+        join(
+            cited.first ? "(" : "",
+            cited.prefix ?? "",
+            [
+                cited.source.tag,
+                ...(cited.repeatedAuthor ? ["repeated"] : []),
+                ...(cited.nonUniqueLastName ? ["initials"] : []),
+                ...(cited.minAuthors > 1 ? [`${cited.minAuthors} authors`] : []),
+                ...(cited.hideAuthor ? ["no author"] : []),
+                ...(cited.hideYear ? ["no year"] : []),
+                ...(cited.hideTitle ? ["no title"] : []),
+                ...(cited.pages ? [`p. ${cited.pages}`] : []),
+                ...(cited.volume ? [`vol. ${cited.volume}`] : []),
+            ].join(", "),
+            cited.suffix ?? "",
+            cited.last ? ")" : "; ",
+        ),
+    bibliography: (sources) => {
+        const sorted = [...sources].sort((a, b) => (a.tag < b.tag ? -1 : 1));
+        const entry = (source: (typeof sources)[number]): FormattedText => join(`${source.tag}  `, italic(fieldOf(source, "Title")), " ");
+        return layout === "rows"
+            ? { rows: sorted.map((source) => [join(`[${source.order}] `), entry(source)] as const) }
+            : { paragraphs: sorted.map(entry), hangingIndent: true };
+    },
+});
+
+/** A component's XML, written as part of a document's body */
+export const xmlOf = (component: BaseXmlComponent, file: File): string =>
+    stringifyXmlable(new Formatter().format(component, { file, viewWrapper: file.Document, stack: [] }));

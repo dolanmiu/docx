@@ -217,7 +217,7 @@ export const xslTemplates = (punctuation: Punctuation): XslTemplates => {
 export const applyItalic = (text: TextLike): FormattedText =>
     textOf(text).length === 0 && formatted(text).length === 0 ? [] : italic(text);
 
-// The letters a name or a title is sorted by when it has an accent or is two letters in one, as Windows sorts them
+// The letters a letter that is two letters in one, or has a stroke through it, is sorted as
 const SORTED_AS: Readonly<Record<string, string>> = { æ: "ae", œ: "oe", ø: "o", ß: "ss", ł: "l", đ: "d", ð: "d", þ: "th", ı: "i" };
 
 /** A sort key's letters, without the accents, hyphens and apostrophes that Word ignores when it sorts, in small letters */
@@ -233,10 +233,10 @@ const compareStrings = (a: string, b: string): number => (a < b ? -1 : a > b ? 1
 
 /**
  * The items sorted by their sort keys, as a style's `xsl:sort` sorts them in Word: in small letters, without the
- * hyphens and apostrophes in them, then by their accents. Items with the same key keep their order.
+ * hyphens and apostrophes in them, and then by their accents. Items with the same key keep their order.
  *
- * Word for Windows sorts this way. Word for Mac sorts some letters with accents differently, such as "Müller" before
- * "Mabe", and so writes some bibliographies in another order when it updates them.
+ * A letter with an accent is sorted as the letter. Word for Mac sorts some of them in an order of its own, such as
+ * "Müller" before "Mabe", so it may put such names in another order when it updates a bibliography.
  */
 export const sortByKey = <T>(items: readonly T[], keyOf: (item: T) => string): readonly T[] =>
     items

@@ -1228,5 +1228,5 @@
             ]
         }
     },
-    "notes": "Corpora a to d: the citations and bibliography as Word for Mac 16.114 writes them, after updating the fields. Word for Mac sorts \"Müller\" before \"Mora\", and docx sorts letters with accents by their letters, as Word for Windows does, so they're the other way round in corpus b. Corpus s: as Word's own style, its XSL, writes them when run with libxslt and Word's English wording, which gives the same as Word for corpora a to d"
+    "notes": "Corpora a to d: the citations and bibliography as Word for Mac 16.114 writes them, after updating the fields. Word for Mac sorts \"Müller\" before \"Mora\", and docx sorts a letter with an accent as the letter, so they're the other way round in corpus b. Corpus s: as Word's own style, its XSL, writes them when run with libxslt and Word's English wording, which gives the same as Word for corpora a to d"
 }

@@ -485,6 +485,20 @@ describe("File", () => {
         expect(captionStyles[0]["w:style"]).to.deep.include({ "w:rPr": [{ "w:b": {} }, { "w:bCs": {} }] });
     });
 
+    it("should write Word's bibliography style, which bibliographies' paragraphs are in, and format it with styles.default", () => {
+        const stylesOf = (doc: File): readonly unknown[] => {
+            const styles = new Formatter().format(doc.Styles)["w:styles"];
+            return styles.filter((child: { readonly "w:style"?: readonly { readonly _attr?: Record<string, string> }[] }) =>
+                child["w:style"]?.some((part) => part._attr?.["w:styleId"] === "Bibliography"),
+            );
+        };
+
+        expect(stylesOf(new File({ sections: [] }))).to.deep.equal([new Formatter().format(createDefaultStyles().bibliography)]);
+        expect(stylesOf(new File({ styles: { default: { bibliography: { run: { size: 20 } } } }, sections: [] }))).to.deep.equal([
+            new Formatter().format(createDefaultStyles({ bibliography: { run: { size: 20 } } }).bibliography),
+        ]);
+    });
+
     it("should create with even and odd headers and footers", () => {
         const doc = new File({
             evenAndOddHeaderAndFooters: true,
@@ -676,6 +690,63 @@ describe("File", () => {
             expect(doc.Settings).to.not.be.undefined;
             expect(doc.Comments).to.not.be.undefined;
             expect(doc.Theme).to.not.be.undefined;
+        });
+    });
+
+    describe("#bibliography", () => {
+        const CUSTOM_XML = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml";
+
+        it("should have no sources part without a bibliography", () => {
+            const doc = new File({ sections: [] });
+
+            expect(doc.Bibliography).toBeUndefined();
+            expect(JSON.stringify(new Formatter().format(doc.Document.Relationships))).not.toContain(CUSTOM_XML);
+            expect(JSON.stringify(new Formatter().format(doc.ContentTypes))).not.toContain("customXml");
+        });
+
+        it("should keep the sources in a custom XML part, with its properties, as Word does", () => {
+            const sources = new Paragraph("Sources");
+            const doc = new File({ bibliography: { sources }, sections: [] });
+
+            expect(doc.Bibliography?.sources).toBe(sources);
+            const properties = new Formatter().format(doc.Bibliography!.properties);
+            expect(properties["ds:datastoreItem"][0]._attr["ds:itemID"]).to.match(/^\{[0-9A-F]{8}(-[0-9A-F]{4}){3}-[0-9A-F]{12}\}$/);
+            expect(new Formatter().format(doc.Bibliography!.relationships)).toEqual({
+                Relationships: [
+                    { _attr: { xmlns: "http://schemas.openxmlformats.org/package/2006/relationships" } },
+                    {
+                        Relationship: {
+                            _attr: {
+                                Id: "rId1",
+                                Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXmlProps",
+                                Target: "itemProps1.xml",
+                            },
+                        },
+                    },
+                ],
+            });
+            expect(JSON.stringify(new Formatter().format(doc.ContentTypes))).toContain(
+                JSON.stringify({
+                    ContentType: "application/vnd.openxmlformats-officedocument.customXmlProperties+xml",
+                    PartName: "/customXml/itemProps1.xml",
+                }),
+            );
+        });
+
+        it("should relate the document to the sources after the theme and the macros", () => {
+            const project = Uint8Array.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1, 0x00]);
+            const relationships = JSON.stringify(
+                new Formatter().format(
+                    new File({ bibliography: { sources: new Paragraph("") }, macros: { project }, sections: [] }).Document.Relationships,
+                ),
+            );
+
+            expect(relationships).toContain(JSON.stringify({ Id: "rId8", Type: CUSTOM_XML, Target: "../customXml/item1.xml" }));
+            expect(
+                JSON.stringify(
+                    new Formatter().format(new File({ bibliography: { sources: new Paragraph("") }, sections: [] }).Document.Relationships),
+                ),
+            ).toContain(JSON.stringify({ Id: "rId7", Type: CUSTOM_XML, Target: "../customXml/item1.xml" }));
         });
     });
 
