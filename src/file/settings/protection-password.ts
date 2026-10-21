@@ -12,7 +12,7 @@ import hash from "hash.js";
 /** How many times Word hashes the password again, which is what it writes in `w:cryptSpinCount` */
 export const PROTECTION_PASSWORD_SPIN_COUNT = 100000;
 
-// Word only reads the first 15 characters of the password
+// Word only reads the first 15 characters of the password, counted in UTF-16 code units
 const MAX_PASSWORD_LENGTH = 15;
 
 // The legacy algorithm's starting values for the key's high-order word, one for each password length
@@ -50,11 +50,15 @@ const rotateLeft15 = (value: number): number => ((value >> 14) & 1) | ((value <<
  * @internal
  */
 export const legacyPasswordKey = (password: string): string => {
-    // Each character becomes one byte: its low byte, or its high byte when the low byte is 0
-    const bytes = [...password.slice(0, MAX_PASSWORD_LENGTH)].map((character) => {
-        const code = character.charCodeAt(0);
-        return (code & 0xff) !== 0 ? code & 0xff : (code >> 8) & 0xff;
-    });
+    // Each UTF-16 code unit becomes one byte: its low byte, or its high byte when the low byte is 0. Word reads code
+    // units, not code points, so an emoji is two, with a byte from each half of its surrogate pair
+    const bytes = password
+        .slice(0, MAX_PASSWORD_LENGTH)
+        .split("")
+        .map((character) => {
+            const code = character.charCodeAt(0);
+            return (code & 0xff) !== 0 ? code & 0xff : (code >> 8) & 0xff;
+        });
 
     const highOrderWord = bytes.reduce(
         (word, byte, index) =>

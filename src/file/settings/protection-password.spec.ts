@@ -17,6 +17,11 @@ describe("legacyPasswordKey", () => {
         expect(legacyPasswordKey("abcdefghijklmn")).not.to.equal(legacyPasswordKey("abcdefghijklmno"));
     });
 
+    it("should read each UTF-16 code unit of a character outside the Basic Multilingual Plane, as Word does", () => {
+        // U+1F600 and U+1F601 are the surrogate pairs D83D DE00 and D83D DE01, which differ only in the second
+        expect(legacyPasswordKey("\u{1F600}A")).not.to.equal(legacyPasswordKey("\u{1F601}A"));
+    });
+
     it("should read a character's high byte when its low byte is 0", () => {
         // U+4E00 has the low byte 0x00 and the high byte 0x4E, which is "N"
         expect(legacyPasswordKey("一")).to.equal(legacyPasswordKey("N"));
@@ -41,6 +46,13 @@ describe("hashProtectionPassword", () => {
         );
 
         expect(toBase64(hash)).to.equal("3vCPYtiBiMryITfhIFJ0JYH+jZYaqN13ShVrlgN3vwQ=");
+    });
+
+    it("should hash a password with an emoji so that Word accepts it", () => {
+        /* cspell:disable-next-line */
+        const hash = hashProtectionPassword("\u{1F600}A", fromBase64("CYsnXnAl+DFslgfN1qMaMA=="), PROTECTION_PASSWORD_SPIN_COUNT);
+
+        expect(toBase64(hash)).to.equal("dpP7q9Lj2LC2lDz9nRn34GE7Mgke2Fhp8b0svGCfc2E=");
     });
 
     it("should give a 32-byte SHA-256 hash that depends on the salt and the spin count", () => {
