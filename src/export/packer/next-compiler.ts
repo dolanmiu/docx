@@ -91,6 +91,12 @@ type IXmlifyedFileMapping = {
     readonly MacroEvents?: IXmlifyedFile;
     /** The relationships of the macros' VBA project (word/_rels/vbaProject.bin.rels), to their events */
     readonly MacroRelationships?: IXmlifyedFile;
+    /** The sources of the document's citations and bibliographies (customXml/item1.xml) */
+    readonly BibliographySources?: IXmlifyedFile;
+    /** The properties of the sources' part (customXml/itemProps1.xml) */
+    readonly BibliographySourcesProperties?: IXmlifyedFile;
+    /** The relationships of the sources' part (customXml/_rels/item1.xml.rels), to its properties */
+    readonly BibliographySourcesRelationships?: IXmlifyedFile;
 };
 
 /**
@@ -792,6 +798,61 @@ export class Compiler {
                               },
                           ),
                           path: "word/_rels/vbaProject.bin.rels",
+                      },
+                  }
+                : {}),
+            ...(file.Bibliography
+                ? {
+                      BibliographySources: {
+                          data: stringifyXmlable(
+                              this.formatter.format(file.Bibliography.sources, {
+                                  viewWrapper: file.Document,
+                                  file,
+                                  stack: [],
+                              }),
+                              {
+                                  indent: prettify,
+                                  declaration: {
+                                      standalone: "yes",
+                                      encoding: "UTF-8",
+                                  },
+                              },
+                          ),
+                          path: "customXml/item1.xml",
+                      },
+                      BibliographySourcesProperties: {
+                          data: stringifyXmlable(
+                              this.formatter.format(file.Bibliography.properties, {
+                                  viewWrapper: file.Document,
+                                  file,
+                                  stack: [],
+                              }),
+                              {
+                                  indent: prettify,
+                                  declaration: {
+                                      standalone: "no",
+                                      encoding: "UTF-8",
+                                  },
+                              },
+                          ),
+                          path: "customXml/itemProps1.xml",
+                      },
+                      BibliographySourcesRelationships: {
+                          data: stringifyXmlable(
+                              this.formatter.format(file.Bibliography.relationships, {
+                                  viewWrapper: file.Document,
+                                  file,
+                                  stack: [],
+                              }),
+                              {
+                                  indent: prettify,
+                                  declaration: {
+                                      standalone: "yes",
+                                      encoding: "UTF-8",
+                                  },
+                              },
+                          ),
+                          path: "customXml/_rels/item1.xml.rels",
                       },
                   }
                 : {}),

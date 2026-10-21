@@ -11,6 +11,7 @@ import type { XmlComponent } from "@file/xml-components";
 
 import { DocumentDefaults, type IDocumentDefaultsOptions } from "./defaults";
 import {
+    BibliographyStyle,
     CaptionStyle,
     EndnoteReferenceStyle,
     EndnoteText,
@@ -53,6 +54,7 @@ import { DocumentAttributes } from "../document/document-attributes";
  * @property strong - Strong paragraph style options
  * @property listParagraph - List paragraph style options
  * @property caption - Caption paragraph style options
+ * @property bibliography - Bibliography paragraph style options
  * @property hyperlink - Hyperlink character style options
  * @property footnoteReference - Footnote reference character style options
  * @property footnoteText - Footnote text paragraph style options
@@ -85,6 +87,11 @@ export type IDefaultStylesOptions = {
      * own, so a `run` replaces its italic, size and color
      */
     readonly caption?: IBaseParagraphStyleOptions;
+    /**
+     * The style of the paragraphs of bibliographies, the lists of sources that `Bibliography` from `docx/bibliography`
+     * writes. It has no formatting of its own, as each style of citation, such as APA, indents them itself
+     */
+    readonly bibliography?: IBaseParagraphStyleOptions;
     /** Hyperlink character style options */
     readonly hyperlink?: IBaseCharacterStyleOptions;
     /** Footnote reference character style options */
@@ -172,6 +179,7 @@ export const createDefaultStyles = (
     }),
     listParagraph: new ListParagraph(options.listParagraph || {}),
     caption: new CaptionStyle(options.caption || {}),
+    bibliography: new BibliographyStyle(options.bibliography || {}),
     hyperlink: new HyperlinkStyle(options.hyperlink || {}),
     footnoteReference: new FootnoteReferenceStyle(options.footnoteReference || {}),
     footnoteText: new FootnoteText(options.footnoteText || {}),

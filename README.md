@@ -156,6 +156,42 @@ const doc = new Document({
 
 In a page without a bundler, load `dist/embedded-files.umd.cjs` after `dist/index.umd.cjs`. It adds the `docxEmbeddedFiles` global. See the [embedded files](https://docx.js.org/#/usage/embedded-files) documentation.
 
+# Citations and Bibliography
+
+Sources, citations of them in the text and a bibliography, in one of Word's styles of citation, such as APA, MLA or Chicago, written as Word writes them, with `docx/bibliography`:
+
+```ts
+import { Document, Paragraph, TextRun } from "docx";
+import { Bibliography, Citation, CitationStyle, SourceType, createBibliography } from "docx/bibliography";
+
+const doc = new Document({
+    bibliography: createBibliography({
+        style: CitationStyle.APA,
+        sources: [
+            {
+                tag: "Bak10",
+                type: SourceType.BOOK,
+                authors: [{ lastName: "Baker", firstName: "Anna" }],
+                title: "The Art of Pizza",
+                year: 2010,
+                city: "Naples",
+                publisher: "Oven Press",
+            },
+        ],
+    }),
+    sections: [
+        {
+            children: [
+                new Paragraph({ children: [new TextRun("Pizza has been baked in Naples for centuries "), new Citation("Bak10")] }),
+                new Bibliography({ title: "References" }),
+            ],
+        },
+    ],
+});
+```
+
+In a page without a bundler, load `dist/bibliography.umd.cjs` after `dist/index.umd.cjs`. It adds the `docxBibliography` global. See the [citations and bibliography](https://docx.js.org/#/usage/bibliography) documentation.
+
 # Playground
 
 Experience `docx` in action through [Docx.js Editor][docxjs-editor-url], an interactive playground where you can code and preview the results in real-time.

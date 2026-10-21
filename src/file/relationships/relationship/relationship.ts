@@ -39,6 +39,14 @@ export type MacroRelationshipType =
     | "http://schemas.microsoft.com/office/2006/relationships/wordVbaData";
 
 /**
+ * The types of the relationships to a document's sources, which are in a custom XML part, and from that part to its
+ * properties.
+ */
+export type CustomXmlRelationshipType =
+    | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml"
+    | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXmlProps";
+
+/**
  * The type of the relationship to an OLE object that isn't a package, such as a file docx/embedded-files embeds in an
  * OLE package. It isn't one of the {@link RelationshipType}s, as a {@link PackagePart} gives its relationship type in its
  * options, which a part made with a relationship type of that union can be read for.
@@ -57,7 +65,7 @@ export const TargetModeType = {
 
 type IRelationshipAttributes = {
     readonly id: string;
-    readonly type: RelationshipType | MacroRelationshipType | OleObjectRelationshipType;
+    readonly type: RelationshipType | MacroRelationshipType | OleObjectRelationshipType | CustomXmlRelationshipType;
     readonly target: string;
     readonly targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType];
 };
@@ -80,7 +88,7 @@ type IRelationshipAttributes = {
 
 export const createRelationship = (
     id: string,
-    type: RelationshipType | MacroRelationshipType | OleObjectRelationshipType,
+    type: RelationshipType | MacroRelationshipType | OleObjectRelationshipType | CustomXmlRelationshipType,
     target: string,
     targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType],
 ): XmlComponent =>

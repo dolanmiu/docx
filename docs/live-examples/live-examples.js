@@ -36,6 +36,7 @@
         "docx/html": { file: "html", global: "docxHtml", after: ["docx/math"] },
         "docx/macros": { file: "macros", global: "docxMacros" },
         "docx/embedded-files": { file: "embedded-files", global: "docxEmbeddedFiles" },
+        "docx/bibliography": { file: "bibliography", global: "docxBibliography" },
     };
 
     // Packages from npm an example can import too, from jsDelivr at the version the docs are written for: where each is, and

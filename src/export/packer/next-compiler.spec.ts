@@ -6,6 +6,7 @@ import { obfuscate } from "@file/fonts/obfuscate-ttf-to-odttf";
 import { Footer, Header } from "@file/header";
 import { LevelFormat } from "@file/numbering";
 import { Bookmark, ExternalHyperlink, ImageRun, Paragraph, TextRun, WpsShapeRun } from "@file/paragraph";
+import { BuilderElement } from "@file/xml-components";
 import * as convenienceFunctions from "@util/convenience-functions";
 
 import { Compiler } from "./next-compiler";
@@ -111,6 +112,24 @@ describe("Compiler", () => {
                     '<Relationship Id="rId1" Type="http://schemas.microsoft.com/office/2006/relationships/wordVbaData" Target="vbaData.xml"/>',
                 );
             });
+        });
+
+        it("should pack a bibliography's sources as Word does, in a custom XML part with its properties", async () => {
+            const sources = new BuilderElement({ name: "b:Sources" });
+            const zipFile = compiler.compile(new File({ sections: [], bibliography: { sources } }));
+
+            expect(await zipFile.file("customXml/item1.xml")?.async("text")).toBe(
+                '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><b:Sources/>',
+            );
+            expect(await zipFile.file("customXml/itemProps1.xml")?.async("text")).to.match(
+                /^<\?xml version="1.0" encoding="UTF-8" standalone="no"\?><ds:datastoreItem ds:itemID="\{[0-9A-F-]{36}\}" xmlns:ds="http:\/\/schemas.openxmlformats.org\/officeDocument\/2006\/customXml"><ds:schemaRefs><ds:schemaRef ds:uri="http:\/\/schemas.openxmlformats.org\/officeDocument\/2006\/bibliography"\/><\/ds:schemaRefs><\/ds:datastoreItem>$/,
+            );
+            expect(await zipFile.file("customXml/_rels/item1.xml.rels")?.async("text")).toContain(
+                '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXmlProps" Target="itemProps1.xml"/>',
+            );
+            expect(await zipFile.file("word/_rels/document.xml.rels")?.async("text")).toContain(
+                'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml" Target="../customXml/item1.xml"',
+            );
         });
 
         it("should give an image in a comment a relationship from the comments part", async () => {

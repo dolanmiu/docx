@@ -399,7 +399,8 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
     // src/file/paragraph/math. src/text-layout measures text for docx/shapes and docx/layout, and each bundles a copy.
     // docx/html (src/html) imports docx/math by name too, for the math in HTML. docx/macros (src/macros) writes VBA
     // projects for docx's macros, and docx/embedded-files (src/embedded-files) embeds files as OLE objects.
-    // src/compound-file writes the compound files both keep them in, and each bundles a copy
+    // src/compound-file writes the compound files both keep them in, and each bundles a copy. docx/bibliography
+    // (src/bibliography) writes citations and bibliographies. Spec helpers (src/tests) may import the entries, as specs do
     {
         files: ["src/**/*.ts"],
         ignores: [
@@ -413,6 +414,8 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
             "src/embedded-files/**",
             "src/compound-file/**",
             "src/text-layout/**",
+            "src/bibliography/**",
+            "src/tests/**",
             "**/*.spec.ts",
         ],
         rules: {
@@ -423,7 +426,7 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
                     patterns: [
                         { group: ["docx/*"], message: "docx doesn't import its optional entries, such as docx/shapes" },
                         {
-                            regex: "(^|/)(shapes|watermarks|charts|layout|html|macros|embedded-files|compound-file|text-layout)(/|$)",
+                            regex: "(^|/)(shapes|watermarks|charts|layout|html|macros|embedded-files|compound-file|text-layout|bibliography)(/|$)",
                             message: "docx doesn't import its optional entries, such as docx/shapes",
                         },
                     ],
@@ -443,6 +446,7 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
             "src/embedded-files/*.ts",
             "src/compound-file/*.ts",
             "src/text-layout/*.ts",
+            "src/bibliography/*.ts",
         ],
         ignores: ["**/*.spec.ts"],
         rules: {
@@ -461,7 +465,14 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
         },
     },
     {
-        files: ["src/shapes/*/*.ts", "src/watermarks/*/*.ts", "src/charts/*/*.ts", "src/layout/*/*.ts", "src/html/*/*.ts"],
+        files: [
+            "src/shapes/*/*.ts",
+            "src/watermarks/*/*.ts",
+            "src/charts/*/*.ts",
+            "src/layout/*/*.ts",
+            "src/html/*/*.ts",
+            "src/bibliography/*/*.ts",
+        ],
         ignores: ["**/*.spec.ts"],
         rules: {
             "no-restricted-imports": [

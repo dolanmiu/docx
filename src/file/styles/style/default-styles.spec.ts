@@ -392,6 +392,27 @@ describe("Default Styles", () => {
         expect(tree["w:style"]).to.deep.include({ "w:pPr": [{ "w:spacing": { _attr: { "w:after": 200 } } }] });
     });
 
+    it("BibliographyStyle#constructor is Word's bibliography style, with no formatting of its own", () => {
+        expect(new Formatter().format(new defaultStyles.BibliographyStyle({}))).to.deep.equal({
+            "w:style": [
+                { _attr: { "w:type": "paragraph", "w:styleId": "Bibliography" } },
+                { "w:name": { _attr: { "w:val": "Bibliography" } } },
+                { "w:basedOn": { _attr: { "w:val": "Normal" } } },
+                { "w:next": { _attr: { "w:val": "Normal" } } },
+                { "w:uiPriority": { _attr: { "w:val": 37 } } },
+                { "w:unhideWhenUsed": EMPTY_OBJECT },
+            ],
+        });
+    });
+
+    it("BibliographyStyle#constructor formats bibliographies with the options given", () => {
+        const tree = new Formatter().format(new defaultStyles.BibliographyStyle({ run: { size: 20 } }));
+
+        expect(tree["w:style"]).to.deep.include({
+            "w:rPr": [{ "w:sz": { _attr: { "w:val": 20 } } }, { "w:szCs": { _attr: { "w:val": 20 } } }],
+        });
+    });
+
     it("LineNumberStyle#constructor is Word's line number style, with no formatting of its own", () => {
         expect(new Formatter().format(new defaultStyles.LineNumberStyle({}))).to.deep.equal({
             "w:style": [
