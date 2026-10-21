@@ -24,30 +24,30 @@ describe("legacyPasswordKey", () => {
 });
 
 describe("hashProtectionPassword", () => {
-    // Each salt and hash below is what Word for Mac 16 wrote when it protected a document with the password
-    it("should hash a password as Word does", () => {
-        const hash = hashProtectionPassword("Example", fromBase64("RtEaIE+V6X78XzRte+874Q=="), PROTECTION_PASSWORD_SPIN_COUNT);
+    // Word for Mac 16 turned off the protection of a document with each salt and hash below when given the password,
+    // and refused a wrong one. Word writes SHA-512 itself, so the hashes are docx's, checked in Word
+    it("should hash a password so that Word accepts it", () => {
+        const hash = hashProtectionPassword("Example", fromBase64("E7Z4pK9vZJtgEIUrL2UL3w=="), PROTECTION_PASSWORD_SPIN_COUNT);
 
-        expect(toBase64(hash)).to.equal("P9vAWTa+XzjQvDiLfHPwEWuAhuyAi+3UW3ccWu/IzaMVWJtTZhT6PHyIylX4V5uzUNmKqSlmWIQo0N6pbPwWkQ==");
+        expect(toBase64(hash)).to.equal("MZHm/PwSL2XqNHWnrQFREO8SwF9ZeosDyD3uS3/jbiU=");
     });
 
-    it("should hash a long password with characters outside ASCII as Word does", () => {
+    it("should hash a long password with characters outside ASCII so that Word accepts it", () => {
         const hash = hashProtectionPassword(
             /* cspell:disable-next-line */
             "Pässwort密码abcdefghijklmnop",
-            /* cspell:disable-next-line */
-            fromBase64("JnIzYkQKINNmgebBzeWVvw=="),
+            fromBase64("v61srLQZvvOFtTTJHbPd+Q=="),
             PROTECTION_PASSWORD_SPIN_COUNT,
         );
 
-        expect(toBase64(hash)).to.equal("DIqTQCjCey679aCOk6tO4LkmSFgOukmk6DA3add/Z8Nhw7OGgrlCik+xoS8BBQ/QuyYaG2qunwoHcNpPRcXGIQ==");
+        expect(toBase64(hash)).to.equal("3vCPYtiBiMryITfhIFJ0JYH+jZYaqN13ShVrlgN3vwQ=");
     });
 
-    it("should give a 64-byte SHA-512 hash that depends on the salt and the spin count", () => {
+    it("should give a 32-byte SHA-256 hash that depends on the salt and the spin count", () => {
         const salt = Array.from({ length: 16 }, (_, index) => index);
         const hash = hashProtectionPassword("secret", salt, 10);
 
-        expect(hash).to.have.length(64);
+        expect(hash).to.have.length(32);
         expect(hashProtectionPassword("secret", salt, 10)).to.deep.equal(hash);
         expect(hashProtectionPassword("secret", salt, 11)).not.to.deep.equal(hash);
         expect(hashProtectionPassword("secret", [...salt].reverse(), 10)).not.to.deep.equal(hash);

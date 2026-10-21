@@ -72,7 +72,7 @@ export type IDocumentProtectionOptions = {
      * Editing > Stop Protection). Word only reads its first 15 characters.
      *
      * The document isn't encrypted, so the protection stops changes in Word, not people who read or change the file
-     * another way. Hashing the password as Word does takes about a second.
+     * another way.
      */
     readonly password?: string;
 };
@@ -120,8 +120,9 @@ const toBase64 = (bytes: readonly number[]): string => btoa(String.fromCharCode(
 /**
  * Represents a document's protection (`w:documentProtection`), which limits what people can change in it in Word.
  *
- * A password is hashed as Word hashes it: SHA-512 (`w:cryptAlgorithmSid` 14) with a random 16-byte salt, 100,000
- * times, after Word's legacy key derivation. These are the transitional password attributes, which Word writes.
+ * A password is hashed as Word hashes it, with a random 16-byte salt, 100,000 times, after Word's legacy key
+ * derivation, but with SHA-256 (`w:cryptAlgorithmSid` 12), which is much faster here than the SHA-512 Word uses. These
+ * are the transitional password attributes, which Word writes.
  *
  * Reference: ISO/IEC 29500-1 17.15.1.29 (documentProtection)
  *
@@ -148,8 +149,8 @@ export class DocumentProtection extends XmlComponent {
                 cryptProviderType: "rsaAES",
                 cryptAlgorithmClass: "hash",
                 cryptAlgorithmType: "typeAny",
-                // SHA-512
-                cryptAlgorithmSid: 14,
+                // SHA-256
+                cryptAlgorithmSid: 12,
                 cryptSpinCount: PROTECTION_PASSWORD_SPIN_COUNT,
                 hash: toBase64(hashProtectionPassword(password, salt, PROTECTION_PASSWORD_SPIN_COUNT)),
                 salt: toBase64(salt),

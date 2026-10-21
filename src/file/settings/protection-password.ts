@@ -72,8 +72,12 @@ export const legacyPasswordKey = (password: string): string => {
 };
 
 /**
- * Hashes a password as Word does for `w:documentProtection`: SHA-512 of the salt and the password's legacy key (in
- * UTF-16LE), then SHA-512 of each hash and its iteration number (32-bit little-endian), `spinCount` times.
+ * Hashes a password for `w:documentProtection` as Word does, with SHA-256: SHA-256 of the salt and the password's
+ * legacy key (in UTF-16LE), then SHA-256 of each hash and its iteration number (32-bit little-endian), `spinCount`
+ * times.
+ *
+ * Word itself uses SHA-512, and reads either. hash.js's SHA-512 works its 64-bit words out in 32-bit halves, so
+ * 100,000 rounds of it take a second or more, where SHA-256 takes about a tenth of that.
  *
  * @param password - The password, of at least one character
  * @param salt - The salt Word reads from `w:salt`
@@ -85,10 +89,10 @@ export const legacyPasswordKey = (password: string): string => {
 export const hashProtectionPassword = (password: string, salt: readonly number[], spinCount: number): readonly number[] => {
     const key = [...legacyPasswordKey(password)].flatMap((character) => [character.charCodeAt(0), 0]);
 
-    let digest: readonly number[] = hash.sha512().update(salt).update(key).digest();
+    let digest: readonly number[] = hash.sha256().update(salt).update(key).digest();
     for (let iteration = 0; iteration < spinCount; iteration++) {
         digest = hash
-            .sha512()
+            .sha256()
             .update(digest)
             .update([iteration & 0xff, (iteration >> 8) & 0xff, (iteration >> 16) & 0xff, (iteration >>> 24) & 0xff])
             .digest();

@@ -30,9 +30,9 @@ describe("DocumentProtection", () => {
         });
     });
 
-    it("should write a password's hash and salt as Word does", () => {
-        // The salt Word for Mac 16 chose when it protected a document with the password "Example"
-        const salt = [...atob("RtEaIE+V6X78XzRte+874Q==")].map((character) => character.charCodeAt(0));
+    it("should write a password's hash and salt so that Word accepts the password", () => {
+        // A salt and hash Word for Mac 16 accepted the password "Example" for
+        const salt = [...atob("E7Z4pK9vZJtgEIUrL2UL3w==")].map((character) => character.charCodeAt(0));
         vi.spyOn(globalThis.crypto, "getRandomValues").mockImplementation((array) => {
             (array as Uint8Array).set(salt);
             return array;
@@ -48,10 +48,10 @@ describe("DocumentProtection", () => {
                     "w:cryptProviderType": "rsaAES",
                     "w:cryptAlgorithmClass": "hash",
                     "w:cryptAlgorithmType": "typeAny",
-                    "w:cryptAlgorithmSid": 14,
+                    "w:cryptAlgorithmSid": 12,
                     "w:cryptSpinCount": 100000,
-                    "w:hash": "P9vAWTa+XzjQvDiLfHPwEWuAhuyAi+3UW3ccWu/IzaMVWJtTZhT6PHyIylX4V5uzUNmKqSlmWIQo0N6pbPwWkQ==",
-                    "w:salt": "RtEaIE+V6X78XzRte+874Q==",
+                    "w:hash": "MZHm/PwSL2XqNHWnrQFREO8SwF9ZeosDyD3uS3/jbiU=",
+                    "w:salt": "E7Z4pK9vZJtgEIUrL2UL3w==",
                 },
             },
         });

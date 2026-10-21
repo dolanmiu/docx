@@ -45,7 +45,7 @@ const doc = new Document({
 });
 ```
 
-The document keeps a hash of the password, never the password. It is hashed as Word hashes it, with SHA-512 and a random salt 100,000 times, which takes about a second. Word only reads the first 15 characters of a password, and an empty password is no password.
+The document keeps a hash of the password, never the password. It is hashed as Word hashes it, 100,000 times with a random salt, though with SHA-256 rather than the SHA-512 Word uses, as SHA-256 is much faster in JavaScript. Word reads either. Word only reads the first 15 characters of a password, and an empty password is no password.
 
 ## Protection Options
 
