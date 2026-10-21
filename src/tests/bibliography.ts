@@ -77,10 +77,8 @@ export const outputOf = (style: StyleDefinition, corpus: Corpus): Required<Corpu
  */
 export const describeWordOutput = (style: StyleDefinition, expected: Readonly<Record<string, CorpusOutput | string>>): void => {
     for (const [name, corpus] of Object.entries(corpora as unknown as Readonly<Record<string, Corpus>>)) {
-        const output = expected[name];
-        if (typeof output !== "object") {
-            continue;
-        }
+        // Each fixture has each corpus, and notes
+        const output = expected[name] as CorpusOutput;
         describe(`corpus ${name}`, () => {
             it("writes the citations as Word does", () => {
                 expect(outputOf(style, corpus).citations).toEqual(output.citations);
@@ -122,7 +120,7 @@ export const testStyle = (layout: "paragraphs" | "rows" = "paragraphs"): StyleDe
             cited.last ? ")" : "; ",
         ),
     bibliography: (sources) => {
-        const sorted = [...sources].sort((a, b) => (a.tag < b.tag ? -1 : 1));
+        const sorted = [...sources].sort((a, b) => a.tag.localeCompare(b.tag));
         const entry = (source: (typeof sources)[number]): FormattedText => join(`${source.tag}  `, italic(fieldOf(source, "Title")), " ");
         return layout === "rows"
             ? { rows: sorted.map((source) => [join(`[${source.order}] `), entry(source)] as const) }

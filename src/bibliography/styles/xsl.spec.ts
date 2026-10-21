@@ -124,6 +124,7 @@ describe("stringFormatDot", () => {
         expect(stringFormatDot("Ed. %1", "Lee")).to.deep.equal([{ text: "Ed. " }, { text: "Lee" }, { text: "." }]);
         expect(stringFormatDot("Ed. %1", "Lee?")).to.deep.equal([{ text: "Ed. " }, { text: "Lee?" }]);
         expect(stringFormatDot("Ed. %1", "")).to.deep.equal([{ text: "Ed. " }]);
+        expect(stringFormatDot("Ed. %3", "Lee")).to.deep.equal([{ text: "Ed. " }]);
     });
 
     it("adds a dot after a character that doesn't end a sentence", () => {

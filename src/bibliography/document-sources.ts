@@ -104,8 +104,9 @@ export class BibliographySources extends XmlComponent {
     }
 
     /**
-     * Written with the file of Word's style after a backslash, as Word for Windows writes it (Word for Mac writes a slash,
-     * and reads either), its name and version, and each source, with the order the document cites it in.
+     * Written with the file of Word's style after a slash, as Word for Mac writes it, its name and version, and each
+     * source, with the order the document cites it in. Word for Windows writes a backslash, which Word for Mac doesn't
+     * find the style by, so a document with one opens in APA in Word for Mac.
      */
     public prepForXml(context: IContext): IXmlableObject | undefined {
         return new BuilderElement<{
@@ -117,7 +118,7 @@ export class BibliographySources extends XmlComponent {
         }>({
             name: "b:Sources",
             attributes: {
-                selectedStyle: { key: "SelectedStyle", value: `\\${this.style.file}` },
+                selectedStyle: { key: "SelectedStyle", value: `/${this.style.file}` },
                 styleName: { key: "StyleName", value: this.style.name },
                 version: { key: "Version", value: this.style.version },
                 prefix: { key: "xmlns:b", value: BIBLIOGRAPHY_NAMESPACE },

@@ -135,6 +135,7 @@ describe("createSourceXml", () => {
                 authors: [
                     { lastName: "Dickens", firstName: "Charles", middleName: "John" },
                     { lastName: "", firstName: "Plato" },
+                    { lastName: "Homer" },
                 ],
                 corporatePerformer: "Band",
                 title: "Bibliographies",
@@ -155,6 +156,7 @@ describe("createSourceXml", () => {
                                     "b:NameList": [
                                         { "b:Person": [{ "b:Last": ["Dickens"] }, { "b:First": ["Charles"] }, { "b:Middle": ["John"] }] },
                                         { "b:Person": [{ "b:First": ["Plato"] }] },
+                                        { "b:Person": [{ "b:Last": ["Homer"] }] },
                                     ],
                                 },
                             ],

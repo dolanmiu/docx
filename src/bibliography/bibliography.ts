@@ -20,8 +20,8 @@ import { createFieldRuns, runsOf } from "./field";
 import { formatBibliography } from "./format";
 import type { FormattedText } from "./styles/formatted-text";
 
-/** What Word writes in a bibliography of a document with no sources */
-const NO_SOURCES = "There are no sources in the current document.";
+/** What Word writes, in bold, in a bibliography of a document with no sources */
+const NO_SOURCES = "Invalid source specified.";
 
 /**
  * Options for a {@link Bibliography}.
@@ -45,9 +45,16 @@ const paragraphOf = (children: readonly XmlComponent[], options: IParagraphOptio
     return paragraph;
 };
 
-/** An entry's paragraph, in the Bibliography style, with the lines after its first indented half an inch if the style's are */
+/**
+ * An entry's paragraph, in the Bibliography style, with the lines after its first indented half an inch if the style's
+ * are. Its mark is kept out of spelling and grammar checks, as its runs are
+ */
 const entryOf = (children: readonly XmlComponent[], hangingIndent = false): Paragraph =>
-    paragraphOf(children, { style: "Bibliography", ...(hangingIndent ? { indent: { left: 720, hanging: 720 } } : {}) });
+    paragraphOf(children, {
+        style: "Bibliography",
+        ...(hangingIndent ? { indent: { left: 720, hanging: 720 } } : {}),
+        run: { noProof: true },
+    });
 
 const tableCellSpacing = (): XmlComponent =>
     new BuilderElement<{ readonly width: number; readonly type: string }>({
@@ -153,22 +160,31 @@ const createBibliographyControl = (context: IContext): XmlComponent => {
     const bibliography = formatBibliography(style, sources);
     const [begin, instruction, separate, end] = createFieldRuns(" BIBLIOGRAPHY ", []);
     const fieldStart = [begin, instruction, separate];
+    // With no sources, Word writes the field and what it says, in bold, in one paragraph with no style
     const content =
         sources.length === 0
-            ? [entryOf([...fieldStart, ...runsOf([{ text: NO_SOURCES }])])]
+            ? [paragraphOf([...fieldStart, ...runsOf([{ text: NO_SOURCES, bold: true }]), end])]
             : "rows" in bibliography
-              ? // The field starts in a paragraph of its own before a table, with no style
-                [paragraphOf(fieldStart), tableOf(bibliography.rows)]
-              : bibliography.paragraphs.map((entry, index) =>
-                    entryOf([...(index === 0 ? fieldStart : []), ...runsOf(entry)], bibliography.hangingIndent),
-                );
-    // The field ends in a paragraph of its own, with no style
-    const fieldEnd = paragraphOf([end]);
+              ? // The field starts in a paragraph of its own before a table, with no style, and an empty paragraph follows
+                // the table before the one the field ends in
+                [
+                    paragraphOf(fieldStart, { run: { noProof: true } }),
+                    tableOf(bibliography.rows),
+                    paragraphOf([], { run: { noProof: true } }),
+                    paragraphOf([end]),
+                ]
+              : [
+                    ...bibliography.paragraphs.map((entry, index) =>
+                        entryOf([...(index === 0 ? fieldStart : []), ...runsOf(entry)], bibliography.hangingIndent),
+                    ),
+                    // The field ends in a paragraph of its own, with no style
+                    paragraphOf([end]),
+                ];
     return new BuilderElement({
         name: "w:sdt",
         children: [
             new BuilderElement({ name: "w:sdtPr", children: [new BuilderElement({ name: "w:bibliography" })] }),
-            new BuilderElement({ name: "w:sdtContent", children: [...content, fieldEnd] }),
+            new BuilderElement({ name: "w:sdtContent", children: content }),
         ],
     });
 };

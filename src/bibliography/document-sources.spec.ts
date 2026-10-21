@@ -48,7 +48,7 @@ describe("BibliographySources", () => {
         });
 
         expect(xmlOf(file.Bibliography!.sources, file)).to.equal(
-            '<b:Sources SelectedStyle="\\TEST.XSL" StyleName="Test" Version="1" xmlns:b="http://schemas.openxmlformats.org/officeDocument/2006/bibliography" xmlns="http://schemas.openxmlformats.org/officeDocument/2006/bibliography">' +
+            '<b:Sources SelectedStyle="/TEST.XSL" StyleName="Test" Version="1" xmlns:b="http://schemas.openxmlformats.org/officeDocument/2006/bibliography" xmlns="http://schemas.openxmlformats.org/officeDocument/2006/bibliography">' +
                 "<b:Source><b:Tag>A</b:Tag><b:SourceType>Book</b:SourceType><b:Title>One</b:Title><b:RefOrder>2</b:RefOrder></b:Source>" +
                 "<b:Source><b:Tag>B</b:Tag><b:SourceType>Book</b:SourceType><b:RefOrder>1</b:RefOrder></b:Source>" +
                 "</b:Sources>",

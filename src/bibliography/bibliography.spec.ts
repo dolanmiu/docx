@@ -23,7 +23,7 @@ const FIELD_START =
 
 const FIELD_END = '<w:p><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>';
 
-const PARAGRAPH = '<w:pPr><w:pStyle w:val="Bibliography"/><w:ind w:left="720" w:hanging="720"/></w:pPr>';
+const PARAGRAPH = '<w:pPr><w:pStyle w:val="Bibliography"/><w:ind w:left="720" w:hanging="720"/><w:rPr><w:noProof/></w:rPr></w:pPr>';
 
 describe("Bibliography", () => {
     it("is a block, so a section takes it", () => {
@@ -60,31 +60,30 @@ describe("Bibliography", () => {
         };
 
         expect(xmlOf(new Bibliography(), documentWith(SOURCES, style))).to.contain(
-            `<w:p><w:pPr><w:pStyle w:val="Bibliography"/></w:pPr>${FIELD_START}<w:r><w:rPr><w:noProof/></w:rPr><w:t xml:space="preserve">Entry</w:t></w:r></w:p>`,
+            `<w:p><w:pPr><w:pStyle w:val="Bibliography"/><w:rPr><w:noProof/></w:rPr></w:pPr>${FIELD_START}<w:r><w:rPr><w:noProof/></w:rPr><w:t xml:space="preserve">Entry</w:t></w:r></w:p>`,
         );
     });
 
     it("writes a table of each source's number and entry as Word writes IEEE's", () => {
         const row = (tag: string, order: number, title: string): string =>
-            `<w:tr><w:trPr><w:tblCellSpacing w:w="15" w:type="dxa"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="50" w:type="pct"/><w:hideMark/></w:tcPr><w:p><w:pPr><w:pStyle w:val="Bibliography"/></w:pPr><w:r><w:rPr><w:noProof/></w:rPr><w:t xml:space="preserve">[${order}] </w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="0" w:type="auto"/><w:hideMark/></w:tcPr><w:p><w:pPr><w:pStyle w:val="Bibliography"/></w:pPr><w:r><w:rPr><w:noProof/></w:rPr><w:t xml:space="preserve">${tag} </w:t></w:r><w:r><w:rPr><w:i/><w:iCs/><w:noProof/></w:rPr><w:t xml:space="preserve">${title}</w:t></w:r><w:r><w:rPr><w:noProof/></w:rPr><w:t xml:space="preserve"> </w:t></w:r></w:p></w:tc></w:tr>`;
+            `<w:tr><w:trPr><w:tblCellSpacing w:w="15" w:type="dxa"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="50" w:type="pct"/><w:hideMark/></w:tcPr><w:p><w:pPr><w:pStyle w:val="Bibliography"/><w:rPr><w:noProof/></w:rPr></w:pPr><w:r><w:rPr><w:noProof/></w:rPr><w:t xml:space="preserve">[${order}] </w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="0" w:type="auto"/><w:hideMark/></w:tcPr><w:p><w:pPr><w:pStyle w:val="Bibliography"/><w:rPr><w:noProof/></w:rPr></w:pPr><w:r><w:rPr><w:noProof/></w:rPr><w:t xml:space="preserve">${tag} </w:t></w:r><w:r><w:rPr><w:i/><w:iCs/><w:noProof/></w:rPr><w:t xml:space="preserve">${title}</w:t></w:r><w:r><w:rPr><w:noProof/></w:rPr><w:t xml:space="preserve"> </w:t></w:r></w:p></w:tc></w:tr>`;
 
         expect(xmlOf(new Bibliography(), documentWith(SOURCES, testStyle("rows")))).to.equal(
-            `<w:sdt><w:sdtPr><w:bibliography/></w:sdtPr><w:sdtContent><w:p>${FIELD_START}</w:p>` +
+            `<w:sdt><w:sdtPr><w:bibliography/></w:sdtPr><w:sdtContent><w:p><w:pPr><w:rPr><w:noProof/></w:rPr></w:pPr>${FIELD_START}</w:p>` +
                 "<w:tbl><w:tblPr>" +
                 '<w:tblW w:w="5000" w:type="pct"/><w:tblCellSpacing w:w="15" w:type="dxa"/>' +
                 '<w:tblCellMar><w:top w:w="15" w:type="dxa"/><w:left w:w="15" w:type="dxa"/><w:bottom w:w="15" w:type="dxa"/><w:right w:w="15" w:type="dxa"/></w:tblCellMar>' +
                 '<w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/>' +
                 '</w:tblPr><w:tblGrid><w:gridCol w:w="409"/><w:gridCol w:w="8617"/></w:tblGrid>' +
-                `${row("A", 2, "One")}${row("B", 1, "Two")}</w:tbl>${FIELD_END}</w:sdtContent></w:sdt>`,
+                `${row("A", 2, "One")}${row("B", 1, "Two")}</w:tbl><w:p><w:pPr><w:rPr><w:noProof/></w:rPr></w:pPr></w:p>${FIELD_END}</w:sdtContent></w:sdt>`,
         );
     });
 
-    it("writes what Word does for a document with no sources", () => {
+    it("writes what Word does for a document with no sources: what it says, in bold, in one paragraph with the field", () => {
         expect(xmlOf(new Bibliography(), documentWith([]))).to.equal(
-            "<w:sdt><w:sdtPr><w:bibliography/></w:sdtPr><w:sdtContent>" +
-                `<w:p><w:pPr><w:pStyle w:val="Bibliography"/></w:pPr>${FIELD_START}` +
-                '<w:r><w:rPr><w:noProof/></w:rPr><w:t xml:space="preserve">There are no sources in the current document.</w:t></w:r></w:p>' +
-                `${FIELD_END}</w:sdtContent></w:sdt>`,
+            `<w:sdt><w:sdtPr><w:bibliography/></w:sdtPr><w:sdtContent><w:p>${FIELD_START}` +
+                '<w:r><w:rPr><w:b/><w:bCs/><w:noProof/></w:rPr><w:t xml:space="preserve">Invalid source specified.</w:t></w:r>' +
+                '<w:r><w:fldChar w:fldCharType="end"/></w:r></w:p></w:sdtContent></w:sdt>',
         );
     });
 
