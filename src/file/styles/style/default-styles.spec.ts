@@ -360,6 +360,38 @@ describe("Default Styles", () => {
         });
     });
 
+    it("CaptionStyle#constructor is Word's caption style: small italic text in the theme's second dark color", () => {
+        expect(new Formatter().format(new defaultStyles.CaptionStyle({}))).to.deep.equal({
+            "w:style": [
+                { _attr: { "w:type": "paragraph", "w:styleId": "Caption" } },
+                { "w:name": { _attr: { "w:val": "caption" } } },
+                { "w:basedOn": { _attr: { "w:val": "Normal" } } },
+                { "w:next": { _attr: { "w:val": "Normal" } } },
+                { "w:uiPriority": { _attr: { "w:val": 35 } } },
+                { "w:semiHidden": EMPTY_OBJECT },
+                { "w:unhideWhenUsed": EMPTY_OBJECT },
+                { "w:qFormat": EMPTY_OBJECT },
+                { "w:pPr": [{ "w:spacing": { _attr: { "w:after": 200 } } }] },
+                {
+                    "w:rPr": [
+                        { "w:i": EMPTY_OBJECT },
+                        { "w:iCs": EMPTY_OBJECT },
+                        { "w:color": { _attr: { "w:val": "44546A", "w:themeColor": "dark2" } } },
+                        { "w:sz": { _attr: { "w:val": 18 } } },
+                        { "w:szCs": { _attr: { "w:val": 18 } } },
+                    ],
+                },
+            ],
+        });
+    });
+
+    it("CaptionStyle#constructor replaces its own formatting with the options given", () => {
+        const tree = new Formatter().format(new defaultStyles.CaptionStyle({ run: { bold: true } }));
+
+        expect(tree["w:style"]).to.deep.include({ "w:rPr": [{ "w:b": EMPTY_OBJECT }, { "w:bCs": EMPTY_OBJECT }] });
+        expect(tree["w:style"]).to.deep.include({ "w:pPr": [{ "w:spacing": { _attr: { "w:after": 200 } } }] });
+    });
+
     it("LineNumberStyle#constructor is Word's line number style, with no formatting of its own", () => {
         expect(new Formatter().format(new defaultStyles.LineNumberStyle({}))).to.deep.equal({
             "w:style": [

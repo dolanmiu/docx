@@ -196,6 +196,38 @@ export class ListParagraph extends StyleForParagraph {
 }
 
 /**
+ * Represents the Caption paragraph style.
+ *
+ * Word gives the captions it inserts (References > Insert Caption) the paragraph style named "caption", and this is that
+ * style as Word writes it: small italic text in the theme's second dark color, with space after it.
+ */
+export class CaptionStyle extends StyleForParagraph {
+    public constructor(options: IBaseParagraphStyleOptions) {
+        super({
+            id: "Caption",
+            name: "caption",
+            basedOn: "Normal",
+            next: "Normal",
+            uiPriority: 35,
+            semiHidden: true,
+            unhideWhenUsed: true,
+            quickFormat: true,
+            paragraph: {
+                spacing: {
+                    after: 200,
+                },
+            },
+            run: {
+                italics: true,
+                color: { theme: "dark2" },
+                size: 18,
+            },
+            ...options,
+        });
+    }
+}
+
+/**
  * Represents the Footnote Text paragraph style.
  *
  * Used for the text content of footnotes with smaller font size and tighter spacing.

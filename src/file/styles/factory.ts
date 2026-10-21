@@ -11,6 +11,7 @@ import type { XmlComponent } from "@file/xml-components";
 
 import { DocumentDefaults, type IDocumentDefaultsOptions } from "./defaults";
 import {
+    CaptionStyle,
     EndnoteReferenceStyle,
     EndnoteText,
     EndnoteTextChar,
@@ -51,6 +52,7 @@ import { DocumentAttributes } from "../document/document-attributes";
  * @property heading6 - Heading 6 paragraph style options
  * @property strong - Strong paragraph style options
  * @property listParagraph - List paragraph style options
+ * @property caption - Caption paragraph style options
  * @property hyperlink - Hyperlink character style options
  * @property footnoteReference - Footnote reference character style options
  * @property footnoteText - Footnote text paragraph style options
@@ -78,6 +80,11 @@ export type IDefaultStylesOptions = {
     readonly strong?: IBaseParagraphStyleOptions;
     /** List paragraph style options */
     readonly listParagraph?: IBaseParagraphStyleOptions;
+    /**
+     * The style of captions (`style: "Caption"`), such as "Table 1" above a table. Options given replace the style's
+     * own, so a `run` replaces its italic, size and color
+     */
+    readonly caption?: IBaseParagraphStyleOptions;
     /** Hyperlink character style options */
     readonly hyperlink?: IBaseCharacterStyleOptions;
     /** Footnote reference character style options */
@@ -164,6 +171,7 @@ export const createDefaultStyles = (
         ...options.strong,
     }),
     listParagraph: new ListParagraph(options.listParagraph || {}),
+    caption: new CaptionStyle(options.caption || {}),
     hyperlink: new HyperlinkStyle(options.hyperlink || {}),
     footnoteReference: new FootnoteReferenceStyle(options.footnoteReference || {}),
     footnoteText: new FootnoteText(options.footnoteText || {}),

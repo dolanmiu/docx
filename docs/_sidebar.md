@@ -48,6 +48,7 @@
     - [Numbering](usage/numbering.md)
     - [Hyperlinks](usage/hyperlinks.md)
     - [Bookmarks](usage/bookmarks.md)
+    - [Captions and Cross-references](usage/captions.md)
     - [Checkboxes](usage/checkboxes.md)
     - [Text Box](usage/text-box.md)
     - [WPS Text Box](usage/wps-text-box.md)
