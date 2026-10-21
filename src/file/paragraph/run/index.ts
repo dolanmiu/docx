@@ -18,6 +18,7 @@ export * from "./east-asian-layout";
 export * from "./fit-text";
 export * from "./simple-field";
 export * from "./comment-run";
+export * from "./editable-range";
 export * from "./comments-extended";
 export * from "./empty-children";
 export * from "./positional-tab";

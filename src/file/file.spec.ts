@@ -462,6 +462,19 @@ describe("File", () => {
         expect(tree["w:settings"]).to.deep.include({ "w:embedTrueTypeFonts": {} });
     });
 
+    it("should protect the document with its protection option", () => {
+        const doc = new File({
+            sections: [],
+            protection: { type: "trackedChanges" },
+        });
+
+        const tree = new Formatter().format(doc.Settings);
+
+        expect(tree["w:settings"]).to.deep.include({
+            "w:documentProtection": { _attr: { "w:edit": "trackedChanges", "w:enforcement": true } },
+        });
+    });
+
     it("should not write embedTrueTypeFonts when no fonts are embedded", () => {
         for (const fonts of [undefined, []]) {
             const doc = new File({ sections: [], fonts });

@@ -30,6 +30,7 @@ import {
     TextRun,
 } from "./run";
 import type { Comment, CommentRangeEnd, CommentRangeStart, CommentReference, Comments } from "./run/comment-run";
+import type { EditableRangeEnd, EditableRangeStart } from "./run/editable-range";
 
 /**
  * The types of children that can be contained within a Paragraph element.
@@ -57,6 +58,8 @@ export type ParagraphChild =
     | CommentRangeStart
     | CommentRangeEnd
     | CommentReference
+    | EditableRangeStart
+    | EditableRangeEnd
     | CheckBox
     | Textbox;
 

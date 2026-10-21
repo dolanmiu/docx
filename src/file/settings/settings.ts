@@ -11,6 +11,7 @@
 import { NumberValueElement, OnOffElement, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 
 import { Compatibility, type ICompatibilityOptions } from "./compatibility";
+import { DocumentProtection, type IDocumentProtectionOptions } from "./document-protection";
 
 /**
  * Attributes for the settings element with XML namespace declarations.
@@ -187,6 +188,8 @@ export type ISettingsOptions = {
     readonly defaultTabStop?: number;
     /** Hyphenation settings */
     readonly hyphenation?: IHyphenationOptions;
+    /** What people can change in the document in Word, and the password that turns that protection off */
+    readonly protection?: IDocumentProtectionOptions;
 };
 
 /**
@@ -219,6 +222,7 @@ export type IHyphenationOptions = {
  *   <xsd:sequence>
  *     <xsd:element name="embedTrueTypeFonts" type="CT_OnOff" minOccurs="0"/>
  *     <xsd:element name="trackRevisions" type="CT_OnOff" minOccurs="0"/>
+ *     <xsd:element name="documentProtection" type="CT_DocProtect" minOccurs="0"/>
  *     <xsd:element name="defaultTabStop" type="CT_TwipsMeasure" minOccurs="0"/>
  *     <xsd:element name="autoHyphenation" type="CT_OnOff" minOccurs="0"/>
  *     <xsd:element name="consecutiveHyphenLimit" type="CT_DecimalNumber" minOccurs="0"/>
@@ -291,6 +295,10 @@ export class Settings extends XmlComponent {
         // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_trackRevisions_topic_ID0EKXKY.html
         if (options.trackRevisions !== undefined) {
             this.root.push(new OnOffElement("w:trackRevisions", options.trackRevisions));
+        }
+
+        if (options.protection !== undefined) {
+            this.root.push(new DocumentProtection(options.protection));
         }
 
         // https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_defaultTabStop_topic_ID0EIXSX.html

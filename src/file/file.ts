@@ -249,6 +249,7 @@ export class File {
             updateFields: options.features?.updateFields,
             embedFonts: options.fonts?.length ? true : undefined,
             defaultTabStop: options.defaultTabStop,
+            protection: options.protection,
             hyphenation: {
                 autoHyphenation: options.hyphenation?.autoHyphenation,
                 hyphenationZone: options.hyphenation?.hyphenationZone,
