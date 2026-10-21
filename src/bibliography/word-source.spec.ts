@@ -100,6 +100,13 @@ describe("wordSourceOf", () => {
         expect(() => wordSourceOf({ tag: "", type: "book" }, 1)).toThrow("A bibliography's source has no tag");
     });
 
+    it("throws for a source whose type isn't one of SourceType's, such as Word's own name for it", () => {
+        expect(() => wordSourceOf({ tag: "T", type: "InternetSite" as "website" }, 1)).toThrow(
+            'The source "T" has the type "InternetSite", which isn\'t a type of source. Give one of SourceType\'s, such as SourceType.BOOK',
+        );
+        expect(() => wordSourceOf({ tag: "T", type: "constructor" as "book" }, 1)).toThrow('has the type "constructor"');
+    });
+
     it("throws for a source with both people and an organization in one role", () => {
         expect(() => wordSourceOf({ tag: "T", type: "book", authors: [{ lastName: "Lee" }], corporateAuthor: "Board" }, 1)).toThrow(
             'The source "T" has both authors and corporateAuthor',

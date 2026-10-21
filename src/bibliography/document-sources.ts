@@ -72,7 +72,8 @@ export class BibliographySources extends XmlComponent {
     private readonly documents = new WeakMap<File, DocumentSources>();
 
     /**
-     * @throws If a source has no tag, or the same tag as another, or both people and an organization in one role
+     * @throws If a source has no tag, or the same tag as another, a type that isn't one of SourceType's, or both people and
+     * an organization in one role
      */
     public constructor(
         public readonly style: StyleDefinition,

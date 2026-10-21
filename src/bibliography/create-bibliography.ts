@@ -30,7 +30,8 @@ export type DocumentBibliographyOptions = {
  *
  * @publicApi
  *
- * @throws If two sources have the same tag, a source has none, or the style isn't one of {@link CitationStyle}'s
+ * @throws If two sources have the same tag, a source has none, a source's type isn't one of {@link SourceType}'s, or the
+ * style isn't one of {@link CitationStyle}'s
  *
  * @example
  * ```typescript

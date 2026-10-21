@@ -159,11 +159,18 @@ const personOf = ({ lastName, firstName = "", middleName = "" }: Person): WordPe
 /**
  * A source as Word keeps it, numbered as cited in the order given.
  *
- * @throws If it has no tag, or both people and an organization with the same role
+ * @throws If it has no tag, a type that isn't one of {@link SourceType}'s, or both people and an organization with the
+ * same role
  */
 export const wordSourceOf = (source: Source, order: number): WordSource => {
     if (!source.tag) {
         throw new Error('A bibliography\'s source has no tag. Give each source the tag its citations refer to it by, such as "Dic06"');
+    }
+    // Only the types' own keys, as every object has others, such as "constructor"
+    if (!Object.keys(SOURCE_TYPES).includes(source.type)) {
+        throw new Error(
+            `The source "${source.tag}" has the type "${source.type}", which isn't a type of source. Give one of SourceType's, such as SourceType.BOOK`,
+        );
     }
     const names: Partial<Record<Role, WordNames>> = {};
     for (const role of ROLES) {
