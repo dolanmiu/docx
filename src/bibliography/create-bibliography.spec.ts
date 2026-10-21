@@ -50,6 +50,13 @@ describe("createBibliography", () => {
         );
     });
 
+    it("throws for the name of a property every object has, which isn't a style", () => {
+        expect(() => createBibliography({ style: "toString" as "apa", sources: [BOOK] })).toThrow('"toString" isn\'t a style of citation');
+        expect(() => createBibliography({ style: "__proto__" as "apa", sources: [BOOK] })).toThrow(
+            '"__proto__" isn\'t a style of citation',
+        );
+    });
+
     it("throws for two sources with one tag", () => {
         expect(() => createBibliography({ sources: [BOOK, BOOK] })).toThrow('Two of the bibliography\'s sources have the tag "Bak10"');
     });

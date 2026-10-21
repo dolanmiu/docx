@@ -54,9 +54,9 @@ export type DocumentBibliographyOptions = {
  * ```
  */
 export const createBibliography = ({ style = CitationStyle.APA, sources }: DocumentBibliographyOptions): DocumentBibliography => {
-    const definition = STYLE_DEFINITIONS[style];
-    if (!definition) {
+    // Only the definitions' own keys, as every object has others, such as "toString"
+    if (!Object.keys(STYLE_DEFINITIONS).includes(style)) {
         throw new Error(`"${style}" isn't a style of citation. Give one of CitationStyle's, such as CitationStyle.APA`);
     }
-    return { sources: new BibliographySources(definition, sources) };
+    return { sources: new BibliographySources(STYLE_DEFINITIONS[style], sources) };
 };
