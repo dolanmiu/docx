@@ -28,6 +28,7 @@ const ENTRIES: Readonly<Record<string, Entry>> = {
     html: { name: "html", global: "docxHtml" },
     macros: { name: "macros", global: "docxMacros" },
     "embedded-files": { name: "embedded-files", global: "docxEmbeddedFiles" },
+    bibliography: { name: "bibliography", global: "docxBibliography" },
 };
 
 // API Extractor, which bundles the declarations, copies in those of any module that isn't a library, so it would copy
