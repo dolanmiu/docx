@@ -73,6 +73,17 @@ describe("Settings", () => {
             });
         });
 
+        it("should protect the document", () => {
+            const settings = new Settings({
+                protection: { type: "comments" },
+            });
+
+            const tree = new Formatter().format(settings);
+            expect(tree["w:settings"]).to.deep.include({
+                "w:documentProtection": { _attr: { "w:edit": "comments", "w:enforcement": true } },
+            });
+        });
+
         it("should add compatibility setting with default compatability version", () => {
             const settings = new Settings({
                 compatibility: {},
@@ -219,6 +230,7 @@ describe("Settings", () => {
                     autoHyphenation: true,
                 },
                 defaultTabStop: 100,
+                protection: { type: "readOnly" },
                 trackRevisions: true,
                 embedFonts: true,
             });
@@ -230,6 +242,7 @@ describe("Settings", () => {
                 "w:displayBackgroundShape",
                 "w:embedTrueTypeFonts",
                 "w:trackRevisions",
+                "w:documentProtection",
                 "w:defaultTabStop",
                 "w:autoHyphenation",
                 "w:consecutiveHyphenLimit",

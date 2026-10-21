@@ -11,6 +11,7 @@ import type { FontOptions } from "@file/fonts/font-table";
 import type { ICommentsOptions } from "@file/paragraph/run/comment-run";
 import type { IHyphenationOptions } from "@file/settings";
 import type { ICompatibilityOptions } from "@file/settings/compatibility";
+import type { IDocumentProtectionOptions } from "@file/settings/document-protection";
 import { StringContainer, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 import { dateTimeValue } from "@util/values";
 
@@ -52,6 +53,7 @@ import type { IThemeOptions } from "../theme";
  * @property theme - The document's theme: its colors, and its fonts for headings and body text
  * @property pageNumbers - Works out the page each bookmark is on, so the page numbers of tables of contents and page references are written with the document
  * @property macros - The document's VBA macros, which make it a macro-enabled document (.docm)
+ * @property protection - What people can change in the document in Word, and the password that turns that protection off
  */
 export type IPropertiesOptions = {
     readonly sections: readonly ISectionOptions[];
@@ -110,6 +112,12 @@ export type IPropertiesOptions = {
      * macro-enabled document, which Word only opens from a .docm file
      */
     readonly macros?: DocumentMacros;
+    /**
+     * What people can change in the document in Word: nothing, or only comments, tracked changes or forms, as Word's
+     * Restrict Editing does. A password stops anyone without it turning the protection off. Parts of the document
+     * between `EditableRangeStart` and `EditableRangeEnd` can still be changed by anyone
+     */
+    readonly protection?: IDocumentProtectionOptions;
 };
 
 /**

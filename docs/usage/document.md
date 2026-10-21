@@ -80,6 +80,7 @@ These properties appear in Word's File > Info panel and in file properties. Word
 | features                   | `{ trackRevisions?: boolean; updateFields?: boolean }` | Feature flags                                                                                                                                                 |
 | evenAndOddHeaderAndFooters | `boolean`                                              | Different odd/even headers                                                                                                                                    |
 | hyphenation                | `IHyphenationOptions`                                  | Hyphenation settings                                                                                                                                          |
+| protection                 | `IDocumentProtectionOptions`                           | What people can change in Word, and the password that turns that [protection](usage/document-protection.md) off                                               |
 | pageNumbers                | `PageNumberEstimator`                                  | Writes the page numbers of tables of contents and page references, and the numbers of pages, with `estimatePageNumbers` from [`docx/layout`](usage/layout.md) |
 
 ### Compatibility
@@ -117,6 +118,7 @@ These properties appear in Word's File > Info panel and in file properties. Word
 | hyphenation                | `IHyphenationOptions`                                    | Optional |
 | theme                      | `IThemeOptions`                                          | Optional |
 | pageNumbers                | `PageNumberEstimator`                                    | Optional |
+| protection                 | `IDocumentProtectionOptions`                             | Optional |
 
 ### Change background color of Document
 
