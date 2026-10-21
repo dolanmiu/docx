@@ -10867,6 +10867,106 @@ EXTERNAL: "External" };
 		}
 	};
 	//#endregion
+	//#region src/file/paragraph/run/editable-range.ts
+	/**
+	* Editable range module for WordprocessingML documents.
+	*
+	* An editable range is a part of a protected document that anyone can still change, as Word's Restrict Editing
+	* exceptions for "Everyone" are. It runs from an `EditableRangeStart` to the `EditableRangeEnd` with the same id,
+	* which can be in a later paragraph.
+	*
+	* Reference: ISO/IEC 29500-1 17.13.7 (permStart and permEnd)
+	*
+	* @module
+	*/
+	/**
+	* @internal
+	*/
+	var EditableRangeStartAttributes = class extends XmlAttributeComponent {
+		constructor(..._args) {
+			super(..._args);
+			_defineProperty(this, "xmlKeys", {
+				id: "w:id",
+				editorGroup: "w:edGrp"
+			});
+		}
+	};
+	/**
+	* @internal
+	*/
+	var EditableRangeEndAttributes = class extends XmlAttributeComponent {
+		constructor(..._args2) {
+			super(..._args2);
+			_defineProperty(this, "xmlKeys", { id: "w:id" });
+		}
+	};
+	/**
+	* Represents the start of an editable range: where a part of a protected document that anyone can change begins.
+	*
+	* It must be paired with an `EditableRangeEnd` with the same id, which can be in the same paragraph or a later one.
+	* The id must be different from every other editable range's. The document's `protection` option protects the rest.
+	*
+	* Reference: ISO/IEC 29500-1 17.13.7.3 (permStart)
+	*
+	* @publicApi
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:complexType name="CT_PermStart">
+	*   <xsd:complexContent>
+	*     <xsd:extension base="CT_Perm">
+	*       <xsd:attribute name="edGrp" type="ST_EdGrp" use="optional"/>
+	*       <xsd:attribute name="ed" type="s:ST_String" use="optional"/>
+	*       <xsd:attribute name="colFirst" type="ST_DecimalNumber" use="optional"/>
+	*       <xsd:attribute name="colLast" type="ST_DecimalNumber" use="optional"/>
+	*     </xsd:extension>
+	*   </xsd:complexContent>
+	* </xsd:complexType>
+	* ```
+	*
+	* @example
+	* ```typescript
+	* new Paragraph({
+	*   children: [new TextRun("Name: "), new EditableRangeStart(1), new TextRun("type your name"), new EditableRangeEnd(1)],
+	* });
+	* ```
+	*/
+	var EditableRangeStart = class extends XmlComponent {
+		constructor(id) {
+			super("w:permStart");
+			this.root.push(new EditableRangeStartAttributes({
+				id,
+				editorGroup: "everyone"
+			}));
+		}
+	};
+	/**
+	* Represents the end of an editable range, which `EditableRangeStart` with the same id begins.
+	*
+	* Reference: ISO/IEC 29500-1 17.13.7.2 (permEnd)
+	*
+	* @publicApi
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:complexType name="CT_Perm">
+	*   <xsd:attribute name="id" type="s:ST_String" use="required"/>
+	*   <xsd:attribute name="displacedByCustomXml" type="ST_DisplacedByCustomXml" use="optional"/>
+	* </xsd:complexType>
+	* ```
+	*
+	* @example
+	* ```typescript
+	* new EditableRangeEnd(1);
+	* ```
+	*/
+	var EditableRangeEnd = class extends XmlComponent {
+		constructor(id) {
+			super("w:permEnd");
+			this.root.push(new EditableRangeEndAttributes({ id }));
+		}
+	};
+	//#endregion
 	//#region src/file/paragraph/run/comments-extended.ts
 	/**
 	* CommentsExtended module for WordprocessingML documents.
@@ -22167,6 +22267,363 @@ MAX: 9026 };
 		}
 	};
 	//#endregion
+	//#region src/file/settings/protection-password.ts
+	/**
+	* Hashes the password that stops a document's protection, as Word does.
+	*
+	* Reference: ISO/IEC 29500-1 17.15.1.29 (documentProtection) and the legacy password algorithm it builds on,
+	* ECMA-376 Part 4 2.15.1.28
+	*
+	* @module
+	*/
+	/** How many times Word hashes the password again, which is what it writes in `w:cryptSpinCount` */
+	var PROTECTION_PASSWORD_SPIN_COUNT = 1e5;
+	var MAX_PASSWORD_LENGTH = 15;
+	var INITIAL_CODES = [
+		57840,
+		7439,
+		52380,
+		33984,
+		4364,
+		3600,
+		61902,
+		12606,
+		6258,
+		57657,
+		54287,
+		34041,
+		10252,
+		43370,
+		20163
+	];
+	var ENCRYPTION_MATRIX = [
+		[
+			44796,
+			19929,
+			39858,
+			10053,
+			20106,
+			40212,
+			10761
+		],
+		[
+			31585,
+			63170,
+			64933,
+			60267,
+			50935,
+			40399,
+			11199
+		],
+		[
+			17763,
+			35526,
+			1453,
+			2906,
+			5812,
+			11624,
+			23248
+		],
+		[
+			885,
+			1770,
+			3540,
+			7080,
+			14160,
+			28320,
+			56640
+		],
+		[
+			55369,
+			41139,
+			20807,
+			41614,
+			21821,
+			43642,
+			17621
+		],
+		[
+			28485,
+			56970,
+			44341,
+			19019,
+			38038,
+			14605,
+			29210
+		],
+		[
+			60195,
+			50791,
+			40175,
+			10751,
+			21502,
+			43004,
+			24537
+		],
+		[
+			18387,
+			36774,
+			3949,
+			7898,
+			15796,
+			31592,
+			63184
+		],
+		[
+			47201,
+			24803,
+			49606,
+			37805,
+			14203,
+			28406,
+			56812
+		],
+		[
+			17824,
+			35648,
+			1697,
+			3394,
+			6788,
+			13576,
+			27152
+		],
+		[
+			43601,
+			17539,
+			35078,
+			557,
+			1114,
+			2228,
+			4456
+		],
+		[
+			30388,
+			60776,
+			51953,
+			34243,
+			7079,
+			14158,
+			28316
+		],
+		[
+			14128,
+			28256,
+			56512,
+			43425,
+			17251,
+			34502,
+			7597
+		],
+		[
+			13105,
+			26210,
+			52420,
+			35241,
+			883,
+			1766,
+			3532
+		],
+		[
+			4129,
+			8258,
+			16516,
+			33032,
+			4657,
+			9314,
+			18628
+		]
+	];
+	var rotateLeft15 = (value) => value >> 14 & 1 | value << 1 & 32767;
+	/**
+	* The legacy key Word derives from a password before hashing it, as uppercase hex in reversed byte order. The
+	* standard's example is "Example", whose key 0x64CEED7E is written "7EEDCE64".
+	*
+	* @internal
+	*/
+	var legacyPasswordKey = (password) => {
+		const bytes = password.slice(0, MAX_PASSWORD_LENGTH).split("").map((character) => {
+			const code = character.charCodeAt(0);
+			return (code & 255) !== 0 ? code & 255 : code >> 8 & 255;
+		});
+		const highOrderWord = bytes.reduce((word, byte, index) => ENCRYPTION_MATRIX[MAX_PASSWORD_LENGTH - bytes.length + index].reduce((current, code, bit) => byte >> bit & 1 ? current ^ code : current, word), INITIAL_CODES[bytes.length - 1]);
+		const lowOrderWord = (rotateLeft15(bytes.reduceRight((word, byte) => rotateLeft15(word) ^ byte, 0)) ^ bytes.length ^ 52811) & 65535;
+		return [
+			lowOrderWord & 255,
+			lowOrderWord >> 8,
+			highOrderWord & 255,
+			highOrderWord >> 8
+		].map((byte) => byte.toString(16).toUpperCase().padStart(2, "0")).join("");
+	};
+	/**
+	* Hashes a password for `w:documentProtection` as Word does, with SHA-256: SHA-256 of the salt and the password's
+	* legacy key (in UTF-16LE), then SHA-256 of each hash and its iteration number (32-bit little-endian), `spinCount`
+	* times.
+	*
+	* Word itself uses SHA-512, and reads either. hash.js's SHA-512 works its 64-bit words out in 32-bit halves, so
+	* 100,000 rounds of it take a second or more, where SHA-256 takes about a tenth of that.
+	*
+	* @param password - The password, of at least one character
+	* @param salt - The salt Word reads from `w:salt`
+	* @param spinCount - How many times to hash again, which Word reads from `w:cryptSpinCount`
+	* @returns The hash Word reads from `w:hash`
+	*
+	* @internal
+	*/
+	var hashProtectionPassword = (password, salt, spinCount) => {
+		const key = [...legacyPasswordKey(password)].flatMap((character) => [character.charCodeAt(0), 0]);
+		let digest = import_hash.default.sha256().update(salt).update(key).digest();
+		for (let iteration = 0; iteration < spinCount; iteration++) digest = import_hash.default.sha256().update(digest).update([
+			iteration & 255,
+			iteration >> 8 & 255,
+			iteration >> 16 & 255,
+			iteration >>> 24 & 255
+		]).digest();
+		return digest;
+	};
+	/**
+	* Random bytes for a password's salt, from the platform's secure random numbers where it has them (browsers, and
+	* Node.js from 19 on). The salt is written in the document beside the hash, so it only has to differ between
+	* documents, and `Math.random` does that on older Node.js.
+	*
+	* @internal
+	*/
+	var randomSalt = (length) => {
+		var _globalThis$crypto;
+		const bytes = new Uint8Array(length);
+		if (typeof ((_globalThis$crypto = globalThis.crypto) === null || _globalThis$crypto === void 0 ? void 0 : _globalThis$crypto.getRandomValues) === "function") {
+			globalThis.crypto.getRandomValues(bytes);
+			return [...bytes];
+		}
+		return [...bytes].map(() => Math.floor(Math.random() * 256));
+	};
+	//#endregion
+	//#region src/file/settings/document-protection.ts
+	/**
+	* Document protection module for WordprocessingML documents.
+	*
+	* Protection limits what people can change in a document when they open it in Word, as Word's Restrict Editing
+	* does: nothing, or only comments, tracked changes or forms. A password stops anyone without it turning the
+	* protection off.
+	*
+	* Reference: ISO/IEC 29500-1 17.15.1.29 (documentProtection)
+	*
+	* @module
+	*/
+	/**
+	* What people can change in a protected document, as Word's Restrict Editing offers it.
+	*
+	* ## XSD Schema
+	*
+	* ```xml
+	* <xsd:simpleType name="ST_DocProtect">
+	*   <xsd:restriction base="xsd:string">
+	*     <xsd:enumeration value="none"/>
+	*     <xsd:enumeration value="readOnly"/>
+	*     <xsd:enumeration value="comments"/>
+	*     <xsd:enumeration value="trackedChanges"/>
+	*     <xsd:enumeration value="forms"/>
+	*   </xsd:restriction>
+	* </xsd:simpleType>
+	* ```
+	*
+	* @publicApi
+	*/
+	var DocumentProtectionType = {
+		/**
+		* ## No Changes (Read Only)
+		*
+		* Nothing can be changed, except in the document's editable ranges (`EditableRangeStart` to `EditableRangeEnd`).
+		*/
+		READ_ONLY: "readOnly",
+		/**
+		* ## Comments
+		*
+		* Only comments can be added, and the editable ranges changed.
+		*/
+		COMMENTS: "comments",
+		/**
+		* ## Tracked Changes
+		*
+		* Anything can be changed, and every change is tracked, as a revision people can accept or reject.
+		*/
+		TRACKED_CHANGES: "trackedChanges",
+		/**
+		* ## Filling in Forms
+		*
+		* Only form fields can be filled in.
+		*/
+		FORMS: "forms"
+	};
+	/**
+	* Attributes of the document protection element.
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:complexType name="CT_DocProtect">
+	*   <xsd:attribute name="edit" type="ST_DocProtect" use="optional"/>
+	*   <xsd:attribute name="formatting" type="s:ST_OnOff" use="optional"/>
+	*   <xsd:attribute name="enforcement" type="s:ST_OnOff"/>
+	*   <xsd:attributeGroup ref="AG_Password"/>
+	*   <xsd:attributeGroup ref="AG_TransitionalPassword"/>
+	* </xsd:complexType>
+	* ```
+	*/
+	var DocumentProtectionAttributes = class extends XmlAttributeComponent {
+		constructor(..._args) {
+			super(..._args);
+			_defineProperty(this, "xmlKeys", {
+				edit: "w:edit",
+				enforcement: "w:enforcement",
+				cryptProviderType: "w:cryptProviderType",
+				cryptAlgorithmClass: "w:cryptAlgorithmClass",
+				cryptAlgorithmType: "w:cryptAlgorithmType",
+				cryptAlgorithmSid: "w:cryptAlgorithmSid",
+				cryptSpinCount: "w:cryptSpinCount",
+				hash: "w:hash",
+				salt: "w:salt"
+			});
+		}
+	};
+	var toBase64 = (bytes) => btoa(String.fromCharCode(...bytes));
+	/**
+	* Represents a document's protection (`w:documentProtection`), which limits what people can change in it in Word.
+	*
+	* A password is hashed as Word hashes it, with a random 16-byte salt, 100,000 times, after Word's legacy key
+	* derivation, but with SHA-256 (`w:cryptAlgorithmSid` 12), which is much faster here than the SHA-512 Word uses. These
+	* are the transitional password attributes, which Word writes.
+	*
+	* Reference: ISO/IEC 29500-1 17.15.1.29 (documentProtection)
+	*
+	* @example
+	* ```typescript
+	* new DocumentProtection({ type: DocumentProtectionType.READ_ONLY, password: "secret" });
+	* ```
+	*/
+	var DocumentProtection = class extends XmlComponent {
+		constructor({ type, password }) {
+			super("w:documentProtection");
+			if (password === void 0 || password === "") {
+				this.root.push(new DocumentProtectionAttributes({
+					edit: type,
+					enforcement: true
+				}));
+				return;
+			}
+			const salt = randomSalt(16);
+			this.root.push(new DocumentProtectionAttributes({
+				edit: type,
+				enforcement: true,
+				cryptProviderType: "rsaAES",
+				cryptAlgorithmClass: "hash",
+				cryptAlgorithmType: "typeAny",
+				cryptAlgorithmSid: 12,
+				cryptSpinCount: PROTECTION_PASSWORD_SPIN_COUNT,
+				hash: toBase64(hashProtectionPassword(password, salt, PROTECTION_PASSWORD_SPIN_COUNT)),
+				salt: toBase64(salt)
+			}));
+		}
+	};
+	//#endregion
 	//#region src/file/settings/settings.ts
 	/**
 	* Settings module for WordprocessingML documents.
@@ -22225,6 +22682,7 @@ MAX: 9026 };
 	*   <xsd:sequence>
 	*     <xsd:element name="embedTrueTypeFonts" type="CT_OnOff" minOccurs="0"/>
 	*     <xsd:element name="trackRevisions" type="CT_OnOff" minOccurs="0"/>
+	*     <xsd:element name="documentProtection" type="CT_DocProtect" minOccurs="0"/>
 	*     <xsd:element name="defaultTabStop" type="CT_TwipsMeasure" minOccurs="0"/>
 	*     <xsd:element name="autoHyphenation" type="CT_OnOff" minOccurs="0"/>
 	*     <xsd:element name="consecutiveHyphenLimit" type="CT_DecimalNumber" minOccurs="0"/>
@@ -22284,6 +22742,7 @@ MAX: 9026 };
 			this.root.push(new OnOffElement("w:displayBackgroundShape", true));
 			if (options.embedFonts !== void 0) this.root.push(new OnOffElement("w:embedTrueTypeFonts", options.embedFonts));
 			if (options.trackRevisions !== void 0) this.root.push(new OnOffElement("w:trackRevisions", options.trackRevisions));
+			if (options.protection !== void 0) this.root.push(new DocumentProtection(options.protection));
 			if (options.defaultTabStop !== void 0) this.root.push(new NumberValueElement("w:defaultTabStop", options.defaultTabStop));
 			if (((_options$hyphenation = options.hyphenation) === null || _options$hyphenation === void 0 ? void 0 : _options$hyphenation.autoHyphenation) !== void 0) this.root.push(new OnOffElement("w:autoHyphenation", options.hyphenation.autoHyphenation));
 			if (((_options$hyphenation2 = options.hyphenation) === null || _options$hyphenation2 === void 0 ? void 0 : _options$hyphenation2.consecutiveHyphenLimit) !== void 0) this.root.push(new NumberValueElement("w:consecutiveHyphenLimit", options.hyphenation.consecutiveHyphenLimit));
@@ -23978,6 +24437,7 @@ MAX: 9026 };
 				updateFields: (_options$features2 = options.features) === null || _options$features2 === void 0 ? void 0 : _options$features2.updateFields,
 				embedFonts: ((_options$fonts = options.fonts) === null || _options$fonts === void 0 ? void 0 : _options$fonts.length) ? true : void 0,
 				defaultTabStop: options.defaultTabStop,
+				protection: options.protection,
 				hyphenation: {
 					autoHyphenation: (_options$hyphenation = options.hyphenation) === null || _options$hyphenation === void 0 ? void 0 : _options$hyphenation.autoHyphenation,
 					hyphenationZone: (_options$hyphenation2 = options.hyphenation) === null || _options$hyphenation2 === void 0 ? void 0 : _options$hyphenation2.hyphenationZone,
@@ -37651,10 +38111,13 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	exports.DocumentBackgroundAttributes = DocumentBackgroundAttributes;
 	exports.DocumentDefaults = DocumentDefaults;
 	exports.DocumentGridType = DocumentGridType;
+	exports.DocumentProtectionType = DocumentProtectionType;
 	exports.Drawing = Drawing;
 	exports.DrawingPatch = DrawingPatch;
 	exports.DropCapType = DropCapType;
 	exports.EMPTY_OBJECT = EMPTY_OBJECT;
+	exports.EditableRangeEnd = EditableRangeEnd;
+	exports.EditableRangeStart = EditableRangeStart;
 	exports.EmphasisMarkType = EmphasisMarkType;
 	exports.EmptyElement = EmptyElement;
 	exports.EndnoteIdReference = EndnoteIdReference;

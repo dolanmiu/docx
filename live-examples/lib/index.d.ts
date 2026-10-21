@@ -3450,6 +3450,52 @@ export declare type DocumentMacros = {
 };
 
 /**
+ * What people can change in a protected document, as Word's Restrict Editing offers it.
+ *
+ * ## XSD Schema
+ *
+ * ```xml
+ * <xsd:simpleType name="ST_DocProtect">
+ *   <xsd:restriction base="xsd:string">
+ *     <xsd:enumeration value="none"/>
+ *     <xsd:enumeration value="readOnly"/>
+ *     <xsd:enumeration value="comments"/>
+ *     <xsd:enumeration value="trackedChanges"/>
+ *     <xsd:enumeration value="forms"/>
+ *   </xsd:restriction>
+ * </xsd:simpleType>
+ * ```
+ *
+ * @publicApi
+ */
+export declare const DocumentProtectionType: {
+    /**
+     * ## No Changes (Read Only)
+     *
+     * Nothing can be changed, except in the document's editable ranges (`EditableRangeStart` to `EditableRangeEnd`).
+     */
+    readonly READ_ONLY: "readOnly";
+    /**
+     * ## Comments
+     *
+     * Only comments can be added, and the editable ranges changed.
+     */
+    readonly COMMENTS: "comments";
+    /**
+     * ## Tracked Changes
+     *
+     * Anything can be changed, and every change is tracked, as a revision people can accept or reject.
+     */
+    readonly TRACKED_CHANGES: "trackedChanges";
+    /**
+     * ## Filling in Forms
+     *
+     * Only form fields can be filled in.
+     */
+    readonly FORMS: "forms";
+};
+
+/**
  * Wrapper for the main document body.
  *
  * DocumentWrapper combines the main Document view with its Relationships,
@@ -3539,6 +3585,67 @@ export declare const DropCapType: {
     /** Drop cap that extends into the margin */
     readonly MARGIN: "margin";
 };
+
+/**
+ * Represents the end of an editable range, which `EditableRangeStart` with the same id begins.
+ *
+ * Reference: ISO/IEC 29500-1 17.13.7.2 (permEnd)
+ *
+ * @publicApi
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_Perm">
+ *   <xsd:attribute name="id" type="s:ST_String" use="required"/>
+ *   <xsd:attribute name="displacedByCustomXml" type="ST_DisplacedByCustomXml" use="optional"/>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * new EditableRangeEnd(1);
+ * ```
+ */
+export declare class EditableRangeEnd extends XmlComponent {
+    private readonly brand;
+    constructor(id: number);
+}
+
+/**
+ * Represents the start of an editable range: where a part of a protected document that anyone can change begins.
+ *
+ * It must be paired with an `EditableRangeEnd` with the same id, which can be in the same paragraph or a later one.
+ * The id must be different from every other editable range's. The document's `protection` option protects the rest.
+ *
+ * Reference: ISO/IEC 29500-1 17.13.7.3 (permStart)
+ *
+ * @publicApi
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_PermStart">
+ *   <xsd:complexContent>
+ *     <xsd:extension base="CT_Perm">
+ *       <xsd:attribute name="edGrp" type="ST_EdGrp" use="optional"/>
+ *       <xsd:attribute name="ed" type="s:ST_String" use="optional"/>
+ *       <xsd:attribute name="colFirst" type="ST_DecimalNumber" use="optional"/>
+ *       <xsd:attribute name="colLast" type="ST_DecimalNumber" use="optional"/>
+ *     </xsd:extension>
+ *   </xsd:complexContent>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * new Paragraph({
+ *   children: [new TextRun("Name: "), new EditableRangeStart(1), new TextRun("type your name"), new EditableRangeEnd(1)],
+ * });
+ * ```
+ */
+export declare class EditableRangeStart extends XmlComponent {
+    private readonly brand;
+    constructor(id: number);
+}
 
 /**
  * Attributes for effect extent.
@@ -5818,6 +5925,24 @@ export declare type IDocumentOptions = {
 };
 
 /**
+ * Options for protecting a document.
+ *
+ * @see {@link DocumentProtection}
+ */
+export declare type IDocumentProtectionOptions = {
+    /** What people can change in the document */
+    readonly type: (typeof DocumentProtectionType)[keyof typeof DocumentProtectionType];
+    /**
+     * The password that turns the protection off. Without one, anyone can turn it off in Word (Review > Restrict
+     * Editing > Stop Protection). Word only reads its first 15 characters.
+     *
+     * The document isn't encrypted, so the protection stops changes in Word, not people who read or change the file
+     * another way.
+     */
+    readonly password?: string;
+};
+
+/**
  * Options for configuring a drawing element.
  *
  * @see {@link Drawing}
@@ -7216,6 +7341,7 @@ export declare type IPatch = ParagraphPatch | FilePatch;
  * @property theme - The document's theme: its colors, and its fonts for headings and body text
  * @property pageNumbers - Works out the page each bookmark is on, so the page numbers of tables of contents and page references are written with the document
  * @property macros - The document's VBA macros, which make it a macro-enabled document (.docm)
+ * @property protection - What people can change in the document in Word, and the password that turns that protection off
  */
 export declare type IPropertiesOptions = {
     readonly sections: readonly ISectionOptions[];
@@ -7264,6 +7390,12 @@ export declare type IPropertiesOptions = {
      * macro-enabled document, which Word only opens from a .docm file
      */
     readonly macros?: DocumentMacros;
+    /**
+     * What people can change in the document in Word: nothing, or only comments, tracked changes or forms, as Word's
+     * Restrict Editing does. A password stops anyone without it turning the protection off. Parts of the document
+     * between `EditableRangeStart` and `EditableRangeEnd` can still be changed by anyone
+     */
+    readonly protection?: IDocumentProtectionOptions;
 };
 
 /**
@@ -7501,6 +7633,8 @@ declare type ISettingsOptions = {
     readonly defaultTabStop?: number;
     /** Hyphenation settings */
     readonly hyphenation?: IHyphenationOptions;
+    /** What people can change in the document in Word, and the password that turns that protection off */
+    readonly protection?: IDocumentProtectionOptions;
 };
 
 /**
@@ -11090,7 +11224,7 @@ export declare class Paragraph extends FileChild {
  * This union type represents all valid inline content elements that can appear
  * within a paragraph in WordprocessingML.
  */
-export declare type ParagraphChild = TextRun | ImageRun | SymbolRun | Bookmark | PageBreak | ColumnBreak | SequentialIdentifier | FootnoteReferenceRun | InternalHyperlink | ExternalHyperlink | InsertedTextRun | DeletedTextRun | Math_2 | SimpleField | SimpleMailMergeField | Comments | Comment_2 | CommentRangeStart | CommentRangeEnd | CommentReference | CheckBox | Textbox;
+export declare type ParagraphChild = TextRun | ImageRun | SymbolRun | Bookmark | PageBreak | ColumnBreak | SequentialIdentifier | FootnoteReferenceRun | InternalHyperlink | ExternalHyperlink | InsertedTextRun | DeletedTextRun | Math_2 | SimpleField | SimpleMailMergeField | Comments | Comment_2 | CommentRangeStart | CommentRangeEnd | CommentReference | EditableRangeStart | EditableRangeEnd | CheckBox | Textbox;
 
 /**
  * Patch definition for paragraph-level replacement.
@@ -12246,6 +12380,7 @@ export declare class SequentialIdentifier extends Run {
  *   <xsd:sequence>
  *     <xsd:element name="embedTrueTypeFonts" type="CT_OnOff" minOccurs="0"/>
  *     <xsd:element name="trackRevisions" type="CT_OnOff" minOccurs="0"/>
+ *     <xsd:element name="documentProtection" type="CT_DocProtect" minOccurs="0"/>
  *     <xsd:element name="defaultTabStop" type="CT_TwipsMeasure" minOccurs="0"/>
  *     <xsd:element name="autoHyphenation" type="CT_OnOff" minOccurs="0"/>
  *     <xsd:element name="consecutiveHyphenLimit" type="CT_DecimalNumber" minOccurs="0"/>

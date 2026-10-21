@@ -65,6 +65,7 @@
         - [Layout](usage/layout.md)
     - [Tabs](usage/tabs.md)
     - [Change Tracking](usage/change-tracking.md)
+    - [Document Protection](usage/document-protection.md)
     - [Math](usage/math.md)
         - [Math from LaTeX](usage/math-latex.md)
     - [HTML](usage/html.md)
