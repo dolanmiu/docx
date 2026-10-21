@@ -5722,6 +5722,7 @@ declare type ICustomPropertyOptions = {
  * @property heading6 - Heading 6 paragraph style options
  * @property strong - Strong paragraph style options
  * @property listParagraph - List paragraph style options
+ * @property caption - Caption paragraph style options
  * @property hyperlink - Hyperlink character style options
  * @property footnoteReference - Footnote reference character style options
  * @property footnoteText - Footnote text paragraph style options
@@ -5749,6 +5750,11 @@ declare type IDefaultStylesOptions = {
     readonly strong?: IBaseParagraphStyleOptions;
     /** List paragraph style options */
     readonly listParagraph?: IBaseParagraphStyleOptions;
+    /**
+     * The style of captions (`style: "Caption"`), such as "Table 1" above a table. Options given replace the style's
+     * own, so a `run` replaces its italic, size and color
+     */
+    readonly caption?: IBaseParagraphStyleOptions;
     /** Hyperlink character style options */
     readonly hyperlink?: IBaseCharacterStyleOptions;
     /** Footnote reference character style options */

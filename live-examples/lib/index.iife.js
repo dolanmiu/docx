@@ -23202,6 +23202,32 @@ MAX: 9026 };
 		}
 	};
 	/**
+	* Represents the Caption paragraph style.
+	*
+	* Word gives the captions it inserts (References > Insert Caption) the paragraph style named "caption", and this is that
+	* style as Word writes it: small italic text in the theme's second dark color, with space after it.
+	*/
+	var CaptionStyle = class extends StyleForParagraph {
+		constructor(options) {
+			super(_objectSpread2({
+				id: "Caption",
+				name: "caption",
+				basedOn: "Normal",
+				next: "Normal",
+				uiPriority: 35,
+				semiHidden: true,
+				unhideWhenUsed: true,
+				quickFormat: true,
+				paragraph: { spacing: { after: 200 } },
+				run: {
+					italics: true,
+					color: { theme: "dark2" },
+					size: 18
+				}
+			}, options));
+		}
+	};
+	/**
 	* Represents the Footnote Text paragraph style.
 	*
 	* Used for the text content of footnotes with smaller font size and tighter spacing.
@@ -23700,6 +23726,7 @@ MAX: 9026 };
 			heading6: new Heading6Style(_objectSpread2({ run: { color: "1F4D78" } }, options.heading6)),
 			strong: new StrongStyle(_objectSpread2({ run: { bold: true } }, options.strong)),
 			listParagraph: new ListParagraph(options.listParagraph || {}),
+			caption: new CaptionStyle(options.caption || {}),
 			hyperlink: new HyperlinkStyle(options.hyperlink || {}),
 			footnoteReference: new FootnoteReferenceStyle(options.footnoteReference || {}),
 			footnoteText: new FootnoteText(options.footnoteText || {}),
