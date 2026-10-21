@@ -1,6 +1,6 @@
 # Captions and Cross-references
 
-A caption labels and numbers a table, a picture or an equation, such as "Table 1: Results". A cross-reference refers to it from elsewhere in the text, as Word's **References > Insert Caption** and **Insert Cross-reference** do.
+A caption labels and numbers a table, a picture or an equation, such as "Table 1: Results". A cross-reference refers to it from elsewhere in the text, as Word's **References > Insert Caption** and **Insert Cross-reference** do. To cite books, articles and other sources, and list them in a bibliography, see [Citations and Bibliography](usage/bibliography.md).
 
 ## Captions
 

@@ -2952,6 +2952,12 @@ declare class CustomProperties extends XmlComponent {
 }
 
 /**
+ * The types of the relationships to a document's sources, which are in a custom XML part, and from that part to its
+ * properties.
+ */
+declare type CustomXmlRelationshipType = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml" | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXmlProps";
+
+/**
  * Converts a JavaScript Date object to an ISO 8601 date-time string.
  *
  * The format is CCYY-MM-DDThh:mm:ss.sssZ where T is a literal and Z indicates UTC.
@@ -3342,6 +3348,20 @@ export declare class DocumentBackgroundAttributes extends XmlAttributeComponent<
         themeTint: string;
     };
 }
+
+/**
+ * A document's bibliography, for the document's `bibliography`: the sources its citations and bibliographies refer to.
+ * `createBibliography` from `docx/bibliography` writes it.
+ *
+ * @publicApi
+ */
+export declare type DocumentBibliography = {
+    /**
+     * The document's sources, as Word keeps them: a `b:Sources` element in the bibliography's namespace, with the style
+     * the citations and bibliographies are written in. It is written after the document's body
+     */
+    readonly sources: XmlComponent;
+};
 
 /**
  * Represents document-wide default formatting in a WordprocessingML document.
@@ -4124,6 +4144,7 @@ declare class File_2 {
     private readonly theme;
     private readonly packageParts;
     private readonly macros?;
+    private readonly bibliography?;
     constructor(options: IPropertiesOptions);
     private addSection;
     private createHeader;
@@ -4160,9 +4181,26 @@ declare class File_2 {
      * handles (word/vbaData.xml), and the project's relationships, to the events.
      */
     get Macros(): FileMacros | undefined;
+    /**
+     * The document's sources, when it has a bibliography: the part they're in (customXml/item1.xml), its properties
+     * (customXml/itemProps1.xml), and its relationships, to its properties.
+     */
+    get Bibliography(): FileBibliography | undefined;
 }
 export { File_2 as Document }
 export { File_2 as File }
+
+/**
+ * A document's sources, as the document writes them.
+ */
+declare type FileBibliography = {
+    /** The sources (customXml/item1.xml) */
+    readonly sources: XmlComponent;
+    /** The properties of their part (customXml/itemProps1.xml) */
+    readonly properties: XmlComponent;
+    /** Their part's relationships (customXml/_rels/item1.xml.rels), to its properties */
+    readonly relationships: Relationships;
+};
 
 /**
  * Base class for document body children.
@@ -5723,6 +5761,7 @@ declare type ICustomPropertyOptions = {
  * @property strong - Strong paragraph style options
  * @property listParagraph - List paragraph style options
  * @property caption - Caption paragraph style options
+ * @property bibliography - Bibliography paragraph style options
  * @property hyperlink - Hyperlink character style options
  * @property footnoteReference - Footnote reference character style options
  * @property footnoteText - Footnote text paragraph style options
@@ -5755,6 +5794,11 @@ declare type IDefaultStylesOptions = {
      * own, so a `run` replaces its italic, size and color
      */
     readonly caption?: IBaseParagraphStyleOptions;
+    /**
+     * The style of the paragraphs of bibliographies, the lists of sources that `Bibliography` from `docx/bibliography`
+     * writes. It has no formatting of its own, as each style of citation, such as APA, indents them itself
+     */
+    readonly bibliography?: IBaseParagraphStyleOptions;
     /** Hyperlink character style options */
     readonly hyperlink?: IBaseCharacterStyleOptions;
     /** Footnote reference character style options */
@@ -7348,6 +7392,7 @@ export declare type IPatch = ParagraphPatch | FilePatch;
  * @property pageNumbers - Works out the page each bookmark is on, so the page numbers of tables of contents and page references are written with the document
  * @property macros - The document's VBA macros, which make it a macro-enabled document (.docm)
  * @property protection - What people can change in the document in Word, and the password that turns that protection off
+ * @property bibliography - The sources the document's citations and bibliographies refer to
  */
 export declare type IPropertiesOptions = {
     readonly sections: readonly ISectionOptions[];
@@ -7402,6 +7447,11 @@ export declare type IPropertiesOptions = {
      * between `EditableRangeStart` and `EditableRangeEnd` can still be changed by anyone
      */
     readonly protection?: IDocumentProtectionOptions;
+    /**
+     * The sources that the document's citations and bibliographies refer to, and the style they're written in, such as
+     * APA. `createBibliography` from `docx/bibliography` writes them. Word lists them in its Source Manager
+     */
+    readonly bibliography?: DocumentBibliography;
 };
 
 /**
@@ -11926,7 +11976,7 @@ declare class Relationships extends XmlComponent {
      * @param target - Path to the target part
      * @param targetMode - Optional mode indicating if target is external
      */
-    addRelationship(id: number | string, type: RelationshipType | MacroRelationshipType | OleObjectRelationshipType, target: string, targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType]): void;
+    addRelationship(id: number | string, type: RelationshipType | MacroRelationshipType | OleObjectRelationshipType | CustomXmlRelationshipType, target: string, targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType]): void;
     /**
      * Creates a copy of the relationships given. Relationships added to the copy aren't added to them, so the compiler
      * adds the ones it writes for a part, such as to its images, to a copy, and packing a document again doesn't add

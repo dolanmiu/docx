@@ -49,6 +49,7 @@
     - [Hyperlinks](usage/hyperlinks.md)
     - [Bookmarks](usage/bookmarks.md)
     - [Captions and Cross-references](usage/captions.md)
+    - [Citations and Bibliography](usage/bibliography.md)
     - [Checkboxes](usage/checkboxes.md)
     - [Text Box](usage/text-box.md)
     - [WPS Text Box](usage/wps-text-box.md)

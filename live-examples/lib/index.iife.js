@@ -19555,6 +19555,58 @@ MAX: 9026 };
 		}
 	};
 	//#endregion
+	//#region src/file/document-bibliography/document-bibliography.ts
+	/**
+	* Document bibliography module: the sources that a document's citations and bibliographies refer to.
+	*
+	* Word keeps a document's sources in a custom XML part, customXml/item1.xml, whose root is a `b:Sources` element, and
+	* lists them in its Source Manager. The part's properties, customXml/itemProps1.xml, give it an id and name the schema
+	* of its XML, the bibliography's.
+	*
+	* Reference: ooxml-schemas/ISO-IEC29500-4_2016/shared-bibliography.xsd and shared-customXmlDataProperties.xsd
+	*
+	* @module
+	*/
+	/**
+	* The properties of the part that a document's sources are in (customXml/itemProps1.xml): its id, and the schema of its
+	* XML, the bibliography's.
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:complexType name="CT_DatastoreItem">
+	*   <xsd:sequence>
+	*     <xsd:element name="schemaRefs" type="CT_DatastoreSchemaRefs" minOccurs="0"/>
+	*   </xsd:sequence>
+	*   <xsd:attribute name="itemID" type="s:ST_Guid" use="required"/>
+	* </xsd:complexType>
+	* ```
+	*
+	* @param itemId - The part's id, a GUID in braces, such as "{6E3A1B2C-4D5E-4F60-8A7B-9C0D1E2F3A4B}"
+	*/
+	var createSourcesProperties = (itemId) => new BuilderElement({
+		name: "ds:datastoreItem",
+		attributes: {
+			itemId: {
+				key: "ds:itemID",
+				value: itemId
+			},
+			namespace: {
+				key: "xmlns:ds",
+				value: "http://schemas.openxmlformats.org/officeDocument/2006/customXml"
+			}
+		},
+		children: [new BuilderElement({
+			name: "ds:schemaRefs",
+			children: [new BuilderElement({
+				name: "ds:schemaRef",
+				attributes: { uri: {
+					key: "ds:uri",
+					value: "http://schemas.openxmlformats.org/officeDocument/2006/bibliography"
+				} }
+			})]
+		})]
+	});
+	//#endregion
 	//#region src/file/document-macros/document-macros.ts
 	/**
 	* Document macros module: a document's VBA macros, which make it a macro-enabled document (.docm).
@@ -23228,6 +23280,25 @@ MAX: 9026 };
 		}
 	};
 	/**
+	* Represents the Bibliography paragraph style.
+	*
+	* Word gives the paragraphs of the bibliographies it writes (References > Bibliography) the paragraph style named
+	* "Bibliography", and this is that style as Word writes it. It has no formatting of its own: each style of citation,
+	* such as APA, indents the paragraphs of its bibliography itself.
+	*/
+	var BibliographyStyle = class extends StyleForParagraph {
+		constructor(options) {
+			super(_objectSpread2({
+				id: "Bibliography",
+				name: "Bibliography",
+				basedOn: "Normal",
+				next: "Normal",
+				uiPriority: 37,
+				unhideWhenUsed: true
+			}, options));
+		}
+	};
+	/**
 	* Represents the Footnote Text paragraph style.
 	*
 	* Used for the text content of footnotes with smaller font size and tighter spacing.
@@ -23727,6 +23798,7 @@ MAX: 9026 };
 			strong: new StrongStyle(_objectSpread2({ run: { bold: true } }, options.strong)),
 			listParagraph: new ListParagraph(options.listParagraph || {}),
 			caption: new CaptionStyle(options.caption || {}),
+			bibliography: new BibliographyStyle(options.bibliography || {}),
 			hyperlink: new HyperlinkStyle(options.hyperlink || {}),
 			footnoteReference: new FootnoteReferenceStyle(options.footnoteReference || {}),
 			footnoteText: new FootnoteText(options.footnoteText || {}),
@@ -24423,6 +24495,7 @@ MAX: 9026 };
 			_defineProperty(this, "theme", void 0);
 			_defineProperty(this, "packageParts", void 0);
 			_defineProperty(this, "macros", void 0);
+			_defineProperty(this, "bibliography", void 0);
 			if (options.macros !== void 0) {
 				const { project, events = [] } = options.macros;
 				const bytes = project instanceof Uint8Array ? project : new Uint8Array(project);
@@ -24451,6 +24524,16 @@ MAX: 9026 };
 			this.endnotesWrapper = new EndnotesWrapper();
 			this.contentTypes = new ContentTypes({ macros: this.macros !== void 0 });
 			if (((_this$macros = this.macros) === null || _this$macros === void 0 ? void 0 : _this$macros.events) !== void 0) this.contentTypes.addOverride("application/vnd.ms-word.vbaData+xml", "/word/vbaData.xml");
+			if (options.bibliography !== void 0) {
+				const relationships = new Relationships();
+				relationships.addRelationship(1, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXmlProps", "itemProps1.xml");
+				this.bibliography = {
+					sources: options.bibliography.sources,
+					properties: createSourcesProperties(`{${uniqueUuid().toUpperCase()}}`),
+					relationships
+				};
+				this.contentTypes.addOverride("application/vnd.openxmlformats-officedocument.customXmlProperties+xml", "/customXml/itemProps1.xml");
+			}
 			this.packageParts = new PackageParts(this.contentTypes);
 			this.documentWrapper = new DocumentWrapper({
 				background: options.background,
@@ -24503,6 +24586,7 @@ MAX: 9026 };
 			this.theme = new Theme(options.theme);
 			this.documentWrapper.Relationships.addRelationship(this.currentRelationshipId++, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme", "theme/theme1.xml");
 			if (this.macros !== void 0) this.documentWrapper.Relationships.addRelationship(this.currentRelationshipId++, "http://schemas.microsoft.com/office/2006/relationships/vbaProject", "vbaProject.bin");
+			if (this.bibliography !== void 0) this.documentWrapper.Relationships.addRelationship(this.currentRelationshipId++, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml", "../customXml/item1.xml");
 		}
 		addSection({ headers = {}, footers = {}, children, properties }) {
 			this.documentWrapper.View.Body.addSection(_objectSpread2(_objectSpread2({}, properties), {}, {
@@ -24640,6 +24724,13 @@ MAX: 9026 };
 		*/
 		get Macros() {
 			return this.macros;
+		}
+		/**
+		* The document's sources, when it has a bibliography: the part they're in (customXml/item1.xml), its properties
+		* (customXml/itemProps1.xml), and its relationships, to its properties.
+		*/
+		get Bibliography() {
+			return this.bibliography;
 		}
 	};
 	//#endregion
@@ -35126,7 +35217,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 			const commentMediaDatas = this.imageReplacer.getMediaData(commentXmlData, file.Media);
 			const footnoteMediaDatas = this.imageReplacer.getMediaData(footnoteXmlData, file.Media);
 			const endnoteMediaDatas = this.imageReplacer.getMediaData(endnoteXmlData, file.Media);
-			return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
+			return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
 				Relationships: {
 					data: (() => {
 						const relationships = Relationships.copy(file.Document.Relationships);
@@ -35493,6 +35584,49 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 						declaration: { encoding: "UTF-8" }
 					}),
 					path: "word/_rels/vbaProject.bin.rels"
+				}
+			} : {}), file.Bibliography ? {
+				BibliographySources: {
+					data: stringifyXmlable(this.formatter.format(file.Bibliography.sources, {
+						viewWrapper: file.Document,
+						file,
+						stack: []
+					}), {
+						indent: prettify,
+						declaration: {
+							standalone: "yes",
+							encoding: "UTF-8"
+						}
+					}),
+					path: "customXml/item1.xml"
+				},
+				BibliographySourcesProperties: {
+					data: stringifyXmlable(this.formatter.format(file.Bibliography.properties, {
+						viewWrapper: file.Document,
+						file,
+						stack: []
+					}), {
+						indent: prettify,
+						declaration: {
+							standalone: "no",
+							encoding: "UTF-8"
+						}
+					}),
+					path: "customXml/itemProps1.xml"
+				},
+				BibliographySourcesRelationships: {
+					data: stringifyXmlable(this.formatter.format(file.Bibliography.relationships, {
+						viewWrapper: file.Document,
+						file,
+						stack: []
+					}), {
+						indent: prettify,
+						declaration: {
+							standalone: "yes",
+							encoding: "UTF-8"
+						}
+					}),
+					path: "customXml/_rels/item1.xml.rels"
 				}
 			} : {}), {}, {
 				PackageParts: xmlifyPackageParts(file, prettify),
