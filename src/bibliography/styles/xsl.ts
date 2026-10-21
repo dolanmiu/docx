@@ -7,6 +7,7 @@
  *
  * @module
  */
+// cspell:ignore Mabe Müller
 import { type FormattedText, type TextLike, formatted, italic, join, textOf } from "./formatted-text";
 import type { DatePatterns, NamePatterns } from "./locals";
 import type { WordPerson } from "../word-source";
@@ -227,7 +228,7 @@ const primaryKeyOf = (key: string): string =>
         .normalize("NFD")
         .replace(/[̀-ͯ]/g, "")
         .replace(/[-'’­]/g, "")
-        .replace(/[æœøßłđðþı]/g, (letter) => SORTED_AS[letter]);
+        .replace(new RegExp(`[${Object.keys(SORTED_AS).join("")}]`, "g"), (letter) => SORTED_AS[letter]);
 
 const compareStrings = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
 

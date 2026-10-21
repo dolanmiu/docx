@@ -1,3 +1,4 @@
+// cspell:ignore Émile Mabe Müller Ørsted Ægir Œuvre Oakes Straße Strasse
 import { describe, expect, it } from "vitest";
 
 import { italic, join } from "./formatted-text";

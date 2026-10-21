@@ -10,6 +10,7 @@
  *
  * @module
  */
+// cspell:ignore Countinous counsl compl interv perfs conds
 
 /** A pattern of a person's name for each of the names they have: first, middle and last, first and middle, and so on */
 export type NamePatterns = { readonly FML: string; readonly FM: string; readonly ML: string; readonly FL: string };
