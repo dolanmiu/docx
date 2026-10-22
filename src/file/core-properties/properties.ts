@@ -48,7 +48,7 @@ import type { IThemeOptions } from "../theme";
  * @property compatibility - Compatibility settings
  * @property customProperties - Custom document properties
  * @property evenAndOddHeaderAndFooters - Enable different headers/footers for even/odd pages
- * @property defaultTabStop - Default tab stop width
+ * @property defaultTabStop - Default tab stop width in twips, half an inch (720) when not given
  * @property fonts - Font configurations
  * @property hyphenation - Hyphenation settings
  * @property theme - The document's theme: its colors, and its fonts for headings and body text

@@ -507,7 +507,7 @@ describe("File", () => {
 
         const tree = new Formatter().format(doc.Settings);
 
-        expect(tree["w:settings"][2]).to.deep.equal({ "w:evenAndOddHeaders": {} });
+        expect(tree["w:settings"][3]).to.deep.equal({ "w:evenAndOddHeaders": {} });
     });
 
     it("should tell Word to keep embedded fonts when the document is saved again", () => {

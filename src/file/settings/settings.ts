@@ -184,7 +184,7 @@ export type ISettingsOptions = {
     readonly embedFonts?: boolean;
     /** Compatibility settings for older Word versions */
     readonly compatibility?: ICompatibilityOptions;
-    /** Default distance between tab stops in twips */
+    /** Default distance between tab stops in twips. Half an inch (720) when not given, as Word writes it */
     readonly defaultTabStop?: number;
     /** Hyphenation settings */
     readonly hyphenation?: IHyphenationOptions;
@@ -302,9 +302,9 @@ export class Settings extends XmlComponent {
         }
 
         // https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_defaultTabStop_topic_ID0EIXSX.html
-        if (options.defaultTabStop !== undefined) {
-            this.root.push(new NumberValueElement("w:defaultTabStop", options.defaultTabStop));
-        }
+        // Without it, the spec puts a tab stop every half inch, as Word and LibreOffice do, but Pages puts none: a tab
+        // takes no room, and a list number's tab sends the text to the right margin. Word always writes it
+        this.root.push(new NumberValueElement("w:defaultTabStop", options.defaultTabStop ?? 720));
 
         // https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_autoHyphenation_topic_ID0EFUMX.html
         if (options.hyphenation?.autoHyphenation !== undefined) {
