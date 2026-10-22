@@ -10076,7 +10076,7 @@ EXTERNAL: "External" };
 		};
 	};
 	/** The formatted content of a table of contents with its entries */
-	var contentOf = ({ properties, beginDirty, textWidth }, entries, styles, context) => {
+	var contentOf = ({ properties, beginDirty, textWidth, tabLeader }, entries, styles, context) => {
 		var _parseRange;
 		const withoutPageNumbers = properties.pageNumbersEntryLevelsRange ? (_parseRange = parseRange(properties.pageNumbersEntryLevelsRange)) !== null && _parseRange !== void 0 ? _parseRange : [1, 9] : void 0;
 		const content = new StructuredDocumentTagContent();
@@ -10098,7 +10098,7 @@ EXTERNAL: "External" };
 				}] : [], {
 					type: "right",
 					position: textWidth,
-					leader: "dot"
+					leader: tabLeader
 				}],
 				children: [...index === 0 ? [new Run({ children: [
 					beginOf(beginDirty),
@@ -24808,7 +24808,8 @@ MAX: 9026 };
 	var _excluded$2 = [
 		"contentChildren",
 		"cachedEntries",
-		"beginDirty"
+		"beginDirty",
+		"tabLeader"
 	];
 	/**
 	* Represents a Table of Contents in a WordprocessingML document.
@@ -24847,7 +24848,7 @@ MAX: 9026 };
 	*/
 	var TableOfContents = class extends FileChild {
 		constructor(alias = "Table of Contents", _ref = {}) {
-			let { contentChildren = [], cachedEntries = [], beginDirty } = _ref, properties = _objectWithoutProperties(_ref, _excluded$2);
+			let { contentChildren = [], cachedEntries = [], beginDirty, tabLeader = LeaderType.DOT } = _ref, properties = _objectWithoutProperties(_ref, _excluded$2);
 			super("w:sdt");
 			_defineProperty(
 				this,
@@ -24872,7 +24873,7 @@ MAX: 9026 };
 					const children = i === 0 ? [...beginParagraphMandatoryChildren, contentChild] : i === cachedEntries.length - 1 ? [contentChild, ...endParagraphMandatoryChildren] : [contentChild];
 					return new Paragraph({
 						style,
-						tabStops: this.getTabStopsForLevel(entry.level),
+						tabStops: this.getTabStopsForLevel(entry.level, tabLeader),
 						children
 					});
 				});
@@ -24887,7 +24888,8 @@ MAX: 9026 };
 				content.addChildElement(endParagraph);
 				if (contentChildren.length === 0) this.fromHeadings = {
 					properties,
-					beginDirty
+					beginDirty,
+					tabLeader
 				};
 			}
 			this.root.push(content);
@@ -24906,14 +24908,14 @@ MAX: 9026 };
 			var _context$file$Documen, _context$file;
 			return (_context$file$Documen = (_context$file = context.file) === null || _context$file === void 0 || (_context$file = _context$file.Document) === null || _context$file === void 0 || (_context$file = _context$file.View.Body.getSectionPropertiesFor(this)) === null || _context$file === void 0 ? void 0 : _context$file.AvailableTextWidth) !== null && _context$file$Documen !== void 0 ? _context$file$Documen : DEFAULT_AVAILABLE_WIDTH;
 		}
-		getTabStopsForLevel(level, pageWidth = 9025) {
+		getTabStopsForLevel(level, leader, pageWidth = 9025) {
 			return [{
 				type: "clear",
 				position: pageWidth + 1 - (level - 1) * 240
 			}, {
 				type: "right",
 				position: pageWidth,
-				leader: "dot"
+				leader
 			}];
 		}
 		buildCachedContentRun(entry, properties) {

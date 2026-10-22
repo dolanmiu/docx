@@ -13329,7 +13329,7 @@ export declare const TableLayoutType: {
 export declare class TableOfContents extends FileChild {
     /** What it is filled in with from the headings, when it isn't given its content */
     private readonly fromHeadings?;
-    constructor(alias?: string, { contentChildren, cachedEntries, beginDirty, ...properties }?: ITableOfContentsOptions & {
+    constructor(alias?: string, { contentChildren, cachedEntries, beginDirty, tabLeader, ...properties }?: ITableOfContentsOptions & {
         readonly contentChildren?: readonly (XmlComponent | string)[];
         /**
          * Use this to provide pre-generated entries for the Table of Contents.
@@ -13343,6 +13343,12 @@ export declare class TableOfContents extends FileChild {
          * it is written, and doesn't ask.
          */
         readonly beginDirty?: boolean;
+        /**
+         * What fills the space between an entry and its page number, such as dots or nothing, as the "Tab leader" of
+         * Word's Table of Contents dialog. Word keeps it when it updates the page numbers or the entire table. Default
+         * is dots.
+         */
+        readonly tabLeader?: (typeof LeaderType)[keyof typeof LeaderType];
     });
     /**
      * Written empty, and filled in from the headings once the body it is in is written, unless it was given its content.
