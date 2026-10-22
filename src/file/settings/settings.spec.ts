@@ -35,7 +35,7 @@ describe("Settings", () => {
             expect(Object.keys(tree)).has.length(1);
             expect(tree["w:settings"]).to.be.an("array");
 
-            const compat = tree["w:settings"][2];
+            const compat = tree["w:settings"][3];
             expect(compat).to.be.an("object").with.keys("w:compat");
             expect(compat["w:compat"]).to.deep.include({
                 "w:compatSetting": {
@@ -131,6 +131,17 @@ describe("Settings", () => {
                         },
                     },
                 ],
+            });
+        });
+
+        it("should write a half-inch defaultTabStop when none is given, as Pages puts no tab stops without one", () => {
+            const tree = new Formatter().format(new Settings({}));
+            expect(tree["w:settings"]).to.deep.include({
+                "w:defaultTabStop": {
+                    _attr: {
+                        "w:val": 720,
+                    },
+                },
             });
         });
 

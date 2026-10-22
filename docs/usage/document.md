@@ -69,7 +69,7 @@ These properties appear in Word's File > Info panel and in file properties. Word
 | externalStyles | `string`            | External XML styles                                           |
 | numbering      | `INumberingOptions` | Numbering definitions                                         |
 | fonts          | `FontOptions[]`     | Embedded fonts                                                |
-| defaultTabStop | `number`            | Default tab stop (twips)                                      |
+| defaultTabStop | `number`            | Default tab stop (twips), 720 (half an inch) when not given   |
 | theme          | `IThemeOptions`     | The document's [theme](usage/themes.md): its colors and fonts |
 
 ### Document Behavior
