@@ -16,7 +16,8 @@ import { decimalNumber } from "@util/values";
  * Options for configuring table cell borders.
  *
  * Defines border settings for individual edges of a table cell. Border settings
- * can be specified for top, bottom, left, right, start, and end edges.
+ * can be specified for top, bottom, left, right, start, and end edges, and for
+ * the two lines that cross the cell from corner to corner.
  *
  * @see {@link TableCellBorders}
  */
@@ -33,6 +34,13 @@ export type ITableCellBorders = {
     readonly end?: IBorderOptions;
     /** Border for the right edge of the cell */
     readonly right?: IBorderOptions;
+    /**
+     * A line across the cell from its top left corner to its bottom right (`w:tl2br`), Word's "Diagonal Down Border".
+     * It splits a header cell into a label for its row, below the line, and one for its column, above it.
+     */
+    readonly diagonalDown?: IBorderOptions;
+    /** A line across the cell from its bottom left corner to its top right (`w:tr2bl`), Word's "Diagonal Up Border" */
+    readonly diagonalUp?: IBorderOptions;
 };
 
 /**
@@ -66,6 +74,7 @@ export type ITableCellBorders = {
  * new TableCellBorders({
  *   top: { style: BorderStyle.SINGLE, size: 6, color: "FF0000" },
  *   bottom: { style: BorderStyle.SINGLE, size: 6, color: "0000FF" },
+ *   diagonalDown: { style: BorderStyle.SINGLE, size: 4, color: "000000" },
  * });
  * ```
  */
@@ -90,6 +99,12 @@ export class TableCellBorders extends IgnoreIfEmptyXmlComponent {
         }
         if (options.right) {
             this.root.push(createBorderElement("w:right", options.right));
+        }
+        if (options.diagonalDown) {
+            this.root.push(createBorderElement("w:tl2br", options.diagonalDown));
+        }
+        if (options.diagonalUp) {
+            this.root.push(createBorderElement("w:tr2bl", options.diagonalUp));
         }
     }
 }
