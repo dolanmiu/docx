@@ -13,7 +13,15 @@
  * @module
  */
 import type { BookmarkListNumber } from "@file/document/body/page-numbers";
-import { BookmarkEnd, BookmarkStart, InternalHyperlink, PageReference, Paragraph, type ParagraphChild } from "@file/paragraph";
+import {
+    BookmarkEnd,
+    BookmarkStart,
+    InternalHyperlink,
+    PageReference,
+    Paragraph,
+    type ParagraphChild,
+    type TabStopDefinition,
+} from "@file/paragraph";
 import { Run, Tab, TextRun } from "@file/paragraph/run";
 import { createBegin, createBeginDirtyWithoutPageNumbers, createEnd, createSeparate } from "@file/paragraph/run/field";
 import type { IContext, IXmlableObject, XmlComponent } from "@file/xml-components";
@@ -33,6 +41,8 @@ export type HeadingEntriesOptions = {
     readonly beginDirty?: boolean;
     /** The width, in twips, of the text in its section, where the page numbers are aligned */
     readonly textWidth: number;
+    /** What fills the space before the page numbers */
+    readonly tabLeader: TabStopDefinition["leader"];
 };
 
 /**
@@ -420,7 +430,7 @@ const entryStyleOf = (level: number, styles: ReadonlyMap<string, StyleDetails>):
 
 /** The formatted content of a table of contents with its entries */
 const contentOf = (
-    { properties, beginDirty, textWidth }: HeadingEntriesOptions,
+    { properties, beginDirty, textWidth, tabLeader }: HeadingEntriesOptions,
     entries: readonly Entry[],
     styles: ReadonlyMap<string, StyleDetails>,
     context: IContext,
@@ -453,7 +463,7 @@ const contentOf = (
                     ...(entry.listNumber?.separator === "tab"
                         ? [{ type: "left" as const, position: numberTabStopOf(entry.level, entry.listNumber.width) }]
                         : []),
-                    { type: "right", position: textWidth, leader: "dot" },
+                    { type: "right", position: textWidth, leader: tabLeader },
                 ],
                 children: [
                     ...(index === 0
