@@ -22770,7 +22770,7 @@ MAX: 9026 };
 	*/
 	var Settings = class extends XmlComponent {
 		constructor(options) {
-			var _options$hyphenation, _options$hyphenation2, _options$hyphenation3, _options$hyphenation4, _options$compatibilit, _ref, _options$compatibilit2, _options$compatibilit3;
+			var _options$defaultTabSt, _options$hyphenation, _options$hyphenation2, _options$hyphenation3, _options$hyphenation4, _options$compatibilit, _ref, _options$compatibilit2, _options$compatibilit3;
 			super("w:settings");
 			this.root.push(new SettingsAttributes({
 				wpc: "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",
@@ -22795,7 +22795,7 @@ MAX: 9026 };
 			if (options.embedFonts !== void 0) this.root.push(new OnOffElement("w:embedTrueTypeFonts", options.embedFonts));
 			if (options.trackRevisions !== void 0) this.root.push(new OnOffElement("w:trackRevisions", options.trackRevisions));
 			if (options.protection !== void 0) this.root.push(new DocumentProtection(options.protection));
-			if (options.defaultTabStop !== void 0) this.root.push(new NumberValueElement("w:defaultTabStop", options.defaultTabStop));
+			this.root.push(new NumberValueElement("w:defaultTabStop", (_options$defaultTabSt = options.defaultTabStop) !== null && _options$defaultTabSt !== void 0 ? _options$defaultTabSt : 720));
 			if (((_options$hyphenation = options.hyphenation) === null || _options$hyphenation === void 0 ? void 0 : _options$hyphenation.autoHyphenation) !== void 0) this.root.push(new OnOffElement("w:autoHyphenation", options.hyphenation.autoHyphenation));
 			if (((_options$hyphenation2 = options.hyphenation) === null || _options$hyphenation2 === void 0 ? void 0 : _options$hyphenation2.consecutiveHyphenLimit) !== void 0) this.root.push(new NumberValueElement("w:consecutiveHyphenLimit", options.hyphenation.consecutiveHyphenLimit));
 			if (((_options$hyphenation3 = options.hyphenation) === null || _options$hyphenation3 === void 0 ? void 0 : _options$hyphenation3.hyphenationZone) !== void 0) this.root.push(new NumberValueElement("w:hyphenationZone", options.hyphenation.hyphenationZone));

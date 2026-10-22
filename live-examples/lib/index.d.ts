@@ -7385,7 +7385,7 @@ export declare type IPatch = ParagraphPatch | FilePatch;
  * @property compatibility - Compatibility settings
  * @property customProperties - Custom document properties
  * @property evenAndOddHeaderAndFooters - Enable different headers/footers for even/odd pages
- * @property defaultTabStop - Default tab stop width
+ * @property defaultTabStop - Default tab stop width in twips, half an inch (720) when not given
  * @property fonts - Font configurations
  * @property hyphenation - Hyphenation settings
  * @property theme - The document's theme: its colors, and its fonts for headings and body text
@@ -7685,7 +7685,7 @@ declare type ISettingsOptions = {
     readonly embedFonts?: boolean;
     /** Compatibility settings for older Word versions */
     readonly compatibility?: ICompatibilityOptions;
-    /** Default distance between tab stops in twips */
+    /** Default distance between tab stops in twips. Half an inch (720) when not given, as Word writes it */
     readonly defaultTabStop?: number;
     /** Hyphenation settings */
     readonly hyphenation?: IHyphenationOptions;
