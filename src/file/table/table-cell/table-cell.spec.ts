@@ -168,6 +168,69 @@ describe("TableCellBorders", () => {
             });
         });
 
+        it("should add a diagonal down border, from the top left corner to the bottom right, as tl2br", () => {
+            const tb = new TableCellBorders({
+                diagonalDown: {
+                    style: BorderStyle.SINGLE,
+                    size: 4,
+                    color: "000000",
+                },
+            });
+
+            const tree = new Formatter().format(tb);
+            expect(tree).to.deep.equal({
+                "w:tcBorders": [
+                    {
+                        "w:tl2br": {
+                            _attr: {
+                                "w:color": "000000",
+                                "w:sz": 4,
+                                "w:val": "single",
+                            },
+                        },
+                    },
+                ],
+            });
+        });
+
+        it("should add a diagonal up border, from the bottom left corner to the top right, as tr2bl", () => {
+            const tb = new TableCellBorders({
+                diagonalUp: {
+                    style: BorderStyle.DASHED,
+                    size: 8,
+                    color: { theme: "accent1" },
+                },
+            });
+
+            const tree = new Formatter().format(tb);
+            expect(tree).to.deep.equal({
+                "w:tcBorders": [
+                    {
+                        "w:tr2bl": {
+                            _attr: {
+                                "w:color": "4472C4",
+                                "w:themeColor": "accent1",
+                                "w:sz": 8,
+                                "w:val": "dashed",
+                            },
+                        },
+                    },
+                ],
+            });
+        });
+
+        it("should write the diagonals after the sides, in the order CT_TcBorders gives them", () => {
+            const tb = new TableCellBorders({
+                diagonalUp: { style: BorderStyle.SINGLE },
+                diagonalDown: { style: BorderStyle.SINGLE },
+                right: { style: BorderStyle.SINGLE },
+                top: { style: BorderStyle.SINGLE },
+            });
+
+            const tree = new Formatter().format(tb) as { readonly "w:tcBorders": readonly object[] };
+            expect(tree["w:tcBorders"].map((border) => Object.keys(border)[0])).to.deep.equal(["w:top", "w:right", "w:tl2br", "w:tr2bl"]);
+        });
+
         it("should add multiple borders", () => {
             const tb = new TableCellBorders({
                 top: {

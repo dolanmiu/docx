@@ -473,12 +473,14 @@ const doc = new Document({
 
 #### Border Options
 
-| Property | Type                                                                | Notes    |
-| -------- | ------------------------------------------------------------------- | -------- |
-| top      | `{ style: BorderStyle, size: number, color: string \| ThemeColor }` | Optional |
-| bottom   | `{ style: BorderStyle, size: number, color: string \| ThemeColor }` | Optional |
-| left     | `{ style: BorderStyle, size: number, color: string \| ThemeColor }` | Optional |
-| right    | `{ style: BorderStyle, size: number, color: string \| ThemeColor }` | Optional |
+| Property     | Type                                                                | Notes                                                                     |
+| ------------ | ------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| top          | `{ style: BorderStyle, size: number, color: string \| ThemeColor }` | Optional                                                                  |
+| bottom       | `{ style: BorderStyle, size: number, color: string \| ThemeColor }` | Optional                                                                  |
+| left         | `{ style: BorderStyle, size: number, color: string \| ThemeColor }` | Optional                                                                  |
+| right        | `{ style: BorderStyle, size: number, color: string \| ThemeColor }` | Optional                                                                  |
+| diagonalDown | `{ style: BorderStyle, size: number, color: string \| ThemeColor }` | Optional. A line from the top left corner to the bottom right (`w:tl2br`) |
+| diagonalUp   | `{ style: BorderStyle, size: number, color: string \| ThemeColor }` | Optional. A line from the bottom left corner to the top right (`w:tr2bl`) |
 
 ##### Example
 
@@ -541,6 +543,53 @@ const doc = new Document({
     ],
 });
 ```
+
+##### Diagonal borders
+
+`diagonalDown` draws a line across the cell from its top left corner to its bottom right, and `diagonalUp` one from its bottom left corner to its top right. They are Word's **Diagonal Down Border** and **Diagonal Up Border**.
+
+A diagonal down border splits a header cell in two: a label for the columns above the line, and one for the rows below it. Put the columns' label in a paragraph aligned right, and the rows' label in the paragraph after it.
+
+```ts live
+import { AlignmentType, BorderStyle, Document, Paragraph, Table, TableCell, TableRow } from "docx";
+
+const cell = (text: string) => new TableCell({ children: [new Paragraph(text)] });
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Table({
+                    rows: [
+                        new TableRow({
+                            children: [
+                                new TableCell({
+                                    children: [
+                                        new Paragraph({ text: "Subject", alignment: AlignmentType.RIGHT }),
+                                        new Paragraph("Student"),
+                                    ],
+                                    borders: {
+                                        diagonalDown: { style: BorderStyle.SINGLE, size: 4, color: "000000" },
+                                    },
+                                }),
+                                cell("Maths"),
+                                cell("Physics"),
+                            ],
+                        }),
+                        new TableRow({ children: [cell("Ada"), cell("92"), cell("88")] }),
+                        new TableRow({ children: [cell("Grace"), cell("85"), cell("91")] }),
+                    ],
+                    columnWidths: [2400, 1600, 1600],
+                }),
+            ],
+        },
+    ],
+});
+```
+
+A cell merged with `columnSpan` or `rowSpan` has one diagonal, from corner to corner of the whole merged cell.
+
+Word draws diagonal borders. LibreOffice and Apple Pages don't, and neither does the preview on this page, so download the document to see them.
 
 ### Add paragraph to a cell
 
