@@ -519,6 +519,27 @@ describe("Table of contents filled in from the headings", () => {
         expect(widthsIn(body)).to.deep.equal([9026, 10240]);
     });
 
+    it("fills the space before the page numbers with dots, or with the tabLeader given, as Word's tab leader", () => {
+        const leadersIn = (tree: readonly IXmlableObject[]): readonly unknown[] =>
+            elementsNamed(tree, "w:sdt").map(
+                (table) => attributesOf(elementsNamed(table, "w:tabs")[0]["w:tabs"][0], "w:tab")?.["w:leader"],
+            );
+        const body = bodyOf({
+            sections: [
+                {
+                    children: [
+                        new TableOfContents("Dots", { headingStyleRange: "1-3" }),
+                        new TableOfContents("None", { headingStyleRange: "1-3", tabLeader: "none" }),
+                        new TableOfContents("Hyphens", { headingStyleRange: "1-3", tabLeader: "hyphen" }),
+                        heading("One"),
+                    ],
+                },
+            ],
+        });
+
+        expect(leadersIn(body)).to.deep.equal(["dot", "none", "hyphen"]);
+    });
+
     it("bookmarks a heading once for several tables of contents, with the same bookmark each time the document is written", () => {
         const file = new File({
             sections: [

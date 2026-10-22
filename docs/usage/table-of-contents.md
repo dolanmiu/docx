@@ -152,6 +152,36 @@ const doc = new Document({
 
 A heading of your own can be a paragraph style with `run: { bold: true }` instead, listed in the table with `stylesWithLevels`.
 
+### Tab leader
+
+By default, dots fill the space between each entry and its page number. To fill it with something else, or leave it empty, set `tabLeader`, as the "Tab leader" of Word's Table of Contents dialog does: `"none"`, `"hyphen"`, `"underscore"` or `"middleDot"`, or `"dot"`, the default. These are the values of `LeaderType`.
+
+Word keeps it when it updates the table, whether it updates the page numbers only or the entire table.
+
+```ts live
+import { Document, HeadingLevel, Paragraph, TableOfContents } from "docx";
+
+const doc = new Document({
+    features: {
+        updateFields: true,
+    },
+    sections: [
+        {
+            children: [
+                new TableOfContents("Contents", {
+                    hyperlink: true,
+                    headingStyleRange: "1-2",
+                    tabLeader: "none",
+                }),
+                new Paragraph({ text: "Introduction", heading: HeadingLevel.HEADING_1, pageBreakBefore: true }),
+                new Paragraph({ text: "Background", heading: HeadingLevel.HEADING_2 }),
+                new Paragraph({ text: "Method", heading: HeadingLevel.HEADING_1, pageBreakBefore: true }),
+            ],
+        },
+    ],
+});
+```
+
 ## Table of Contents Options
 
 Here is the list of all options that you can use to generate your tables of contents:
@@ -246,6 +276,7 @@ These options control the TOC structure rather than field switches:
 | --------------- | ---------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | contentChildren | `(XmlComponent \| string)[]` | `[]`    | Additional content to include inside the TOC between the field begin and end markers. Useful for placeholder entries.                                                                                                                                           |
 | beginDirty      | `boolean`                    | `true`  | When `true`, marks the field as needing update, prompting Word to regenerate the TOC on open. When it isn't given and the document has `pageNumbers`, the field isn't marked, so Word doesn't ask (see [Layout](usage/layout.md#opening-the-document-in-word)). |
+| tabLeader       | `LeaderType`                 | `"dot"` | What fills the space between each entry and its page number: `"dot"`, `"hyphen"`, `"underscore"`, `"middleDot"` or `"none"` (see [Tab leader](#tab-leader)).                                                                                                    |
 
 ### Example with contentChildren
 

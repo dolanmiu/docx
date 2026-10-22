@@ -646,6 +646,25 @@ describe("Table of Contents", () => {
                 expect(fldChar["w:fldChar"]._attr["w:dirty"]).to.equal(false);
             });
 
+            it("should fill the space before the page numbers of cached entries with the tabLeader given", () => {
+                const toc = new TableOfContents("Table of Contents", {
+                    cachedEntries: [
+                        { title: "One", level: 1, page: 1 },
+                        { title: "Two", level: 2, page: 2 },
+                    ],
+                    tabLeader: "underscore",
+                });
+                const tree = new Formatter().format(toc);
+
+                const paragraphs = tree["w:sdt"][1]["w:sdtContent"];
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const rightTabs = paragraphs.map((paragraph: any) => paragraph["w:p"][0]["w:pPr"][1]["w:tabs"][1]["w:tab"]._attr);
+                expect(rightTabs).to.deep.equal([
+                    { "w:val": "right", "w:pos": 9025, "w:leader": "underscore" },
+                    { "w:val": "right", "w:pos": 9025, "w:leader": "underscore" },
+                ]);
+            });
+
             it("should fill in an end paragraph if only one cached entry is provided", () => {
                 const cachedEntries = [{ title: "Only Entry", level: 1, page: 1 }];
                 const toc = new TableOfContents("Table of Contents", { cachedEntries });

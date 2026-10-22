@@ -9,7 +9,7 @@
  * @module
  */
 import { FileChild } from "@file/file-child";
-import { InternalHyperlink, Paragraph, type TabStopDefinition } from "@file/paragraph";
+import { InternalHyperlink, LeaderType, Paragraph, type TabStopDefinition } from "@file/paragraph";
 import { Run, Tab } from "@file/paragraph/run";
 import { createEnd, createSeparate } from "@file/paragraph/run/field";
 import { Text } from "@file/paragraph/run/run-components/text";
@@ -74,6 +74,7 @@ export class TableOfContents extends FileChild {
             contentChildren = [],
             cachedEntries = [],
             beginDirty,
+            tabLeader = LeaderType.DOT,
             ...properties
         }: ITableOfContentsOptions & {
             readonly contentChildren?: readonly (XmlComponent | string)[];
@@ -89,6 +90,12 @@ export class TableOfContents extends FileChild {
              * it is written, and doesn't ask.
              */
             readonly beginDirty?: boolean;
+            /**
+             * What fills the space between an entry and its page number, such as dots or nothing, as the "Tab leader" of
+             * Word's Table of Contents dialog. Word keeps it when it updates the page numbers or the entire table. Default
+             * is dots.
+             */
+            readonly tabLeader?: (typeof LeaderType)[keyof typeof LeaderType];
         } = {},
     ) {
         super("w:sdt");
@@ -124,7 +131,7 @@ export class TableOfContents extends FileChild {
 
                 return new Paragraph({
                     style,
-                    tabStops: this.getTabStopsForLevel(entry.level),
+                    tabStops: this.getTabStopsForLevel(entry.level, tabLeader),
                     children,
                 });
             });
@@ -160,7 +167,7 @@ export class TableOfContents extends FileChild {
             content.addChildElement(endParagraph);
 
             if (contentChildren.length === 0) {
-                this.fromHeadings = { properties, beginDirty };
+                this.fromHeadings = { properties, beginDirty, tabLeader };
             }
         }
 
@@ -182,7 +189,11 @@ export class TableOfContents extends FileChild {
         return context.file?.Document?.View.Body.getSectionPropertiesFor(this)?.AvailableTextWidth ?? DEFAULT_AVAILABLE_WIDTH;
     }
 
-    private getTabStopsForLevel(level: number, pageWidth: number = 9025): readonly TabStopDefinition[] {
+    private getTabStopsForLevel(
+        level: number,
+        leader: TabStopDefinition["leader"],
+        pageWidth: number = 9025,
+    ): readonly TabStopDefinition[] {
         const levelSpace = 240;
         const levelPosition = pageWidth + 1 - (level - 1) * levelSpace; // TODO: should be equal to page width + 1 - level margin
         return [
@@ -193,7 +204,7 @@ export class TableOfContents extends FileChild {
             {
                 type: "right",
                 position: pageWidth,
-                leader: "dot",
+                leader,
             },
         ];
     }
