@@ -17520,6 +17520,7 @@ MAX: 9026 };
 	* new TableCellBorders({
 	*   top: { style: BorderStyle.SINGLE, size: 6, color: "FF0000" },
 	*   bottom: { style: BorderStyle.SINGLE, size: 6, color: "0000FF" },
+	*   diagonalDown: { style: BorderStyle.SINGLE, size: 4, color: "000000" },
 	* });
 	* ```
 	*/
@@ -17532,6 +17533,8 @@ MAX: 9026 };
 			if (options.bottom) this.root.push(createBorderElement("w:bottom", options.bottom));
 			if (options.end) this.root.push(createBorderElement("w:end", options.end));
 			if (options.right) this.root.push(createBorderElement("w:right", options.right));
+			if (options.diagonalDown) this.root.push(createBorderElement("w:tl2br", options.diagonalDown));
+			if (options.diagonalUp) this.root.push(createBorderElement("w:tr2bl", options.diagonalUp));
 		}
 	};
 	/**
