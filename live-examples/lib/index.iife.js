@@ -5909,6 +5909,60 @@ DOT: "dot" };
 		}
 	};
 	//#endregion
+	//#region src/file/paragraph/run/image-data.ts
+	var convertDataURIToBinary = (dataURI) => {
+		const base64Index = dataURI.indexOf(";base64,");
+		const base64IndexWithOffset = base64Index === -1 ? 0 : base64Index + 8;
+		return new Uint8Array(atob(dataURI.substring(base64IndexWithOffset)).split("").map((c) => c.charCodeAt(0)));
+	};
+	var standardizeData = (data) => typeof data === "string" ? convertDataURIToBinary(data) : data;
+	var SIGNATURES = [
+		["png", [
+			137,
+			80,
+			78,
+			71,
+			13,
+			10,
+			26,
+			10
+		]],
+		["jpg", [
+			255,
+			216,
+			255
+		]],
+		["gif", [
+			71,
+			73,
+			70,
+			56,
+			55,
+			97
+		]],
+		["gif", [
+			71,
+			73,
+			70,
+			56,
+			57,
+			97
+		]],
+		["bmp", [66, 77]]
+	];
+	/**
+	* The format of an image given without a `type`, read from the bytes its file starts with. Without one, its file in the
+	* package would be named `.undefined`, which has no content type, so Word reports the document as unreadable.
+	*/
+	var imageTypeOf = ({ type, data }, name) => {
+		if (type !== void 0) return type;
+		const standardized = standardizeData(data);
+		const bytes = ArrayBuffer.isView(standardized) ? new Uint8Array(standardized.buffer, standardized.byteOffset, standardized.byteLength) : new Uint8Array(standardized);
+		const signature = SIGNATURES.find(([, start]) => start.every((byte, index) => bytes[index] === byte));
+		if (signature === void 0) throw new Error(`${name}: type isn't given, and data isn't a PNG, JPEG, GIF or BMP file to read it from. Give its type`);
+		return signature[0];
+	};
+	//#endregion
 	//#region src/file/drawing/floating/floating-position.ts
 	/**
 	* Horizontal Relative Positioning.
@@ -8553,9 +8607,9 @@ EXTERNAL: "External" };
 	* Reference: [MS-OI29500] Part 1 Section 20.1.10.42, ST_PositiveCoordinate
 	*/
 	var MAX_EXTENT = 2147483647;
-	var EMUS_PER_PIXEL = 9525;
+	var EMUS_PER_PIXEL$1 = 9525;
 	var checkExtent = (dimension, value) => {
-		if (value !== void 0 && value > MAX_EXTENT) throw new Error(`Invalid drawing ${dimension} ${value} EMUs (${Math.round(value / EMUS_PER_PIXEL)} pixels). Word won't open a drawing with a ${dimension} over ${MAX_EXTENT} EMUs (${Math.floor(MAX_EXTENT / EMUS_PER_PIXEL)} pixels). Sizes such as an ImageRun's transformation are in pixels, not EMUs`);
+		if (value !== void 0 && value > MAX_EXTENT) throw new Error(`Invalid drawing ${dimension} ${value} EMUs (${Math.round(value / EMUS_PER_PIXEL$1)} pixels). Word won't open a drawing with a ${dimension} over ${MAX_EXTENT} EMUs (${Math.floor(MAX_EXTENT / EMUS_PER_PIXEL$1)} pixels). Sizes such as an ImageRun's transformation are in pixels, not EMUs`);
 		return value;
 	};
 	/**
@@ -8920,58 +8974,6 @@ EXTERNAL: "External" };
 	};
 	//#endregion
 	//#region src/file/paragraph/run/image-run.ts
-	var convertDataURIToBinary = (dataURI) => {
-		const base64Index = dataURI.indexOf(";base64,");
-		const base64IndexWithOffset = base64Index === -1 ? 0 : base64Index + 8;
-		return new Uint8Array(atob(dataURI.substring(base64IndexWithOffset)).split("").map((c) => c.charCodeAt(0)));
-	};
-	var standardizeData = (data) => typeof data === "string" ? convertDataURIToBinary(data) : data;
-	var SIGNATURES = [
-		["png", [
-			137,
-			80,
-			78,
-			71,
-			13,
-			10,
-			26,
-			10
-		]],
-		["jpg", [
-			255,
-			216,
-			255
-		]],
-		["gif", [
-			71,
-			73,
-			70,
-			56,
-			55,
-			97
-		]],
-		["gif", [
-			71,
-			73,
-			70,
-			56,
-			57,
-			97
-		]],
-		["bmp", [66, 77]]
-	];
-	/**
-	* The format of an image given without a `type`, read from the bytes its file starts with. Without one, its file in the
-	* package would be named `.undefined`, which has no content type, so Word reports the document as unreadable.
-	*/
-	var typeOf = ({ type, data }, name) => {
-		if (type !== void 0) return type;
-		const standardized = standardizeData(data);
-		const bytes = ArrayBuffer.isView(standardized) ? new Uint8Array(standardized.buffer, standardized.byteOffset, standardized.byteLength) : new Uint8Array(standardized);
-		const signature = SIGNATURES.find(([, start]) => start.every((byte, index) => bytes[index] === byte));
-		if (signature === void 0) throw new Error(`${name}: type isn't given, and data isn't a PNG, JPEG, GIF or BMP file to read it from. Give its type`);
-		return signature[0];
-	};
 	var createImageData = (options, key) => ({
 		data: standardizeData(options.data),
 		fileName: key,
@@ -8990,7 +8992,7 @@ EXTERNAL: "External" };
 	});
 	/** The media data of a PNG, JPEG, GIF or BMP image, as an image of its own or as an SVG image's fallback */
 	var createRegularImageData = (options, transformation, name) => {
-		const type = typeOf(options, name);
+		const type = imageTypeOf(options, name);
 		return _objectSpread2({ type }, createImageData(_objectSpread2(_objectSpread2({}, options), {}, { transformation }), `${hashedId(options.data)}.${type}`));
 	};
 	var createDeletion = ({ id, author, date }, run) => new BuilderElement({
@@ -9848,10 +9850,10 @@ EXTERNAL: "External" };
 		const content = name === void 0 ? void 0 : element[name];
 		return Array.isArray(content) ? content : content === void 0 ? [] : [content];
 	};
-	var childOf$1 = (element, name) => childrenOf$1(element).find((child) => nameOf$4(child) === name);
+	var childOf$2 = (element, name) => childrenOf$1(element).find((child) => nameOf$4(child) === name);
 	var attributeOf = (element, attribute) => {
 		var _childOf;
-		return (_childOf = childOf$1(element, "_attr")) === null || _childOf === void 0 || (_childOf = _childOf._attr) === null || _childOf === void 0 ? void 0 : _childOf[attribute];
+		return (_childOf = childOf$2(element, "_attr")) === null || _childOf === void 0 || (_childOf = _childOf._attr) === null || _childOf === void 0 ? void 0 : _childOf[attribute];
 	};
 	/** An attribute such as `w:val="2"` as a number. Imported XML gives it as a string */
 	var numberAttributeOf = (element, attribute) => {
@@ -9951,11 +9953,11 @@ EXTERNAL: "External" };
 		const bookmarks = followBookmarks ? bookmarksOf(paragraphs) : [];
 		return paragraphs.map((element, index) => {
 			var _bookmarks$index;
-			const properties = childOf$1(element, "w:pPr");
+			const properties = childOf$2(element, "w:pPr");
 			return {
 				element,
-				styleId: attributeOf(childOf$1(properties, "w:pStyle"), "w:val"),
-				outlineLevel: numberAttributeOf(childOf$1(properties, "w:outlineLvl"), "w:val"),
+				styleId: attributeOf(childOf$2(properties, "w:pStyle"), "w:val"),
+				outlineLevel: numberAttributeOf(childOf$2(properties, "w:outlineLvl"), "w:val"),
 				text: textOf$1(element),
 				bookmarks: (_bookmarks$index = bookmarks[index]) !== null && _bookmarks$index !== void 0 ? _bookmarks$index : /* @__PURE__ */ new Set()
 			};
@@ -9966,9 +9968,9 @@ EXTERNAL: "External" };
 		var _context$file;
 		const styles = (_context$file = context.file) === null || _context$file === void 0 || (_context$file = _context$file.Styles) === null || _context$file === void 0 ? void 0 : _context$file.prepForXml(context);
 		return new Map(childrenOf$1(styles).filter((style) => nameOf$4(style) === "w:style" && ["paragraph", void 0].includes(attributeOf(style, "w:type"))).map((style) => [attributeOf(style, "w:styleId"), {
-			name: attributeOf(childOf$1(style, "w:name"), "w:val"),
-			basedOn: attributeOf(childOf$1(style, "w:basedOn"), "w:val"),
-			outlineLevel: numberAttributeOf(childOf$1(childOf$1(style, "w:pPr"), "w:outlineLvl"), "w:val")
+			name: attributeOf(childOf$2(style, "w:name"), "w:val"),
+			basedOn: attributeOf(childOf$2(style, "w:basedOn"), "w:val"),
+			outlineLevel: numberAttributeOf(childOf$2(childOf$2(style, "w:pPr"), "w:outlineLvl"), "w:val")
 		}]));
 	};
 	/** A range such as `1-3` */
@@ -10004,12 +10006,12 @@ EXTERNAL: "External" };
 	var headingLevels = (context) => {
 		const styles = stylesOf(context);
 		return (paragraph) => {
-			const properties = childOf$1(paragraph, "w:pPr");
-			const styleId = attributeOf(childOf$1(properties, "w:pStyle"), "w:val");
+			const properties = childOf$2(paragraph, "w:pPr");
+			const styleId = attributeOf(childOf$2(properties, "w:pStyle"), "w:val");
 			const heading = headingLevelOf(styleId, styles);
 			const outlineLevel = outlineLevelOf({
 				styleId,
-				outlineLevel: numberAttributeOf(childOf$1(properties, "w:outlineLvl"), "w:val")
+				outlineLevel: numberAttributeOf(childOf$2(properties, "w:outlineLvl"), "w:val")
 			}, styles);
 			const outline = outlineLevel === void 0 || outlineLevel >= 9 ? void 0 : outlineLevel + 1;
 			if (heading !== void 0 && (outline === void 0 || outline === heading)) return heading;
@@ -21997,7 +21999,6 @@ MAX: 9026 };
 	var RESERVED_FOLDERS = /* @__PURE__ */ new Set([
 		"_rels",
 		"fonts",
-		"media",
 		"theme"
 	]);
 	/**
@@ -36234,8 +36235,8 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	*/
 	/**
 	* A patch for a drawing in a template whose alt text holds the placeholder, such as `{{sales}}`, rather than for the
-	* placeholder in text. It changes the drawing, and the parts it refers to, in place. `ChartDataPatch` from `docx/charts`
-	* is one: it replaces the data of a chart made in Word.
+	* placeholder in text. It changes the drawing, and the parts it refers to, in place. {@link ImagePatch} is one: it
+	* replaces a picture's image. So is `ChartDataPatch` from `docx/charts`, which replaces the data of a chart made in Word.
 	*
 	* A drawing's alt text is its description (`descr`) or title. A drawing patch leaves the placeholder in text as it is.
 	*
@@ -36314,7 +36315,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 		const shared = common === -1 ? folders.length : common;
 		return [...folders.slice(shared).map(() => ".."), ...segments.slice(shared)].join("/");
 	};
-	var CONTENT_TYPES = "[Content_Types].xml";
+	var CONTENT_TYPES$1 = "[Content_Types].xml";
 	/**
 	* A relationships part's relationships, which can be added to. A part without the `Relationships` element is given one.
 	*/
@@ -36326,15 +36327,34 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 		}
 		return getFirstLevelElements(relationships, "Relationships");
 	};
+	var RELATIONSHIPS_NAMESPACE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
 	/**
-	* The template's package, as a patch reads and changes it.
+	* The prefixes an element and its descendants give the relationships namespace, with "r", which Word uses.
+	*/
+	var relationshipPrefixesIn = (element) => {
+		var _element$attributes, _element$elements2;
+		return /* @__PURE__ */ new Set([
+			"r",
+			...Object.entries((_element$attributes = element.attributes) !== null && _element$attributes !== void 0 ? _element$attributes : {}).flatMap(([name, value]) => name.startsWith("xmlns:") && value === RELATIONSHIPS_NAMESPACE ? [name.slice(6)] : []),
+			...((_element$elements2 = element.elements) !== null && _element$elements2 !== void 0 ? _element$elements2 : []).flatMap((child) => [...relationshipPrefixesIn(child)])
+		]);
+	};
+	/**
+	* The ids of the relationships an element and its descendants refer to, such as a picture's `r:embed`.
+	*
+	* @param prefixes - The prefixes of the relationships namespace in the element's part
+	*/
+	var relationshipIdsIn = (element, prefixes) => {
+		var _element$attributes2, _element$elements3;
+		return /* @__PURE__ */ new Set([...Object.entries((_element$attributes2 = element.attributes) !== null && _element$attributes2 !== void 0 ? _element$attributes2 : {}).flatMap(([name, value]) => name.includes(":") && prefixes.has(name.slice(0, name.indexOf(":"))) ? [String(value)] : []), ...((_element$elements3 = element.elements) !== null && _element$elements3 !== void 0 ? _element$elements3 : []).flatMap((child) => [...relationshipIdsIn(child, prefixes)])]);
+	};
+	/**
+	* Reads and changes the template's parts and the relationships between them.
 	*
 	* @param parts - The template's XML parts, parsed, by their paths, which are changed in place
 	* @param binaryParts - The template's other parts, by their paths
-	* @param context - The context to format XML with
 	*/
-	var createTemplatePackage = (parts, binaryParts, file, context) => {
-		const formatter = new Formatter();
+	var contentsOf = (parts, binaryParts) => {
 		const has = (path) => parts.has(path) || binaryParts.has(path);
 		const findPath = (path) => {
 			if (has(path)) return path;
@@ -36362,13 +36382,43 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 			return ((_relationship$attribu3 = relationship.attributes) === null || _relationship$attribu3 === void 0 ? void 0 : _relationship$attribu3.TargetMode) === "External" || target === void 0 ? void 0 : findPath(resolveTarget(from, String(target)));
 		};
 		const isReferenced = (path) => [...parts].some(([relationshipsPath, relationships]) => relationshipsPath.endsWith(".rels") && getFirstLevelElements(relationships, "Relationships").some((relationship) => pathOf(sourceOfRelationships(relationshipsPath), relationship) === path));
-		const removePart = (path) => {
+		const removeIfUnreferenced = (from, path) => {
+			if (path === void 0 || path === from || path === CONTENT_TYPES$1 || path.endsWith(".rels") || isReferenced(path)) return;
+			const relationships = parts.get(relationshipsPathOf(path));
 			parts.delete(path);
 			binaryParts.delete(path);
 			parts.delete(relationshipsPathOf(path));
-			const contentTypes = parts.get(CONTENT_TYPES);
+			const contentTypes = parts.get(CONTENT_TYPES$1);
 			if (contentTypes !== void 0) removeContentTypeOverride(contentTypes, `/${path}`);
+			for (const relationship of relationships === void 0 ? [] : getFirstLevelElements(relationships, "Relationships")) removeIfUnreferenced(path, pathOf(path, relationship));
 		};
+		const removeRelationships = (from, ids) => {
+			var _parts$get, _relationships$elemen3;
+			const relationships = (_parts$get = parts.get(relationshipsPathOf(from))) === null || _parts$get === void 0 || (_parts$get = _parts$get.elements) === null || _parts$get === void 0 ? void 0 : _parts$get.find((element) => element.name === "Relationships");
+			const removed = ((_relationships$elemen3 = relationships === null || relationships === void 0 ? void 0 : relationships.elements) !== null && _relationships$elemen3 !== void 0 ? _relationships$elemen3 : []).filter((relationship) => {
+				var _relationship$attribu4;
+				return relationship.name === "Relationship" && ids.has(String((_relationship$attribu4 = relationship.attributes) === null || _relationship$attribu4 === void 0 ? void 0 : _relationship$attribu4.Id));
+			});
+			if (relationships === void 0 || removed.length === 0) return;
+			relationships.elements = relationships.elements.filter((element) => !removed.includes(element));
+			for (const relationship of removed) removeIfUnreferenced(from, pathOf(from, relationship));
+		};
+		return {
+			findRelationship,
+			pathOf,
+			removeIfUnreferenced,
+			removeRelationships
+		};
+	};
+	/**
+	* The template's package, as a patch reads and changes it.
+	*
+	* @param parts - The template's XML parts, parsed, by their paths, which are changed in place
+	* @param contents - Reads and changes the template's parts and the relationships between them
+	* @param context - The context to format XML with
+	*/
+	var createTemplatePackage = (parts, { findRelationship, pathOf, removeIfUnreferenced }, file, context) => {
+		const formatter = new Formatter();
 		return {
 			getRelatedPart: (from, relationshipId) => {
 				const relationship = findRelationship(from.path, relationshipId);
@@ -36384,9 +36434,9 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 				const target = relativeTarget(from.path, path);
 				const relationship = relationshipId === void 0 ? void 0 : findRelationship(from.path, relationshipId);
 				if (relationship === void 0) {
-					var _parts$get;
+					var _parts$get2;
 					const relationshipsPath = relationshipsPathOf(from.path);
-					const relationships = (_parts$get = parts.get(relationshipsPath)) !== null && _parts$get !== void 0 ? _parts$get : createRelationshipFile();
+					const relationships = (_parts$get2 = parts.get(relationshipsPath)) !== null && _parts$get2 !== void 0 ? _parts$get2 : createRelationshipFile();
 					parts.set(relationshipsPath, relationships);
 					const id = relationshipId !== null && relationshipId !== void 0 ? relationshipId : `rId${getNextRelationshipIndex(relationships)}`;
 					relationshipsIn(relationships).push({
@@ -36405,7 +36455,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 					Type: relationshipType,
 					Target: target
 				});
-				if (previous !== void 0 && previous !== from.path && previous !== CONTENT_TYPES && !previous.endsWith(".rels") && !isReferenced(previous)) removePart(previous);
+				removeIfUnreferenced(from.path, previous);
 				return String(relationship.attributes.Id);
 			},
 			format: (content) => toJson(stringifyXmlable(formatter.format(content, context))).elements[0]
@@ -36441,7 +36491,13 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 				patch
 			}));
 		}));
-		for (const { drawing, patch } of found) patch.patch(drawing, createTemplatePackage(parts, binaryParts, file, createContext(drawing.part.path)));
+		const contents = contentsOf(parts, binaryParts);
+		for (const { drawing, patch } of found) {
+			const referenced = relationshipIdsIn(drawing.element, relationshipPrefixesIn(drawing.part.xml));
+			patch.patch(drawing, createTemplatePackage(parts, contents, file, createContext(drawing.part.path)));
+			const used = relationshipIdsIn(drawing.part.xml, relationshipPrefixesIn(drawing.part.xml));
+			contents.removeRelationships(drawing.part.path, new Set([...referenced].filter((id) => !used.has(id))));
+		}
 	};
 	//#endregion
 	//#region src/patcher/core-properties.ts
@@ -37622,14 +37678,14 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 		const name = (_style$elements = style.elements) === null || _style$elements === void 0 || (_style$elements = _style$elements.find((element) => element.name === "w:name")) === null || _style$elements === void 0 || (_style$elements = _style$elements.attributes) === null || _style$elements === void 0 ? void 0 : _style$elements["w:val"];
 		return name === void 0 ? void 0 : String(name).toLowerCase();
 	};
-	var childOf = (element, name) => {
+	var childOf$1 = (element, name) => {
 		var _element$elements;
 		return element === null || element === void 0 || (_element$elements = element.elements) === null || _element$elements === void 0 ? void 0 : _element$elements.find((child) => child.name === name);
 	};
 	/** The size of the font that run properties give, in half points, as Word writes it */
 	var sizeIn = (runProperties) => {
 		var _childOf;
-		const size = Number((_childOf = childOf(runProperties, "w:sz")) === null || _childOf === void 0 || (_childOf = _childOf.attributes) === null || _childOf === void 0 ? void 0 : _childOf["w:val"]);
+		const size = Number((_childOf = childOf$1(runProperties, "w:sz")) === null || _childOf === void 0 || (_childOf = _childOf.attributes) === null || _childOf === void 0 ? void 0 : _childOf["w:val"]);
 		return Number.isNaN(size) ? void 0 : size;
 	};
 	/**
@@ -37645,7 +37701,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 			return ((_style$attributes2 = style.attributes) === null || _style$attributes2 === void 0 ? void 0 : _style$attributes2["w:type"]) === "paragraph" && nameOf(style) === "normal";
 		});
 		const defaults = elements.find((element) => element.name === "w:docDefaults");
-		return (_sizeIn = sizeIn(childOf(normal, "w:rPr"))) !== null && _sizeIn !== void 0 ? _sizeIn : sizeIn(childOf(childOf(defaults, "w:rPrDefault"), "w:rPr"));
+		return (_sizeIn = sizeIn(childOf$1(normal, "w:rPr"))) !== null && _sizeIn !== void 0 ? _sizeIn : sizeIn(childOf$1(childOf$1(defaults, "w:rPrDefault"), "w:rPr"));
 	};
 	var formatDefaultStyles = (context, normalSize) => new Map(Object.values(createDefaultStyles({ document: { run: { size: normalSize } } })).map((style) => toJson(stringifyXmlable(formatter.format(style, context))).elements[0]).filter((style) => style.name === "w:style").map((style) => [idOf(style), style]));
 	/**
@@ -37952,6 +38008,216 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 		return (elements) => elements.flatMap(remove);
 	};
 	//#endregion
+	//#region src/patcher/image-patch.ts
+	/**
+	* Replaces the image of a picture in a template, such as a placeholder logo, with `patchDocument`, keeping its look.
+	*
+	* Reference: http://officeopenxml.com/drwPic.php
+	*
+	* @module
+	*/
+	var IMAGE_RELATIONSHIP = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image";
+	var CONTENT_TYPES = {
+		png: "image/png",
+		jpg: "image/jpeg",
+		gif: "image/gif",
+		bmp: "image/bmp",
+		svg: "image/svg+xml"
+	};
+	var REGULAR_TYPES = [
+		"png",
+		"jpg",
+		"gif",
+		"bmp"
+	];
+	var EMUS_PER_PIXEL = 9525;
+	var SVG_EXTENSION = "{96DAC541-7B7A-43D3-8B79-37D633B846F1}";
+	var IMAGE_PROPERTIES_EXTENSION = "{BEBA8EAE-BF5A-486C-A8C5-ECC9F3942E4B}";
+	var childOf = (element, name) => {
+		var _element$elements;
+		return element === null || element === void 0 || (_element$elements = element.elements) === null || _element$elements === void 0 ? void 0 : _element$elements.find((child) => child.name === name);
+	};
+	/** The bytes of image data, as an `ImageRun` takes it */
+	var bytesOf = (data) => {
+		const standardized = standardizeData(data);
+		return ArrayBuffer.isView(standardized) ? new Uint8Array(standardized.buffer, standardized.byteOffset, standardized.byteLength) : new Uint8Array(standardized);
+	};
+	var imagePart = (type, data) => new PackagePart({
+		folder: "media",
+		name: "image",
+		extension: type,
+		contentType: CONTENT_TYPES[type],
+		relationshipType: IMAGE_RELATIONSHIP,
+		content: bytesOf(data)
+	});
+	/**
+	* The part for a PNG, JPEG, GIF or BMP image, whose type is read from its data when JavaScript leaves it out.
+	*
+	* @throws If its type isn't one of those, or isn't given and its data isn't one of those formats
+	*/
+	var regularImagePart = (options, name) => {
+		const type = imageTypeOf(options, name);
+		if (!REGULAR_TYPES.includes(type)) throw new Error(`${name}: invalid type "${type}". Expected "png", "jpg", "gif", "bmp" or, with a fallback, "svg"`);
+		return imagePart(type, options.data);
+	};
+	var NOT_PICTURES = /* @__PURE__ */ new Map([
+		["c:chart", "It is a chart, not a picture. Give a chart new data with ChartDataPatch from docx/charts"],
+		["cx:chart", "It is a chart, not a picture. Give a chart new data with ChartDataPatch from docx/charts"],
+		["wpg:wgp", "It is a group of drawings. Ungroup the picture in Word, and put the placeholder in its alt text"],
+		["wpc:wpc", "It is a drawing canvas. Move the picture out of it in Word, and put the placeholder in its alt text"],
+		["wps:wsp", "It is a shape, not a picture"]
+	]);
+	/**
+	* The picture a drawing shows.
+	*
+	* @throws If the drawing isn't a picture, saying what it is
+	*/
+	var pictureOf = (drawing, placeholder) => {
+		var _graphicData$elements, _NOT_PICTURES$get;
+		const graphicData = childOf(childOf(drawing, "a:graphic"), "a:graphicData");
+		const picture = childOf(graphicData, "pic:pic");
+		if (picture !== void 0) return picture;
+		const content = graphicData === null || graphicData === void 0 || (_graphicData$elements = graphicData.elements) === null || _graphicData$elements === void 0 || (_graphicData$elements = _graphicData$elements.find((element) => element.type === "element")) === null || _graphicData$elements === void 0 ? void 0 : _graphicData$elements.name;
+		throw new Error(`Can't patch the picture ${placeholder}. ${(_NOT_PICTURES$get = NOT_PICTURES.get(content !== null && content !== void 0 ? content : "")) !== null && _NOT_PICTURES$get !== void 0 ? _NOT_PICTURES$get : "It isn't a picture"}`);
+	};
+	/**
+	* The extensions of an image, without those for the template's image: an SVG version, which is replaced by the new
+	* image's, if it has one, and the image before Word's artistic effects.
+	*/
+	var withExtensions = (blip, svgId) => {
+		var _blip$elements, _list$elements;
+		const elements = (_blip$elements = blip.elements) !== null && _blip$elements !== void 0 ? _blip$elements : [];
+		const list = childOf(blip, "a:extLst");
+		const svg = svgId === void 0 ? [] : [{
+			type: "element",
+			name: "a:ext",
+			attributes: { uri: SVG_EXTENSION },
+			elements: [{
+				type: "element",
+				name: "asvg:svgBlip",
+				attributes: {
+					"xmlns:asvg": "http://schemas.microsoft.com/office/drawing/2016/SVG/main",
+					"r:embed": svgId
+				}
+			}]
+		}];
+		const extensions = [...((_list$elements = list === null || list === void 0 ? void 0 : list.elements) !== null && _list$elements !== void 0 ? _list$elements : []).filter((extension) => {
+			var _extension$attributes;
+			return extension.name === "a:ext" && ![SVG_EXTENSION, IMAGE_PROPERTIES_EXTENSION].includes(String((_extension$attributes = extension.attributes) === null || _extension$attributes === void 0 ? void 0 : _extension$attributes.uri).toUpperCase());
+		}), ...svg];
+		const newList = extensions.length === 0 ? [] : [_objectSpread2(_objectSpread2({}, list), {}, {
+			type: "element",
+			name: "a:extLst",
+			elements: extensions
+		})];
+		return [...elements.filter((element) => element !== list), ...newList];
+	};
+	/**
+	* Sets the alt text of a picture's properties: the description and title given, or else the template's, without the
+	* placeholder. An empty one is removed.
+	*/
+	var setAltText = (properties, placeholder, altText) => {
+		var _altText$description, _altText$title;
+		const without = (name) => {
+			var _properties$attribute;
+			const text = (_properties$attribute = properties.attributes) === null || _properties$attribute === void 0 ? void 0 : _properties$attribute[name];
+			return text === void 0 ? void 0 : String(text).split(placeholder).join("").trim();
+		};
+		const description = (_altText$description = altText === null || altText === void 0 ? void 0 : altText.description) !== null && _altText$description !== void 0 ? _altText$description : without("descr");
+		const title = (_altText$title = altText === null || altText === void 0 ? void 0 : altText.title) !== null && _altText$title !== void 0 ? _altText$title : without("title");
+		properties.attributes = Object.fromEntries(Object.entries(_objectSpread2(_objectSpread2({}, properties.attributes), {}, {
+			descr: description || void 0,
+			title: title || void 0
+		})).filter(([, value]) => value !== void 0));
+	};
+	var resize = (element, { width, height }) => {
+		if (element !== void 0) element.attributes = _objectSpread2(_objectSpread2({}, element.attributes), {}, {
+			cx: Math.round(width * EMUS_PER_PIXEL),
+			cy: Math.round(height * EMUS_PER_PIXEL)
+		});
+	};
+	/**
+	* Replaces the image of a picture in a template, found by a placeholder in its alt text, such as `{{logo}}`, keeping
+	* its look: its size, position, text wrapping, border, shape, effects and link. Give it as a patch to `patchDocument`,
+	* with the placeholder's key.
+	*
+	* - The new image fills the picture, stretched to its size, unless a new `transformation` is given. Word's crop of the
+	*   template's image is removed.
+	* - The placeholder is taken out of the alt text, unless new alt text is given.
+	* - The template's image is removed, unless something else, such as another picture, shows it.
+	*
+	* Put the placeholder in the picture's alt text in Word, in "Alt Text" or "Edit Alt Text". Every picture whose alt text
+	* holds it is patched, wherever it is: in the document, a table, a header, a footer or a note. A placeholder in the
+	* document's text is left as it is: use an `ImageRun` in a `PatchType.PARAGRAPH` patch for it.
+	*
+	* @publicApi
+	*
+	* @example
+	* ```typescript
+	* await patchDocument({
+	*   outputType: "nodebuffer",
+	*   data: template,
+	*   patches: {
+	*     logo: new ImagePatch({ type: "png", data: fs.readFileSync("logo.png") }),
+	*   },
+	* });
+	* ```
+	*/
+	var ImagePatch = class extends DrawingPatch {
+		/**
+		* @throws If the image's type isn't one an `ImageRun` takes, an SVG image has no fallback, or the size isn't a number
+		* of pixels greater than 0
+		*/
+		constructor(options) {
+			super();
+			_defineProperty(this, "image", void 0);
+			_defineProperty(this, "svg", void 0);
+			_defineProperty(this, "transformation", void 0);
+			_defineProperty(this, "altText", void 0);
+			if (options.type === "svg") {
+				if (options.fallback === void 0) throw new Error("ImagePatch: an SVG image needs a fallback, a PNG, JPEG, GIF or BMP image for applications that can't show SVG");
+				this.image = regularImagePart(options.fallback, "ImagePatch fallback");
+				this.svg = imagePart("svg", options.data);
+			} else this.image = regularImagePart(options, "ImagePatch");
+			const { transformation } = options;
+			if (transformation !== void 0) {
+				for (const name of ["width", "height"]) {
+					const value = transformation[name];
+					if (!(typeof value === "number" && value > 0 && Number.isFinite(value))) throw new Error(`ImagePatch: invalid ${name} ${String(value)}. Expected a number of pixels greater than 0`);
+				}
+				this.transformation = {
+					width: transformation.width,
+					height: transformation.height
+				};
+			}
+			this.altText = options.altText && _objectSpread2({}, options.altText);
+		}
+		/**
+		* Replaces the picture's image, and sets its size and alt text.
+		*
+		* @throws If the drawing isn't a picture, such as a chart, a shape or a group, or has no image
+		*/
+		patch({ element, properties, placeholder, part }, template) {
+			var _blip$attributes;
+			const picture = pictureOf(element, placeholder);
+			const fill = childOf(picture, "pic:blipFill");
+			const blip = childOf(fill, "a:blip");
+			if (fill === void 0 || blip === void 0) throw new Error(`Can't patch the picture ${placeholder}. It has no image: it has no a:blip`);
+			const id = template.replaceRelatedPart(part, void 0, this.image);
+			const svgId = this.svg && template.replaceRelatedPart(part, void 0, this.svg);
+			blip.attributes = _objectSpread2({ "r:embed": id }, Object.fromEntries(Object.entries((_blip$attributes = blip.attributes) !== null && _blip$attributes !== void 0 ? _blip$attributes : {}).filter(([name]) => !/^[^:]+:(embed|link)$/.test(name))));
+			blip.elements = [...withExtensions(blip, svgId)];
+			fill.elements = fill.elements.filter((child) => child.name !== "a:srcRect");
+			if (this.transformation !== void 0) {
+				resize(childOf(element, "wp:extent"), this.transformation);
+				resize(childOf(childOf(childOf(picture, "pic:spPr"), "a:xfrm"), "a:ext"), this.transformation);
+			}
+			setAltText(properties, placeholder, this.altText);
+			const pictureProperties = childOf(childOf(picture, "pic:nvPicPr"), "pic:cNvPr");
+			if (pictureProperties !== void 0) setAltText(pictureProperties, placeholder, this.altText);
+		}
+	};
+	//#endregion
 	//#region src/patcher/from-docx.ts
 	/**
 	* Document patching module for modifying existing .docx files.
@@ -37976,7 +38242,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 			}
 			return;
 		}
-		if (!((patch === null || patch === void 0 ? void 0 : patch.type) === PatchType.DRAWING ? !inTableRow && typeof patch.patch === "function" : (patch === null || patch === void 0 ? void 0 : patch.type) !== PatchType.TABLE_ROWS && Array.isArray(patch === null || patch === void 0 ? void 0 : patch.children))) throw new Error(`Invalid patch "${key}". Expected { type: PatchType.PARAGRAPH or PatchType.DOCUMENT, children: [...] }, ${inTableRow ? "or { type: PatchType.TABLE_ROWS, rows: [...] }" : "{ type: PatchType.TABLE_ROWS, rows: [...] }, or a drawing patch such as ChartDataPatch from docx/charts"}`);
+		if (!((patch === null || patch === void 0 ? void 0 : patch.type) === PatchType.DRAWING ? !inTableRow && typeof patch.patch === "function" : (patch === null || patch === void 0 ? void 0 : patch.type) !== PatchType.TABLE_ROWS && Array.isArray(patch === null || patch === void 0 ? void 0 : patch.children))) throw new Error(`Invalid patch "${key}". Expected { type: PatchType.PARAGRAPH or PatchType.DOCUMENT, children: [...] }, ${inTableRow ? "or { type: PatchType.TABLE_ROWS, rows: [...] }" : "{ type: PatchType.TABLE_ROWS, rows: [...] }, or a drawing patch such as ImagePatch, or ChartDataPatch from docx/charts"}`);
 	};
 	var imageReplacer = new ImageReplacer();
 	var UTF16LE = new Uint8Array([255, 254]);
@@ -38408,6 +38674,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	exports.HpsMeasureElement = HpsMeasureElement;
 	exports.HyperlinkType = HyperlinkType;
 	exports.IgnoreIfEmptyXmlComponent = IgnoreIfEmptyXmlComponent;
+	exports.ImagePatch = ImagePatch;
 	exports.ImageRun = ImageRun;
 	exports.ImportedRootElementAttributes = ImportedRootElementAttributes;
 	exports.ImportedXmlComponent = ImportedXmlComponent;

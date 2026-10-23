@@ -188,7 +188,7 @@ The template's charts without a placeholder are left as they are, whatever they 
 
 ## Other Drawings
 
-`ChartDataPatch` is a `DrawingPatch` from `docx`: a patch for a drawing whose alt text holds the placeholder, which changes the drawing and the parts of the document it refers to. `patchDocument` applies drawing patches before text patches, so they only see the template's own drawings.
+`ChartDataPatch` is a `DrawingPatch` from `docx`: a patch for a drawing whose alt text holds the placeholder, which changes the drawing and the parts of the document it refers to. `patchDocument` applies drawing patches before text patches, so they only see the template's own drawings. `ImagePatch`, from `docx`, is another: it gives a picture a new image. See [Replacing a Picture](usage/templates.md#replacing-a-picture).
 
 ## Example
 

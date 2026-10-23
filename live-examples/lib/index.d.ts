@@ -3573,8 +3573,8 @@ export declare type DrawingLinkOptions = {
 
 /**
  * A patch for a drawing in a template whose alt text holds the placeholder, such as `{{sales}}`, rather than for the
- * placeholder in text. It changes the drawing, and the parts it refers to, in place. `ChartDataPatch` from `docx/charts`
- * is one: it replaces the data of a chart made in Word.
+ * placeholder in text. It changes the drawing, and the parts it refers to, in place. {@link ImagePatch} is one: it
+ * replaces a picture's image. So is `ChartDataPatch` from `docx/charts`, which replaces the data of a chart made in Word.
  *
  * A drawing's alt text is its description (`descr`) or title. A drawing patch leaves the placeholder in text as it is.
  *
@@ -3585,6 +3585,9 @@ export declare abstract class DrawingPatch {
     /**
      * Changes a drawing whose alt text holds the placeholder, and the parts it refers to. `patchDocument` calls it for
      * each such drawing before it patches text, so it only sees the template's own drawings.
+     *
+     * A relationship the drawing referred to that nothing in its part refers to once it is patched, such as to a
+     * picture's old image, is then removed, and so is the part it referred to, unless something else refers to it.
      *
      * @throws If the drawing can't be patched, which stops the document being patched
      */
@@ -6465,6 +6468,85 @@ export declare type ILineNumberAttributes = {
      * The possible values for this attribute are defined by the ST_TwipsMeasure simple type (§2.18.105).
      */
     readonly distance?: number | PositiveUniversalMeasure;
+};
+
+/**
+ * Replaces the image of a picture in a template, found by a placeholder in its alt text, such as `{{logo}}`, keeping
+ * its look: its size, position, text wrapping, border, shape, effects and link. Give it as a patch to `patchDocument`,
+ * with the placeholder's key.
+ *
+ * - The new image fills the picture, stretched to its size, unless a new `transformation` is given. Word's crop of the
+ *   template's image is removed.
+ * - The placeholder is taken out of the alt text, unless new alt text is given.
+ * - The template's image is removed, unless something else, such as another picture, shows it.
+ *
+ * Put the placeholder in the picture's alt text in Word, in "Alt Text" or "Edit Alt Text". Every picture whose alt text
+ * holds it is patched, wherever it is: in the document, a table, a header, a footer or a note. A placeholder in the
+ * document's text is left as it is: use an `ImageRun` in a `PatchType.PARAGRAPH` patch for it.
+ *
+ * @publicApi
+ *
+ * @example
+ * ```typescript
+ * await patchDocument({
+ *   outputType: "nodebuffer",
+ *   data: template,
+ *   patches: {
+ *     logo: new ImagePatch({ type: "png", data: fs.readFileSync("logo.png") }),
+ *   },
+ * });
+ * ```
+ */
+export declare class ImagePatch extends DrawingPatch {
+    private readonly image;
+    private readonly svg;
+    private readonly transformation;
+    private readonly altText;
+    /**
+     * @throws If the image's type isn't one an `ImageRun` takes, an SVG image has no fallback, or the size isn't a number
+     * of pixels greater than 0
+     */
+    constructor(options: ImagePatchOptions);
+    /**
+     * Replaces the picture's image, and sets its size and alt text.
+     *
+     * @throws If the drawing isn't a picture, such as a chart, a shape or a group, or has no image
+     */
+    patch({ element, properties, placeholder, part }: TemplateDrawing, template: TemplatePackage): void;
+}
+
+/**
+ * The new image for a picture in a template, given as an `ImageRun`'s is, and optionally the picture's new size and
+ * alt text.
+ *
+ * @publicApi
+ */
+export declare type ImagePatchOptions = (RegularImageOptions | SvgMediaOptions) & {
+    /**
+     * The picture's new size. Default is the template picture's size, which the new image is stretched to fill, so give
+     * it the template's proportions, or give a size with its own
+     */
+    readonly transformation?: ImagePatchTransformation;
+    /**
+     * The picture's alt text. Default is the template's, without the placeholder. An empty description or title removes
+     * it
+     */
+    readonly altText?: {
+        readonly description?: string;
+        readonly title?: string;
+    };
+};
+
+/**
+ * The size of a picture an {@link ImagePatch} gives a new image, in pixels, at 96 to the inch, as an `ImageRun`'s.
+ *
+ * @publicApi
+ */
+export declare type ImagePatchTransformation = {
+    /** The picture's width in pixels */
+    readonly width: number;
+    /** The picture's height in pixels */
+    readonly height: number;
 };
 
 /**
@@ -11585,7 +11667,8 @@ export declare type PatchDocumentOptions<T extends PatchDocumentOutputType = Pat
     readonly data: InputDataType;
     /**
      * Mapping of placeholder keys to patch content, to a {@link TableRowsPatch} that repeats the rows of a table, or to a
-     * {@link DrawingPatch}, such as `docx/charts`' `ChartDataPatch`, for a drawing whose alt text holds the placeholder
+     * {@link DrawingPatch}, such as an {@link ImagePatch} or `docx/charts`' `ChartDataPatch`, for a drawing whose alt text
+     * holds the placeholder
      */
     readonly patches: Readonly<Record<string, IPatch | TableRowsPatch | DrawingPatch>>;
     /** Preserve original formatting of replaced text (default: true) */
@@ -11938,6 +12021,15 @@ export declare const PrettifyType: {
     readonly WITH_TAB: "\t";
 };
 
+/**
+ * The data of images, for `ImageRun` and the patcher's `ImagePatch`: their formats, read from their bytes when not given,
+ * and their bytes, from a data URI.
+ *
+ * @module
+ */
+/**
+ * A PNG, JPEG, GIF or BMP image.
+ */
 declare type RegularImageOptions = {
     /**
      * The image format. JavaScript, which has no types to require it, can leave it out, and it is then read from the
@@ -13007,6 +13099,9 @@ declare type SvgMediaData = {
     readonly fallback: RegularMediaData & CoreMediaData;
 };
 
+/**
+ * An SVG image, with an image of another format for applications that can't show SVG.
+ */
 declare type SvgMediaOptions = {
     /** The image format. Must be `"svg"` for SVG images. */
     readonly type: "svg";

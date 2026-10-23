@@ -13,8 +13,8 @@
 <h1>Class DrawingPatch<code class="tsd-tag">Abstract</code></h1></div>
 <section class="tsd-panel tsd-comment">
 <div class="tsd-comment tsd-typography"><p>A patch for a drawing in a template whose alt text holds the placeholder, such as <code>{{sales}}</code>, rather than for the
-placeholder in text. It changes the drawing, and the parts it refers to, in place. <code>ChartDataPatch</code> from <code>docx/charts</code>
-is one: it replaces the data of a chart made in Word.</p>
+placeholder in text. It changes the drawing, and the parts it refers to, in place. <a href="index.ImagePatch.html" class="tsd-kind-class">ImagePatch</a> is one: it
+replaces a picture's image. So is <code>ChartDataPatch</code> from <code>docx/charts</code>, which replaces the data of a chart made in Word.</p>
 <p>A drawing's alt text is its description (<code>descr</code>) or title. A drawing patch leaves the placeholder in text as it is.</p>
 </div>
 <div class="tsd-comment tsd-typography">
@@ -25,9 +25,10 @@ is one: it replaces the data of a chart made in Word.</p>
 <ul class="tsd-hierarchy">
 <li class="tsd-hierarchy-item"><span class="tsd-hierarchy-target">DrawingPatch</span>
 <ul class="tsd-hierarchy">
-<li class="tsd-hierarchy-item"><a href="charts.ChartDataPatch.html" class="tsd-signature-type tsd-kind-class">ChartDataPatch</a></li></ul></li></ul></section><aside class="tsd-sources">
+<li class="tsd-hierarchy-item"><a href="charts.ChartDataPatch.html" class="tsd-signature-type tsd-kind-class">ChartDataPatch</a></li>
+<li class="tsd-hierarchy-item"><a href="index.ImagePatch.html" class="tsd-signature-type tsd-kind-class">ImagePatch</a></li></ul></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/07286f3beeacf012789b4f713e51c7e42b2d5e75/src/patcher/drawing-patch.ts#L88">patcher/drawing-patch.ts:88</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/72951b75f79d4ba9bd43ff021f36ce02451650b0/src/patcher/drawing-patch.ts#L88">patcher/drawing-patch.ts:88</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -62,7 +63,7 @@ is one: it replaces the data of a chart made in Word.</p>
 <h3 class="tsd-anchor-link" id="type"><code class="tsd-tag">Readonly</code><span>type</span><a href="#type" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">type</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;drawing&quot;</span><span class="tsd-signature-symbol"> = PatchType.DRAWING</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/07286f3beeacf012789b4f713e51c7e42b2d5e75/src/patcher/drawing-patch.ts#L89">patcher/drawing-patch.ts:89</a></li></ul></aside></section></section></details>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/72951b75f79d4ba9bd43ff021f36ce02451650b0/src/patcher/drawing-patch.ts#L89">patcher/drawing-patch.ts:89</a></li></ul></aside></section></section></details>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Methods"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="methods-1">Methods<a href="#methods-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
@@ -74,6 +75,8 @@ is one: it replaces the data of a chart made in Word.</p>
 <div class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Changes a drawing whose alt text holds the placeholder, and the parts it refers to. <code>patchDocument</code> calls it for
 each such drawing before it patches text, so it only sees the template's own drawings.</p>
+<p>A relationship the drawing referred to that nothing in its part refers to once it is patched, such as to a
+picture's old image, is then removed, and so is the part it referred to, unless something else refers to it.</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
@@ -86,7 +89,7 @@ each such drawing before it patches text, so it only sees the template's own dra
 <h4 class="tsd-anchor-link" id="throws">Throws<a href="#throws" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>If the drawing can't be patched, which stops the document being patched</p>
 </div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/07286f3beeacf012789b4f713e51c7e42b2d5e75/src/patcher/drawing-patch.ts#L97">patcher/drawing-patch.ts:97</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/72951b75f79d4ba9bd43ff021f36ce02451650b0/src/patcher/drawing-patch.ts#L100">patcher/drawing-patch.ts:100</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
