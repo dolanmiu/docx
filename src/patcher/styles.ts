@@ -50,13 +50,15 @@ const sizeIn = (runProperties: Element | undefined): number | undefined => {
 
 /**
  * The size of the font of a template's Normal style, in half points: its own, or else the document's default. Word
- * indents each level of a table of contents by it, so docx's TOC styles are indented by it too.
+ * indents each level of a table of contents by it, so docx's TOC styles are indented by it too. Normal is the style that
+ * the styles added are based on: the template's with its id, or else with its name.
  */
-const normalSizeOf = (styles: readonly Element[]): number | undefined => {
-    const normal = styles.find(
-        (style) => style.name === "w:style" && style.attributes?.["w:type"] === "paragraph" && nameOf(style) === "normal",
-    );
-    const defaults = styles.find((element) => element.name === "w:docDefaults");
+const normalSizeOf = (elements: readonly Element[]): number | undefined => {
+    const styles = elements.filter((element) => element.name === "w:style");
+    const normal =
+        styles.find((style) => idOf(style) === "Normal") ??
+        styles.find((style) => style.attributes?.["w:type"] === "paragraph" && nameOf(style) === "normal");
+    const defaults = elements.find((element) => element.name === "w:docDefaults");
     return sizeIn(childOf(normal, "w:rPr")) ?? sizeIn(childOf(childOf(defaults, "w:rPrDefault"), "w:rPr"));
 };
 

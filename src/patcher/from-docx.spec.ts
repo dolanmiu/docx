@@ -2294,15 +2294,18 @@ describe("from-docx", () => {
                     return /w:styleId="TOC3">.*?<w:ind w:left="(\d+)"\/>/.exec((await read("word/styles.xml"))!)?.[1];
                 };
                 const defaults = `<w:docDefaults><w:rPrDefault><w:rPr><w:sz w:val="24"/></w:rPr></w:rPrDefault></w:docDefaults>`;
-                const normal = (size: string): string =>
-                    `<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/>${size}</w:style>`;
+                const normal = (id: string, name: string, runProperties = ""): string =>
+                    `<w:style w:type="paragraph" w:default="1" w:styleId="${id}"><w:name w:val="${name}"/>${runProperties}</w:style>`;
+                const fourteenPoints = `<w:rPr><w:sz w:val="28"/></w:rPr>`;
 
                 // docx's 10 points, without a size in the template
                 expect(await indentOfTOC3With(WORD_STYLES)).to.equal("400");
                 // The document's default size, 12 points, as Word for Mac saves
-                expect(await indentOfTOC3With(`${defaults}${normal("")}`)).to.equal("480");
-                // Normal's own size, 14 points
-                expect(await indentOfTOC3With(`${defaults}${normal(`<w:rPr><w:sz w:val="28"/></w:rPr>`)}`)).to.equal("560");
+                expect(await indentOfTOC3With(`${defaults}${normal("Normal", "Normal")}`)).to.equal("480");
+                // Normal's own size, 14 points, of the style the added styles are based on: the one with Normal's id, or else
+                // the one with its name, as in a template saved by Word in German
+                expect(await indentOfTOC3With(`${defaults}${normal("Normal", "Body", fourteenPoints)}`)).to.equal("560");
+                expect(await indentOfTOC3With(`${defaults}${normal("Standard", "Normal", fourteenPoints)}`)).to.equal("560");
             });
 
             it("should add the styles that an added style is based on or linked to, if the template doesn't have them", async () => {
