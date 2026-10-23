@@ -74,9 +74,11 @@ const doc = new Document({
                 new Paragraph({ indent: { left: 1440 }, children: [new TextRun(text(120, 5))] }),
                 new Paragraph({ indent: { left: 720, right: 1440 }, children: [new TextRun(text(120, 6))] }),
                 new Paragraph({ indent: { firstLine: 720 }, children: [new TextRun(text(120, 7))] }),
+                // 80 words, so the heading after it and its first line fit at the bottom of the page with room to spare. A line
+                // ending less than a point below the bottom margin fits in Word and docx/layout, but not in LibreOffice
                 new Paragraph({
                     indent: { left: 1080, hanging: 1080 },
-                    children: [new TextRun("Term:"), new TextRun({ text: `\t${text(90, 8)}` })],
+                    children: [new TextRun("Term:"), new TextRun({ text: `\t${text(80, 8)}` })],
                 }),
                 heading("Tab stops"),
                 ...Array.from(
