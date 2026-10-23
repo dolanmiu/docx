@@ -10,7 +10,7 @@
 import type { IDefaultStylesOptions } from "@file/styles/factory";
 import { type BaseXmlComponent, type IContext, type IXmlableObject, type ImportedXmlComponent, XmlComponent } from "@file/xml-components";
 
-import { StyleForCharacter, StyleForParagraph } from "./style";
+import { StyleForCharacter, StyleForParagraph, isDefaultTableOfContentsStyle } from "./style";
 import type { ICharacterStyleOptions } from "./style/character-style";
 import type { IParagraphStyleOptions } from "./style/paragraph-style";
 
@@ -50,6 +50,12 @@ const attributesOf = (style: IXmlableObject): Record<string, unknown> | undefine
 
 /** The id of a formatted `w:style` */
 const styleIdOf = (style: IXmlableObject): string | undefined => attributesOf(style)?.["w:styleId"] as string | undefined;
+
+/** The name of a formatted `w:style`, in lower case, as Word compares the names of its built-in styles */
+const styleNameOf = (style: IXmlableObject): string | undefined => {
+    const name = [style["w:style"]].flat().find((part) => nameOf(part) === "w:name")?.["w:name"]?._attr?.["w:val"];
+    return name === undefined ? undefined : String(name).toLowerCase();
+};
 
 /** Whether a formatted `w:style` is a paragraph style marked as the default for paragraphs */
 const isDefaultParagraphStyle = (style: IXmlableObject): boolean => {
@@ -135,9 +141,10 @@ export class Styles extends XmlComponent {
     /**
      * Writes the styles in the schema's order: the document defaults, the latent styles, then the styles. A style id
      * can only be used once, so a style replaces an earlier one with its id. That way external styles replace docx's
-     * default styles, and paragraph and character styles replace the default and imported ones. Of several document
-     * defaults, or several latent styles, the last is kept. Normal is marked as the default paragraph style when no
-     * style is.
+     * default styles, and paragraph and character styles replace the default and imported ones. docx's TOC 1 to TOC 9
+     * styles are also replaced by a style with their name, such as a template's in another language, with an id of its
+     * own. Of several document defaults, or several latent styles, the last is kept. Normal is marked as the default
+     * paragraph style when no style is.
      */
     public prepForXml(context: IContext): IXmlableObject {
         const xml = super.prepForXml(context) as IXmlableObject;
@@ -147,10 +154,17 @@ export class Styles extends XmlComponent {
         }
         const named = (name: string): readonly unknown[] => children.filter((child) => nameOf(child) === name);
         const ids = children.map((child) => (nameOf(child) === "w:style" ? styleIdOf(child) : undefined));
-        const kept = children.filter(
+        const unique = children.filter(
             (child, index) =>
                 !["_attr", "w:docDefaults", "w:latentStyles"].includes(nameOf(child) as string) &&
                 (ids[index] === undefined || ids.lastIndexOf(ids[index]) === index),
+        );
+        // The names of the styles other than docx's TOC styles
+        const otherNames = new Set(
+            unique.filter((child) => !isDefaultTableOfContentsStyle(child as object)).map((child) => styleNameOf(child as IXmlableObject)),
+        );
+        const kept = unique.filter(
+            (child) => !isDefaultTableOfContentsStyle(child as object) || !otherNames.has(styleNameOf(child as IXmlableObject)),
         );
         // Word takes Normal as the default paragraph style when no style is marked as the default, such as when Normal
         // comes from paragraphStyles. Other applications need the mark: Pages draws math tiny without it

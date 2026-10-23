@@ -413,6 +413,35 @@ describe("Default Styles", () => {
         });
     });
 
+    it("TableOfContentsStyle#constructor is Word's TOC style of a level, indented by a level indent for each level below the first", () => {
+        const styleOf = (level: number): unknown => new Formatter().format(new defaultStyles.TableOfContentsStyle(level, 200));
+
+        expect(styleOf(1)).to.deep.equal({
+            "w:style": [
+                { _attr: { "w:type": "paragraph", "w:styleId": "TOC1" } },
+                { "w:name": { _attr: { "w:val": "toc 1" } } },
+                { "w:basedOn": { _attr: { "w:val": "Normal" } } },
+                { "w:next": { _attr: { "w:val": "Normal" } } },
+                { "w:uiPriority": { _attr: { "w:val": 39 } } },
+                { "w:semiHidden": EMPTY_OBJECT },
+                { "w:unhideWhenUsed": EMPTY_OBJECT },
+                { "w:pPr": [{ "w:spacing": { _attr: { "w:after": 100 } } }] },
+            ],
+        });
+        expect(styleOf(9)).to.deep.equal({
+            "w:style": [
+                { _attr: { "w:type": "paragraph", "w:styleId": "TOC9" } },
+                { "w:name": { _attr: { "w:val": "toc 9" } } },
+                { "w:basedOn": { _attr: { "w:val": "Normal" } } },
+                { "w:next": { _attr: { "w:val": "Normal" } } },
+                { "w:uiPriority": { _attr: { "w:val": 39 } } },
+                { "w:semiHidden": EMPTY_OBJECT },
+                { "w:unhideWhenUsed": EMPTY_OBJECT },
+                { "w:pPr": [{ "w:spacing": { _attr: { "w:after": 100 } } }, { "w:ind": { _attr: { "w:left": 1600 } } }] },
+            ],
+        });
+    });
+
     it("LineNumberStyle#constructor is Word's line number style, with no formatting of its own", () => {
         expect(new Formatter().format(new defaultStyles.LineNumberStyle({}))).to.deep.equal({
             "w:style": [

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
+import type { IXmlableObject } from "@file/xml-components";
 
 import { sectionMarginDefaults, sectionPageSizeDefaults } from "./document";
 import { File } from "./file";
@@ -438,6 +439,63 @@ describe("File", () => {
         expect(lineNumberStyles).to.deep.equal([
             new Formatter().format(createDefaultStyles({ lineNumber: { run: { font: "Calibri", size: 20 } } }).lineNumber),
         ]);
+    });
+
+    describe("the TOC 1 to TOC 9 styles of the entries of tables of contents", () => {
+        // The left indent of each TOC style, by its id
+        const indentsIn = (doc: File): Record<string, unknown> =>
+            Object.fromEntries(
+                (new Formatter().format(doc.Styles)["w:styles"] as readonly IXmlableObject[]).flatMap((child) => {
+                    const parts: readonly IXmlableObject[] = [child["w:style"] ?? []].flat();
+                    const id = parts[0]?._attr?.["w:styleId"];
+                    const paragraph: readonly IXmlableObject[] = parts.find((part) => part["w:pPr"])?.["w:pPr"] ?? [];
+                    const indent = paragraph.find((part) => part["w:ind"])?.["w:ind"]._attr["w:left"];
+                    return /^TOC\d$/.test(String(id)) ? [[id, indent ?? 0]] : [];
+                }),
+            );
+
+        it("are written as Word adds them, each level indented 10 points more than the one above, the size of docx's text", () => {
+            expect(indentsIn(new File({ sections: [] }))).to.deep.equal({
+                TOC1: 0,
+                TOC2: 200,
+                TOC3: 400,
+                TOC4: 600,
+                TOC5: 800,
+                TOC6: 1000,
+                TOC7: 1200,
+                TOC8: 1400,
+                TOC9: 1600,
+            });
+        });
+
+        it("indent each level by the document's default font size, as Word does", () => {
+            const indentsWithSize = (size: number | `${number}pt`): unknown =>
+                indentsIn(new File({ styles: { default: { document: { run: { size } } } }, sections: [] })).TOC3;
+
+            expect(indentsWithSize(22)).to.equal(440);
+            expect(indentsWithSize("14pt")).to.equal(560);
+        });
+
+        it("are replaced by a paragraph style with their id", () => {
+            const doc = new File({
+                styles: { paragraphStyles: [{ id: "TOC2", name: "toc 2", paragraph: { indent: { left: 720 } } }] },
+                sections: [],
+            });
+
+            expect(indentsIn(doc)).to.include({ TOC1: 0, TOC2: 720, TOC3: 400 });
+        });
+
+        it("are replaced by a style with their name, such as a template's in another language, so no two styles have one name", () => {
+            const doc = new File({
+                externalStyles: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+                    <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+                        <w:style w:type="paragraph" w:styleId="Verzeichnis2"><w:name w:val="toc 2"/></w:style>
+                    </w:styles>`,
+                sections: [],
+            });
+
+            expect(Object.keys(indentsIn(doc))).to.deep.equal(["TOC1", "TOC3", "TOC4", "TOC5", "TOC6", "TOC7", "TOC8", "TOC9"]);
+        });
     });
 
     it("should write Word's caption style, so paragraphs with the style Caption are captions", () => {

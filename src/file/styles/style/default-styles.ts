@@ -12,6 +12,7 @@ import { LineRuleType } from "@file/paragraph";
 import { UnderlineType } from "@file/paragraph/run/underline";
 import { TableProperties } from "@file/table/table-properties";
 import { WidthType } from "@file/table/table-width";
+import type { IContext, IXmlableObject } from "@file/xml-components";
 
 import { type IBaseCharacterStyleOptions, StyleForCharacter } from "./character-style";
 import { type IBaseParagraphStyleOptions, type IParagraphStyleOptions, StyleForParagraph } from "./paragraph-style";
@@ -245,6 +246,53 @@ export class BibliographyStyle extends StyleForParagraph {
             unhideWhenUsed: true,
             ...options,
         });
+    }
+}
+
+// The formatted TOC 1 to TOC 9 styles of docx's own, which a style of the document's with their name replaces
+const tableOfContentsStyles = new WeakSet<object>();
+
+/**
+ * Whether a formatted style is one of docx's TOC 1 to TOC 9 styles, which a style with its name replaces, such as one in
+ * a template saved by Word in another language, with an id of its own.
+ */
+export const isDefaultTableOfContentsStyle = (style: object): boolean => tableOfContentsStyles.has(style);
+
+/**
+ * Represents a TOC 1 to TOC 9 paragraph style, the style of the entries at a level of a table of contents.
+ *
+ * Word gives the entries it writes the paragraph styles named "toc 1" to "toc 9", and adds the styles when the
+ * document doesn't have them: with 5 points of space after, and each level indented by the size of the Normal style's
+ * font more than the level above. Without them, LibreOffice indents no level once it updates the table. Like Word's,
+ * they are hidden until they are used.
+ */
+export class TableOfContentsStyle extends StyleForParagraph {
+    /**
+     * @param level - The level of the entries, 1 to 9
+     * @param levelIndent - How much more each level is indented than the level above, in twips
+     */
+    public constructor(level: number, levelIndent: number) {
+        super({
+            id: `TOC${level}`,
+            name: `toc ${level}`,
+            basedOn: "Normal",
+            next: "Normal",
+            uiPriority: 39,
+            semiHidden: true,
+            unhideWhenUsed: true,
+            paragraph: {
+                spacing: {
+                    after: 100,
+                },
+                ...(level > 1 ? { indent: { left: (level - 1) * levelIndent } } : {}),
+            },
+        });
+    }
+
+    public prepForXml(context: IContext): IXmlableObject {
+        const xml = super.prepForXml(context) as IXmlableObject;
+        tableOfContentsStyles.add(xml);
+        return xml;
     }
 }
 
