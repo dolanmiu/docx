@@ -419,14 +419,11 @@ export const numberTabStopOf = (level: number, width: number): number => {
 };
 
 /**
- * The paragraph style of the entries at a level: the built-in TOC style, found by its name, "toc 1" to "toc 9". When
- * the document doesn't have it, the entries are indented as Word's are, 220 twips a level.
+ * The paragraph style of the entries at a level: the built-in TOC style, found by its name, "toc 1" to "toc 9", such as
+ * a template's in another language, or else docx's own, `TOC1` to `TOC9`, which indent the levels as Word's do.
  */
-const entryStyleOf = (level: number, styles: ReadonlyMap<string, StyleDetails>): { readonly id: string; readonly indent?: number } => {
-    const named = [...styles].find(([, style]) => style.name?.toLowerCase() === `toc ${level}`)?.[0];
-    const id = named ?? `TOC${level}`;
-    return named !== undefined || styles.has(id) || level === 1 ? { id } : { id, indent: (level - 1) * 220 };
-};
+const entryStyleOf = (level: number, styles: ReadonlyMap<string, StyleDetails>): string =>
+    [...styles].find(([, style]) => style.name?.toLowerCase() === `toc ${level}`)?.[0] ?? `TOC${level}`;
 
 /** The formatted content of a table of contents with its entries */
 const contentOf = (
@@ -454,11 +451,9 @@ const contentOf = (
                   ]
                 : []),
         ];
-        const style = entryStyleOf(entry.level, styles);
         content.addChildElement(
             new Paragraph({
-                style: style.id,
-                indent: style.indent === undefined ? undefined : { left: style.indent },
+                style: entryStyleOf(entry.level, styles),
                 tabStops: [
                     ...(entry.listNumber?.separator === "tab"
                         ? [{ type: "left" as const, position: numberTabStopOf(entry.level, entry.listNumber.width) }]

@@ -441,7 +441,7 @@ describe("Table of contents filled in from the headings", () => {
         expect(tableOfContentsIn(body)[0]["w:p"][3]).to.deep.equal({ "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, " - "] }] });
     });
 
-    it("indents the entries below the first level as Word's TOC styles do, when the document doesn't have them", () => {
+    it("gives the entries docx's TOC styles, which indent the levels, rather than indenting the entries themselves", () => {
         const body = bodyOf({
             sections: [
                 {
@@ -455,9 +455,8 @@ describe("Table of contents filled in from the headings", () => {
             ],
         });
 
-        expect(
-            tableOfContentsIn(body).map((paragraph) => attributesOf(elementsNamed(paragraph, "w:ind")[0], "w:ind")?.["w:left"]),
-        ).to.deep.equal([undefined, 220, 440, undefined]);
+        expect(entriesIn(body).map(({ style }) => style)).to.deep.equal(["TOC1", "TOC2", "TOC3"]);
+        expect(elementsNamed(tableOfContentsIn(body), "w:ind")).to.deep.equal([]);
     });
 
     it("uses the document's TOC styles, found by their name, without indenting the entries", () => {

@@ -8,6 +8,7 @@
  * @module
  */
 import type { XmlComponent } from "@file/xml-components";
+import { universalMeasureToTwips } from "@util/values";
 
 import { DocumentDefaults, type IDocumentDefaultsOptions } from "./defaults";
 import {
@@ -33,6 +34,7 @@ import {
     NormalTableStyle,
     StrongStyle,
     StyleForParagraph,
+    TableOfContentsStyle,
     TitleStyle,
 } from "./style";
 import type { IStylesOptions } from "./styles";
@@ -108,15 +110,45 @@ export type IDefaultStylesOptions = {
 };
 
 /**
- * docx's default styles, each under the option of `styles.default` that configures it, and Normal.
+ * How much more Word indents each level of a table of contents than the level above, in twips: the size of the Normal
+ * style's font. docx's Normal has no formatting, so that is the document's default size, or 10 points without one.
+ */
+const tableOfContentsLevelIndentOf = (options: IDefaultStylesOptions): number => {
+    const size = options.document?.run?.size;
+    if (size === undefined) {
+        return 200;
+    }
+    // A number is in half points, so ten times it is in twips
+    return Math.round(typeof size === "number" ? size * 10 : universalMeasureToTwips(size));
+};
+
+/** The styles of the entries at each level of a table of contents, TOC 1 to TOC 9 */
+type TableOfContentsStyles = Readonly<Record<`tableOfContents${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9}`, XmlComponent>>;
+
+/** The styles of the entries at each level of a table of contents, as Word adds them */
+const createTableOfContentsStyles = (levelIndent: number): TableOfContentsStyles => ({
+    tableOfContents1: new TableOfContentsStyle(1, levelIndent),
+    tableOfContents2: new TableOfContentsStyle(2, levelIndent),
+    tableOfContents3: new TableOfContentsStyle(3, levelIndent),
+    tableOfContents4: new TableOfContentsStyle(4, levelIndent),
+    tableOfContents5: new TableOfContentsStyle(5, levelIndent),
+    tableOfContents6: new TableOfContentsStyle(6, levelIndent),
+    tableOfContents7: new TableOfContentsStyle(7, levelIndent),
+    tableOfContents8: new TableOfContentsStyle(8, levelIndent),
+    tableOfContents9: new TableOfContentsStyle(9, levelIndent),
+});
+
+/**
+ * docx's default styles, each under the option of `styles.default` that configures it, and Normal, the default table
+ * style and the TOC 1 to TOC 9 styles.
  *
  * @internal
  */
 export const createDefaultStyles = (
     options: IDefaultStylesOptions = {},
-): { readonly normal: XmlComponent; readonly normalTable: XmlComponent } & {
-    readonly [Key in keyof IDefaultStylesOptions]-?: XmlComponent;
-} => ({
+): { readonly normal: XmlComponent; readonly normalTable: XmlComponent } & TableOfContentsStyles & {
+        readonly [Key in keyof IDefaultStylesOptions]-?: XmlComponent;
+    } => ({
     // The style of paragraphs that don't name one, which the headings and others are based on. It has no formatting, so
     // it changes nothing in Word, which takes Normal as the default paragraph style anyway. A style with its id, such as
     // one in paragraphStyles or externalStyles, takes its place
@@ -180,6 +212,9 @@ export const createDefaultStyles = (
     listParagraph: new ListParagraph(options.listParagraph || {}),
     caption: new CaptionStyle(options.caption || {}),
     bibliography: new BibliographyStyle(options.bibliography || {}),
+    // The styles of the entries of tables of contents, as Word adds them. A style with their id, or a paragraph style with
+    // their name, such as one in paragraphStyles or externalStyles, takes their place
+    ...createTableOfContentsStyles(tableOfContentsLevelIndentOf(options)),
     hyperlink: new HyperlinkStyle(options.hyperlink || {}),
     footnoteReference: new FootnoteReferenceStyle(options.footnoteReference || {}),
     footnoteText: new FootnoteText(options.footnoteText || {}),

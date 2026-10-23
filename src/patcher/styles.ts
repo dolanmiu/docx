@@ -39,9 +39,32 @@ const nameOf = (style: Element): string | undefined => {
     return name === undefined ? undefined : String(name).toLowerCase();
 };
 
-const formatDefaultStyles = (context: IContext): ReadonlyMap<string, Element> =>
+const childOf = (element: Element | undefined, name: string): Element | undefined =>
+    element?.elements?.find((child) => child.name === name);
+
+/** The size of the font that run properties give, in half points, as Word writes it */
+const sizeIn = (runProperties: Element | undefined): number | undefined => {
+    const size = Number(childOf(runProperties, "w:sz")?.attributes?.["w:val"]);
+    return Number.isNaN(size) ? undefined : size;
+};
+
+/**
+ * The size of the font of a template's Normal style, in half points: its own, or else the document's default. Word
+ * indents each level of a table of contents by it, so docx's TOC styles are indented by it too. Normal is the style that
+ * the styles added are based on: the template's with its id, or else with its name.
+ */
+const normalSizeOf = (elements: readonly Element[]): number | undefined => {
+    const styles = elements.filter((element) => element.name === "w:style");
+    const normal =
+        styles.find((style) => idOf(style) === "Normal") ??
+        styles.find((style) => style.attributes?.["w:type"] === "paragraph" && nameOf(style) === "normal");
+    const defaults = elements.find((element) => element.name === "w:docDefaults");
+    return sizeIn(childOf(normal, "w:rPr")) ?? sizeIn(childOf(childOf(defaults, "w:rPrDefault"), "w:rPr"));
+};
+
+const formatDefaultStyles = (context: IContext, normalSize: number | undefined): ReadonlyMap<string, Element> =>
     new Map(
-        Object.values(createDefaultStyles())
+        Object.values(createDefaultStyles({ document: { run: { size: normalSize } } }))
             .map((style) => toJson(stringifyXmlable(formatter.format(style, context))).elements![0])
             // Rather than the document's defaults, which aren't a style
             .filter((style) => style.name === "w:style")
@@ -64,12 +87,13 @@ export const patchStyles = (
     parts: Map<string, Element>,
     createContext: (path: string) => IContext,
 ): StylesPatcher => {
-    const templateStyles = getFirstLevelElements(parts.get(STYLES_PATH) ?? {}, "w:styles").filter((element) => element.name === "w:style");
+    const templateElements = getFirstLevelElements(parts.get(STYLES_PATH) ?? {}, "w:styles");
+    const templateStyles = templateElements.filter((element) => element.name === "w:style");
     const templateIds = new Set(templateStyles.map(idOf));
     // docx's styles, as a Document writes them, by their ids. They're only formatted once content refers to a style
     let defaultStyles: ReadonlyMap<string, Element> | undefined;
     const defaultStyleOf = (id: string): Element | undefined => {
-        defaultStyles ??= formatDefaultStyles(createContext(STYLES_PATH));
+        defaultStyles ??= formatDefaultStyles(createContext(STYLES_PATH), normalSizeOf(templateElements));
         return defaultStyles.get(id);
     };
     // The ids of docx's styles that the content uses, and that the document doesn't have
