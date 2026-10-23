@@ -12986,9 +12986,10 @@ export declare class Styles extends XmlComponent {
     /**
      * Writes the styles in the schema's order: the document defaults, the latent styles, then the styles. A style id
      * can only be used once, so a style replaces an earlier one with its id. That way external styles replace docx's
-     * default styles, and paragraph and character styles replace the default and imported ones. Of several document
-     * defaults, or several latent styles, the last is kept. Normal is marked as the default paragraph style when no
-     * style is.
+     * default styles, and paragraph and character styles replace the default and imported ones. docx's TOC 1 to TOC 9
+     * styles are also replaced by a paragraph style with their name, such as a template's in another language, with an id
+     * of its own. Of several document defaults, or several latent styles, the last is kept. Normal is marked as the
+     * default paragraph style when no style is.
      */
     prepForXml(context: IContext): IXmlableObject;
 }

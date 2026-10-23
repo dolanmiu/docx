@@ -9848,10 +9848,10 @@ EXTERNAL: "External" };
 		const content = name === void 0 ? void 0 : element[name];
 		return Array.isArray(content) ? content : content === void 0 ? [] : [content];
 	};
-	var childOf = (element, name) => childrenOf$1(element).find((child) => nameOf$4(child) === name);
+	var childOf$1 = (element, name) => childrenOf$1(element).find((child) => nameOf$4(child) === name);
 	var attributeOf = (element, attribute) => {
 		var _childOf;
-		return (_childOf = childOf(element, "_attr")) === null || _childOf === void 0 || (_childOf = _childOf._attr) === null || _childOf === void 0 ? void 0 : _childOf[attribute];
+		return (_childOf = childOf$1(element, "_attr")) === null || _childOf === void 0 || (_childOf = _childOf._attr) === null || _childOf === void 0 ? void 0 : _childOf[attribute];
 	};
 	/** An attribute such as `w:val="2"` as a number. Imported XML gives it as a string */
 	var numberAttributeOf = (element, attribute) => {
@@ -9951,11 +9951,11 @@ EXTERNAL: "External" };
 		const bookmarks = followBookmarks ? bookmarksOf(paragraphs) : [];
 		return paragraphs.map((element, index) => {
 			var _bookmarks$index;
-			const properties = childOf(element, "w:pPr");
+			const properties = childOf$1(element, "w:pPr");
 			return {
 				element,
-				styleId: attributeOf(childOf(properties, "w:pStyle"), "w:val"),
-				outlineLevel: numberAttributeOf(childOf(properties, "w:outlineLvl"), "w:val"),
+				styleId: attributeOf(childOf$1(properties, "w:pStyle"), "w:val"),
+				outlineLevel: numberAttributeOf(childOf$1(properties, "w:outlineLvl"), "w:val"),
 				text: textOf$1(element),
 				bookmarks: (_bookmarks$index = bookmarks[index]) !== null && _bookmarks$index !== void 0 ? _bookmarks$index : /* @__PURE__ */ new Set()
 			};
@@ -9966,9 +9966,9 @@ EXTERNAL: "External" };
 		var _context$file;
 		const styles = (_context$file = context.file) === null || _context$file === void 0 || (_context$file = _context$file.Styles) === null || _context$file === void 0 ? void 0 : _context$file.prepForXml(context);
 		return new Map(childrenOf$1(styles).filter((style) => nameOf$4(style) === "w:style" && ["paragraph", void 0].includes(attributeOf(style, "w:type"))).map((style) => [attributeOf(style, "w:styleId"), {
-			name: attributeOf(childOf(style, "w:name"), "w:val"),
-			basedOn: attributeOf(childOf(style, "w:basedOn"), "w:val"),
-			outlineLevel: numberAttributeOf(childOf(childOf(style, "w:pPr"), "w:outlineLvl"), "w:val")
+			name: attributeOf(childOf$1(style, "w:name"), "w:val"),
+			basedOn: attributeOf(childOf$1(style, "w:basedOn"), "w:val"),
+			outlineLevel: numberAttributeOf(childOf$1(childOf$1(style, "w:pPr"), "w:outlineLvl"), "w:val")
 		}]));
 	};
 	/** A range such as `1-3` */
@@ -10004,12 +10004,12 @@ EXTERNAL: "External" };
 	var headingLevels = (context) => {
 		const styles = stylesOf(context);
 		return (paragraph) => {
-			const properties = childOf(paragraph, "w:pPr");
-			const styleId = attributeOf(childOf(properties, "w:pStyle"), "w:val");
+			const properties = childOf$1(paragraph, "w:pPr");
+			const styleId = attributeOf(childOf$1(properties, "w:pStyle"), "w:val");
 			const heading = headingLevelOf(styleId, styles);
 			const outlineLevel = outlineLevelOf({
 				styleId,
-				outlineLevel: numberAttributeOf(childOf(properties, "w:outlineLvl"), "w:val")
+				outlineLevel: numberAttributeOf(childOf$1(properties, "w:outlineLvl"), "w:val")
 			}, styles);
 			const outline = outlineLevel === void 0 || outlineLevel >= 9 ? void 0 : outlineLevel + 1;
 			if (heading !== void 0 && (outline === void 0 || outline === heading)) return heading;
@@ -10060,20 +10060,15 @@ EXTERNAL: "External" };
 		return end <= 1920 ? Math.ceil(end / 240) * 240 : Math.round(end);
 	};
 	/**
-	* The paragraph style of the entries at a level: the built-in TOC style, found by its name, "toc 1" to "toc 9". When
-	* the document doesn't have it, the entries are indented as Word's are, 220 twips a level.
+	* The paragraph style of the entries at a level: the built-in TOC style, found by its name, "toc 1" to "toc 9", such as
+	* a template's in another language, or else docx's own, `TOC1` to `TOC9`, which indent the levels as Word's do.
 	*/
 	var entryStyleOf = (level, styles) => {
-		var _find;
-		const named = (_find = [...styles].find(([, style]) => {
+		var _find$, _find;
+		return (_find$ = (_find = [...styles].find(([, style]) => {
 			var _style$name;
 			return ((_style$name = style.name) === null || _style$name === void 0 ? void 0 : _style$name.toLowerCase()) === `toc ${level}`;
-		})) === null || _find === void 0 ? void 0 : _find[0];
-		const id = named !== null && named !== void 0 ? named : `TOC${level}`;
-		return named !== void 0 || styles.has(id) || level === 1 ? { id } : {
-			id,
-			indent: (level - 1) * 220
-		};
+		})) === null || _find === void 0 ? void 0 : _find[0]) !== null && _find$ !== void 0 ? _find$ : `TOC${level}`;
 	};
 	/** The formatted content of a table of contents with its entries */
 	var contentOf = ({ properties, beginDirty, textWidth, tabLeader }, entries, styles, context) => {
@@ -10088,10 +10083,8 @@ EXTERNAL: "External" };
 				...titleRunsOf(entry.title, properties),
 				...hasPageNumber ? [new TextRun({ children: [properties.entryAndPageNumberSeparator || new Tab()] }), new PageReference(entry.bookmark, { hyperlink: properties.hyperlink })] : []
 			];
-			const style = entryStyleOf(entry.level, styles);
 			content.addChildElement(new Paragraph({
-				style: style.id,
-				indent: style.indent === void 0 ? void 0 : { left: style.indent },
+				style: entryStyleOf(entry.level, styles),
 				tabStops: [...((_entry$listNumber = entry.listNumber) === null || _entry$listNumber === void 0 ? void 0 : _entry$listNumber.separator) === "tab" ? [{
 					type: "left",
 					position: numberTabStopOf(entry.level, entry.listNumber.width)
@@ -23301,6 +23294,43 @@ MAX: 9026 };
 			}, options));
 		}
 	};
+	var tableOfContentsStyles = /* @__PURE__ */ new WeakSet();
+	/**
+	* Whether a formatted style is one of docx's TOC 1 to TOC 9 styles, which a style with its name replaces, such as one in
+	* a template saved by Word in another language, with an id of its own.
+	*/
+	var isDefaultTableOfContentsStyle = (style) => tableOfContentsStyles.has(style);
+	/**
+	* Represents a TOC 1 to TOC 9 paragraph style, the style of the entries at a level of a table of contents.
+	*
+	* Word gives the entries it writes the paragraph styles named "toc 1" to "toc 9", and adds the styles when the
+	* document doesn't have them: with 5 points of space after, and each level indented by the size of the Normal style's
+	* font more than the level above. Without them, LibreOffice indents no level once it updates the table. Like Word's,
+	* they are hidden until they are used.
+	*/
+	var TableOfContentsStyle = class extends StyleForParagraph {
+		/**
+		* @param level - The level of the entries, 1 to 9
+		* @param levelIndent - How much more each level is indented than the level above, in twips
+		*/
+		constructor(level, levelIndent) {
+			super({
+				id: `TOC${level}`,
+				name: `toc ${level}`,
+				basedOn: "Normal",
+				next: "Normal",
+				uiPriority: 39,
+				semiHidden: true,
+				unhideWhenUsed: true,
+				paragraph: _objectSpread2({ spacing: { after: 100 } }, level > 1 ? { indent: { left: (level - 1) * levelIndent } } : {})
+			});
+		}
+		prepForXml(context) {
+			const xml = super.prepForXml(context);
+			tableOfContentsStyles.add(xml);
+			return xml;
+		}
+	};
 	/**
 	* Represents the Footnote Text paragraph style.
 	*
@@ -23496,11 +23526,21 @@ MAX: 9026 };
 		var _attributesOf;
 		return (_attributesOf = attributesOf(style)) === null || _attributesOf === void 0 ? void 0 : _attributesOf["w:styleId"];
 	};
-	/** Whether a formatted `w:style` is a paragraph style marked as the default for paragraphs */
-	var isDefaultParagraphStyle = (style) => {
-		var _attributes$wType;
-		const attributes = attributesOf(style);
-		return ((_attributes$wType = attributes === null || attributes === void 0 ? void 0 : attributes["w:type"]) !== null && _attributes$wType !== void 0 ? _attributes$wType : "paragraph") === "paragraph" && (attributes === null || attributes === void 0 ? void 0 : attributes["w:default"]) !== void 0 && ![
+	/** The name of a formatted `w:style`, in lower case, as Word compares the names of its built-in styles */
+	var styleNameOf = (style) => {
+		var _flat$find2;
+		const name = (_flat$find2 = [style["w:style"]].flat().find((part) => nameOf$1(part) === "w:name")) === null || _flat$find2 === void 0 || (_flat$find2 = _flat$find2["w:name"]) === null || _flat$find2 === void 0 || (_flat$find2 = _flat$find2._attr) === null || _flat$find2 === void 0 ? void 0 : _flat$find2["w:val"];
+		return name === void 0 ? void 0 : String(name).toLowerCase();
+	};
+	/** Whether a formatted element is a paragraph style, as a `w:style` is when its type isn't given */
+	var isParagraphStyle = (child) => {
+		var _attributesOf$wType, _attributesOf2;
+		return nameOf$1(child) === "w:style" && ((_attributesOf$wType = (_attributesOf2 = attributesOf(child)) === null || _attributesOf2 === void 0 ? void 0 : _attributesOf2["w:type"]) !== null && _attributesOf$wType !== void 0 ? _attributesOf$wType : "paragraph") === "paragraph";
+	};
+	/** Whether a formatted element is a paragraph style marked as the default for paragraphs */
+	var isDefaultParagraphStyle = (child) => {
+		const attributes = isParagraphStyle(child) ? attributesOf(child) : void 0;
+		return (attributes === null || attributes === void 0 ? void 0 : attributes["w:default"]) !== void 0 && ![
 			"0",
 			"false",
 			"off"
@@ -23557,9 +23597,10 @@ MAX: 9026 };
 		/**
 		* Writes the styles in the schema's order: the document defaults, the latent styles, then the styles. A style id
 		* can only be used once, so a style replaces an earlier one with its id. That way external styles replace docx's
-		* default styles, and paragraph and character styles replace the default and imported ones. Of several document
-		* defaults, or several latent styles, the last is kept. Normal is marked as the default paragraph style when no
-		* style is.
+		* default styles, and paragraph and character styles replace the default and imported ones. docx's TOC 1 to TOC 9
+		* styles are also replaced by a paragraph style with their name, such as a template's in another language, with an id
+		* of its own. Of several document defaults, or several latent styles, the last is kept. Normal is marked as the
+		* default paragraph style when no style is.
 		*/
 		prepForXml(context) {
 			const xml = super.prepForXml(context);
@@ -23567,15 +23608,14 @@ MAX: 9026 };
 			if (!Array.isArray(children)) return xml;
 			const named = (name) => children.filter((child) => nameOf$1(child) === name);
 			const ids = children.map((child) => nameOf$1(child) === "w:style" ? styleIdOf(child) : void 0);
-			const kept = children.filter((child, index) => ![
+			const unique = children.filter((child, index) => ![
 				"_attr",
 				"w:docDefaults",
 				"w:latentStyles"
 			].includes(nameOf$1(child)) && (ids[index] === void 0 || ids.lastIndexOf(ids[index]) === index));
-			const styles = kept.some((child) => nameOf$1(child) === "w:style" && isDefaultParagraphStyle(child)) ? kept : kept.map((child) => {
-				var _attributesOf$wType, _attributesOf2;
-				return nameOf$1(child) === "w:style" && styleIdOf(child) === "Normal" && ((_attributesOf$wType = (_attributesOf2 = attributesOf(child)) === null || _attributesOf2 === void 0 ? void 0 : _attributesOf2["w:type"]) !== null && _attributesOf$wType !== void 0 ? _attributesOf$wType : "paragraph") === "paragraph" ? markedAsDefault(child) : child;
-			});
+			const otherNames = new Set(unique.filter((child) => isParagraphStyle(child) && !isDefaultTableOfContentsStyle(child)).map(styleNameOf));
+			const kept = unique.filter((child) => !isDefaultTableOfContentsStyle(child) || !otherNames.has(styleNameOf(child)));
+			const styles = kept.some(isDefaultParagraphStyle) ? kept : kept.map((child) => isParagraphStyle(child) && styleIdOf(child) === "Normal" ? markedAsDefault(child) : child);
 			return { "w:styles": [
 				...named("_attr"),
 				...named("w:docDefaults").slice(-1),
@@ -23765,20 +23805,43 @@ MAX: 9026 };
 	//#endregion
 	//#region src/file/styles/factory.ts
 	/**
-	* docx's default styles, each under the option of `styles.default` that configures it, and Normal.
+	* How much more Word indents each level of a table of contents than the level above, in twips: the size of the Normal
+	* style's font. docx's Normal has no formatting, so that is the document's default size, or 10 points without one.
+	*/
+	var tableOfContentsLevelIndentOf = (options) => {
+		var _options$document;
+		const size = (_options$document = options.document) === null || _options$document === void 0 || (_options$document = _options$document.run) === null || _options$document === void 0 ? void 0 : _options$document.size;
+		if (size === void 0) return 200;
+		return Math.round(typeof size === "number" ? size * 10 : universalMeasureToTwips(size));
+	};
+	/** The styles of the entries at each level of a table of contents, as Word adds them */
+	var createTableOfContentsStyles = (levelIndent) => ({
+		tableOfContents1: new TableOfContentsStyle(1, levelIndent),
+		tableOfContents2: new TableOfContentsStyle(2, levelIndent),
+		tableOfContents3: new TableOfContentsStyle(3, levelIndent),
+		tableOfContents4: new TableOfContentsStyle(4, levelIndent),
+		tableOfContents5: new TableOfContentsStyle(5, levelIndent),
+		tableOfContents6: new TableOfContentsStyle(6, levelIndent),
+		tableOfContents7: new TableOfContentsStyle(7, levelIndent),
+		tableOfContents8: new TableOfContentsStyle(8, levelIndent),
+		tableOfContents9: new TableOfContentsStyle(9, levelIndent)
+	});
+	/**
+	* docx's default styles, each under the option of `styles.default` that configures it, and Normal, the default table
+	* style and the TOC 1 to TOC 9 styles.
 	*
 	* @internal
 	*/
 	var createDefaultStyles = (options = {}) => {
-		var _options$document;
-		return {
+		var _options$document2;
+		return _objectSpread2(_objectSpread2({
 			normal: new StyleForParagraph({
 				id: "Normal",
 				name: "Normal",
 				quickFormat: true
 			}),
 			normalTable: new NormalTableStyle(),
-			document: new DocumentDefaults((_options$document = options.document) !== null && _options$document !== void 0 ? _options$document : {}),
+			document: new DocumentDefaults((_options$document2 = options.document) !== null && _options$document2 !== void 0 ? _options$document2 : {}),
 			title: new TitleStyle(_objectSpread2({ run: { size: 56 } }, options.title)),
 			heading1: new Heading1Style(_objectSpread2({ run: {
 				color: "2E74B5",
@@ -23801,7 +23864,8 @@ MAX: 9026 };
 			strong: new StrongStyle(_objectSpread2({ run: { bold: true } }, options.strong)),
 			listParagraph: new ListParagraph(options.listParagraph || {}),
 			caption: new CaptionStyle(options.caption || {}),
-			bibliography: new BibliographyStyle(options.bibliography || {}),
+			bibliography: new BibliographyStyle(options.bibliography || {})
+		}, createTableOfContentsStyles(tableOfContentsLevelIndentOf(options))), {}, {
 			hyperlink: new HyperlinkStyle(options.hyperlink || {}),
 			footnoteReference: new FootnoteReferenceStyle(options.footnoteReference || {}),
 			footnoteText: new FootnoteText(options.footnoteText || {}),
@@ -23810,7 +23874,7 @@ MAX: 9026 };
 			endnoteText: new EndnoteText(options.endnoteText || {}),
 			endnoteTextChar: new EndnoteTextChar(options.endnoteTextChar || {}),
 			lineNumber: new LineNumberStyle(options.lineNumber || {})
-		};
+		});
 	};
 	/**
 	* Factory for creating default document styles.
@@ -37558,7 +37622,32 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 		const name = (_style$elements = style.elements) === null || _style$elements === void 0 || (_style$elements = _style$elements.find((element) => element.name === "w:name")) === null || _style$elements === void 0 || (_style$elements = _style$elements.attributes) === null || _style$elements === void 0 ? void 0 : _style$elements["w:val"];
 		return name === void 0 ? void 0 : String(name).toLowerCase();
 	};
-	var formatDefaultStyles = (context) => new Map(Object.values(createDefaultStyles()).map((style) => toJson(stringifyXmlable(formatter.format(style, context))).elements[0]).filter((style) => style.name === "w:style").map((style) => [idOf(style), style]));
+	var childOf = (element, name) => {
+		var _element$elements;
+		return element === null || element === void 0 || (_element$elements = element.elements) === null || _element$elements === void 0 ? void 0 : _element$elements.find((child) => child.name === name);
+	};
+	/** The size of the font that run properties give, in half points, as Word writes it */
+	var sizeIn = (runProperties) => {
+		var _childOf;
+		const size = Number((_childOf = childOf(runProperties, "w:sz")) === null || _childOf === void 0 || (_childOf = _childOf.attributes) === null || _childOf === void 0 ? void 0 : _childOf["w:val"]);
+		return Number.isNaN(size) ? void 0 : size;
+	};
+	/**
+	* The size of the font of a template's Normal style, in half points: its own, or else the document's default. Word
+	* indents each level of a table of contents by it, so docx's TOC styles are indented by it too. Normal is the style that
+	* the styles added are based on: the template's with its id, or else with its name.
+	*/
+	var normalSizeOf = (elements) => {
+		var _styles$find, _sizeIn;
+		const styles = elements.filter((element) => element.name === "w:style");
+		const normal = (_styles$find = styles.find((style) => idOf(style) === "Normal")) !== null && _styles$find !== void 0 ? _styles$find : styles.find((style) => {
+			var _style$attributes2;
+			return ((_style$attributes2 = style.attributes) === null || _style$attributes2 === void 0 ? void 0 : _style$attributes2["w:type"]) === "paragraph" && nameOf(style) === "normal";
+		});
+		const defaults = elements.find((element) => element.name === "w:docDefaults");
+		return (_sizeIn = sizeIn(childOf(normal, "w:rPr"))) !== null && _sizeIn !== void 0 ? _sizeIn : sizeIn(childOf(childOf(defaults, "w:rPrDefault"), "w:rPr"));
+	};
+	var formatDefaultStyles = (context, normalSize) => new Map(Object.values(createDefaultStyles({ document: { run: { size: normalSize } } })).map((style) => toJson(stringifyXmlable(formatter.format(style, context))).elements[0]).filter((style) => style.name === "w:style").map((style) => [idOf(style), style]));
 	/**
 	* Creates the writer of the styles that patches use.
 	*
@@ -37572,12 +37661,13 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	*/
 	var patchStyles = (parts, createContext) => {
 		var _parts$get;
-		const templateStyles = getFirstLevelElements((_parts$get = parts.get(STYLES_PATH)) !== null && _parts$get !== void 0 ? _parts$get : {}, "w:styles").filter((element) => element.name === "w:style");
+		const templateElements = getFirstLevelElements((_parts$get = parts.get(STYLES_PATH)) !== null && _parts$get !== void 0 ? _parts$get : {}, "w:styles");
+		const templateStyles = templateElements.filter((element) => element.name === "w:style");
 		const templateIds = new Set(templateStyles.map(idOf));
 		let defaultStyles;
 		const defaultStyleOf = (id) => {
 			var _defaultStyles;
-			(_defaultStyles = defaultStyles) !== null && _defaultStyles !== void 0 || (defaultStyles = formatDefaultStyles(createContext(STYLES_PATH)));
+			(_defaultStyles = defaultStyles) !== null && _defaultStyles !== void 0 || (defaultStyles = formatDefaultStyles(createContext(STYLES_PATH), normalSizeOf(templateElements)));
 			return defaultStyles.get(id);
 		};
 		const missingIds = /* @__PURE__ */ new Set();
@@ -37586,8 +37676,8 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 			const style = templateIds.has(id) ? void 0 : defaultStyleOf(id);
 			if (style === void 0) return id;
 			const sameStyle = templateStyles.find((templateStyle) => {
-				var _templateStyle$attrib, _style$attributes2;
-				return ((_templateStyle$attrib = templateStyle.attributes) === null || _templateStyle$attrib === void 0 ? void 0 : _templateStyle$attrib["w:type"]) === ((_style$attributes2 = style.attributes) === null || _style$attributes2 === void 0 ? void 0 : _style$attributes2["w:type"]) && nameOf(templateStyle) === nameOf(style);
+				var _templateStyle$attrib, _style$attributes3;
+				return ((_templateStyle$attrib = templateStyle.attributes) === null || _templateStyle$attrib === void 0 ? void 0 : _templateStyle$attrib["w:type"]) === ((_style$attributes3 = style.attributes) === null || _style$attributes3 === void 0 ? void 0 : _style$attributes3["w:type"]) && nameOf(templateStyle) === nameOf(style);
 			});
 			if (sameStyle !== void 0) return idOf(sameStyle);
 			missingIds.add(id);

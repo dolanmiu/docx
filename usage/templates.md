@@ -439,7 +439,7 @@ const doc = await patchDocument({
 fs.writeFileSync("My Document.docx", doc);
 ```
 
-A heading has the look of the template's heading style. Word only saves the styles that a document uses, so a template may not have it yet, and Word would show the heading as body text. A heading style that the template doesn't have, or another of docx's styles such as `ListParagraph` or `Hyperlink`, is added to it as a `Document` writes it. To give the headings a look of your own, change the heading style in the template in Word, which saves it with the template.
+A heading has the look of the template's heading style. Word only saves the styles that a document uses, so a template may not have it yet, and Word would show the heading as body text. A heading style that the template doesn't have, or another of docx's styles such as `ListParagraph` or `Hyperlink`, is added to it as a `Document` writes it. The `TOC1` to `TOC9` styles of the entries of a table of contents indent each level by the size of the template's Normal font, as Word's do. To give the headings a look of your own, change the heading style in the template in Word, which saves it with the template.
 
 A template saved by Word in another language has its styles under other ids, such as `berschrift1` for Heading 1 in German. A heading is given the template's style of the same name, such as `heading 1`, so it has the template's look there too.
 
