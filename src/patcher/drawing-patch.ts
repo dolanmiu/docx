@@ -78,8 +78,8 @@ export type TemplatePackage = {
 
 /**
  * A patch for a drawing in a template whose alt text holds the placeholder, such as `{{sales}}`, rather than for the
- * placeholder in text. It changes the drawing, and the parts it refers to, in place. `ChartDataPatch` from `docx/charts`
- * is one: it replaces the data of a chart made in Word.
+ * placeholder in text. It changes the drawing, and the parts it refers to, in place. {@link ImagePatch} is one: it
+ * replaces a picture's image. So is `ChartDataPatch` from `docx/charts`, which replaces the data of a chart made in Word.
  *
  * A drawing's alt text is its description (`descr`) or title. A drawing patch leaves the placeholder in text as it is.
  *
@@ -91,6 +91,9 @@ export abstract class DrawingPatch {
     /**
      * Changes a drawing whose alt text holds the placeholder, and the parts it refers to. `patchDocument` calls it for
      * each such drawing before it patches text, so it only sees the template's own drawings.
+     *
+     * A relationship the drawing referred to that nothing in its part refers to once it is patched, such as to a
+     * picture's old image, is then removed, and so is the part it referred to, unless something else refers to it.
      *
      * @throws If the drawing can't be patched, which stops the document being patched
      */
@@ -195,22 +198,63 @@ const relationshipsIn = (relationships: Element): Element[] => {
     return getFirstLevelElements(relationships, "Relationships");
 };
 
+// The relationships namespace, whose attributes, such as a picture's r:embed, refer to relationships by their ids
+const RELATIONSHIPS_NAMESPACE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+
 /**
- * The template's package, as a patch reads and changes it.
+ * The prefixes an element and its descendants give the relationships namespace, with "r", which Word uses.
+ */
+const relationshipPrefixesIn = (element: Element): ReadonlySet<string> =>
+    new Set([
+        "r",
+        ...Object.entries(element.attributes ?? {}).flatMap(([name, value]) =>
+            name.startsWith("xmlns:") && value === RELATIONSHIPS_NAMESPACE ? [name.slice("xmlns:".length)] : [],
+        ),
+        ...(element.elements ?? []).flatMap((child) => [...relationshipPrefixesIn(child)]),
+    ]);
+
+/**
+ * The ids of the relationships an element and its descendants refer to, such as a picture's `r:embed`.
+ *
+ * @param prefixes - The prefixes of the relationships namespace in the element's part
+ */
+const relationshipIdsIn = (element: Element, prefixes: ReadonlySet<string>): ReadonlySet<string> =>
+    new Set([
+        ...Object.entries(element.attributes ?? {}).flatMap(([name, value]) =>
+            name.includes(":") && prefixes.has(name.slice(0, name.indexOf(":"))) ? [String(value)] : [],
+        ),
+        ...(element.elements ?? []).flatMap((child) => [...relationshipIdsIn(child, prefixes)]),
+    ]);
+
+/**
+ * The template's parts and the relationships between them, as drawing patches read and change them.
+ */
+type TemplateContents = {
+    /** The relationship of a part with an id */
+    readonly findRelationship: (from: string, id: string) => Element | undefined;
+    /** The path of the part inside the package that a relationship refers to, if the package has it */
+    readonly pathOf: (from: string, relationship: Element) => string | undefined;
+    /**
+     * Removes the part a relationship referred to, unless something else refers to it. The package's content types, a
+     * relationships part and the part the relationship is from are never removed
+     */
+    readonly removeIfUnreferenced: (from: string, path: string | undefined) => void;
+    /** Removes the relationships of a part with the ids, and the parts they referred to, unless something else refers to them */
+    readonly removeRelationships: (from: string, ids: ReadonlySet<string>) => void;
+};
+
+/**
+ * Reads and changes the template's parts and the relationships between them.
  *
  * @param parts - The template's XML parts, parsed, by their paths, which are changed in place
  * @param binaryParts - The template's other parts, by their paths
- * @param context - The context to format XML with
  */
-const createTemplatePackage = (
+const contentsOf = (
     // eslint-disable-next-line functional/prefer-readonly-type
     parts: Map<string, Element>,
     // eslint-disable-next-line functional/prefer-readonly-type
     binaryParts: Map<string, Uint8Array>,
-    file: File,
-    context: IContext,
-): TemplatePackage => {
-    const formatter = new Formatter();
+): TemplateContents => {
     const has = (path: string): boolean => parts.has(path) || binaryParts.has(path);
 
     // The path the package has a part at: as given, with its escapes decoded, or in other capitals, since part names
@@ -242,7 +286,6 @@ const createTemplatePackage = (
               );
     };
 
-    // The path of the part inside the package that a relationship refers to, if the package has it
     const pathOf = (from: string, relationship: Element): string | undefined => {
         const target = relationship.attributes?.Target;
         return relationship.attributes?.TargetMode === "External" || target === undefined
@@ -259,7 +302,11 @@ const createTemplatePackage = (
                 ),
         );
 
-    const removePart = (path: string): void => {
+    const removeIfUnreferenced = (from: string, path: string | undefined): void => {
+        if (path === undefined || path === from || path === CONTENT_TYPES || path.endsWith(".rels") || isReferenced(path)) {
+            return;
+        }
+        const relationships = parts.get(relationshipsPathOf(path));
         /* eslint-disable functional/immutable-data */
         parts.delete(path);
         binaryParts.delete(path);
@@ -269,7 +316,45 @@ const createTemplatePackage = (
         if (contentTypes !== undefined) {
             removeContentTypeOverride(contentTypes, `/${path}`);
         }
+        // The parts only it referred to, such as a chart's workbook
+        for (const relationship of relationships === undefined ? [] : getFirstLevelElements(relationships, "Relationships")) {
+            removeIfUnreferenced(path, pathOf(path, relationship));
+        }
     };
+
+    const removeRelationships = (from: string, ids: ReadonlySet<string>): void => {
+        const relationships = parts.get(relationshipsPathOf(from))?.elements?.find((element) => element.name === "Relationships");
+        const removed = (relationships?.elements ?? []).filter(
+            (relationship) => relationship.name === "Relationship" && ids.has(String(relationship.attributes?.Id)),
+        );
+        if (relationships === undefined || removed.length === 0) {
+            return;
+        }
+        // eslint-disable-next-line functional/immutable-data
+        relationships.elements = relationships.elements!.filter((element) => !removed.includes(element));
+        for (const relationship of removed) {
+            removeIfUnreferenced(from, pathOf(from, relationship));
+        }
+    };
+
+    return { findRelationship, pathOf, removeIfUnreferenced, removeRelationships };
+};
+
+/**
+ * The template's package, as a patch reads and changes it.
+ *
+ * @param parts - The template's XML parts, parsed, by their paths, which are changed in place
+ * @param contents - Reads and changes the template's parts and the relationships between them
+ * @param context - The context to format XML with
+ */
+const createTemplatePackage = (
+    // eslint-disable-next-line functional/prefer-readonly-type
+    parts: Map<string, Element>,
+    { findRelationship, pathOf, removeIfUnreferenced }: TemplateContents,
+    file: File,
+    context: IContext,
+): TemplatePackage => {
+    const formatter = new Formatter();
 
     return {
         getRelatedPart: (from, relationshipId) => {
@@ -305,17 +390,8 @@ const createTemplatePackage = (
             const attributes = Object.fromEntries(Object.entries(relationship.attributes!).filter(([name]) => name !== "TargetMode"));
             // eslint-disable-next-line functional/immutable-data
             relationship.attributes = { ...attributes, Type: relationshipType, Target: target };
-            // The part it referred to, such as a workbook with the template's own data, unless something else refers to
-            // it. The package's content types, a relationships part and the part itself are never removed
-            if (
-                previous !== undefined &&
-                previous !== from.path &&
-                previous !== CONTENT_TYPES &&
-                !previous.endsWith(".rels") &&
-                !isReferenced(previous)
-            ) {
-                removePart(previous);
-            }
+            // The part it referred to, such as a workbook with the template's own data
+            removeIfUnreferenced(from.path, previous);
             return String(relationship.attributes.Id);
         },
 
@@ -372,7 +448,13 @@ export const patchDrawings = (
             }),
         );
 
+    const contents = contentsOf(parts, binaryParts);
     for (const { drawing, patch } of found) {
-        patch.patch(drawing, createTemplatePackage(parts, binaryParts, file, createContext(drawing.part.path)));
+        const referenced = relationshipIdsIn(drawing.element, relationshipPrefixesIn(drawing.part.xml));
+        patch.patch(drawing, createTemplatePackage(parts, contents, file, createContext(drawing.part.path)));
+        // The relationships the drawing no longer refers to, such as to a picture's old image, unless something else in
+        // its part does, such as another picture of the same image
+        const used = relationshipIdsIn(drawing.part.xml, relationshipPrefixesIn(drawing.part.xml));
+        contents.removeRelationships(drawing.part.path, new Set([...referenced].filter((id) => !used.has(id))));
     }
 };

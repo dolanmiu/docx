@@ -54,8 +54,9 @@ export type PackagePartOptions<Relationship extends PackagePartRelationshipType 
 // A folder, name or extension is one part of a path, without a separator or dots
 const PATH_PART = /^[\w-]+$/;
 
-// The folders under word/ that docx writes parts of its own in
-const RESERVED_FOLDERS = new Set(["_rels", "fonts", "media", "theme"]);
+// The folders under word/ that docx writes parts of its own in. Its images are in media/ too, but are named by a hash of
+// their data, which a part's numbered name never is, so a part can be an image there, as Word's are
+const RESERVED_FOLDERS = new Set(["_rels", "fonts", "theme"]);
 
 /**
  * A part that something in a document adds to the package when it is written, such as a chart, with the relationship to
