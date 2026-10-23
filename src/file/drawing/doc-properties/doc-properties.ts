@@ -30,8 +30,8 @@ import { DrawingLink, type DrawingLinkOptions, createDecorativeExtensionList } f
  * Options for configuring document properties of a drawing: its name and alternative text, written in `wp:docPr`.
  */
 export type DocPropertiesOptions = {
-    /** Name of the drawing element (used for identification) */
-    readonly name: string;
+    /** The drawing's name, which Word shows in its Selection Pane. Default is an empty name */
+    readonly name?: string;
     /** Description/alt text for accessibility */
     readonly description?: string;
     /** Title of the drawing element */
@@ -67,7 +67,8 @@ export class DocProperties extends XmlComponent {
     private readonly decorative?: boolean;
 
     public constructor(
-        { name, description, title, id }: DocPropertiesOptions = { name: "" },
+        // The name is required in the XML, so a drawing without one is given an empty name
+        { name = "", description, title, id }: DocPropertiesOptions = {},
         { link, decorative }: DrawingLinkOptions = {},
     ) {
         super("wp:docPr");

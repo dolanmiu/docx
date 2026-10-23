@@ -1325,6 +1325,12 @@ describe("ImageRun", () => {
             ]);
         });
 
+        it("should name an image whose alt text is only a description, as the XML requires a name", () => {
+            const { tree } = format(new ImageRun({ ...image, altText: { description: "A puppy", title: "Rex" } }));
+
+            expect(docProperties(tree, "wp:inline")).to.deep.equal({ _attr: { id: 1, name: "", descr: "A puppy", title: "Rex" } });
+        });
+
         it("should prefer its own link to a hyperlink it is in", () => {
             const { tree, addRelationship } = format(new ImageRun({ ...image, link: "https://example.com" }), [
                 new ConcreteHyperlink([], "outer"),
