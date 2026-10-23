@@ -101,6 +101,12 @@ const templateWith = (files: Readonly<Record<string, string | Uint8Array | undef
     return zip.generateAsync({ type: "nodebuffer" });
 };
 
+// The elements with a name, in an element and its descendants
+const findElements = (element: Element, name: string): readonly Element[] => [
+    ...(element.name === name ? [element] : []),
+    ...(element.elements ?? []).flatMap((child) => findElements(child, name)),
+];
+
 type Call = {
     readonly drawing: TemplateDrawing;
     readonly template: TemplatePackage;
@@ -949,6 +955,150 @@ describe("drawing-patch", () => {
                     );
                     expect(await read(zip, "word/charts/_rels/chart1.xml.rels")).to.contain('Target="../things/thing1.xml"');
                 });
+            });
+        });
+
+        describe("relationships the drawing no longer refers to", () => {
+            // A patch that points the drawing's chart to a new relationship to a new part
+            const repoint = (): RecordingPatch =>
+                new RecordingPatch(({ element, part }, template) => {
+                    const id = template.replaceRelatedPart(part, undefined, createWorkbook());
+                    const [chart] = findElements(element, "c:chart");
+                    // eslint-disable-next-line functional/immutable-data
+                    chart.attributes = { ...chart.attributes, "r:id": id };
+                });
+
+            it("should remove the relationship, and the part it referred to, with the parts only that part referred to", async () => {
+                const zip = await patch(await templateWith(), { chart: repoint() });
+
+                const relationships = await read(zip, "word/_rels/document.xml.rels");
+                expect(relationships).to.not.contain('Id="rId5"');
+                expect(relationships).to.contain(relationship("rId6", PACKAGE_RELATIONSHIP, "embeddings/Microsoft_Excel_Worksheet2.xlsx"));
+                expect(zip.file("word/charts/chart1.xml")).to.equal(null);
+                expect(zip.file("word/charts/_rels/chart1.xml.rels")).to.equal(null);
+                expect(zip.file("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")).to.equal(null);
+
+                const contentTypes = await read(zip, "[Content_Types].xml");
+                expect(contentTypes).to.not.contain("/word/charts/chart1.xml");
+                expect(contentTypes).to.not.contain("/word/embeddings/Microsoft_Excel_Worksheet1.xlsx");
+            });
+
+            it("should keep the relationship when something else in the part refers to it", async () => {
+                const zip = await patch(
+                    await templateWith({ "word/document.xml": documentOf(chartDrawing({ descr: "{{chart}}" }) + chartDrawing({})) }),
+                    { chart: repoint() },
+                );
+
+                expect(await read(zip, "word/_rels/document.xml.rels")).to.contain(
+                    relationship("rId5", CHART_RELATIONSHIP, "charts/chart1.xml"),
+                );
+                expect(zip.file("word/charts/chart1.xml")).to.not.equal(null);
+                expect(zip.file("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")).to.not.equal(null);
+            });
+
+            it("should keep the part when another part refers to it", async () => {
+                const zip = await patch(
+                    await templateWith({
+                        "word/header1.xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:hdr ${NAMESPACES}>${chartDrawing({})}</w:hdr>`,
+                        "word/_rels/header1.xml.rels": relationshipsOf(relationship("rId5", CHART_RELATIONSHIP, "charts/chart1.xml")),
+                    }),
+                    { chart: repoint() },
+                );
+
+                expect(await read(zip, "word/_rels/document.xml.rels")).to.not.contain('Id="rId5"');
+                expect(zip.file("word/charts/chart1.xml")).to.not.equal(null);
+            });
+
+            it("should keep the relationships the drawing never referred to, such as those to the styles", async () => {
+                const styles = relationship(
+                    "rId1",
+                    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles",
+                    "styles.xml",
+                );
+                const zip = await patch(
+                    await templateWith({
+                        "word/_rels/document.xml.rels": relationshipsOf(
+                            styles,
+                            relationship("rId5", CHART_RELATIONSHIP, "charts/chart1.xml"),
+                        ),
+                    }),
+                    { chart: repoint() },
+                );
+
+                expect(await read(zip, "word/_rels/document.xml.rels")).to.contain(styles);
+            });
+
+            it("should keep every relationship when the patch changes nothing the drawing refers to", async () => {
+                const zip = await patch(await templateWith(), { chart: new RecordingPatch() });
+
+                expect(await read(zip, "word/_rels/document.xml.rels")).to.contain(
+                    relationship("rId5", CHART_RELATIONSHIP, "charts/chart1.xml"),
+                );
+                expect(zip.file("word/charts/chart1.xml")).to.not.equal(null);
+            });
+
+            it("should remove a relationship to outside the package that the drawing no longer refers to", async () => {
+                const link = relationship(
+                    "rId7",
+                    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+                    "https://example.com",
+                    "External",
+                );
+                const zip = await patch(
+                    await templateWith({
+                        "word/document.xml": documentOf(
+                            chartDrawing({ descr: "{{chart}}" }).replace(
+                                'descr="{{chart}}"/>',
+                                'descr="{{chart}}"><a:hlinkClick r:id="rId7"/></wp:docPr>',
+                            ),
+                        ),
+                        "word/_rels/document.xml.rels": relationshipsOf(
+                            relationship("rId5", CHART_RELATIONSHIP, "charts/chart1.xml"),
+                            link,
+                        ),
+                    }),
+                    {
+                        chart: new RecordingPatch(({ properties }) => {
+                            properties.elements = [];
+                        }),
+                    },
+                );
+
+                const relationships = await read(zip, "word/_rels/document.xml.rels");
+                expect(relationships).to.not.contain('Id="rId7"');
+                expect(relationships).to.contain('Id="rId5"');
+            });
+
+            it("should find the relationships by any prefix the part gives their namespace", async () => {
+                const rel = 'xmlns:rel="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
+                const zip = await patch(
+                    await templateWith({
+                        "word/document.xml": documentOf(
+                            `${chartDrawing({ descr: "{{chart}}" }).replace('<c:chart r:id="rId5"/>', `<c:chart ${rel} rel:id="rId5"/>`)}<w:p><w:hyperlink ${rel} rel:id="rId8"/></w:p>`,
+                        ),
+                        "word/_rels/document.xml.rels": relationshipsOf(
+                            relationship("rId5", CHART_RELATIONSHIP, "charts/chart1.xml"),
+                            relationship(
+                                "rId8",
+                                "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+                                "https://example.com",
+                                "External",
+                            ),
+                        ),
+                    }),
+                    {
+                        chart: new RecordingPatch(({ element }) => {
+                            const [chart] = findElements(element, "c:chart");
+                            // eslint-disable-next-line functional/immutable-data
+                            chart.attributes = { ...chart.attributes, "rel:id": "rId8" };
+                        }),
+                    },
+                );
+
+                const relationships = await read(zip, "word/_rels/document.xml.rels");
+                expect(relationships).to.not.contain('Id="rId5"');
+                expect(relationships).to.contain('Id="rId8"');
+                expect(zip.file("word/charts/chart1.xml")).to.equal(null);
             });
         });
 

@@ -230,6 +230,114 @@ const doc = await patchDocument({
 fs.writeFileSync("My Document.docx", doc);
 ```
 
+### Replacing a Picture
+
+To give a picture the template already has a new image, such as a placeholder photo or logo, put the placeholder in the picture's alt text rather than in the text, and patch it with an `ImagePatch`. The picture keeps its size, position, text wrapping, border, shape and effects, so it can be laid out and styled in Word:
+
+1. In Word, insert a placeholder picture, and size, place and style it as the document needs.
+2. Right-click the picture, choose **Edit Alt Text**, and type a placeholder as its description, such as `{{photo}}`.
+3. Patch the template with an `ImagePatch` for the placeholder's key, giving the new image as you would to an `ImageRun`:
+
+```ts live
+import * as fs from "fs";
+import { Document, ImagePatch, ImageRun, Packer, Paragraph, patchDocument } from "docx";
+
+// The template, made here as it would be in Word: a picture with a border, with {{photo}} as its alt text's description
+const template = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ImageRun({
+                            type: "gif",
+                            data: fs.readFileSync("./demo/assets/images/pizza.gif"),
+                            transformation: { width: 200, height: 200 },
+                            outline: { type: "solidFill", solidFillType: "rgb", value: "1F4E79", width: 38100 },
+                            altText: { name: "Photo", description: "{{photo}}" },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
+
+const doc = await patchDocument({
+    outputType: "nodebuffer",
+    data: await Packer.toBuffer(template),
+    patches: {
+        photo: new ImagePatch({
+            type: "png",
+            data: fs.readFileSync("./demo/assets/images/dog.png"),
+            altText: { description: "A puppy" },
+        }),
+    },
+});
+
+fs.writeFileSync("My Document.docx", doc);
+```
+
+An `ImagePatch` only looks in pictures' alt text, so `{{photo}}` typed in the document's text stays as it is. Every picture whose alt text holds the placeholder gets the new image, wherever it is: in the document, a table, a header, a footer or a footnote. `patchDetector` lists the placeholders in pictures' alt text along with those in text.
+
+| Property       | Type                                              | Notes    | Description                                                                                                                 |
+| -------------- | ------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------- |
+| type           | `"png"`, `"jpg"`, `"gif"`, `"bmp"` or `"svg"`     | Required | The new image's format, as for an [`ImageRun`](usage/images.md)                                                             |
+| data           | `Buffer`, `Uint8Array`, `ArrayBuffer` or `string` | Required | The new image, or a base64 data URI of it                                                                                   |
+| fallback       | `{ type, data }`                                  | Optional | For an SVG image, the PNG, JPEG, GIF or BMP image that applications that can't show SVG show instead. Required for `"svg"`  |
+| transformation | `{ width: number; height: number }`               | Optional | The picture's new size, in pixels. Default is the template picture's size                                                   |
+| altText        | `{ description?: string; title?: string }`        | Optional | The picture's alt text. Default is the template's, with the placeholder taken out. An empty description or title removes it |
+
+The new image fills the picture, so it is stretched to the template picture's proportions. Give a new image with other proportions a `transformation` that keeps its own:
+
+```ts live
+import * as fs from "fs";
+import { Document, ImagePatch, ImageRun, Packer, Paragraph, patchDocument } from "docx";
+
+// A square placeholder picture
+const template = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ImageRun({
+                            type: "gif",
+                            data: fs.readFileSync("./demo/assets/images/pizza.gif"),
+                            transformation: { width: 200, height: 200 },
+                            altText: { name: "Photo", description: "{{photo}}" },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
+
+const doc = await patchDocument({
+    outputType: "nodebuffer",
+    data: await Packer.toBuffer(template),
+    patches: {
+        // The cat is 625 by 417 pixels: 300 by 200 keeps its proportions
+        photo: new ImagePatch({
+            type: "jpg",
+            data: fs.readFileSync("./demo/assets/images/cat.jpg"),
+            transformation: { width: 300, height: 200 },
+        }),
+    },
+});
+
+fs.writeFileSync("My Document.docx", doc);
+```
+
+What changes, and what stays:
+
+- **The image.** The new image is added to the document, and the template's is removed, unless another picture shows it. A picture linked to a file gets the new image embedded.
+- **The look.** The picture's position, text wrapping, rotation, border, shape and effects, such as its transparency, are the template's. Word's crop of the template's image is removed, and so are Word's artistic effects, which keep a copy of the template's image.
+- **The alt text.** The placeholder is taken out of the description and title, unless `altText` is given. Describe the new image in `altText`, so screen readers can read it.
+
+`patchDocument` throws an error that names the placeholder for a drawing that isn't a picture, such as a chart, a shape, a group of drawings or a drawing canvas. Ungroup a picture in Word to patch it. To give a chart new data, use `ChartDataPatch` (see [Charts in Templates](usage/chart-templates.md)).
+
 ### Hyperlinks
 
 ```ts live

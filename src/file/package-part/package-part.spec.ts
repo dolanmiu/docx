@@ -5,7 +5,7 @@ import { Packer } from "@export/packer/packer";
 import { File } from "@file/file";
 import { FootnoteReferenceRun } from "@file/footnotes";
 import { Footer, Header } from "@file/header";
-import { Paragraph, Run, TextRun } from "@file/paragraph";
+import { ImageRun, Paragraph, Run, TextRun } from "@file/paragraph";
 import { BuilderElement, type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 
 import { PackagePart, type PackagePartOptions, type PackagePartRelationshipType, PackageParts } from "./package-part";
@@ -69,7 +69,7 @@ const count = (text: string | undefined, search: string): number => (text ?? "")
 describe("PackagePart", () => {
     describe("#constructor()", () => {
         it("should throw for a folder docx writes parts of its own in, or that isn't a single folder name", () => {
-            for (const folder of ["media", "theme", "fonts", "_rels", "", "charts/more", "../charts"]) {
+            for (const folder of ["theme", "fonts", "_rels", "", "charts/more", "../charts"]) {
                 expect(() => new PackagePart({ ...createChart().options, folder })).to.throw(
                     `Invalid package part folder "${folder}". Expected a folder name docx doesn't use, such as "charts"`,
                 );
@@ -107,6 +107,39 @@ describe("PackagePart", () => {
             expect(await read(zip, "word/document.xml")).to.contain(`<c:chart>${chart.relationshipId}</c:chart>`);
             // A part whose XML refers to nothing has no relationships part
             expect(zip.file("word/charts/_rels/chart1.xml.rels")).to.equal(null);
+        });
+
+        it("should write an image part in media/, beside docx's own images, which are named by a hash of their data", async () => {
+            const image = new PackagePart({
+                folder: "media",
+                name: "image",
+                extension: "png",
+                contentType: "image/png",
+                relationshipType: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+                content: new Uint8Array([1]),
+            });
+            const zip = await pack(
+                new File({
+                    sections: [
+                        {
+                            children: [
+                                paragraphWith(image),
+                                new Paragraph({
+                                    children: [
+                                        new ImageRun({ type: "png", data: new Uint8Array([2]), transformation: { width: 1, height: 1 } }),
+                                    ],
+                                }),
+                            ],
+                        },
+                    ],
+                }),
+            );
+
+            expect(await zip.file("word/media/image1.png")?.async("uint8array")).to.deep.equal(new Uint8Array([1]));
+            expect(Object.keys(zip.files).filter((path) => /^word\/media\/[0-9a-f]{40}\.png$/.test(path))).to.have.length(1);
+            expect(await read(zip, "[Content_Types].xml")).to.contain(
+                '<Override ContentType="image/png" PartName="/word/media/image1.png"/>',
+            );
         });
 
         it("should relate a part as an OLE object, which isn't one of the relationship types", async () => {

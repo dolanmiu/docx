@@ -57,6 +57,8 @@ export type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffe
 export { PatchType } from "./patch-type";
 export { DrawingPatch } from "./drawing-patch";
 export type { TemplateDrawing, TemplatePackage, TemplatePart } from "./drawing-patch";
+export { ImagePatch } from "./image-patch";
+export type { ImagePatchOptions, ImagePatchTransformation } from "./image-patch";
 export type { PatchedTemplate, TemplatePageNumberEstimator } from "./page-numbers";
 export type { PatchDocumentProperties } from "./core-properties";
 
@@ -186,7 +188,8 @@ export type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocume
     readonly data: InputDataType;
     /**
      * Mapping of placeholder keys to patch content, to a {@link TableRowsPatch} that repeats the rows of a table, or to a
-     * {@link DrawingPatch}, such as `docx/charts`' `ChartDataPatch`, for a drawing whose alt text holds the placeholder
+     * {@link DrawingPatch}, such as an {@link ImagePatch} or `docx/charts`' `ChartDataPatch`, for a drawing whose alt text
+     * holds the placeholder
      */
     readonly patches: Readonly<Record<string, IPatch | TableRowsPatch | DrawingPatch>>;
     /** Preserve original formatting of replaced text (default: true) */
@@ -258,7 +261,7 @@ const assertValidPatch = (
     if (!valid) {
         const others = inTableRow
             ? "or { type: PatchType.TABLE_ROWS, rows: [...] }"
-            : "{ type: PatchType.TABLE_ROWS, rows: [...] }, or a drawing patch such as ChartDataPatch from docx/charts";
+            : "{ type: PatchType.TABLE_ROWS, rows: [...] }, or a drawing patch such as ImagePatch, or ChartDataPatch from docx/charts";
         throw new Error(`Invalid patch "${key}". Expected { type: PatchType.PARAGRAPH or PatchType.DOCUMENT, children: [...] }, ${others}`);
     }
 };
