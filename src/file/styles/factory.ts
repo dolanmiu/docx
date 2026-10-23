@@ -212,8 +212,8 @@ export const createDefaultStyles = (
     listParagraph: new ListParagraph(options.listParagraph || {}),
     caption: new CaptionStyle(options.caption || {}),
     bibliography: new BibliographyStyle(options.bibliography || {}),
-    // The styles of the entries of tables of contents, as Word adds them. A style with their id, or their name, such as
-    // one in paragraphStyles or externalStyles, takes their place
+    // The styles of the entries of tables of contents, as Word adds them. A style with their id, or a paragraph style with
+    // their name, such as one in paragraphStyles or externalStyles, takes their place
     ...createTableOfContentsStyles(tableOfContentsLevelIndentOf(options)),
     hyperlink: new HyperlinkStyle(options.hyperlink || {}),
     footnoteReference: new FootnoteReferenceStyle(options.footnoteReference || {}),

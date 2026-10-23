@@ -485,7 +485,7 @@ describe("File", () => {
             expect(indentsIn(doc)).to.include({ TOC1: 0, TOC2: 720, TOC3: 400 });
         });
 
-        it("are replaced by a style with their name, such as a template's in another language, so no two styles have one name", () => {
+        it("are replaced by a paragraph style with their name, such as a template's in another language, so no two styles have one name", () => {
             const doc = new File({
                 externalStyles: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
                     <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
@@ -495,6 +495,12 @@ describe("File", () => {
             });
 
             expect(Object.keys(indentsIn(doc))).to.deep.equal(["TOC1", "TOC3", "TOC4", "TOC5", "TOC6", "TOC7", "TOC8", "TOC9"]);
+        });
+
+        it("are kept beside a character style with their name, which the entries, as paragraphs, can't take", () => {
+            const doc = new File({ styles: { characterStyles: [{ id: "Toc2Char", name: "toc 2" }] }, sections: [] });
+
+            expect(indentsIn(doc)).to.include({ TOC2: 200 });
         });
     });
 

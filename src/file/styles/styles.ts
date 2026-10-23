@@ -57,15 +57,15 @@ const styleNameOf = (style: IXmlableObject): string | undefined => {
     return name === undefined ? undefined : String(name).toLowerCase();
 };
 
-/** Whether a formatted `w:style` is a paragraph style marked as the default for paragraphs */
-const isDefaultParagraphStyle = (style: IXmlableObject): boolean => {
-    const attributes = attributesOf(style);
-    // A style's type is paragraph when it isn't given, and ST_OnOff is off as 0, false or off
-    return (
-        (attributes?.["w:type"] ?? "paragraph") === "paragraph" &&
-        attributes?.["w:default"] !== undefined &&
-        !["0", "false", "off"].includes(String(attributes["w:default"]))
-    );
+/** Whether a formatted element is a paragraph style, as a `w:style` is when its type isn't given */
+const isParagraphStyle = (child: unknown): child is IXmlableObject =>
+    nameOf(child) === "w:style" && (attributesOf(child as IXmlableObject)?.["w:type"] ?? "paragraph") === "paragraph";
+
+/** Whether a formatted element is a paragraph style marked as the default for paragraphs */
+const isDefaultParagraphStyle = (child: unknown): boolean => {
+    const attributes = isParagraphStyle(child) ? attributesOf(child) : undefined;
+    // ST_OnOff is off as 0, false or off
+    return attributes?.["w:default"] !== undefined && !["0", "false", "off"].includes(String(attributes["w:default"]));
 };
 
 /** A formatted `w:style`, marked as the default for its type */
@@ -142,9 +142,9 @@ export class Styles extends XmlComponent {
      * Writes the styles in the schema's order: the document defaults, the latent styles, then the styles. A style id
      * can only be used once, so a style replaces an earlier one with its id. That way external styles replace docx's
      * default styles, and paragraph and character styles replace the default and imported ones. docx's TOC 1 to TOC 9
-     * styles are also replaced by a style with their name, such as a template's in another language, with an id of its
-     * own. Of several document defaults, or several latent styles, the last is kept. Normal is marked as the default
-     * paragraph style when no style is.
+     * styles are also replaced by a paragraph style with their name, such as a template's in another language, with an id
+     * of its own. Of several document defaults, or several latent styles, the last is kept. Normal is marked as the
+     * default paragraph style when no style is.
      */
     public prepForXml(context: IContext): IXmlableObject {
         const xml = super.prepForXml(context) as IXmlableObject;
@@ -159,24 +159,19 @@ export class Styles extends XmlComponent {
                 !["_attr", "w:docDefaults", "w:latentStyles"].includes(nameOf(child) as string) &&
                 (ids[index] === undefined || ids.lastIndexOf(ids[index]) === index),
         );
-        // The names of the styles other than docx's TOC styles
+        // The names of the paragraph styles other than docx's TOC styles. A character style can't take their place, as an
+        // entry is a paragraph
         const otherNames = new Set(
-            unique.filter((child) => !isDefaultTableOfContentsStyle(child as object)).map((child) => styleNameOf(child as IXmlableObject)),
+            unique.filter((child) => isParagraphStyle(child) && !isDefaultTableOfContentsStyle(child)).map(styleNameOf),
         );
         const kept = unique.filter(
             (child) => !isDefaultTableOfContentsStyle(child as object) || !otherNames.has(styleNameOf(child as IXmlableObject)),
         );
         // Word takes Normal as the default paragraph style when no style is marked as the default, such as when Normal
         // comes from paragraphStyles. Other applications need the mark: Pages draws math tiny without it
-        const styles = kept.some((child) => nameOf(child) === "w:style" && isDefaultParagraphStyle(child))
+        const styles = kept.some(isDefaultParagraphStyle)
             ? kept
-            : kept.map((child) =>
-                  nameOf(child) === "w:style" &&
-                  styleIdOf(child) === "Normal" &&
-                  (attributesOf(child)?.["w:type"] ?? "paragraph") === "paragraph"
-                      ? markedAsDefault(child)
-                      : child,
-              );
+            : kept.map((child) => (isParagraphStyle(child) && styleIdOf(child) === "Normal" ? markedAsDefault(child) : child));
         return {
             "w:styles": [...named("_attr"), ...named("w:docDefaults").slice(-1), ...named("w:latentStyles").slice(-1), ...styles],
         };

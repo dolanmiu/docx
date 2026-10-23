@@ -96,7 +96,7 @@ const doc = new Document({
 
 `docx` writes the `TOC1` to `TOC9` paragraph styles as Word adds them: with 5 points of space after each entry, and each level indented by the size of the document's font more than the level above, so 10 points with `docx`'s default font, or 11 points with `styles.default.document.run.size` set to `22`. LibreOffice indents the levels with them when it updates the table too.
 
-To change how the entries look, such as their size or spacing, define the `TOC1` to `TOC9` paragraph styles in `paragraphStyles`, with the names `toc 1` to `toc 9`. A style named `toc 1` to `toc 9` in `externalStyles`, such as a template's saved by Word in another language, is used in place of `docx`'s too.
+To change how the entries look, such as their size or spacing, define the `TOC1` to `TOC9` paragraph styles in `paragraphStyles`, with the names `toc 1` to `toc 9`. A paragraph style named `toc 1` to `toc 9` in `externalStyles`, such as a template's saved by Word in another language, is used in place of `docx`'s too.
 
 When Word updates the table, it copies the formatting set on a heading's text onto the heading's entry, such as `bold: true` on a `TextRun`. That formatting is set on the entry's text, so it takes priority over the `TOC1` style, and `bold: false` in the style doesn't remove it. Formatting that comes from the heading's style isn't copied.
 
