@@ -42,6 +42,7 @@ import { replacer } from "./replacer";
 import { patchStyles } from "./styles";
 import { patchTableRows } from "./table-rows";
 import { readThemeColors } from "./theme-colors";
+import { trimPlaceholders as trimPlaceholdersIn } from "./trim-placeholders";
 import { toJson } from "./util";
 import { removeShapeTypesIn } from "./vml-shape-types";
 
@@ -175,6 +176,7 @@ export type PatchDocumentOutputType = OutputType;
  * @property keepOriginalStyles - Whether to preserve original text formatting
  * @property placeholderDelimiters - Custom delimiter characters for placeholders
  * @property recursive - Whether to replace every occurrence of a placeholder in a paragraph, rather than only the first
+ * @property trimPlaceholders - Whether to patch a placeholder with spaces inside its delimiters, such as `{{ name }}`
  * @property footnotes - The footnotes that patches refer to with a `FootnoteReferenceRun`
  * @property endnotes - The endnotes that patches refer to with an `EndnoteReferenceRun`
  * @property numbering - The lists that the paragraphs in patches use, by their references
@@ -201,6 +203,12 @@ export type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocume
     }>;
     /** Replace every occurrence of a placeholder in a paragraph, rather than only the first (default: true) */
     readonly recursive?: boolean;
+    /**
+     * Patch a placeholder with spaces inside its delimiters, such as `{{ name }}` or `{{name }}`, as if it had none, so a
+     * template's placeholders needn't be typed exactly. Spaces inside the key itself, such as in `{{first name}}`, are
+     * still part of it. Only the placeholders of patches lose their spaces (default: false)
+     */
+    readonly trimPlaceholders?: boolean;
     /**
      * The footnotes that patches refer to, by the id given to their `FootnoteReferenceRun`s, as in a `Document`. Each
      * reference a patch inserts gets a footnote of its own, with an id that none of the document's footnotes have
@@ -327,6 +335,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     keepOriginalStyles,
     placeholderDelimiters = { start: "{{", end: "}}" } as const,
     recursive = true,
+    trimPlaceholders = false,
     footnotes,
     endnotes,
     numbering = { config: [] },
@@ -470,6 +479,23 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     // Word has notes only in a document's body, so a reference run with its own note is left out of other parts
     const carryNote = (kind: "footnotes" | "endnotes", reference: object, note: NoteContent, context: IContext): number | undefined =>
         context.viewWrapper === viewWrapperOf("word/document.xml") ? notes.carry(kind, reference, note) : undefined;
+
+    if (trimPlaceholders) {
+        const keysWhere = (test: (type: string) => boolean): readonly string[] =>
+            Object.entries(patches).flatMap(([key, patch]) => (test(patch.type) ? [key] : []));
+        const keys = {
+            delimiters: { start, end },
+            // A patch without a type, from JavaScript, is a paragraph patch
+            textKeys: new Set(keysWhere((type) => type !== PatchType.TABLE_ROWS && type !== PatchType.DRAWING)),
+            tableRowsKeys: keysWhere((type) => type === PatchType.TABLE_ROWS),
+            drawingKeys: new Set(keysWhere((type) => type === PatchType.DRAWING)),
+        };
+        for (const [key, json] of map) {
+            if (key.startsWith("word/") && !key.endsWith(".rels")) {
+                trimPlaceholdersIn(json, keys);
+            }
+        }
+    }
 
     // Drawings whose alt text holds a placeholder, such as charts, are patched first, so their patches only see the
     // template's own drawings, and not those the other patches add

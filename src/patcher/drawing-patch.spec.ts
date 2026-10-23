@@ -474,6 +474,19 @@ describe("drawing-patch", () => {
                 expect(recording.calls[0].drawing.placeholder).to.equal('<&chart">');
             });
 
+            it("should patch a drawing whose placeholder has spaces inside its delimiters with trimPlaceholders, and only with it", async () => {
+                const data = await templateWith({ "word/document.xml": documentOf(chartDrawing({ descr: "Sales {{ chart }}" })) });
+                const trimmed = new RecordingPatch();
+                const exact = new RecordingPatch();
+                await patchDocument({ outputType: "nodebuffer", data, patches: { chart: trimmed }, trimPlaceholders: true });
+                await patchDocument({ outputType: "nodebuffer", data, patches: { chart: exact } });
+
+                expect(trimmed.calls.map(({ drawing }) => [drawing.placeholder, drawing.properties.attributes?.descr])).to.deep.equal([
+                    ["{{chart}}", "Sales {{chart}}"],
+                ]);
+                expect(exact.calls).to.have.length(0);
+            });
+
             it("should throw when a drawing's alt text holds the placeholders of two drawing patches", async () => {
                 const body = chartDrawing({ descr: "{{first}}", title: "{{second}}", name: "Both" });
                 await expect(

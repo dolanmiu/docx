@@ -31,6 +31,8 @@ Use `patchDetector({ data })` to find the placeholder keys in a template before 
 
 This discovery workflow supports only `{{...}}` placeholders. `patchDetector` does not accept the custom `placeholderDelimiters` supported by `patchDocument`.
 
+If the template's placeholders can have spaces inside their braces, such as `{{ name }}`, give both `patchDetector` and `patchDocument` `trimPlaceholders: true`. `patchDetector` then gives the key as `name`, and `patchDocument` patches the placeholder with the patch `name`. See [Spaces inside placeholders](usage/templates.md#spaces-inside-placeholders).
+
 The following example uses the existing [simple-template.docx](https://github.com/dolanmiu/docx/blob/master/demo/assets/simple-template.docx). Keep patch builders as functions so that discovering placeholders does not run every builder. Reuse the same template data for detection and patching.
 
 ```ts live
@@ -78,6 +80,8 @@ A patch can also repeat the rows of a table in the template, once for each row o
 A paragraph in a patch can be a heading. Its style is added to a template that doesn't have it yet. See [Headings and styles](usage/templates.md#headings-and-styles).
 
 The patcher also takes in a `keepOriginalStyles` boolean, which will preserve the styles of the patched text when set to true.
+
+It also takes in a `trimPlaceholders` boolean, which patches a placeholder with spaces inside its delimiters, such as `{{ name }}`, as if it had none. See [Spaces inside placeholders](usage/templates.md#spaces-inside-placeholders).
 
 It also takes in `footnotes` and `endnotes`, for the notes that patches refer to with a `FootnoteReferenceRun` or an `EndnoteReferenceRun`. See [Footnotes and endnotes](usage/templates.md#footnotes-and-endnotes).
 
