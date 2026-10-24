@@ -421,6 +421,17 @@ describe("patch-detector", () => {
         });
     });
 
+    it("should give the keys of placeholders with spaces inside their delimiters without them, with trimPlaceholders", async () => {
+        const data = await Packer.toBuffer(
+            new Document({
+                sections: [{ children: [new Paragraph("{{ name }} {{name}} {{ }} {{first name }}"), new Paragraph("{{\tname}}")] }],
+            }),
+        );
+
+        expect(await patchDetector({ data, trimPlaceholders: true })).to.deep.equal(["name", "first name"]);
+        expect(await patchDetector({ data })).to.deep.equal([" name ", "name", " ", "first name ", "\tname"]);
+    });
+
     it("should detect and patch placeholders in a template read from a stream", async () => {
         const data = await Packer.toBuffer(new Document({ sections: [{ children: [new Paragraph("Hello {{name}}")] }] }));
         // A stream such as fs.createReadStream gives a template in chunks, and can be read only once

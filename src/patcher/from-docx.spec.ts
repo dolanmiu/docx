@@ -742,6 +742,82 @@ describe("from-docx", () => {
             });
         });
 
+        describe("Placeholders with spaces inside their delimiters", () => {
+            // Patches a template with this body, and a header with {{ name }}, and returns the texts of their paragraphs
+            const patchTexts = async (
+                body: string,
+                options: Omit<PatchDocumentOptions, "outputType" | "data">,
+            ): Promise<{ readonly body: readonly string[]; readonly header: readonly string[] }> => {
+                vi.spyOn(JSZip, "loadAsync").mockResolvedValue(
+                    new JSZip()
+                        .file("word/document.xml", `<w:document><w:body>${body}</w:body></w:document>`)
+                        .file("word/header1.xml", `<w:hdr><w:p><w:r><w:t>{{ name }}</w:t></w:r></w:p></w:hdr>`)
+                        .file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`),
+                );
+                const output = await patchDocument({ outputType: "uint8array", data: Buffer.from(""), ...options });
+                // `JSZip.loadAsync` is mocked; the instance method reads the real output
+                const patched = await new JSZip().loadAsync(output);
+                const textsOf = async (path: string): Promise<readonly string[]> =>
+                    traverse(toJson(await patched.file(path)!.async("text"))).map((p) => p.text);
+                return { body: await textsOf("word/document.xml"), header: await textsOf("word/header1.xml") };
+            };
+            const text = (value: string): IPatch => ({ type: PatchType.PARAGRAPH, children: [new TextRun(value)] });
+            // {{ name }} split across runs, as Word often saves it, with the first run bold
+            const SPLIT =
+                `<w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Dear {{ </w:t></w:r><w:r><w:t>name</w:t></w:r>` +
+                `<w:r><w:t xml:space="preserve"> }}, and {{name }}</w:t></w:r></w:p>`;
+
+            afterEach(() => {
+                vi.restoreAllMocks();
+            });
+
+            it("should patch them with trimPlaceholders, in every part, even when split across runs", async () => {
+                const texts = await patchTexts(SPLIT, { patches: { name: text("Ada") }, trimPlaceholders: true });
+
+                expect(texts).to.deep.equal({ body: ["Dear Ada, and Ada"], header: ["Ada"] });
+            });
+
+            it("should leave them without trimPlaceholders", async () => {
+                const texts = await patchTexts(SPLIT, { patches: { name: text("Ada") } });
+
+                expect(texts).to.deep.equal({ body: ["Dear {{ name }}, and {{name }}"], header: ["{{ name }}"] });
+            });
+
+            it("should keep patching the placeholder of a key with spaces at its ends exactly", async () => {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                const texts = await patchTexts("<w:p/>", { patches: { " name ": text("Ada") }, trimPlaceholders: true });
+
+                expect(texts.header).to.deep.equal(["Ada"]);
+            });
+
+            it("should replace the paragraph of a document patch", async () => {
+                const texts = await patchTexts(SPLIT, {
+                    patches: { name: { type: PatchType.DOCUMENT, children: [new Paragraph("Replaced")] } },
+                    trimPlaceholders: true,
+                });
+
+                expect(texts.body).to.deep.equal(["Replaced"]);
+            });
+
+            it("should repeat the rows of a table whose fields have spaces inside their delimiters", async () => {
+                const cell = (value: string): string => `<w:tc><w:p><w:r><w:t xml:space="preserve">${value}</w:t></w:r></w:p></w:tc>`;
+                const texts = await patchTexts(`<w:tbl><w:tr>${cell("{{ items.name }}")}${cell("{{items.price }}")}</w:tr></w:tbl>`, {
+                    patches: {
+                        items: {
+                            type: PatchType.TABLE_ROWS,
+                            rows: [
+                                { name: text("Apples"), price: text("1.20") },
+                                { name: text("Pears"), price: undefined },
+                            ],
+                        },
+                    },
+                    trimPlaceholders: true,
+                });
+
+                expect(texts.body).to.deep.equal(["Apples", "1.20", "Pears", ""]);
+            });
+        });
+
         describe("Hyperlinks", () => {
             it.each([
                 ["255 literal characters", "a".repeat(255), true],

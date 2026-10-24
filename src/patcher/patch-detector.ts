@@ -13,9 +13,15 @@ import { toJson } from "./util";
  * Options for patch detection.
  *
  * @property data - The document template to scan for placeholders
+ * @property trimPlaceholders - Whether to give the key of a placeholder with spaces inside its delimiters without them
  */
 type PatchDetectorOptions = {
     readonly data: InputDataType;
+    /**
+     * Give the key of a placeholder with spaces inside its delimiters without them, such as "name" for `{{ name }}`, as
+     * `patchDocument`'s `trimPlaceholders` patches it (default: false)
+     */
+    readonly trimPlaceholders?: boolean;
 };
 
 /**
@@ -45,7 +51,7 @@ type PatchDetectorOptions = {
  * });
  * ```
  */
-export const patchDetector = async ({ data }: PatchDetectorOptions): Promise<readonly string[]> => {
+export const patchDetector = async ({ data, trimPlaceholders = false }: PatchDetectorOptions): Promise<readonly string[]> => {
     const zipContent = await loadZip(data);
     const patches = new Set<string>();
 
@@ -56,8 +62,13 @@ export const patchDetector = async ({ data }: PatchDetectorOptions): Promise<rea
         if (key.startsWith("word/") && !key.endsWith(".xml.rels")) {
             const json = toJson(await value.async("text"));
             const texts = [...traverse(json).map((p) => p.text), ...findDrawings(json).flatMap(({ properties }) => altTextOf(properties))];
+            const keys = texts
+                .flatMap((text) => findPatchKeys(text))
+                .map((patch) => (trimPlaceholders ? patch.trim() : patch))
+                // A placeholder of only spaces has no key
+                .filter((patch) => patch !== "");
             // eslint-disable-next-line functional/immutable-data
-            texts.forEach((text) => findPatchKeys(text).forEach((patch) => patches.add(patch)));
+            keys.forEach((patch) => patches.add(patch));
         }
     }
     return Array.from(patches);
