@@ -1,4 +1,3 @@
-import JSZip from "jszip";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
@@ -8,6 +7,7 @@ import { File } from "@file/file";
 import type { IMediaData } from "@file/media/data";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 import * as convenienceFunctions from "@util/convenience-functions";
+import { textOf, unzip } from "tests/zip";
 
 import { type IImageOptions, ImageRun } from "./image-run";
 import type { IRunOptions } from "./run";
@@ -1731,12 +1731,12 @@ describe("ImageRun", () => {
             const document = new File({
                 sections: [{ children: [new Paragraph({ children: [new ImageRun(untyped({ data: PNG }))] })] }],
             });
-            const zip = await JSZip.loadAsync(await Packer.toBuffer(document));
+            const packed = unzip(await Packer.toBuffer(document));
 
-            expect(zip.file(/^word\/media\//).map((file) => file.name)).to.deep.equal([
+            expect([...packed.keys()].filter((name) => /^word\/media\//.test(name))).to.deep.equal([
                 `word/media/${convenienceFunctions.hashedId(PNG)}.png`,
             ]);
-            expect(await zip.file("[Content_Types].xml")!.async("text")).to.contain('Extension="png"');
+            expect(textOf(packed, "[Content_Types].xml")).to.contain('Extension="png"');
         });
     });
 });

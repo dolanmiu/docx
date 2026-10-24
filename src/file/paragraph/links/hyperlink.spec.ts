@@ -1,10 +1,10 @@
-import JSZip from "jszip";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 import { Packer } from "@export/packer/packer";
 import { File } from "@file/file";
 import { Footer, Header } from "@file/header";
+import { textOf, unzip } from "tests/zip";
 
 import { Paragraph } from "../paragraph";
 import { ImageRun, TextRun } from "../run";
@@ -99,14 +99,14 @@ describe("ExternalHyperlink", () => {
         const document = new File({
             sections: [{ children: [new Paragraph({ children: [new ExternalHyperlink({ link, children: [new TextRun("Link")] })] })] }],
         });
-        const zip = await JSZip.loadAsync(await Packer.toBuffer(document));
-        const xml = new DOMParser().parseFromString(await zip.file("word/document.xml")!.async("text"), "text/xml");
+        const files = unzip(await Packer.toBuffer(document));
+        const xml = new DOMParser().parseFromString(textOf(files, "word/document.xml")!, "text/xml");
         const hyperlink = xml.getElementsByTagName("w:hyperlink")[0];
         expect(hyperlink.hasAttribute("w:anchor")).to.equal(useAnchor);
         if (useAnchor) {
             expect(hyperlink.getAttribute("w:anchor")).to.equal(fragment);
         }
-        const relationships = new DOMParser().parseFromString(await zip.file("word/_rels/document.xml.rels")!.async("text"), "text/xml");
+        const relationships = new DOMParser().parseFromString(textOf(files, "word/_rels/document.xml.rels")!, "text/xml");
         const matches = [...relationships.getElementsByTagName("Relationship")].filter(
             (relationship) => relationship.getAttribute("Id") === hyperlink.getAttribute("r:id"),
         );
@@ -136,15 +136,12 @@ describe("ExternalHyperlink", () => {
         });
 
         for (let pack = 0; pack < 2; pack++) {
-            const zip = await JSZip.loadAsync(await Packer.toBuffer(document));
+            const files = unzip(await Packer.toBuffer(document));
             for (const part of ["document", "header1", "footer1"]) {
-                const xml = new DOMParser().parseFromString(await zip.file(`word/${part}.xml`)!.async("text"), "text/xml");
+                const xml = new DOMParser().parseFromString(textOf(files, `word/${part}.xml`)!, "text/xml");
                 const hyperlink = xml.getElementsByTagName("w:hyperlink")[0];
                 expect(hyperlink.getAttribute("w:anchor")).to.equal('foo#bar&"quoted"');
-                const relationships = new DOMParser().parseFromString(
-                    await zip.file(`word/_rels/${part}.xml.rels`)!.async("text"),
-                    "text/xml",
-                );
+                const relationships = new DOMParser().parseFromString(textOf(files, `word/_rels/${part}.xml.rels`)!, "text/xml");
                 const matches = [...relationships.getElementsByTagName("Relationship")].filter(
                     (relationship) => relationship.getAttribute("Id") === hyperlink.getAttribute("r:id"),
                 );
@@ -176,11 +173,11 @@ describe("ExternalHyperlink", () => {
         });
 
         for (let pack = 0; pack < 2; pack++) {
-            const zip = await JSZip.loadAsync(await Packer.toBuffer(document));
-            const xml = new DOMParser().parseFromString(await zip.file("word/document.xml")!.async("text"), "text/xml");
+            const files = unzip(await Packer.toBuffer(document));
+            const xml = new DOMParser().parseFromString(textOf(files, "word/document.xml")!, "text/xml");
             const relationships = [
                 ...new DOMParser()
-                    .parseFromString(await zip.file("word/_rels/document.xml.rels")!.async("text"), "text/xml")
+                    .parseFromString(textOf(files, "word/_rels/document.xml.rels")!, "text/xml")
                     .getElementsByTagName("Relationship"),
             ];
             const targetOf = (id: string | null): readonly (string | null)[] =>

@@ -1,4 +1,3 @@
-import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
@@ -6,6 +5,7 @@ import { Packer } from "@export/packer/packer";
 import { File } from "@file/file";
 import { Paragraph } from "@file/paragraph";
 import { Table, TableCell, TableRow } from "@file/table";
+import { textOf, unzip } from "tests/zip";
 
 import { LevelFormat } from "./level";
 import { Numbering } from "./numbering";
@@ -299,9 +299,9 @@ describe("Numbering", () => {
                 ],
             });
 
-            const zip = await JSZip.loadAsync(await Packer.toBuffer(file));
-            const document = await zip.file("word/document.xml")!.async("text");
-            const numbering = await zip.file("word/numbering.xml")!.async("text");
+            const files = unzip(await Packer.toBuffer(file));
+            const document = textOf(files, "word/document.xml")!;
+            const numbering = textOf(files, "word/numbering.xml")!;
 
             expect([...document.matchAll(/<w:numId w:val="([^"]*)"\/>/g)].map(([, id]) => id)).to.deep.equal(["2", "2", "3"]);
             expect(numbering.split("<w:abstractNum ").length - 1).to.equal(3);
@@ -317,8 +317,8 @@ describe("Numbering", () => {
                 sections: [{ children: [new Paragraph({ text: "One", numbering: { reference: roman, level: 0 } })] }],
             });
 
-            const first = await (await JSZip.loadAsync(await Packer.toBuffer(file))).file("word/numbering.xml")!.async("text");
-            const second = await (await JSZip.loadAsync(await Packer.toBuffer(file))).file("word/numbering.xml")!.async("text");
+            const first = textOf(unzip(await Packer.toBuffer(file)), "word/numbering.xml")!;
+            const second = textOf(unzip(await Packer.toBuffer(file)), "word/numbering.xml")!;
 
             expect(second).to.equal(first);
             expect(second.split("<w:abstractNum ").length - 1).to.equal(2);

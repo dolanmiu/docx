@@ -1,11 +1,10 @@
-import JSZip from "jszip";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import * as docx from "docx";
+import { textOf, unzip } from "tests/zip";
 
 /** Writes a document and reads back one of its parts */
-const partOf = async (document: docx.Document, path: string): Promise<string> =>
-    (await JSZip.loadAsync(await docx.Packer.toBuffer(document))).file(path)!.async("text");
+const partOf = async (document: docx.Document, path: string): Promise<string> => textOf(unzip(await docx.Packer.toBuffer(document)), path)!;
 
 const bodyOf = async (children: readonly docx.FileChild[]): Promise<string> => {
     const xml = await partOf(new docx.Document({ sections: [{ children }] }), "word/document.xml");

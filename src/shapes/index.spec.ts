@@ -1,7 +1,7 @@
-import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
 
 import { Document, Footer, Header, ImageRun, Packer, Paragraph, WpsShapeRun } from "docx";
+import { textOf, unzip } from "tests/zip";
 
 import { ShapeCanvasRun, ShapeGroupRun, ShapeRun } from ".";
 
@@ -36,10 +36,8 @@ describe("docx/shapes in a document", () => {
         // Headers and footers are formatted more than once when a document is packed, and a document can be packed
         // more than once, so pack it twice
         await Packer.toBuffer(doc);
-        const zip = await JSZip.loadAsync(await Packer.toBuffer(doc));
-        const xml = (
-            await Promise.all(["word/document.xml", "word/header1.xml", "word/footer1.xml"].map((name) => zip.file(name)?.async("text")))
-        ).join("");
+        const files = unzip(await Packer.toBuffer(doc));
+        const xml = ["word/document.xml", "word/header1.xml", "word/footer1.xml"].map((name) => textOf(files, name)).join("");
 
         // Shapes inside groups and canvases carry ids too, which must not clash with any drawing's id
         const ids = [...xml.matchAll(/<(?:wp:docPr|wps:cNvPr) id="(\d+)"/g)].map(([, id]) => id);

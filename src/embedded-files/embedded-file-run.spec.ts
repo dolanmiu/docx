@@ -1,10 +1,10 @@
-import JSZip from "jszip";
 import { describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
 import { File } from "@file/file";
 import { Document, Footer, FootnoteReferenceRun, Header, Packer, Paragraph, PatchType, Run, TextRun, patchDocument } from "docx";
 import { readCompoundFile } from "tests/compound-file";
+import { textOf, unzip, zip } from "tests/zip";
 
 import { EmbeddedFileRun, type EmbeddedFileRunOptions } from "./embedded-file-run";
 
@@ -35,9 +35,9 @@ const attributesOf = (run: EmbeddedFileRun, name: string): Record<string, unknow
     return (element as { readonly _attr: Record<string, unknown> })._attr;
 };
 
-const pack = async (doc: Document): Promise<JSZip> => JSZip.loadAsync(await Packer.toBuffer(doc));
+const pack = async (doc: Document): Promise<ReadonlyMap<string, Uint8Array>> => unzip(await Packer.toBuffer(doc));
 
-const read = async (zip: JSZip, path: string): Promise<string> => (await zip.file(path)?.async("text")) ?? "";
+const read = (files: ReadonlyMap<string, Uint8Array>, path: string): string => textOf(files, path) ?? "";
 
 describe("EmbeddedFileRun", () => {
     it("should be a run from docx", () => {
@@ -164,15 +164,15 @@ describe("EmbeddedFileRun", () => {
 
     describe("when packed", () => {
         it("should embed an Office file as itself, with its picture and the relationships to both", async () => {
-            const zip = await pack(
+            const files = await pack(
                 new Document({ sections: [{ children: [new Paragraph({ children: [new EmbeddedFileRun(workbook)] })] }] }),
             );
-            const document = await read(zip, "word/document.xml");
-            const relationships = await read(zip, "word/_rels/document.xml.rels");
+            const document = read(files, "word/document.xml");
+            const relationships = read(files, "word/_rels/document.xml.rels");
             const [, imageId] = /<v:imagedata r:id="([^"]+)"/.exec(document)!;
             const [, objectId] = /<o:OLEObject [^>]*r:id="([^"]+)"/.exec(document)!;
 
-            expect(await zip.file("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")?.async("uint8array")).toEqual(WORKBOOK);
+            expect(files.get("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")).toEqual(WORKBOOK);
             expect(relationships).toContain(
                 `<Relationship Id="${objectId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/package" Target="embeddings/Microsoft_Excel_Worksheet1.xlsx"/>`,
             );
@@ -181,7 +181,7 @@ describe("EmbeddedFileRun", () => {
                     `<Relationship Id="${imageId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/[0-9a-f]+\\.png"/>`,
                 ),
             );
-            expect(await read(zip, "[Content_Types].xml")).toContain(
+            expect(read(files, "[Content_Types].xml")).toContain(
                 '<Override ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" PartName="/word/embeddings/Microsoft_Excel_Worksheet1.xlsx"/>',
             );
         });
@@ -202,10 +202,10 @@ describe("EmbeddedFileRun", () => {
                 ],
             });
             await pack(doc);
-            const zip = await pack(doc);
+            const files = await pack(doc);
 
             for (const part of ["document", "header1", "footnotes"]) {
-                const xml = await read(zip, `word/${part}.xml`);
+                const xml = read(files, `word/${part}.xml`);
                 expect(xml.split("<v:shapetype ").length - 1, part).toBe(1);
                 // Before the first object's shape
                 expect(xml.indexOf("<v:shapetype ")).toBeLessThan(xml.indexOf("<v:shape "));
@@ -213,11 +213,11 @@ describe("EmbeddedFileRun", () => {
         });
 
         it("should write the picture frame shape type as Word does", async () => {
-            const zip = await pack(
+            const files = await pack(
                 new Document({ sections: [{ children: [new Paragraph({ children: [new EmbeddedFileRun(workbook)] })] }] }),
             );
 
-            expect(await read(zip, "word/document.xml")).toContain(
+            expect(read(files, "word/document.xml")).toContain(
                 '<v:shapetype id="_x0000_t75" coordsize="21600,21600" o:spt="75" o:preferrelative="t" path="m@4@5l@4@11@9@11@9@5xe" filled="f" stroked="f">' +
                     '<v:stroke joinstyle="miter"/><v:formulas><v:f eqn="if lineDrawn pixelLineWidth 0"/><v:f eqn="sum @0 1 0"/>' +
                     '<v:f eqn="sum 0 0 @1"/><v:f eqn="prod @2 1 2"/><v:f eqn="prod @3 21600 pixelWidth"/><v:f eqn="prod @3 21600 pixelHeight"/>' +
@@ -229,37 +229,33 @@ describe("EmbeddedFileRun", () => {
 
         it("should embed any other file in an OLE package", async () => {
             const data = new Uint8Array([1, 2, 3]);
-            const zip = await pack(
+            const files = await pack(
                 new Document({
                     sections: [
                         { children: [new Paragraph({ children: [new EmbeddedFileRun({ ...workbook, fileName: "song.mp3", data })] })] },
                     ],
                 }),
             );
-            const ole = readCompoundFile((await zip.file("word/embeddings/oleObject1.bin")?.async("uint8array"))!);
+            const ole = readCompoundFile(files.get("word/embeddings/oleObject1.bin")!);
 
             expect(ole.entries[0].classId).toBe("0003000C-0000-0000-C000-000000000046");
             expect(ole.streams.get("\u0001Ole10Native")).toBeDefined();
-            expect(await read(zip, "word/_rels/document.xml.rels")).toContain(
+            expect(read(files, "word/_rels/document.xml.rels")).toContain(
                 'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject" Target="embeddings/oleObject1.bin"',
             );
-            expect(await read(zip, "[Content_Types].xml")).toContain(
+            expect(read(files, "[Content_Types].xml")).toContain(
                 '<Override ContentType="application/vnd.openxmlformats-officedocument.oleObject" PartName="/word/embeddings/oleObject1.bin"/>',
             );
         });
 
         it("should embed each file once, and a picture used twice once", async () => {
-            const zip = await pack(
+            const files = await pack(
                 new Document({
                     sections: [{ children: [new Paragraph({ children: [new EmbeddedFileRun(workbook), new EmbeddedFileRun(workbook)] })] }],
                 }),
             );
 
-            expect(
-                Object.keys(zip.files)
-                    .filter((path) => /^word\/(embeddings|media)\/./.test(path))
-                    .sort(),
-            ).toEqual([
+            expect([...files.keys()].filter((path) => /^word\/(embeddings|media)\/./.test(path)).sort()).toEqual([
                 "word/embeddings/Microsoft_Excel_Worksheet1.xlsx",
                 "word/embeddings/Microsoft_Excel_Worksheet2.xlsx",
                 expect.stringMatching(/^word\/media\/[0-9a-f]+\.png$/),
@@ -267,7 +263,7 @@ describe("EmbeddedFileRun", () => {
         });
 
         it("should embed a file in a header or a footnote, with the relationships from its part", async () => {
-            const zip = await pack(
+            const files = await pack(
                 new Document({
                     footnotes: {
                         1: { children: [new Paragraph({ children: [new EmbeddedFileRun({ ...workbook, fileName: "note.docx" })] })] },
@@ -285,7 +281,7 @@ describe("EmbeddedFileRun", () => {
                 ["header1", "embeddings/Microsoft_Excel_Worksheet1.xlsx"],
                 ["footnotes", "embeddings/Microsoft_Word_Document1.docx"],
             ]) {
-                const relationships = await read(zip, `word/_rels/${part}.xml.rels`);
+                const relationships = read(files, `word/_rels/${part}.xml.rels`);
                 expect(relationships).toContain(`Target="${target}"`);
                 expect(relationships).toMatch(/Target="media\/[0-9a-f]+\.png"/);
             }
@@ -298,10 +294,10 @@ describe("EmbeddedFileRun", () => {
                 `data:application/octet-stream;base64,${Buffer.from(WORKBOOK).toString("base64")}`,
                 larger.subarray(2, -1),
             ]) {
-                const zip = await pack(
+                const files = await pack(
                     new Document({ sections: [{ children: [new Paragraph({ children: [new EmbeddedFileRun({ ...workbook, data })] })] }] }),
                 );
-                expect(await zip.file("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")?.async("uint8array")).toEqual(WORKBOOK);
+                expect(files.get("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")).toEqual(WORKBOOK);
             }
         });
 
@@ -317,7 +313,7 @@ describe("EmbeddedFileRun", () => {
                 data: template,
                 patches: { file: { type: PatchType.PARAGRAPH, children: [new EmbeddedFileRun(workbook)] } },
             });
-            const document = await read(await JSZip.loadAsync(patched), "word/document.xml");
+            const document = read(unzip(patched), "word/document.xml");
 
             expect(document.split('<v:shapetype id="_x0000_t75"').length - 1).toBe(1);
             expect(document.split('<v:shape id="EmbeddedFile').length - 1).toBe(2);
@@ -326,7 +322,7 @@ describe("EmbeddedFileRun", () => {
         it("should declare the VML and Office namespaces in each part patchDocument inserts a file into, when it doesn't", async () => {
             // A template whose parts don't declare them, as some applications write one
             const parts = { document: "w:document", header1: "w:hdr", footer1: "w:ftr", footnotes: "w:footnotes" };
-            const zip = await JSZip.loadAsync(
+            const template = unzip(
                 await Packer.toBuffer(
                     new Document({
                         footnotes: { 1: { children: [new Paragraph("{{file}}")] } },
@@ -340,19 +336,24 @@ describe("EmbeddedFileRun", () => {
                     }),
                 ),
             );
-            for (const part of Object.keys(parts)) {
-                zip.file(`word/${part}.xml`, (await read(zip, `word/${part}.xml`)).replace(/ xmlns:[vo]="[^"]*"/g, ""));
-            }
-            const patched = await JSZip.loadAsync(
+            const patched = unzip(
                 await patchDocument({
                     outputType: "uint8array",
-                    data: await zip.generateAsync({ type: "uint8array" }),
+                    data: zip({
+                        ...Object.fromEntries(template),
+                        ...Object.fromEntries(
+                            Object.keys(parts).map((part) => [
+                                `word/${part}.xml`,
+                                read(template, `word/${part}.xml`).replace(/ xmlns:[vo]="[^"]*"/g, ""),
+                            ]),
+                        ),
+                    }),
                     patches: { file: { type: PatchType.PARAGRAPH, children: [new EmbeddedFileRun(workbook)] } },
                 }),
             );
 
             for (const [part, rootName] of Object.entries(parts)) {
-                const xml = await read(patched, `word/${part}.xml`);
+                const xml = read(patched, `word/${part}.xml`);
                 const root = new RegExp(`<${rootName} [^>]*>`).exec(xml)![0];
                 expect(xml, part).toContain('ProgID="Excel.Sheet.12"');
                 expect(root, part).toContain('xmlns:v="urn:schemas-microsoft-com:vml"');
@@ -367,11 +368,11 @@ describe("EmbeddedFileRun", () => {
                 data: template,
                 patches: { file: { type: PatchType.PARAGRAPH, children: [new EmbeddedFileRun(workbook)] } },
             });
-            const zip = await JSZip.loadAsync(patched);
+            const files = unzip(patched);
 
-            expect(await read(zip, "word/document.xml")).toContain('ProgID="Excel.Sheet.12"');
-            expect(await zip.file("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")?.async("uint8array")).toEqual(WORKBOOK);
-            expect(Object.keys(zip.files).some((path) => /^word\/media\/[0-9a-f]+\.png$/.test(path))).toBe(true);
+            expect(read(files, "word/document.xml")).toContain('ProgID="Excel.Sheet.12"');
+            expect(files.get("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")).toEqual(WORKBOOK);
+            expect([...files.keys()].some((path) => /^word\/media\/[0-9a-f]+\.png$/.test(path))).toBe(true);
         });
     });
 });

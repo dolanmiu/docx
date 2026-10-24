@@ -1,6 +1,7 @@
-import JSZip from "jszip";
 import type { ImportGlobFunction } from "vite";
 import { describe, expect, it } from "vitest";
+
+import { textOf, unzip } from "tests/zip";
 
 import { parseXml } from "./parse";
 import { stringifyElement } from "./stringify";
@@ -38,10 +39,10 @@ const texts = import.meta.glob<string>(["/ooxml-schemas/**/*.xsd", "/demo/assets
  */
 const MAX_PART_LENGTH = 1_000_000;
 
-const partsOf = async (dataUrl: string): Promise<ReadonlyMap<string, string>> => {
-    const zip = await JSZip.loadAsync(dataUrl.slice(dataUrl.indexOf(",") + 1), { base64: true });
-    const names = Object.keys(zip.files).filter((name) => name.endsWith(".xml") || name.endsWith(".rels"));
-    const parts = await Promise.all(names.map(async (name) => [name, await zip.file(name)!.async("string")] as const));
+const partsOf = (dataUrl: string): ReadonlyMap<string, string> => {
+    const files = unzip(Uint8Array.from(atob(dataUrl.slice(dataUrl.indexOf(",") + 1)), (character) => character.charCodeAt(0)));
+    const names = [...files.keys()].filter((name) => name.endsWith(".xml") || name.endsWith(".rels"));
+    const parts = names.map((name) => [name, textOf(files, name)!] as const);
     return new Map(parts.filter(([, xml]) => xml.length <= MAX_PART_LENGTH));
 };
 
@@ -125,7 +126,7 @@ describe("parseXml and stringifyElement with the repository's XML", () => {
     describe("documents", () => {
         for (const [path, load] of Object.entries(documents)) {
             it(`should read and write each part of ${path} as jsdom reads it`, async () => {
-                for (const [name, xml] of await partsOf(await load())) {
+                for (const [name, xml] of partsOf(await load())) {
                     check(xml, name);
                 }
             });

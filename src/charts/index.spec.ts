@@ -1,8 +1,8 @@
-import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
 
 import { type XmlElement as Element, parseXml } from "@util/xml";
 import { Document, Footer, FootnoteReferenceRun, Header, Packer, Paragraph, Run, Table, TableCell, TableRow, TextRun } from "docx";
+import { textOf as fileTextOf, unzip } from "tests/zip";
 
 import { ChartRun, type ChartRunOptions } from ".";
 
@@ -93,7 +93,7 @@ const CHARTS: readonly ChartRunOptions[] = [
 
 const paragraphWith = (options: ChartRunOptions): Paragraph => new Paragraph({ children: [new ChartRun(options)] });
 
-const read = async (zip: JSZip, path: string): Promise<string> => (await zip.file(path)?.async("text")) ?? "";
+const read = (files: ReadonlyMap<string, Uint8Array>, path: string): string => fileTextOf(files, path) ?? "";
 
 const parse = (text: string): Element => parseXml(text);
 
@@ -103,10 +103,10 @@ const descendants = (element: Element, name: string): readonly Element[] =>
 const textOf = (element: Element): string => element.elements?.[0]?.text?.toString() ?? "";
 
 // The text or number in each cell of a workbook's sheet, by the cell's name
-const readCells = async (workbook: JSZip): Promise<ReadonlyMap<string, string>> => {
-    const strings = descendants(parse(await read(workbook, "xl/sharedStrings.xml")), "si").map((si) => textOf(descendants(si, "t")[0]));
+const readCells = (workbook: ReadonlyMap<string, Uint8Array>): ReadonlyMap<string, string> => {
+    const strings = descendants(parse(read(workbook, "xl/sharedStrings.xml")), "si").map((si) => textOf(descendants(si, "t")[0]));
     return new Map(
-        descendants(parse(await read(workbook, "xl/worksheets/sheet1.xml")), "c").map((cell) => {
+        descendants(parse(read(workbook, "xl/worksheets/sheet1.xml")), "c").map((cell) => {
             const value = textOf(descendants(cell, "v")[0]);
             return [String(cell.attributes!.r), cell.attributes!.t === "s" ? strings[Number(value)] : value];
         }),
@@ -145,24 +145,21 @@ describe("docx/charts in a document", () => {
             ],
             footnotes: { 1: { children: [paragraphWith(CHARTS[2])] } },
         });
-        const zip = await JSZip.loadAsync(await Packer.toBuffer(doc));
+        const files = unzip(await Packer.toBuffer(doc));
         const target = (rels: string): readonly string[] =>
             [...rels.matchAll(/Type="[^"]+\/(chart|package)" Target="([^"]+)"/g)].map(([, type, path]) => `${type} ${path}`);
 
         // The document is written first, then the footnotes, the headers and the footers
-        expect(target(await read(zip, "word/_rels/document.xml.rels"))).to.deep.equal([
-            "chart charts/chart1.xml",
-            "chart charts/chart2.xml",
-        ]);
-        expect(target(await read(zip, "word/_rels/footnotes.xml.rels"))).to.deep.equal(["chart charts/chart3.xml"]);
-        expect(target(await read(zip, "word/_rels/header1.xml.rels"))).to.deep.equal(["chart charts/chart4.xml"]);
-        expect(target(await read(zip, "word/_rels/footer1.xml.rels"))).to.deep.equal(["chart charts/chart5.xml"]);
+        expect(target(read(files, "word/_rels/document.xml.rels"))).to.deep.equal(["chart charts/chart1.xml", "chart charts/chart2.xml"]);
+        expect(target(read(files, "word/_rels/footnotes.xml.rels"))).to.deep.equal(["chart charts/chart3.xml"]);
+        expect(target(read(files, "word/_rels/header1.xml.rels"))).to.deep.equal(["chart charts/chart4.xml"]);
+        expect(target(read(files, "word/_rels/footer1.xml.rels"))).to.deep.equal(["chart charts/chart5.xml"]);
 
         for (const chart of [1, 2, 3, 4, 5]) {
-            expect(target(await read(zip, `word/charts/_rels/chart${chart}.xml.rels`))).to.deep.equal([
+            expect(target(read(files, `word/charts/_rels/chart${chart}.xml.rels`))).to.deep.equal([
                 `package ../embeddings/Microsoft_Excel_Worksheet${chart}.xlsx`,
             ]);
-            const contentTypes = await read(zip, "[Content_Types].xml");
+            const contentTypes = read(files, "[Content_Types].xml");
             expect(contentTypes).to.contain(
                 `<Override ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml" PartName="/word/charts/chart${chart}.xml"/>`,
             );
@@ -170,19 +167,17 @@ describe("docx/charts in a document", () => {
                 `<Override ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" PartName="/word/embeddings/Microsoft_Excel_Worksheet${chart}.xlsx"/>`,
             );
         }
-        expect(Object.keys(zip.files).filter((path) => /^word\/(charts|embeddings)\/[^/]+$/.test(path))).to.have.length(10);
+        expect([...files.keys()].filter((path) => /^word\/(charts|embeddings)\/[^/]+$/.test(path))).to.have.length(10);
     });
 
     it("should write workbooks whose cells hold what each chart's caches hold", async () => {
         const doc = new Document({ sections: [{ children: CHARTS.map(paragraphWith) }] });
-        const zip = await JSZip.loadAsync(await Packer.toBuffer(doc));
+        const files = unzip(await Packer.toBuffer(doc));
 
         for (const [index] of CHARTS.entries()) {
-            const chart = parse(await read(zip, `word/charts/chart${index + 1}.xml`));
-            const workbook = await JSZip.loadAsync(
-                (await zip.file(`word/embeddings/Microsoft_Excel_Worksheet${index + 1}.xlsx`)?.async("uint8array"))!,
-            );
-            const cells = await readCells(workbook);
+            const chart = parse(read(files, `word/charts/chart${index + 1}.xml`));
+            const workbook = unzip(files.get(`word/embeddings/Microsoft_Excel_Worksheet${index + 1}.xlsx`)!);
+            const cells = readCells(workbook);
             const references = [...descendants(chart, "c:strRef"), ...descendants(chart, "c:numRef")];
             const levels = descendants(chart, "c:multiLvlStrRef");
 
@@ -219,14 +214,14 @@ describe("docx/charts in a document", () => {
                 { headers: { default: new Header({ children: [paragraphWith(CHARTS[0])] }) }, children: [paragraphWith(CHARTS[1])] },
             ],
         });
-        const paths = async (): Promise<readonly string[]> => Object.keys((await JSZip.loadAsync(await Packer.toBuffer(doc))).files).sort();
+        const paths = async (): Promise<readonly string[]> => [...unzip(await Packer.toBuffer(doc)).keys()].sort();
 
         const first = await paths();
         expect(await paths()).to.deep.equal(first);
-        const zip = await JSZip.loadAsync(await Packer.toBuffer(doc));
-        expect((await read(zip, "word/_rels/header1.xml.rels")).match(/relationships\/chart"/g)).to.have.length(1);
-        expect((await read(zip, "word/charts/_rels/chart1.xml.rels")).match(/relationships\/package"/g)).to.have.length(1);
-        expect((await read(zip, "[Content_Types].xml")).match(/chart1\.xml/g)).to.have.length(1);
+        const files = unzip(await Packer.toBuffer(doc));
+        expect(read(files, "word/_rels/header1.xml.rels").match(/relationships\/chart"/g)).to.have.length(1);
+        expect(read(files, "word/charts/_rels/chart1.xml.rels").match(/relationships\/package"/g)).to.have.length(1);
+        expect(read(files, "[Content_Types].xml").match(/chart1\.xml/g)).to.have.length(1);
     });
 
     it("should be a run from docx", () => {
