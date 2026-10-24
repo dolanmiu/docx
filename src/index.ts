@@ -31,6 +31,8 @@
  * const buffer = await Packer.toBuffer(doc);
  * ```
  */
+// The declarations use Node's types, such as Buffer, so they load them, as JSZip's declarations did for docx's
+/// <reference types="node" preserve="true" />
 
 // Internally, the wrapper is a 'File', but export to the end user as a 'Document'
 // Use of 'File' also works
