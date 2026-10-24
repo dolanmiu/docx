@@ -29,6 +29,41 @@ Best regards,
 
 ?> Use double curly braces `{{}}` for placeholders. These will be replaced at runtime.
 
+### Spaces inside placeholders
+
+People often type a placeholder with spaces inside its braces, such as `{{ customer_name }}`, which doesn't match the patch `customer_name`. Give `patchDocument` `trimPlaceholders: true` to patch it as if the spaces weren't there:
+
+```ts live
+import * as fs from "fs";
+import { Document, Packer, Paragraph, patchDocument, PatchType, TextRun } from "docx";
+
+// The template, with spaces inside the braces of its placeholders
+const template = new Document({
+    sections: [
+        {
+            children: [new Paragraph("Dear {{ customer_name }},"), new Paragraph("Thank you for your order #{{order_number }}.")],
+        },
+    ],
+});
+
+const doc = await patchDocument({
+    outputType: "nodebuffer",
+    data: await Packer.toBuffer(template),
+    patches: {
+        customer_name: { type: PatchType.PARAGRAPH, children: [new TextRun("John Smith")] },
+        order_number: { type: PatchType.PARAGRAPH, children: [new TextRun("12345")] },
+    },
+    trimPlaceholders: true,
+});
+
+fs.writeFileSync("output.docx", doc);
+```
+
+- Only the spaces at the ends are left out, as JavaScript's `trim()` does, including tabs and non-breaking spaces. `{{ first name }}` is the placeholder of the patch `first name`.
+- It works for every kind of patch: the fields of a [`TABLE_ROWS`](#table_rows-type) patch, such as `{{ items.name }}`, and the alt text of a [picture](#replacing-a-picture) or a [chart](usage/chart-templates.md).
+- Only the placeholders of the patches given lose their spaces. Other text that looks like a placeholder, such as `{{ not_patched }}`, is left as it is.
+- [`patchDetector`](usage/patcher.md#discover-placeholders-before-building-patches) takes `trimPlaceholders` too, and then gives the key of `{{ customer_name }}` as `customer_name`.
+
 ## Basic Usage
 
 ```ts live

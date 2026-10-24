@@ -11597,15 +11597,21 @@ export declare class ParagraphRunProperties extends RunProperties {
  * });
  * ```
  */
-export declare const patchDetector: ({ data }: PatchDetectorOptions) => Promise<readonly string[]>;
+export declare const patchDetector: ({ data, trimPlaceholders }: PatchDetectorOptions) => Promise<readonly string[]>;
 
 /**
  * Options for patch detection.
  *
  * @property data - The document template to scan for placeholders
+ * @property trimPlaceholders - Whether to give the key of a placeholder with spaces inside its delimiters without them
  */
 declare type PatchDetectorOptions = {
     readonly data: InputDataType;
+    /**
+     * Give the key of a placeholder with spaces inside its delimiters without them, such as "name" for `{{ name }}`, as
+     * `patchDocument`'s `trimPlaceholders` patches it (default: false)
+     */
+    readonly trimPlaceholders?: boolean;
 };
 
 /**
@@ -11643,7 +11649,7 @@ declare type PatchDetectorOptions = {
  *
  * @publicApi
  */
-export declare const patchDocument: <T extends PatchDocumentOutputType = PatchDocumentOutputType>({ outputType, data, patches, keepOriginalStyles, placeholderDelimiters, recursive, footnotes, endnotes, numbering, pageNumbers, properties, }: PatchDocumentOptions<T>) => Promise<OutputByType[T]>;
+export declare const patchDocument: <T extends PatchDocumentOutputType = PatchDocumentOutputType>({ outputType, data, patches, keepOriginalStyles, placeholderDelimiters, recursive, trimPlaceholders, footnotes, endnotes, numbering, pageNumbers, properties, }: PatchDocumentOptions<T>) => Promise<OutputByType[T]>;
 
 /**
  * Options for patching a document.
@@ -11654,6 +11660,7 @@ export declare const patchDocument: <T extends PatchDocumentOutputType = PatchDo
  * @property keepOriginalStyles - Whether to preserve original text formatting
  * @property placeholderDelimiters - Custom delimiter characters for placeholders
  * @property recursive - Whether to replace every occurrence of a placeholder in a paragraph, rather than only the first
+ * @property trimPlaceholders - Whether to patch a placeholder with spaces inside its delimiters, such as `{{ name }}`
  * @property footnotes - The footnotes that patches refer to with a `FootnoteReferenceRun`
  * @property endnotes - The endnotes that patches refer to with an `EndnoteReferenceRun`
  * @property numbering - The lists that the paragraphs in patches use, by their references
@@ -11680,6 +11687,12 @@ export declare type PatchDocumentOptions<T extends PatchDocumentOutputType = Pat
     }>;
     /** Replace every occurrence of a placeholder in a paragraph, rather than only the first (default: true) */
     readonly recursive?: boolean;
+    /**
+     * Patch a placeholder with spaces inside its delimiters, such as `{{ name }}` or `{{name }}`, as if it had none, so a
+     * template's placeholders needn't be typed exactly. Spaces inside the key itself, such as in `{{first name}}`, are
+     * still part of it. Only the placeholders of patches lose their spaces (default: false)
+     */
+    readonly trimPlaceholders?: boolean;
     /**
      * The footnotes that patches refer to, by the id given to their `FootnoteReferenceRun`s, as in a `Document`. Each
      * reference a patch inserts gets a footnote of its own, with an id that none of the document's footnotes have

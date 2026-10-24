@@ -37965,6 +37965,72 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 		};
 	}();
 	//#endregion
+	//#region src/patcher/trim-placeholders.ts
+	/**
+	* The first placeholder in a text, from an index on, with spaces inside its delimiters, whose key, without them, is
+	* one to patch.
+	*/
+	var findSpacedPlaceholder = (text, from, { start, end }, isKey) => {
+		for (let index = text.indexOf(start, from); index !== -1; index = text.indexOf(start, index + 1)) {
+			const endIndex = text.indexOf(end, index + start.length);
+			if (endIndex === -1) return;
+			const content = text.slice(index + start.length, endIndex);
+			const key = content.trim();
+			if (key !== content && isKey(key)) return {
+				index,
+				placeholder: text.slice(index, endIndex + end.length),
+				trimmed: `${start}${key}${end}`
+			};
+		}
+	};
+	var trimInText = (text, delimiters, isKey) => {
+		let trimmed = text;
+		for (let found = findSpacedPlaceholder(trimmed, 0, delimiters, isKey); found !== void 0; found = findSpacedPlaceholder(trimmed, found.index + found.trimmed.length, delimiters, isKey)) trimmed = `${trimmed.slice(0, found.index)}${found.trimmed}${trimmed.slice(found.index + found.placeholder.length)}`;
+		return trimmed;
+	};
+	var paragraphsIn = (element) => {
+		var _element$elements;
+		return ((_element$elements = element.elements) !== null && _element$elements !== void 0 ? _element$elements : []).flatMap((child) => [...child.name === "w:p" ? [child] : [], ...paragraphsIn(child)]);
+	};
+	/**
+	* Takes the spaces out of each placeholder in a paragraph whose key is one to patch, even if it is split across runs.
+	* The placeholder is left in its first run, as a patch would put its content there.
+	*/
+	var trimInParagraph = (paragraph, delimiters, isKey) => {
+		const render = () => renderParagraphNode({
+			element: paragraph,
+			index: 0,
+			parent: void 0
+		});
+		for (let rendered = render(), found = findSpacedPlaceholder(rendered.text, 0, delimiters, isKey); found !== void 0; rendered = render(), found = findSpacedPlaceholder(rendered.text, found.index + found.trimmed.length, delimiters, isKey)) replaceTokenInParagraphElement({
+			paragraphElement: paragraph,
+			renderedParagraph: rendered,
+			originalText: found.placeholder,
+			replacementText: found.trimmed,
+			fromIndex: found.index
+		});
+	};
+	/**
+	* Takes the spaces inside the delimiters out of the placeholders in a part that patches are for, such as `{{ name }}`
+	* for the patch `name`, so the patches find them. Other text is left as it is, even if it looks like a placeholder.
+	*
+	* @param json - The part, which is changed in place
+	* @param delimiters - The placeholders' delimiters
+	* @param textKeys - The keys of the patches for placeholders in the text
+	* @param tableRowsKeys - The keys of the patches that repeat the rows of a table, whose fields are `{{key.field}}`
+	* @param drawingKeys - The keys of the patches for drawings whose alt text holds the placeholder
+	*/
+	var trimPlaceholders = (json, { delimiters, textKeys, tableRowsKeys, drawingKeys }) => {
+		const isTextKey = (key) => textKeys.has(key) || tableRowsKeys.some((tableRowsKey) => key.startsWith(`${tableRowsKey}.`));
+		for (const paragraph of paragraphsIn(json)) trimInParagraph(paragraph, delimiters, isTextKey);
+		const isDrawingKey = (key) => drawingKeys.has(key);
+		for (const { properties } of findDrawings(json)) for (const name of ["descr", "title"]) {
+			var _properties$attribute;
+			const text = (_properties$attribute = properties.attributes) === null || _properties$attribute === void 0 ? void 0 : _properties$attribute[name];
+			if (text !== void 0) properties.attributes[name] = trimInText(String(text), delimiters, isDrawingKey);
+		}
+	};
+	//#endregion
 	//#region src/patcher/vml-shape-types.ts
 	var shapeTypeIdOf = (element) => {
 		var _element$attributes;
@@ -38299,7 +38365,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 		var _ref = _asyncToGenerator(function* ({ outputType, data, patches, keepOriginalStyles, placeholderDelimiters = {
 			start: "{{",
 			end: "}}"
-		}, recursive = true, footnotes, endnotes, numbering = { config: [] }, pageNumbers, properties }) {
+		}, recursive = true, trimPlaceholders: trimPlaceholders$1 = false, footnotes, endnotes, numbering = { config: [] }, pageNumbers, properties }) {
 			const zipContent = yield loadZip(data);
 			const contexts = /* @__PURE__ */ new Map();
 			const themeColors = yield readThemeColors(zipContent);
@@ -38400,6 +38466,19 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 				useStyles: styles.use
 			});
 			const carryNote = (kind, reference, note, context) => context.viewWrapper === viewWrapperOf("word/document.xml") ? notes.carry(kind, reference, note) : void 0;
+			if (trimPlaceholders$1) {
+				const keysWhere = (test) => Object.entries(patches).flatMap(([key, patch]) => test(patch.type) ? [key] : []);
+				const keys = {
+					delimiters: {
+						start,
+						end
+					},
+					textKeys: new Set(keysWhere((type) => type !== PatchType.TABLE_ROWS && type !== PatchType.DRAWING)),
+					tableRowsKeys: keysWhere((type) => type === PatchType.TABLE_ROWS),
+					drawingKeys: new Set(keysWhere((type) => type === PatchType.DRAWING))
+				};
+				for (const [key, json] of map) if (key.startsWith("word/") && !key.endsWith(".rels")) trimPlaceholders(json, keys);
+			}
 			patchDrawings({
 				parts: map,
 				binaryParts: binaryContentMap,
@@ -38562,14 +38641,14 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	* ```
 	*/
 	var patchDetector = function() {
-		var _ref = _asyncToGenerator(function* ({ data }) {
+		var _ref = _asyncToGenerator(function* ({ data, trimPlaceholders = false }) {
 			const zipContent = yield loadZip(data);
 			const patches = /* @__PURE__ */ new Set();
 			for (const [key, value] of Object.entries(zipContent.files)) {
 				if (!key.endsWith(".xml") && !key.endsWith(".rels")) continue;
 				if (key.startsWith("word/") && !key.endsWith(".xml.rels")) {
 					const json = toJson(yield value.async("text"));
-					[...traverse(json).map((p) => p.text), ...findDrawings(json).flatMap(({ properties }) => altTextOf(properties))].forEach((text) => findPatchKeys(text).forEach((patch) => patches.add(patch)));
+					[...traverse(json).map((p) => p.text), ...findDrawings(json).flatMap(({ properties }) => altTextOf(properties))].flatMap((text) => findPatchKeys(text)).map((patch) => trimPlaceholders ? patch.trim() : patch).filter((patch) => patch !== "").forEach((patch) => patches.add(patch));
 				}
 			}
 			return Array.from(patches);
