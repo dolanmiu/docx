@@ -1,4 +1,3 @@
-import JSZip from "jszip";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -16,6 +15,7 @@ import {
     VerticalPositionRelativeFrom,
 } from "docx";
 import { formatted, png, pngDataUrl } from "tests/html";
+import { textOf, unzip } from "tests/zip";
 
 import { htmlToContent } from "./html-to-content";
 import { DEFAULT_MAX_IMAGE_WIDTH, resolveUrl } from "./images";
@@ -43,8 +43,11 @@ const warningsOf = (source: string, options: HtmlOptions = {}): readonly HtmlWar
 
 /** The SVG file that the image of an <svg> in HTML is, in a document it is packed in */
 const svgFileOf = async (source: string): Promise<string> => {
-    const zip = await JSZip.loadAsync(await Packer.toBuffer(new Document({ sections: [{ children: [...htmlToContent(source)] }] })));
-    return zip.file(/^word\/media\/.*\.svg$/)[0].async("text");
+    const files = unzip(await Packer.toBuffer(new Document({ sections: [{ children: [...htmlToContent(source)] }] })));
+    return textOf(
+        files,
+        [...files.keys()].find((path) => /^word\/media\/.*\.svg$/.test(path))!,
+    )!;
 };
 
 const SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20"><rect width="40" height="20" fill="red"/></svg>';

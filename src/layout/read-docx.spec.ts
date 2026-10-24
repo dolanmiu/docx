@@ -1,4 +1,3 @@
-import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
 
 import { obfuscate } from "@file/fonts/obfuscate-ttf-to-odttf";
@@ -25,6 +24,7 @@ import {
     WidthType,
 } from "docx";
 import { buildTestFont } from "tests/font-file";
+import { unzip } from "tests/zip";
 
 import { layOutPasses } from "./layout-passes";
 import { type DocumentContent, type ParagraphBlock, readDocument } from "./read-document";
@@ -34,11 +34,12 @@ import { readDocx } from "./read-docx";
 const parse = (xml: string): Element => parseXml(xml, { keepWhitespaceText: true });
 
 /** The XML parts of a .docx, parsed, by their paths */
-const partsOf = async (buffer: Buffer): Promise<ReadonlyMap<string, Element>> => {
-    const zip = await JSZip.loadAsync(buffer);
-    const paths = Object.keys(zip.files).filter((path) => path.endsWith(".xml") || path.endsWith(".rels"));
-    return new Map(await Promise.all(paths.map(async (path) => [path, parse(await zip.file(path)!.async("string"))] as const)));
-};
+const partsOf = (buffer: Buffer): ReadonlyMap<string, Element> =>
+    new Map(
+        [...unzip(buffer)]
+            .filter(([path]) => path.endsWith(".xml") || path.endsWith(".rels"))
+            .map(([path, file]) => [path, parse(new TextDecoder().decode(file))] as const),
+    );
 
 const W = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
 const R = 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
@@ -109,7 +110,7 @@ describe("readDocx", () => {
                 },
             ],
         });
-        const parts = await partsOf(await Packer.toBuffer(doc));
+        const parts = partsOf(await Packer.toBuffer(doc));
         const read = readDocx(parts);
         expect(read).to.deep.equal(written);
         // What it is read into has the document's text, lists, tables, notes and sections

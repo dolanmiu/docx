@@ -1,10 +1,10 @@
 // cspell:ignore cmark fnref ftnt ftnref ednref reflist reversefootnote rearnote noteref backref backlink kramdown docutils
-import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
 
 // docx's own entry is loaded before its parts that the helpers import, as its modules refer to each other
 import { Document, Packer, Paragraph } from "docx";
 import { formattedWithNotes, pngDataUrl } from "tests/html";
+import { textOf, unzip } from "tests/zip";
 
 import { htmlToContent, htmlToRuns } from "./html-to-content";
 import type { HtmlOptions, HtmlWarningCode } from "./options";
@@ -462,9 +462,9 @@ a second line. <a href="#user-content-fnref-note" data-footnote-backref="" aria-
     });
 
     describe("in a document", () => {
-        const partsOf = async (document: Document): Promise<(path: string) => Promise<string>> => {
-            const zip = await JSZip.loadAsync(await Packer.toBuffer(document));
-            return (path) => zip.file(path)!.async("text");
+        const partsOf = async (document: Document): Promise<(path: string) => string> => {
+            const files = unzip(await Packer.toBuffer(document));
+            return (path) => textOf(files, path)!;
         };
 
         it("numbers the notes after the document's own, and keeps them when it's packed again", async () => {
@@ -481,15 +481,11 @@ a second line. <a href="#user-content-fnref-note" data-footnote-backref="" aria-
             await Packer.toBuffer(document);
             const read = await partsOf(document);
 
-            expect([...(await read("word/document.xml")).matchAll(/<w:footnoteReference w:id="(\d+)"\/>/g)].map(([, id]) => id)).toEqual([
+            expect([...read("word/document.xml").matchAll(/<w:footnoteReference w:id="(\d+)"\/>/g)].map(([, id]) => id)).toEqual([
                 "2",
                 "3",
             ]);
-            expect([...(await read("word/footnotes.xml")).matchAll(/<w:footnote w:id="(\d+)">/g)].map(([, id]) => id)).toEqual([
-                "1",
-                "2",
-                "3",
-            ]);
+            expect([...read("word/footnotes.xml").matchAll(/<w:footnote w:id="(\d+)">/g)].map(([, id]) => id)).toEqual(["1", "2", "3"]);
         });
     });
 

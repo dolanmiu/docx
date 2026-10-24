@@ -1,7 +1,7 @@
-import JSZip from "jszip";
 import { describe, expect, it, vi } from "vitest";
 
 import { type XmlElement as Element, stringifyElement } from "@util/xml";
+import { zip } from "tests/zip";
 
 import { type PatchedTemplate, fillTemplatePageNumbers } from "./page-numbers";
 import { toJson } from "./util";
@@ -119,13 +119,7 @@ describe("fillTemplatePageNumbers", () => {
 
     describe("documents the template imports", () => {
         /** A zip file of these files */
-        const zipOf = (files: ReadonlyMap<string, string>): Promise<Uint8Array> => {
-            const zip = new JSZip();
-            for (const [path, text] of files) {
-                zip.file(path, text);
-            }
-            return zip.generateAsync({ type: "uint8array" });
-        };
+        const zipOf = (files: ReadonlyMap<string, string | Uint8Array>): Uint8Array => zip(Object.fromEntries(files));
         const relationships = (...targets: readonly (readonly [string, string, string?])[]): Element =>
             toJson(
                 `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${targets
@@ -137,8 +131,8 @@ describe("fillTemplatePageNumbers", () => {
             );
 
         it("should give the estimator each .docx the template imports, unzipped, with those they import in turn", async () => {
-            const inner = await zipOf(new Map([["word/document.xml", `<w:document ${W}><w:body><w:p/></w:body></w:document>`]]));
-            const outer = await zipOf(
+            const inner = zipOf(new Map([["word/document.xml", `<w:document ${W}><w:body><w:p/></w:body></w:document>`]]));
+            const outer = zipOf(
                 new Map([
                     ["word/document.xml", `<w:document ${W}><w:body><w:altChunk/></w:body></w:document>`],
                     ["word/_rels/document.xml.rels", stringifyElement(relationships(["rId1", "inner.docx"]))],
@@ -184,22 +178,21 @@ describe("fillTemplatePageNumbers", () => {
         });
 
         it("should read a .docx a .docx the template imports imports", async () => {
-            const inner = await zipOf(new Map([["word/document.xml", `<w:document ${W}><w:body><w:p/></w:body></w:document>`]]));
-            const outer = new JSZip();
-            outer.file("word/document.xml", `<w:document ${W}><w:body><w:altChunk/></w:body></w:document>`);
-            outer.file("word/_rels/document.xml.rels", stringifyElement(relationships(["rId1", "inner.docx"])));
-            outer.file("word/inner.docx", inner);
+            const inner = zipOf(new Map([["word/document.xml", `<w:document ${W}><w:body><w:p/></w:body></w:document>`]]));
+            const outer = zipOf(
+                new Map<string, string | Uint8Array>([
+                    ["word/document.xml", `<w:document ${W}><w:body><w:altChunk/></w:body></w:document>`],
+                    ["word/_rels/document.xml.rels", stringifyElement(relationships(["rId1", "inner.docx"]))],
+                    ["word/inner.docx", inner],
+                ]),
+            );
             const parts = new Map([
                 ["word/document.xml", toJson(`<w:document ${W}><w:body/></w:document>`)],
                 ["word/_rels/document.xml.rels", relationships(["rId1", "outer.docx"])],
             ]);
             const estimator = vi.fn((_: PatchedTemplate) => ({ bookmarks: new Map() }));
 
-            await fillTemplatePageNumbers(
-                parts,
-                estimator,
-                new Map([["word/outer.docx", await outer.generateAsync({ type: "uint8array" })]]),
-            );
+            await fillTemplatePageNumbers(parts, estimator, new Map([["word/outer.docx", outer]]));
 
             const read = estimator.mock.calls[0][0].importedDocuments!.get("word/outer.docx")!;
             expect([...read.importedDocuments!.keys()]).to.deep.equal(["word/inner.docx"]);

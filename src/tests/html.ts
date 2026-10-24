@@ -6,7 +6,6 @@
  * @internal
  */
 // cspell:ignore IHDR IDAT IEND
-import JSZip from "jszip";
 import { deflateSync } from "node:zlib";
 
 import { Formatter } from "@export/formatter";
@@ -16,6 +15,8 @@ import type { Paragraph } from "@file/paragraph";
 import type { Table } from "@file/table";
 import type { IContext } from "@file/xml-components";
 import { stringifyXmlable } from "@util/xml";
+
+import { textOf, unzip } from "./zip";
 
 /**
  * Written content with its ids made the same each time: relationships', bookmarks', tracked changes' and drawings'
@@ -82,9 +83,9 @@ export type ListLevel = { readonly format: string; readonly text: string; readon
 export const listsIn = async (
     children: readonly (Paragraph | Table)[],
 ): Promise<{ readonly paragraphs: readonly ListParagraph[]; readonly levels: readonly (readonly ListLevel[])[] }> => {
-    const zip = await JSZip.loadAsync(await Packer.toBuffer(new File({ sections: [{ children }] })));
-    const document = await zip.file("word/document.xml")!.async("text");
-    const numbering = await zip.file("word/numbering.xml")!.async("text");
+    const files = unzip(await Packer.toBuffer(new File({ sections: [{ children }] })));
+    const document = textOf(files, "word/document.xml")!;
+    const numbering = textOf(files, "word/numbering.xml")!;
     // The lists, in the order they start
     const numIds = [...new Set([...document.matchAll(/<w:numId w:val="(\d+)"\/>/g)].map(([, numId]) => numId))].filter(
         (numId) => numId !== "0",

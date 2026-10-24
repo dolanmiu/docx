@@ -1,8 +1,9 @@
-import JSZip from "jszip";
+/* eslint-disable @typescript-eslint/naming-convention -- The keys of objects here are paths of parts in a package */
 import { describe, expect, it, vi } from "vitest";
 
 import { Document, Packer, Paragraph, PatchType, TextRun, patchDocument } from "docx";
 import { formatted } from "tests/html";
+import { textOf, unzip, zip } from "tests/zip";
 
 import { htmlToContent, htmlToRuns } from "./html-to-content";
 import type { HtmlWarning } from "./options";
@@ -10,12 +11,10 @@ import { DEEPEST_ELEMENT } from "./read-html";
 
 /** Packs content into a document, and returns its parts' XML, which must be well formed */
 const packed = async (children: ReturnType<typeof htmlToContent>): Promise<Readonly<Record<string, string>>> => {
-    const zip = await JSZip.loadAsync(await Packer.toBuffer(new Document({ sections: [{ children }] })));
-    const parts = await Promise.all(
-        Object.keys(zip.files)
-            .filter((path) => path.endsWith(".xml") || path.endsWith(".rels"))
-            .map(async (path) => [path, await zip.file(path)!.async("text")] as const),
-    );
+    const files = unzip(await Packer.toBuffer(new Document({ sections: [{ children }] })));
+    const parts = [...files.keys()]
+        .filter((path) => path.endsWith(".xml") || path.endsWith(".rels"))
+        .map((path) => [path, textOf(files, path)!] as const);
     for (const [path, part] of parts) {
         const parsed = new DOMParser().parseFromString(part, "application/xml");
         expect(parsed.getElementsByTagName("parsererror"), path).toHaveLength(0);
@@ -247,27 +246,19 @@ describe("htmlToContent: robustness", () => {
 
 describe("htmlToContent and htmlToRuns in patchDocument", () => {
     const W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
-    const template = (): Promise<Buffer> => {
-        const zip = new JSZip()
-            .file(
-                "[Content_Types].xml",
+    const template = (): Uint8Array =>
+        zip({
+            "[Content_Types].xml":
                 '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>',
-            )
-            .file(
-                "_rels/.rels",
+            "_rels/.rels":
                 '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>',
-            )
-            .file(
-                "word/document.xml",
-                `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="${W}"><w:body><w:p><w:r><w:t>{{body}}</w:t></w:r></w:p><w:p><w:r><w:t>Total: {{total}}</w:t></w:r></w:p></w:body></w:document>`,
-            );
-        return zip.generateAsync({ type: "nodebuffer" });
-    };
+            "word/document.xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="${W}"><w:body><w:p><w:r><w:t>{{body}}</w:t></w:r></w:p><w:p><w:r><w:t>Total: {{total}}</w:t></w:r></w:p></w:body></w:document>`,
+        });
 
     it("patches a template's paragraph with content, and another's text with runs, adding their lists and links", async () => {
         const output = await patchDocument({
             outputType: "nodebuffer",
-            data: await template(),
+            data: template(),
             patches: {
                 body: {
                     type: PatchType.DOCUMENT,
@@ -278,13 +269,13 @@ describe("htmlToContent and htmlToRuns in patchDocument", () => {
                 total: { type: PatchType.PARAGRAPH, children: [...htmlToRuns("<b>£120</b>")] },
             },
         });
-        const zip = await JSZip.loadAsync(output);
-        const document = await zip.file("word/document.xml")!.async("text");
-        const numbering = await zip.file("word/numbering.xml")!.async("text");
+        const files = unzip(output);
+        const document = textOf(files, "word/document.xml")!;
+        const numbering = textOf(files, "word/numbering.xml")!;
         expect(document).toContain('<w:pStyle w:val="Heading2"/>');
         expect(document).toMatch(/<w:numId w:val="\d+"\/>.*One.*<w:numId w:val="\d+"\/>.*Two/);
         expect(document).toMatch(/Total: <\/w:t><\/w:r><w:r><w:rPr><w:b\/><w:bCs\/><\/w:rPr><w:t xml:space="preserve">£120/);
         expect(numbering).toContain('<w:numFmt w:val="decimal"/>');
-        expect(await zip.file("word/_rels/document.xml.rels")!.async("text")).toContain("https://example.com");
+        expect(textOf(files, "word/_rels/document.xml.rels")).toContain("https://example.com");
     });
 });
