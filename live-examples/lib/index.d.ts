@@ -1,4 +1,5 @@
-import { default as default_2 } from 'jszip';
+/// <reference types="node" />
+
 import { Stream } from 'stream';
 
 /**
@@ -3818,16 +3819,10 @@ export declare class EmptyElement extends XmlComponent {
 /**
  * Encode a string to UTF-8 bytes.
  *
- * This is used to pre-encode XML content before passing to JSZip,
- * which avoids a bug where JSZip's string chunking can split UTF-16
- * surrogate pairs for characters above U+FFFF (like emoji).
- *
  * The copy via `new Uint8Array()` ensures the returned array uses the
  * current module's Uint8Array constructor, avoiding cross-realm issues
  * in test environments (jsdom) where TextEncoder returns a different
- * realm's Uint8Array that fails JSZip's instanceof checks.
- *
- * @see https://github.com/Stuk/jszip/pull/963
+ * realm's Uint8Array that fails `instanceof Uint8Array` checks.
  */
 export declare const encodeUtf8: (str: string) => Uint8Array;
 
@@ -6964,7 +6959,7 @@ declare type INotePropertiesBaseOptions = {
  * The patcher can accept documents in various formats including buffers,
  * arrays, and streams, such as `fs.createReadStream`'s or `Packer.toStream`'s.
  */
-export declare type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob | NodeJS.ReadableStream | Stream | default_2;
+export declare type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob | NodeJS.ReadableStream | Stream | ZipArchive;
 
 export declare class InsertedTableCell extends XmlComponent {
     constructor(options: IChangedAttributesProperties);
@@ -14908,6 +14903,13 @@ export declare class YearLong extends EmptyElement {
 export declare class YearShort extends EmptyElement {
     constructor();
 }
+
+/** A zip file opened with JSZip, or anything else that gives its bytes the same way. It's read, and left as it was. */
+declare type ZipArchive = {
+    readonly generateAsync: (options: {
+        readonly type: "uint8array";
+    }) => Promise<Uint8Array>;
+};
 
 export { }
 
