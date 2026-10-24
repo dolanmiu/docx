@@ -232,7 +232,7 @@ const doc = new Document({
 });
 ```
 
-`name` is required, and `description` and `title` are optional. A chart with `altText` but no `description` is still described from its data.
+`name`, `description` and `title` are optional. A chart with `altText` but no `description` is still described from its data.
 
 `decorative: true` marks a chart as decorative, as Word's "Mark as decorative" does, so screen readers skip it, and it isn't described.
 
@@ -242,6 +242,6 @@ const doc = new Document({
 | ---------------- | ----------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | `transformation` | `{ width, height }`     | Optional | Size in pixels. Default is 576 by 336                                                                                                |
 | `floating`       | `IFloating`             | Optional | Floats the chart. See [floating images](usage/images.md#floating)                                                                    |
-| `altText`        | `DocPropertiesOptions`  | Optional | `{ name, description?, title? }` for screen readers. Default is described from the data                                              |
+| `altText`        | `DocPropertiesOptions`  | Optional | `{ name?, description?, title? }` for screen readers. Default is described from the data                                             |
 | `decorative`     | `boolean`               | Optional | Marks the chart as decorative, so screen readers skip it. Default `false`                                                            |
 | `run`            | `IRunPropertiesOptions` | Optional | Formatting of the run the chart is in, such as `position` to raise or lower it. See [run formatting](usage/images.md#run-formatting) |

@@ -56,6 +56,11 @@ describe("DocProperties", () => {
         expect(tree["wp:docPr"]._attr.name).to.equal("");
     });
 
+    it("should give a drawing whose alt text has no name an empty name, which the XML requires", () => {
+        const tree = new Formatter().format(new DocProperties({ description: "A puppy", id: "1" }));
+        expect(tree).to.deep.equal({ "wp:docPr": { _attr: { id: "1", name: "", descr: "A puppy" } } });
+    });
+
     it("should give each drawing its own id when none is supplied", () => {
         const first = new Formatter().format(new DocProperties({ name: "first" }));
         const second = new Formatter().format(new DocProperties({ name: "second" }));
