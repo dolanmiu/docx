@@ -182,6 +182,7 @@
     ],
     "dependencies": {
         "@types/node": "^26.6.2",
+        "fflate": "^0.8.3",
         "hash.js": "^1.1.7",
         "jszip": "^3.10.1",
         "nanoid": "^6.0.1"
