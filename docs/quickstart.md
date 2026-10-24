@@ -200,9 +200,7 @@ Packer.toBuffer(doc).then((buffer) => {
 ```ts
 import * as fs from "fs";
 
-Packer.toStream(doc).then((stream) => {
-    stream.pipe(fs.createWriteStream("document.docx"));
-});
+Packer.toStream(doc).pipe(fs.createWriteStream("document.docx"));
 ```
 
 ### Browser - Download
