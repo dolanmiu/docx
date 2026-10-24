@@ -3,7 +3,7 @@ import { afterEach, assert, beforeEach, describe, expect, it, vi } from "vitest"
 import { Formatter } from "@export/formatter";
 import { BorderStyle } from "@file/border";
 import { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared";
-import { EMPTY_OBJECT, type IContext } from "@file/xml-components";
+import { EMPTY_OBJECT, type IContext, type IXmlableObject } from "@file/xml-components";
 import * as convenienceFunctions from "@util/convenience-functions";
 
 import { DocumentWrapper, type IViewWrapper } from "../document-wrapper";
@@ -64,6 +64,74 @@ describe("Paragraph", () => {
             ];
 
             expect(children).toHaveLength(6);
+        });
+    });
+
+    describe("#with()", () => {
+        const run = (text: string): IXmlableObject => ({ "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, text] }] });
+
+        it("should make a new paragraph with the options given and the paragraph's own, leaving the paragraph as it is", () => {
+            const paragraph = new Paragraph({ style: "Quote", spacing: { after: 120 }, children: [new TextRun("Hello")] });
+            const indented = paragraph.with({ indent: { left: 720, right: 720 }, alignment: AlignmentType.RIGHT });
+
+            expect(new Formatter().format(indented)).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [
+                            { "w:pStyle": { _attr: { "w:val": "Quote" } } },
+                            { "w:spacing": { _attr: { "w:after": 120 } } },
+                            { "w:ind": { _attr: { "w:left": 720, "w:right": 720 } } },
+                            { "w:jc": { _attr: { "w:val": "right" } } },
+                        ],
+                    },
+                    run("Hello"),
+                ],
+            });
+            expect(new Formatter().format(paragraph)).to.deep.equal({
+                "w:p": [
+                    { "w:pPr": [{ "w:pStyle": { _attr: { "w:val": "Quote" } } }, { "w:spacing": { _attr: { "w:after": 120 } } }] },
+                    run("Hello"),
+                ],
+            });
+        });
+
+        it("should replace each option given as a whole, and remove one given as undefined", () => {
+            const paragraph = new Paragraph({ text: "Hello", spacing: { before: 240, after: 120 }, indent: { left: 720 } });
+            const changed = paragraph.with({ spacing: { before: 0 }, indent: undefined });
+
+            expect(new Formatter().format(changed)).to.deep.equal({
+                "w:p": [{ "w:pPr": [{ "w:spacing": { _attr: { "w:before": 0 } } }] }, run("Hello")],
+            });
+        });
+
+        it("should keep the text of a paragraph made from a string, which is its options' text", () => {
+            const paragraph = new Paragraph("Hello");
+
+            expect(paragraph.options).to.deep.equal({ text: "Hello" });
+            expect(new Formatter().format(paragraph.with({ style: "Quote" }))).to.deep.equal({
+                "w:p": [{ "w:pPr": [{ "w:pStyle": { _attr: { "w:val": "Quote" } } }] }, run("Hello")],
+            });
+        });
+
+        it("should replace the paragraph's children with those given", () => {
+            const paragraph = new Paragraph({ style: "Quote", children: [new TextRun("Old")] });
+
+            expect(new Formatter().format(paragraph.with({ children: [new TextRun("New")] }))).to.deep.equal({
+                "w:p": [{ "w:pPr": [{ "w:pStyle": { _attr: { "w:val": "Quote" } } }] }, run("New")],
+            });
+        });
+
+        it("should keep a bookmark in the paragraph's children", () => {
+            const paragraph = new Paragraph({ children: [new Bookmark({ id: "anchor", children: [new TextRun("Marked")] })] });
+
+            expect(new Formatter().format(paragraph.with({ style: "Quote" }))).to.deep.equal({
+                "w:p": [
+                    { "w:pPr": [{ "w:pStyle": { _attr: { "w:val": "Quote" } } }] },
+                    { "w:bookmarkStart": { _attr: { "w:name": "anchor", "w:id": -101 } } },
+                    run("Marked"),
+                    { "w:bookmarkEnd": { _attr: { "w:id": -101 } } },
+                ],
+            });
         });
     });
 
