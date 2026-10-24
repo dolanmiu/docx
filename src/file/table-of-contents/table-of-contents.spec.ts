@@ -50,6 +50,18 @@ describe("Table of Contents", () => {
             expect(tree).to.be.deep.equal(TOC_WITH_CHILDREN);
         });
 
+        it("should be a content control of Word's Table of Contents gallery, so Word shows Update Table on it rather than its alias", () => {
+            const tree = new Formatter().format(new TableOfContents("Summary"));
+            expect((tree["w:sdt"] as readonly unknown[])[0]).to.deep.equal({
+                "w:sdtPr": [
+                    { "w:alias": { _attr: { "w:val": "Summary" } } },
+                    {
+                        "w:docPartObj": [{ "w:docPartGallery": { _attr: { "w:val": "Table of Contents" } } }, { "w:docPartUnique": {} }],
+                    },
+                ],
+            });
+        });
+
         describe("cached entries", () => {
             it("should construct a TOC with cached content", () => {
                 const cachedEntries = [
@@ -304,6 +316,12 @@ describe("Table of Contents", () => {
                                         },
                                     },
                                 },
+                                {
+                                    "w:docPartObj": [
+                                        { "w:docPartGallery": { _attr: { "w:val": "Table of Contents" } } },
+                                        { "w:docPartUnique": {} },
+                                    ],
+                                },
                             ],
                         },
                         {
@@ -359,6 +377,12 @@ describe("Table of Contents", () => {
                                             "w:val": "Table of Contents",
                                         },
                                     },
+                                },
+                                {
+                                    "w:docPartObj": [
+                                        { "w:docPartGallery": { _attr: { "w:val": "Table of Contents" } } },
+                                        { "w:docPartUnique": {} },
+                                    ],
                                 },
                             ],
                         },
@@ -794,6 +818,12 @@ describe("Table of Contents", () => {
                                         },
                                     },
                                 },
+                                {
+                                    "w:docPartObj": [
+                                        { "w:docPartGallery": { _attr: { "w:val": "Table of Contents" } } },
+                                        { "w:docPartUnique": {} },
+                                    ],
+                                },
                             ],
                         },
                         {
@@ -817,6 +847,9 @@ const DEFAULT_TOC = {
                             "w:val": "Table of Contents",
                         },
                     },
+                },
+                {
+                    "w:docPartObj": [{ "w:docPartGallery": { _attr: { "w:val": "Table of Contents" } } }, { "w:docPartUnique": {} }],
                 },
             ],
         },
@@ -886,6 +919,9 @@ const COMPLETE_TOC = {
                         },
                     },
                 },
+                {
+                    "w:docPartObj": [{ "w:docPartGallery": { _attr: { "w:val": "Table of Contents" } } }, { "w:docPartUnique": {} }],
+                },
             ],
         },
         {
@@ -953,6 +989,9 @@ const TOC_WITH_CHILDREN = {
                             "w:val": "My TOC",
                         },
                     },
+                },
+                {
+                    "w:docPartObj": [{ "w:docPartGallery": { _attr: { "w:val": "Table of Contents" } } }, { "w:docPartUnique": {} }],
                 },
             ],
         },

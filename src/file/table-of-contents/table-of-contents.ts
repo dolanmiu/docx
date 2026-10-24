@@ -19,7 +19,7 @@ import type { IContext, IXmlableObject, XmlComponent } from "@file/xml-component
 import { FieldInstruction } from "./field-instruction";
 import { type HeadingEntriesOptions, beginOf, recordTableOfContents } from "./heading-entries";
 import { StructuredDocumentTagContent } from "./sdt-content";
-import { StructuredDocumentTagProperties } from "./sdt-properties";
+import { StructuredDocumentTagProperties, createDocumentPartObject } from "./sdt-properties";
 import type { ITableOfContentsOptions } from "./table-of-contents-properties";
 
 type ToCEntry = {
@@ -40,6 +40,9 @@ type ToCEntry = {
  * so it isn't empty before Word updates it or in applications that don't update it.
  * The page numbers are left for Word to fill in when it updates the field, unless the document's `pageNumbers`
  * writes them.
+ *
+ * It is written in a content control of Word's Table of Contents gallery, as Word writes its own, so Word shows it as a
+ * table of contents, with Update Table, rather than as a content control named by its alias.
  *
  * Reference: http://officeopenxml.com/WPtableOfContents.php
  *
@@ -99,7 +102,9 @@ export class TableOfContents extends FileChild {
         } = {},
     ) {
         super("w:sdt");
-        this.root.push(new StructuredDocumentTagProperties(alias));
+        const sdtProperties = new StructuredDocumentTagProperties(alias);
+        sdtProperties.addChildElement(createDocumentPartObject("Table of Contents"));
+        this.root.push(sdtProperties);
 
         const content = new StructuredDocumentTagContent();
 
