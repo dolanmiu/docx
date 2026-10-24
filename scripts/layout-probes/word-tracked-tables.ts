@@ -19,7 +19,7 @@
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 
-import JSZip from "jszip";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 
 import {
     BorderStyle,
@@ -137,17 +137,16 @@ const doc = new Document({
 });
 
 const main = async (): Promise<void> => {
-    const zip = await JSZip.loadAsync(await Packer.toBuffer(doc));
+    const zip = unzipSync(await Packer.toBuffer(doc), { filter: ({ name }) => !name.endsWith("/") });
     // tblLook's parts as 1 and 0, as the document Word opened has them, rather than as docx writes them, true and false
-    const xml = await zip.file("word/document.xml")!.async("string");
-    zip.file(
-        "word/document.xml",
+    const xml = strFromU8(zip["word/document.xml"]);
+    zip["word/document.xml"] = strToU8(
         xml.replace(/<w:tblLook [^>]*>/g, (look) => look.replaceAll('"true"', '"1"').replaceAll('"false"', '"0"')),
     );
-    const styles = await zip.file("word/styles.xml")!.async("string");
-    zip.file("word/styles.xml", styles.replace("</w:styles>", `${TABLE_STYLES}</w:styles>`));
+    const styles = strFromU8(zip["word/styles.xml"]);
+    zip["word/styles.xml"] = strToU8(styles.replace("</w:styles>", `${TABLE_STYLES}</w:styles>`));
     mkdirSync("build/word-probes", { recursive: true });
-    writeFileSync("build/word-probes/word-tracked-tables.docx", await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }));
+    writeFileSync("build/word-probes/word-tracked-tables.docx", zipSync(zip, { level: 6 }));
 };
 
 void main();

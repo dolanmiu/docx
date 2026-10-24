@@ -13,7 +13,7 @@
 // among Word's lines. The lines before are laid out as they are without a guess, which `demo-lines.ts` checks.
 import { readFileSync } from "node:fs";
 
-import JSZip from "jszip";
+import { strFromU8, unzipSync } from "fflate";
 import { type XmlElement as Element, parseXml } from "../../src/util/xml";
 
 import type { BlockLayout } from "../../src/layout";
@@ -52,17 +52,14 @@ const WORD = [...readFileSync(htmlPath, "utf8").matchAll(/<page[\s\S]*?<\/page>/
     .filter(({ text }) => text.length > 0)
     .sort((a, b) => a.page - b.page || a.y - b.y || a.x - b.x);
 
-const zip = await JSZip.loadAsync(readFileSync(docxPath));
+const zip = unzipSync(readFileSync(docxPath), { filter: ({ name }) => !name.endsWith("/") });
 const parts = new Map<string, Element>();
 const binaryParts = new Map<string, Uint8Array>();
-for (const [path, file] of Object.entries(zip.files)) {
-    if (file.dir) {
-        continue;
-    }
+for (const [path, data] of Object.entries(zip)) {
     if (path.endsWith(".xml") || path.endsWith(".rels")) {
-        parts.set(path, parseXml(await file.async("string"), { keepWhitespaceText: true }));
+        parts.set(path, parseXml(strFromU8(data), { keepWhitespaceText: true }));
     } else {
-        binaryParts.set(path, await file.async("uint8array"));
+        binaryParts.set(path, data);
     }
 }
 

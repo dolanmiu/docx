@@ -31,6 +31,8 @@
  *
  * Usage: npm run run-ts -- scripts/layout-probes/stops2/word-stops-imported.ts [folder]
  */
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
+
 import {
     Document,
     Footer,
@@ -191,13 +193,12 @@ const IMPORTS: Record<string, { readonly doc: Document; readonly matchSource?: b
 };
 
 const files: Record<string, Uint8Array> = {};
-const JSZip = (await import("jszip")).default;
 for (const [name, { doc, strip }] of Object.entries(IMPORTS)) {
     let data = await importedDocument(doc);
     if (strip) {
-        const zip = await JSZip.loadAsync(data);
-        zip.file("word/styles.xml", strip(await zip.file("word/styles.xml")!.async("string")));
-        data = await zip.generateAsync({ type: "uint8array" });
+        const zip = unzipSync(data, { filter: ({ name }) => !name.endsWith("/") });
+        zip["word/styles.xml"] = strToU8(strip(strFromU8(zip["word/styles.xml"])));
+        data = zipSync(zip, { level: 6 });
     }
     files[`word/afchunk-${name}.docx`] = data;
 }

@@ -38,6 +38,8 @@
 // cspell:ignore pdftocairo
 import * as fs from "fs";
 
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
+
 import {
     AlignmentType,
     Document,
@@ -163,17 +165,16 @@ const doc = new Document({
 });
 
 const main = async (): Promise<void> => {
-    const JSZip = (await import("jszip")).default;
-    const zip = await JSZip.loadAsync(await Packer.toBuffer(doc));
-    const written = await zip.file("word/document.xml")!.async("string");
+    const zip = unzipSync(await Packer.toBuffer(doc), { filter: ({ name }) => !name.endsWith("/") });
+    const written = strFromU8(zip["word/document.xml"]);
     // The equation after EQ2d's lines is put in `m:oMathPara`
     const marker = new RegExp(`(${MATH_PARAGRAPH} fill 3</w:t></w:r></w:p><w:p>)(<m:oMath>.*?</m:oMath>)`);
     if (!marker.test(written)) {
         throw new Error(`No equation after ${MATH_PARAGRAPH}'s lines`);
     }
-    zip.file("word/document.xml", written.replace(marker, "$1<m:oMathPara>$2</m:oMathPara>"));
+    zip["word/document.xml"] = strToU8(written.replace(marker, "$1<m:oMathPara>$2</m:oMathPara>"));
     fs.mkdirSync("build/word-probes", { recursive: true });
-    fs.writeFileSync("build/word-probes/word-equations.docx", await zip.generateAsync({ type: "nodebuffer" }));
+    fs.writeFileSync("build/word-probes/word-equations.docx", zipSync(zip, { level: 6 }));
 };
 
 main();

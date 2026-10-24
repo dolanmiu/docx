@@ -35,7 +35,7 @@
 // of the page.
 import * as fs from "fs";
 import * as path from "path";
-import JSZip from "jszip";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import {
     BorderStyle,
     Document,
@@ -816,11 +816,11 @@ export const probeDocument = (options: Partial<ConstructorParameters<typeof Docu
 
 /** The document's file, with the placeholder runs of U8a7 made page breaks */
 export const probeBuffer = async (document: Document = probeDocument()): Promise<Buffer> => {
-    const zip = await JSZip.loadAsync(await Packer.toBuffer(document));
-    const xml = await zip.file("word/document.xml")!.async("string");
+    const zip = unzipSync(await Packer.toBuffer(document), { filter: ({ name }) => !name.endsWith("/") });
+    const xml = strFromU8(zip["word/document.xml"]);
     const placeholder = new RegExp(`<w:t xml:space="preserve">${PAGE_BREAK_28}</w:t>`, "g");
-    zip.file("word/document.xml", xml.replace(placeholder, '<w:br w:type="page"/>'));
-    return zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
+    zip["word/document.xml"] = strToU8(xml.replace(placeholder, '<w:br w:type="page"/>'));
+    return Buffer.from(zipSync(zip, { level: 6 }));
 };
 
 if (process.argv[1]?.endsWith("word-probes.ts")) {

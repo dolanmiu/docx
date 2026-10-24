@@ -25,7 +25,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
-import JSZip from "jszip";
+import { type Unzipped, strFromU8, unzipSync } from "fflate";
 import { type XmlElement as Element, parseXml } from "../src/util/xml";
 
 import { estimatePageNumbers } from "../src/layout/estimate-page-numbers";
@@ -52,10 +52,12 @@ const collapsed = (text: string): string => text.replace(/\s+/g, " ").trim();
 const paragraphsIn = (element: Element): readonly Element[] =>
     element.name === "w:p" ? [element] : (element.elements ?? []).flatMap(paragraphsIn);
 
+/** The files in a .docx, by their paths, leaving out its folders */
+const filesOf = (path: string): Unzipped => unzipSync(readFileSync(path), { filter: ({ name }) => !name.endsWith("/") });
+
 /** Each entry of the document's tables of contents: its heading's text, and the page number written for it */
-const entriesOf = async (path: string): Promise<readonly { readonly title: string; readonly page: string }[]> => {
-    const zip = await JSZip.loadAsync(readFileSync(path));
-    const document = parseXml(await zip.file("word/document.xml")!.async("string"));
+const entriesOf = (path: string): readonly { readonly title: string; readonly page: string }[] => {
+    const document = parseXml(strFromU8(filesOf(path)["word/document.xml"]));
     return paragraphsIn(document)
         .filter((paragraph) => JSON.stringify(paragraph).includes("PAGEREF _Toc"))
         .map((paragraph) => {
@@ -70,9 +72,9 @@ const entriesOf = async (path: string): Promise<readonly { readonly title: strin
 };
 
 /** The results written into the NUMPAGES fields of the document's text, headers and footers */
-const pageCountsOf = async (path: string): Promise<readonly string[]> => {
-    const zip = await JSZip.loadAsync(readFileSync(path));
-    const parts = Object.keys(zip.files).filter((file) => /^word\/(document|header\d+|footer\d+)\.xml$/.test(file));
+const pageCountsOf = (path: string): readonly string[] => {
+    const files = filesOf(path);
+    const parts = Object.keys(files).filter((file) => /^word\/(document|header\d+|footer\d+)\.xml$/.test(file));
     const results: string[] = [];
     const fields: { instruction: string; result?: string }[] = [];
     const read = (element: Element): void => {
@@ -96,7 +98,7 @@ const pageCountsOf = async (path: string): Promise<readonly string[]> => {
         }
     };
     for (const part of parts) {
-        read(parseXml(await zip.file(part)!.async("string")));
+        read(parseXml(strFromU8(files[part])));
     }
     return results;
 };
@@ -108,15 +110,12 @@ const findElement = (element: Element, name: string): Element | undefined =>
         : (element.elements ?? []).reduce<Element | undefined>((found, child) => found ?? findElement(child, name), undefined);
 
 /** The XML parts of a .docx, parsed as patchDocument parses them, by their paths */
-const partsOf = async (path: string): Promise<ReadonlyMap<string, Element>> => {
-    const zip = await JSZip.loadAsync(readFileSync(path));
-    const paths = Object.keys(zip.files).filter((file) => file.endsWith(".xml") || file.endsWith(".rels"));
-    return new Map(
-        await Promise.all(
-            paths.map(async (file) => [file, parseXml(await zip.file(file)!.async("string"), { keepWhitespaceText: true })] as const),
-        ),
+const partsOf = (path: string): ReadonlyMap<string, Element> =>
+    new Map(
+        Object.entries(filesOf(path))
+            .filter(([file]) => file.endsWith(".xml") || file.endsWith(".rels"))
+            .map(([file, data]) => [file, parseXml(strFromU8(data), { keepWhitespaceText: true })] as const),
     );
-};
 
 /**
  * Word's pages of a document it saved, read from the w:lastRenderedPageBreak elements Word writes where each page began
@@ -232,7 +231,7 @@ const notLaidOut: string[] = [];
 for (const name of readdirSync(directory)
     .filter((file) => file.endsWith(".docx") && !file.endsWith(".word.docx"))
     .sort()) {
-    const entries = await entriesOf(join(directory, name));
+    const entries = entriesOf(join(directory, name));
     const references = REFERENCES.flatMap((reference) => {
         const pages = pagesOf(join(directory, name.replace(/\.docx$/, reference.suffix)));
         return pages ? [{ ...reference, pages }] : [];
@@ -256,7 +255,7 @@ for (const name of readdirSync(directory)
         );
     }
     // pdftotext ends each page with a form feed
-    const written = [...new Set(await pageCountsOf(join(directory, name)))];
+    const written = [...new Set(pageCountsOf(join(directory, name)))];
     if (written.length > 0) {
         const results = references.map(({ name: reference, pages }) => {
             const found = String(pages.length - 1);
@@ -283,7 +282,7 @@ const notMarkedCommitted: string[] = [];
 for (const name of readdirSync(directory)
     .filter((file) => file.endsWith(".word.docx"))
     .sort()) {
-    const parts = await partsOf(join(directory, name));
+    const parts = partsOf(join(directory, name));
     const marked = wordPagesOf(parts.get("word/document.xml")!);
     // The number of pages Word had laid out when it saved the document
     const app = parts.get("docProps/app.xml");

@@ -76,7 +76,7 @@
 // cspell:ignore bidi
 import { mkdirSync, writeFileSync } from "node:fs";
 
-import JSZip from "jszip";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 
 import {
     AlignmentType,
@@ -308,8 +308,8 @@ const replace = (text: string, pattern: RegExp, replacement: (...groups: string[
 };
 
 const main = async (): Promise<void> => {
-    const zip = await JSZip.loadAsync(await Packer.toBuffer(doc));
-    let xml = await zip.file("word/numbering.xml")!.async("string");
+    const zip = unzipSync(await Packer.toBuffer(doc), { filter: ({ name }) => !name.endsWith("/") });
+    let xml = strFromU8(zip["word/numbering.xml"]);
     // Each list's w:num, and the definition it numbers by, from the lists docx made while it wrote the document
     const nums = new Map(doc.Numbering.ConcreteNumbering.map(({ reference, instance, numId }) => [`${reference}-${instance}`, numId]));
     const numOf = (list: string): RegExp => new RegExp(`(<w:num w:numId="${nums.get(list)}"><w:abstractNumId w:val="(\\d+)"/>).*?</w:num>`);
@@ -327,9 +327,9 @@ const main = async (): Promise<void> => {
             (_, before: string) => `${before}${extra}`,
         );
     }
-    zip.file("word/numbering.xml", xml);
+    zip["word/numbering.xml"] = strToU8(xml);
     mkdirSync("build/word-probes", { recursive: true });
-    writeFileSync("build/word-probes/word-lists.docx", await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }));
+    writeFileSync("build/word-probes/word-lists.docx", zipSync(zip, { level: 6 }));
 };
 
 void main();

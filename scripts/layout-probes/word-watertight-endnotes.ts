@@ -29,7 +29,7 @@
 // cspell:ignore bbox
 import { mkdirSync, writeFileSync } from "node:fs";
 
-import JSZip from "jszip";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 
 import { Document, EndnoteReferenceRun, LineRuleType, Packer, Paragraph, TextRun } from "docx";
 
@@ -70,17 +70,17 @@ const probe = (name: string, firstLine?: number): Document =>
     });
 
 const write = async (document: Document, name: string, change?: (endnotes: string) => string): Promise<void> => {
-    const zip = await JSZip.loadAsync(await Packer.toBuffer(document));
+    const zip = unzipSync(await Packer.toBuffer(document), { filter: ({ name }) => !name.endsWith("/") });
     if (change) {
-        const before = await zip.file("word/endnotes.xml")!.async("string");
+        const before = strFromU8(zip["word/endnotes.xml"]);
         const after = change(before);
         if (after === before) {
             throw new Error(`${name}: the change to the endnotes found nothing to change`);
         }
-        zip.file("word/endnotes.xml", after);
+        zip["word/endnotes.xml"] = strToU8(after);
     }
     mkdirSync("build/word-probes", { recursive: true });
-    writeFileSync(`build/word-probes/${name}.docx`, await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }));
+    writeFileSync(`build/word-probes/${name}.docx`, zipSync(zip, { level: 6 }));
 };
 
 const main = async (): Promise<void> => {

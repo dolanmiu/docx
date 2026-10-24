@@ -59,7 +59,7 @@
 // cspell:ignore bbox Carlito WinAnsi Aptos Caladea GSUB
 import { mkdirSync, writeFileSync } from "node:fs";
 
-import JSZip from "jszip";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 
 import { Document, Packer, Paragraph, type ParagraphChild, TextRun } from "docx";
 
@@ -397,15 +397,12 @@ const doc = new Document({
 });
 
 const main = async (): Promise<void> => {
-    const zip = await JSZip.loadAsync(await Packer.toBuffer(doc));
+    const zip = unzipSync(await Packer.toBuffer(doc), { filter: ({ name }) => !name.endsWith("/") });
     // Ligatures, written as a language, at the end of the run's properties, as their schema has them
-    const xml = (await zip.file("word/document.xml")!.async("string")).replace(
-        /<w:lang w:val="x-ligatures-(\w+)"\/>/g,
-        '<w14:ligatures w14:val="$1"/>',
-    );
-    zip.file("word/document.xml", xml);
+    const xml = strFromU8(zip["word/document.xml"]).replace(/<w:lang w:val="x-ligatures-(\w+)"\/>/g, '<w14:ligatures w14:val="$1"/>');
+    zip["word/document.xml"] = strToU8(xml);
     mkdirSync("build/word-probes", { recursive: true });
-    writeFileSync("build/word-probes/word-kerning.docx", await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }));
+    writeFileSync("build/word-probes/word-kerning.docx", zipSync(zip, { level: 6 }));
     // Each line as [its probe, its face's name, whether it is kerned, its ligatures or "", its text]
     const sidecar = {
         size: SIZE,

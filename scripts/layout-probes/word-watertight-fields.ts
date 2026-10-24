@@ -12,7 +12,7 @@
 // cspell:ignore bbox
 import { mkdirSync, writeFileSync } from "node:fs";
 
-import JSZip from "jszip";
+import { unzipSync, zipSync } from "fflate";
 
 import {
     Bookmark,
@@ -110,9 +110,9 @@ const doc = new Document({
 });
 
 const main = async (): Promise<void> => {
-    const zip = await JSZip.loadAsync(await Packer.toBuffer(doc));
+    const zip = unzipSync(await Packer.toBuffer(doc), { filter: ({ name }) => !name.endsWith("/") });
     mkdirSync("build/word-probes", { recursive: true });
-    writeFileSync("build/word-probes/word-watertight-fields.docx", await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }));
+    writeFileSync("build/word-probes/word-watertight-fields.docx", zipSync(zip, { level: 6 }));
 };
 
 void main();

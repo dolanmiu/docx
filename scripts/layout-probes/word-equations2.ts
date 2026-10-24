@@ -44,7 +44,7 @@
 // cspell:ignore pdftocairo nabla
 import * as fs from "fs";
 
-import JSZip from "jszip";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 
 import { Document, type ISectionOptions, Math as Equation, MathFunction, MathRun, Packer, Paragraph, TextRun } from "docx";
 
@@ -182,8 +182,8 @@ const CHARACTERS: Readonly<Record<string, string>> = {
 };
 
 const main = async (): Promise<void> => {
-    const zip = await JSZip.loadAsync(await Packer.toBuffer(doc));
-    let xml = await zip.file("word/document.xml")!.async("string");
+    const zip = unzipSync(await Packer.toBuffer(doc), { filter: ({ name }) => !name.endsWith("/") });
+    let xml = strFromU8(zip["word/document.xml"]);
     xml = xml.replace(/@(\w+)@/g, (marker, name: string) => CHARACTERS[name] ?? marker);
     // EQ9e's run is 16 points
     xml = xml.replace(/<m:r><m:t>@BIG@x\+y<\/m:t><\/m:r>/, '<m:r><w:rPr><w:sz w:val="32"/></w:rPr><m:t>x+y</m:t></m:r>');
@@ -195,9 +195,9 @@ const main = async (): Promise<void> => {
     if (/@\w+@/.test(xml)) {
         throw new Error(`A marker is left: ${/@\w+@/.exec(xml)![0]}`);
     }
-    zip.file("word/document.xml", xml);
+    zip["word/document.xml"] = strToU8(xml);
     fs.mkdirSync("build/word-probes", { recursive: true });
-    fs.writeFileSync("build/word-probes/word-equations2.docx", await zip.generateAsync({ type: "nodebuffer" }));
+    fs.writeFileSync("build/word-probes/word-equations2.docx", zipSync(zip, { level: 6 }));
 };
 
 main();

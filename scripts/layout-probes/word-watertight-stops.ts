@@ -33,7 +33,7 @@
 // cspell:ignore bbox
 import { mkdirSync, writeFileSync } from "node:fs";
 
-import JSZip from "jszip";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 
 import {
     AlignmentType,
@@ -481,11 +481,11 @@ const doc = new Document({
 });
 
 const main = async (): Promise<void> => {
-    const zip = await JSZip.loadAsync(await Packer.toBuffer(doc));
-    const styles = await zip.file("word/styles.xml")!.async("string");
-    zip.file("word/styles.xml", styles.replace("</w:styles>", `${FIRST_ROW_STYLE}</w:styles>`));
+    const zip = unzipSync(await Packer.toBuffer(doc), { filter: ({ name }) => !name.endsWith("/") });
+    const styles = strFromU8(zip["word/styles.xml"]);
+    zip["word/styles.xml"] = strToU8(styles.replace("</w:styles>", `${FIRST_ROW_STYLE}</w:styles>`));
     mkdirSync("build/word-probes", { recursive: true });
-    writeFileSync("build/word-probes/word-watertight-stops.docx", await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }));
+    writeFileSync("build/word-probes/word-watertight-stops.docx", zipSync(zip, { level: 6 }));
 };
 
 void main();

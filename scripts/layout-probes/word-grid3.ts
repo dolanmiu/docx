@@ -35,7 +35,7 @@
 // cspell:ignore bbox linesAndChars snapToChars charSpace linePitch beforeLines tbRl
 import { mkdirSync, writeFileSync } from "node:fs";
 
-import JSZip from "jszip";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 
 import {
     Document,
@@ -215,14 +215,11 @@ const doc = new Document({
 });
 
 const main = async (): Promise<void> => {
-    const zip = await JSZip.loadAsync(await Packer.toBuffer(doc));
-    const xml = await zip.file("word/document.xml")!.async("string");
-    zip.file(
-        "word/document.xml",
-        INJECTIONS.reduce((text, [marker, replacement]) => text.replace(marker, replacement), xml),
-    );
+    const zip = unzipSync(await Packer.toBuffer(doc), { filter: ({ name }) => !name.endsWith("/") });
+    const xml = strFromU8(zip["word/document.xml"]);
+    zip["word/document.xml"] = strToU8(INJECTIONS.reduce((text, [marker, replacement]) => text.replace(marker, replacement), xml));
     mkdirSync("build/word-probes", { recursive: true });
-    writeFileSync("build/word-probes/word-grid3.docx", await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }));
+    writeFileSync("build/word-probes/word-grid3.docx", zipSync(zip, { level: 6 }));
 };
 
 void main();

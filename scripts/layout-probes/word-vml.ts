@@ -56,7 +56,7 @@
 import * as fs from "fs";
 import { deflateSync } from "node:zlib";
 
-import JSZip from "jszip";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 
 import { AlignmentType, Document, Header, type ISectionOptions, Packer, Paragraph, TextRun, Textbox } from "docx";
 
@@ -226,30 +226,29 @@ const inject = (xml: string): { readonly xml: string; readonly names: readonly s
 };
 
 const main = async (): Promise<void> => {
-    const zip = await JSZip.loadAsync(await Packer.toBuffer(doc));
-    const parts = Object.keys(zip.files).filter((name) => /^word\/(document|header\d+)\.xml$/.test(name));
+    const zip: Record<string, Uint8Array> = unzipSync(await Packer.toBuffer(doc), { filter: ({ name }) => !name.endsWith("/") });
+    const parts = Object.keys(zip).filter((name) => /^word\/(document|header\d+)\.xml$/.test(name));
     const names: string[] = [];
     for (const part of parts) {
-        const written = inject(await zip.file(part)!.async("string"));
+        const written = inject(strFromU8(zip[part]));
         names.push(...written.names);
-        zip.file(part, written.xml);
+        zip[part] = strToU8(written.xml);
     }
     const missing = Object.keys(VML).filter((name) => !names.includes(name));
     if (missing.length > 0) {
         throw new Error(`No marker for ${missing.join(", ")}`);
     }
     // VM8's picture, and its relationship from the document
-    zip.file("word/media/vml-picture.png", pixel());
-    const relationships = await zip.file("word/_rels/document.xml.rels")!.async("string");
-    zip.file(
-        "word/_rels/document.xml.rels",
+    zip["word/media/vml-picture.png"] = pixel();
+    const relationships = strFromU8(zip["word/_rels/document.xml.rels"]);
+    zip["word/_rels/document.xml.rels"] = strToU8(
         relationships.replace(
             "</Relationships>",
             `<Relationship Id="${PICTURE}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/vml-picture.png"/></Relationships>`,
         ),
     );
     fs.mkdirSync("build/word-probes", { recursive: true });
-    fs.writeFileSync("build/word-probes/word-vml.docx", await zip.generateAsync({ type: "nodebuffer" }));
+    fs.writeFileSync("build/word-probes/word-vml.docx", zipSync(zip, { level: 6 }));
 };
 
 main();

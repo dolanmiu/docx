@@ -59,7 +59,7 @@
 // cspell:ignore Calibri pneumonoultramicroscopicsilicovolcanoconiosis incomprehensibilities Donau dampf schiff fahrts gesellschaft zxx unbe unbeliev aban extraordinar
 import { mkdirSync, writeFileSync } from "node:fs";
 
-import JSZip from "jszip";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 
 import {
     AlignmentType,
@@ -339,15 +339,12 @@ const DOCUMENTS = [
 const main = async (): Promise<void> => {
     mkdirSync("build/word-probes", { recursive: true });
     for (const [name, hyphenation] of DOCUMENTS) {
-        const zip = await JSZip.loadAsync(await Packer.toBuffer(doc(hyphenation)));
-        const styles = await zip.file("word/styles.xml")!.async("string");
-        zip.file("word/styles.xml", styles.replace("</w:styles>", `${STYLES}</w:styles>`));
-        const body = await zip.file("word/document.xml")!.async("string");
-        zip.file(
-            "word/document.xml",
-            INJECTIONS.reduce((xml, [marker, replacement]) => xml.replace(marker, replacement), body),
-        );
-        writeFileSync(`build/word-probes/${name}.docx`, await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }));
+        const zip = unzipSync(await Packer.toBuffer(doc(hyphenation)), { filter: ({ name }) => !name.endsWith("/") });
+        const styles = strFromU8(zip["word/styles.xml"]);
+        zip["word/styles.xml"] = strToU8(styles.replace("</w:styles>", `${STYLES}</w:styles>`));
+        const body = strFromU8(zip["word/document.xml"]);
+        zip["word/document.xml"] = strToU8(INJECTIONS.reduce((xml, [marker, replacement]) => xml.replace(marker, replacement), body));
+        writeFileSync(`build/word-probes/${name}.docx`, zipSync(zip, { level: 6 }));
     }
 };
 
