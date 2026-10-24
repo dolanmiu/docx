@@ -1,5 +1,6 @@
-import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
+
+import { encodeUtf8 } from "@util/convenience-functions";
 
 import { readThemeColors } from "./theme-colors";
 
@@ -49,16 +50,16 @@ const OFFICE_COLORS = {
     followedHyperlink: "954F72",
 };
 
-const createZip = (files: readonly (readonly [string, string | Uint8Array])[]): JSZip =>
-    files.reduce((zip, [path, content]) => zip.file(path, content), new JSZip());
+const createZip = (files: readonly (readonly [string, string | Uint8Array])[]): ReadonlyMap<string, Uint8Array> =>
+    new Map(files.map(([path, content]) => [path, typeof content === "string" ? encodeUtf8(content) : content]));
 
 describe("readThemeColors", () => {
-    it("should read every color of the document's theme, in capitals", async () => {
+    it("should read every color of the document's theme, in capitals", () => {
         const zip = createZip([
             ["word/_rels/document.xml.rels", RELATIONSHIPS("theme/theme1.xml")],
             ["word/theme/theme1.xml", THEME(OFFICE_2007_SCHEME)],
         ]);
-        expect(await readThemeColors(zip)).to.deep.equal({
+        expect(readThemeColors(zip)).to.deep.equal({
             dark1: "000000",
             light1: "FFFFFF",
             dark2: "1F497D",
@@ -74,7 +75,7 @@ describe("readThemeColors", () => {
         });
     });
 
-    it("should read the last value of system colors, as Word writes the dark and light colors", async () => {
+    it("should read the last value of system colors, as Word writes the dark and light colors", () => {
         const zip = createZip([
             ["word/_rels/document.xml.rels", RELATIONSHIPS("theme/theme1.xml")],
             [
@@ -84,10 +85,10 @@ describe("readThemeColors", () => {
                 ),
             ],
         ]);
-        expect(await readThemeColors(zip)).to.deep.equal({ ...OFFICE_COLORS, dark1: "1A1A1A", light1: "FAFAFA" });
+        expect(readThemeColors(zip)).to.deep.equal({ ...OFFICE_COLORS, dark1: "1A1A1A", light1: "FAFAFA" });
     });
 
-    it("should use Office's colors for colors the theme doesn't give, or gives in a way that isn't read", async () => {
+    it("should use Office's colors for colors the theme doesn't give, or gives in a way that isn't read", () => {
         const zip = createZip([
             ["word/_rels/document.xml.rels", RELATIONSHIPS("theme/theme1.xml")],
             [
@@ -104,44 +105,44 @@ describe("readThemeColors", () => {
             `),
             ],
         ]);
-        expect(await readThemeColors(zip)).to.deep.equal({ ...OFFICE_COLORS, accent4: "2E7D32" });
+        expect(readThemeColors(zip)).to.deep.equal({ ...OFFICE_COLORS, accent4: "2E7D32" });
     });
 
-    it("should read a theme whose namespace has another prefix", async () => {
+    it("should read a theme whose namespace has another prefix", () => {
         const zip = createZip([
             ["word/_rels/document.xml.rels", RELATIONSHIPS("theme/theme1.xml")],
             ["word/theme/theme1.xml", THEME(`<d:accent1><d:srgbClr val="2E7D32"/></d:accent1>`, "d")],
         ]);
-        expect(await readThemeColors(zip)).to.deep.equal({ ...OFFICE_COLORS, accent1: "2E7D32" });
+        expect(readThemeColors(zip)).to.deep.equal({ ...OFFICE_COLORS, accent1: "2E7D32" });
     });
 
-    it("should find the theme from the document's relationships", async () => {
+    it("should find the theme from the document's relationships", () => {
         const zip = createZip([
             ["word/_rels/document.xml.rels", RELATIONSHIPS("/word/themes/custom.xml")],
             ["word/theme/theme1.xml", THEME(`<a:accent1><a:srgbClr val="111111"/></a:accent1>`)],
             ["word/themes/custom.xml", THEME(`<a:accent1><a:srgbClr val="2E7D32"/></a:accent1>`)],
         ]);
-        expect(await readThemeColors(zip)).to.deep.equal({ ...OFFICE_COLORS, accent1: "2E7D32" });
+        expect(readThemeColors(zip)).to.deep.equal({ ...OFFICE_COLORS, accent1: "2E7D32" });
     });
 
-    it("should find a theme whose target goes up out of the document's folder", async () => {
+    it("should find a theme whose target goes up out of the document's folder", () => {
         const zip = createZip([
             ["word/_rels/document.xml.rels", RELATIONSHIPS("../theme/theme1.xml")],
             ["word/theme/theme1.xml", THEME(`<a:accent1><a:srgbClr val="111111"/></a:accent1>`)],
             ["theme/theme1.xml", THEME(`<a:accent1><a:srgbClr val="2E7D32"/></a:accent1>`)],
         ]);
-        expect(await readThemeColors(zip)).to.deep.equal({ ...OFFICE_COLORS, accent1: "2E7D32" });
+        expect(readThemeColors(zip)).to.deep.equal({ ...OFFICE_COLORS, accent1: "2E7D32" });
     });
 
-    it("should find a theme whose target is written with backslashes", async () => {
+    it("should find a theme whose target is written with backslashes", () => {
         const zip = createZip([
             ["word/_rels/document.xml.rels", RELATIONSHIPS("theme\\theme1.xml")],
             ["word/theme/theme1.xml", THEME(`<a:accent1><a:srgbClr val="2E7D32"/></a:accent1>`)],
         ]);
-        expect(await readThemeColors(zip)).to.deep.equal({ ...OFFICE_COLORS, accent1: "2E7D32" });
+        expect(readThemeColors(zip)).to.deep.equal({ ...OFFICE_COLORS, accent1: "2E7D32" });
     });
 
-    it("should use Office's colors for a theme without a color scheme", async () => {
+    it("should use Office's colors for a theme without a color scheme", () => {
         const zip = createZip([
             ["word/_rels/document.xml.rels", RELATIONSHIPS("theme/theme1.xml")],
             [
@@ -149,16 +150,16 @@ describe("readThemeColors", () => {
                 `<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:themeElements/></a:theme>`,
             ],
         ]);
-        expect(await readThemeColors(zip)).to.deep.equal(OFFICE_COLORS);
+        expect(readThemeColors(zip)).to.deep.equal(OFFICE_COLORS);
     });
 
-    it("should return undefined for a document without a theme", async () => {
-        expect(await readThemeColors(createZip([]))).to.equal(undefined);
+    it("should return undefined for a document without a theme", () => {
+        expect(readThemeColors(createZip([]))).to.equal(undefined);
         expect(
-            await readThemeColors(createZip([["word/_rels/document.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`]])),
+            readThemeColors(createZip([["word/_rels/document.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`]])),
         ).to.equal(undefined);
         expect(
-            await readThemeColors(
+            readThemeColors(
                 createZip([
                     [
                         "word/_rels/document.xml.rels",
@@ -169,12 +170,12 @@ describe("readThemeColors", () => {
         ).to.equal(undefined);
     });
 
-    it("should return undefined when the theme the relationships name isn't there", async () => {
+    it("should return undefined when the theme the relationships name isn't there", () => {
         const zip = createZip([["word/_rels/document.xml.rels", RELATIONSHIPS("theme/theme1.xml")]]);
-        expect(await readThemeColors(zip)).to.equal(undefined);
+        expect(readThemeColors(zip)).to.equal(undefined);
     });
 
-    it("should leave a theme in UTF-16 unread, as the patcher leaves such parts", async () => {
+    it("should leave a theme in UTF-16 unread, as the patcher leaves such parts", () => {
         const theme = THEME(`<a:accent1><a:srgbClr val="2E7D32"/></a:accent1>`);
         const utf16 = (byteOrderMark: readonly number[], littleEndian: boolean): Uint8Array =>
             new Uint8Array([
@@ -189,7 +190,7 @@ describe("readThemeColors", () => {
                 ["word/_rels/document.xml.rels", RELATIONSHIPS("theme/theme1.xml")],
                 ["word/theme/theme1.xml", utf16(byteOrderMark, littleEndian)],
             ]);
-            expect(await readThemeColors(zip)).to.equal(undefined);
+            expect(readThemeColors(zip)).to.equal(undefined);
         }
     });
 });

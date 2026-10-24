@@ -1,11 +1,12 @@
-import JSZip from "jszip";
+/* eslint-disable @typescript-eslint/naming-convention -- The keys of objects here are paths of parts in a package */
 import { Readable } from "stream";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { Document, Packer, Paragraph, TextRun } from "../index";
 import { type IPatch, patchDocument } from "./from-docx";
 import { patchDetector } from "./patch-detector";
 import { PatchType } from "./patch-type";
+import { textOf, unzip, zip } from "../tests/zip";
 
 const MOCK_XML = `
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -356,8 +357,7 @@ describe("patch-detector", () => {
             keys.filter((key) => Object.hasOwn(builders, key)).map(async (key) => [key, await builders[key]()] as const),
         );
         const output = await patchDocument({ outputType: "nodebuffer", data, patches: Object.fromEntries(entries) });
-        const zip = await JSZip.loadAsync(output);
-        const xml = await zip.file("word/document.xml")!.async("string");
+        const xml = textOf(unzip(output), "word/document.xml")!;
 
         expect(keys).toEqual(["name", "unknown"]);
         expect(name).toHaveBeenCalledOnce();
@@ -369,25 +369,12 @@ describe("patch-detector", () => {
 
     describe("patchDetector", () => {
         describe("document.xml and [Content_Types].xml", () => {
-            beforeEach(() => {
-                vi.spyOn(JSZip, "loadAsync").mockReturnValue(
-                    new Promise<JSZip>((resolve) => {
-                        const zip = new JSZip();
-
-                        zip.file("word/document.xml", MOCK_XML);
-                        zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
-                        resolve(zip);
-                    }),
-                );
-            });
-
-            afterEach(() => {
-                vi.restoreAllMocks();
-            });
-
             it("should patch the document", async () => {
                 const output = await patchDetector({
-                    data: Buffer.from(""),
+                    data: zip({
+                        "word/document.xml": MOCK_XML,
+                        "[Content_Types].xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
+                    }),
                 });
                 expect(output).toMatchObject(["name", "paragraph_replace", "table", "image_test", "table_heading_1", "item_1"]);
             });
@@ -396,25 +383,12 @@ describe("patch-detector", () => {
 
     describe("patchDetector", () => {
         describe("document.xml and [Content_Types].xml", () => {
-            beforeEach(() => {
-                vi.spyOn(JSZip, "loadAsync").mockReturnValue(
-                    new Promise<JSZip>((resolve) => {
-                        const zip = new JSZip();
-
-                        zip.file("word/document.xml", MOCK_XML_2);
-                        zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
-                        resolve(zip);
-                    }),
-                );
-            });
-
-            afterEach(() => {
-                vi.restoreAllMocks();
-            });
-
             it("should patch the document", async () => {
                 const output = await patchDetector({
-                    data: Buffer.from(""),
+                    data: zip({
+                        "word/document.xml": MOCK_XML_2,
+                        "[Content_Types].xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
+                    }),
                 });
                 expect(output).toMatchObject(["school_name", "address"]);
             });
@@ -443,7 +417,7 @@ describe("patch-detector", () => {
             data: streamOf(),
             patches: { name: { type: PatchType.PARAGRAPH, children: [new TextRun("Ada")] } },
         });
-        const xml = await (await JSZip.loadAsync(output)).file("word/document.xml")!.async("string");
+        const xml = textOf(unzip(output), "word/document.xml")!;
 
         expect(keys).toEqual(["name"]);
         expect(xml).toMatch(/<w:t[^>]*>Ada<\/w:t>/);
@@ -451,13 +425,14 @@ describe("patch-detector", () => {
     });
 
     describe("with JSZip instance", () => {
-        it("should accept a JSZip instance directly", async () => {
-            const zip = new JSZip();
-            zip.file("word/document.xml", MOCK_XML);
-            zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
+        it("should accept a JSZip instance directly, reading it through its generateAsync", async () => {
+            const template = zip({
+                "word/document.xml": MOCK_XML,
+                "[Content_Types].xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
+            });
 
             const output = await patchDetector({
-                data: zip,
+                data: { generateAsync: () => Promise.resolve(template) },
             });
             expect(output).toMatchObject(["name", "paragraph_replace", "table", "image_test", "table_heading_1", "item_1"]);
         });

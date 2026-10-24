@@ -1,4 +1,3 @@
-import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
 
 import { Packer } from "@export/packer/packer";
@@ -9,6 +8,7 @@ import { ImageRun, Paragraph, Run, TextRun } from "@file/paragraph";
 import { BuilderElement, type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 
 import { PackagePart, type PackagePartOptions, type PackagePartRelationshipType, PackageParts } from "./package-part";
+import { textOf, unzip } from "../../tests/zip";
 
 const CHART_TYPE = "application/vnd.openxmlformats-officedocument.drawingml.chart+xml";
 const CHART_RELATIONSHIP = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart";
@@ -57,12 +57,9 @@ const createWorkbook = (content: PackagePartOptions["content"] = new Uint8Array(
 const paragraphWith = (...parts: readonly PackagePart<PackagePartRelationshipType>[]): Paragraph =>
     new Paragraph({ children: parts.map((part) => new PartRun(part)) });
 
-const pack = async (file: File): Promise<JSZip> => JSZip.loadAsync(await Packer.toBuffer(file));
+const pack = async (file: File): Promise<ReadonlyMap<string, Uint8Array>> => unzip(await Packer.toBuffer(file));
 
-const read = async (zip: JSZip, path: string): Promise<string | undefined> => {
-    const text = await zip.file(path)?.async("text");
-    return text;
-};
+const read = (zip: ReadonlyMap<string, Uint8Array>, path: string): string | undefined => textOf(zip, path);
 
 const count = (text: string | undefined, search: string): number => (text ?? "").split(search).length - 1;
 
@@ -95,18 +92,16 @@ describe("PackagePart", () => {
             const chart = createChart();
             const zip = await pack(new File({ sections: [{ children: [paragraphWith(chart)] }] }));
 
-            expect(await read(zip, "word/charts/chart1.xml")).to.equal(
-                '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><c:chartSpace/>',
-            );
-            expect(await read(zip, "[Content_Types].xml")).to.contain(
+            expect(read(zip, "word/charts/chart1.xml")).to.equal('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><c:chartSpace/>');
+            expect(read(zip, "[Content_Types].xml")).to.contain(
                 `<Override ContentType="${CHART_TYPE}" PartName="/word/charts/chart1.xml"/>`,
             );
-            expect(await read(zip, "word/_rels/document.xml.rels")).to.contain(
+            expect(read(zip, "word/_rels/document.xml.rels")).to.contain(
                 `<Relationship Id="${chart.relationshipId}" Type="${CHART_RELATIONSHIP}" Target="charts/chart1.xml"/>`,
             );
-            expect(await read(zip, "word/document.xml")).to.contain(`<c:chart>${chart.relationshipId}</c:chart>`);
+            expect(read(zip, "word/document.xml")).to.contain(`<c:chart>${chart.relationshipId}</c:chart>`);
             // A part whose XML refers to nothing has no relationships part
-            expect(zip.file("word/charts/_rels/chart1.xml.rels")).to.equal(null);
+            expect(zip.has("word/charts/_rels/chart1.xml.rels")).to.equal(false);
         });
 
         it("should write an image part in media/, beside docx's own images, which are named by a hash of their data", async () => {
@@ -135,11 +130,9 @@ describe("PackagePart", () => {
                 }),
             );
 
-            expect(await zip.file("word/media/image1.png")?.async("uint8array")).to.deep.equal(new Uint8Array([1]));
-            expect(Object.keys(zip.files).filter((path) => /^word\/media\/[0-9a-f]{40}\.png$/.test(path))).to.have.length(1);
-            expect(await read(zip, "[Content_Types].xml")).to.contain(
-                '<Override ContentType="image/png" PartName="/word/media/image1.png"/>',
-            );
+            expect(zip.get("word/media/image1.png")).to.deep.equal(new Uint8Array([1]));
+            expect([...zip.keys()].filter((path) => /^word\/media\/[0-9a-f]{40}\.png$/.test(path))).to.have.length(1);
+            expect(read(zip, "[Content_Types].xml")).to.contain('<Override ContentType="image/png" PartName="/word/media/image1.png"/>');
         });
 
         it("should relate a part as an OLE object, which isn't one of the relationship types", async () => {
@@ -153,10 +146,10 @@ describe("PackagePart", () => {
             });
             const zip = await pack(new File({ sections: [{ children: [paragraphWith(oleObject)] }] }));
 
-            expect(await read(zip, "word/_rels/document.xml.rels")).to.contain(
+            expect(read(zip, "word/_rels/document.xml.rels")).to.contain(
                 `<Relationship Id="${oleObject.relationshipId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject" Target="embeddings/oleObject1.bin"/>`,
             );
-            expect(await zip.file("word/embeddings/oleObject1.bin")?.async("uint8array")).to.deep.equal(new Uint8Array([1, 2, 3]));
+            expect(zip.get("word/embeddings/oleObject1.bin")).to.deep.equal(new Uint8Array([1, 2, 3]));
         });
 
         it("should give each part a relationship id of its own", () => {
@@ -177,7 +170,7 @@ describe("PackagePart", () => {
                     ],
                 }),
             );
-            const relationships = await read(zip, "word/_rels/document.xml.rels");
+            const relationships = read(zip, "word/_rels/document.xml.rels");
 
             expect(relationships).to.contain(`Id="${charts[0].relationshipId}" Type="${CHART_RELATIONSHIP}" Target="charts/chart1.xml"`);
             expect(relationships).to.contain(`Id="${charts[1].relationshipId}" Type="${CHART_RELATIONSHIP}" Target="charts/chart2.xml"`);
@@ -188,10 +181,10 @@ describe("PackagePart", () => {
                 `Id="${workbooks[1].relationshipId}" Type="${PACKAGE_RELATIONSHIP}" Target="embeddings/Microsoft_Excel_Worksheet2.xlsx"`,
             );
             // The header is written after the document
-            expect(await read(zip, "word/_rels/header1.xml.rels")).to.contain(
+            expect(read(zip, "word/_rels/header1.xml.rels")).to.contain(
                 `Id="${charts[2].relationshipId}" Type="${CHART_RELATIONSHIP}" Target="charts/chart3.xml"`,
             );
-            expect(Object.keys(zip.files).filter((path) => /^word\/(charts|embeddings)\/[^/]+$/.test(path))).to.deep.equal([
+            expect([...zip.keys()].filter((path) => /^word\/(charts|embeddings)\/[^/]+$/.test(path))).to.deep.equal([
                 "word/charts/chart1.xml",
                 "word/embeddings/Microsoft_Excel_Worksheet1.xlsx",
                 "word/charts/chart2.xml",
@@ -219,14 +212,14 @@ describe("PackagePart", () => {
             );
 
             for (const relationships of ["header1", "footer1", "footnotes", "endnotes", "comments"]) {
-                expect(await read(zip, `word/_rels/${relationships}.xml.rels`)).to.contain(
+                expect(read(zip, `word/_rels/${relationships}.xml.rels`)).to.contain(
                     `<Relationship Id="${chart.relationshipId}" Type="${CHART_RELATIONSHIP}" Target="charts/chart1.xml"/>`,
                 );
             }
-            expect(await read(zip, "word/_rels/document.xml.rels")).to.not.contain(chart.relationshipId);
-            expect(zip.file("word/charts/chart2.xml")).to.equal(null);
+            expect(read(zip, "word/_rels/document.xml.rels")).to.not.contain(chart.relationshipId);
+            expect(zip.has("word/charts/chart2.xml")).to.equal(false);
             // The endnotes are written after the content types used to be, so the part's content type is written last
-            expect(count(await read(zip, "[Content_Types].xml"), "/word/charts/chart1.xml")).to.equal(1);
+            expect(count(read(zip, "[Content_Types].xml"), "/word/charts/chart1.xml")).to.equal(1);
         });
 
         it("should add a part and its relationships once, however many times it is written, and when packed twice", async () => {
@@ -244,13 +237,10 @@ describe("PackagePart", () => {
             await pack(file);
             const zip = await pack(file);
 
-            expect(Object.keys(zip.files).filter((path) => path.startsWith("word/charts/"))).to.deep.equal([
-                "word/charts/",
-                "word/charts/chart1.xml",
-            ]);
-            expect(count(await read(zip, "word/_rels/document.xml.rels"), chart.relationshipId)).to.equal(1);
-            expect(count(await read(zip, "word/_rels/header1.xml.rels"), chart.relationshipId)).to.equal(1);
-            expect(count(await read(zip, "[Content_Types].xml"), "/word/charts/chart1.xml")).to.equal(1);
+            expect([...zip.keys()].filter((path) => path.startsWith("word/charts/"))).to.deep.equal(["word/charts/chart1.xml"]);
+            expect(count(read(zip, "word/_rels/document.xml.rels"), chart.relationshipId)).to.equal(1);
+            expect(count(read(zip, "word/_rels/header1.xml.rels"), chart.relationshipId)).to.equal(1);
+            expect(count(read(zip, "[Content_Types].xml"), "/word/charts/chart1.xml")).to.equal(1);
         });
 
         it("should add the parts a part's XML refers to, with relationships relative to its folder", async () => {
@@ -271,21 +261,19 @@ describe("PackagePart", () => {
 
             await pack(file);
             const zip = await pack(file);
-            const relationships = await read(zip, "word/charts/_rels/chart1.xml.rels");
+            const relationships = read(zip, "word/charts/_rels/chart1.xml.rels");
 
             expect(relationships).to.equal(
                 `<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
                     `<Relationship Id="${workbook.relationshipId}" Type="${PACKAGE_RELATIONSHIP}" Target="../embeddings/Microsoft_Excel_Worksheet1.xlsx"/>` +
                     `<Relationship Id="${style.relationshipId}" Type="${CHART_RELATIONSHIP}" Target="style1.xml"/></Relationships>`,
             );
-            expect(await read(zip, "word/_rels/document.xml.rels")).to.not.contain(workbook.relationshipId);
-            expect(await read(zip, "[Content_Types].xml")).to.contain(
+            expect(read(zip, "word/_rels/document.xml.rels")).to.not.contain(workbook.relationshipId);
+            expect(read(zip, "[Content_Types].xml")).to.contain(
                 '<Override ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" PartName="/word/embeddings/Microsoft_Excel_Worksheet1.xlsx"/>',
             );
-            expect(await zip.file("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")?.async("uint8array")).to.deep.equal(
-                new Uint8Array([1, 2, 3]),
-            );
-            expect(await read(zip, "word/charts/style1.xml")).to.contain("<cs:chartStyle/>");
+            expect(zip.get("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")).to.deep.equal(new Uint8Array([1, 2, 3]));
+            expect(read(zip, "word/charts/style1.xml")).to.contain("<cs:chartStyle/>");
         });
 
         it("should zip the files of an embedded package, formatting their XML", async () => {
@@ -299,21 +287,19 @@ describe("PackagePart", () => {
                 ],
             });
             const zip = await pack(new File({ sections: [{ children: [paragraphWith(workbook)] }] }));
-            const embedded = await JSZip.loadAsync(
-                (await zip.file("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")?.async("uint8array"))!,
-            );
+            const embedded = unzip(zip.get("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")!);
 
-            expect(await embedded.file("xl/workbook.xml")?.async("text")).to.equal(
+            expect(textOf(embedded, "xl/workbook.xml")).to.equal(
                 '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook><sheets/></workbook>',
             );
-            expect(await embedded.file("xl/media/image1.png")?.async("uint8array")).to.deep.equal(new Uint8Array([4, 5]));
+            expect(embedded.get("xl/media/image1.png")).to.deep.equal(new Uint8Array([4, 5]));
         });
 
         it("should prettify a part's XML as the document's", async () => {
             const chart = createChart(new BuilderElement({ name: "c:chartSpace", children: [new BuilderElement({ name: "c:chart" })] }));
-            const zip = await JSZip.loadAsync(await Packer.toBuffer(new File({ sections: [{ children: [paragraphWith(chart)] }] }), true));
+            const zip = unzip(await Packer.toBuffer(new File({ sections: [{ children: [paragraphWith(chart)] }] }), true));
 
-            expect(await read(zip, "word/charts/chart1.xml")).to.equal(
+            expect(read(zip, "word/charts/chart1.xml")).to.equal(
                 '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<c:chartSpace>\n  <c:chart/>\n</c:chartSpace>',
             );
         });

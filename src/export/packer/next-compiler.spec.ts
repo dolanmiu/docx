@@ -1,4 +1,3 @@
-import type JSZip from "jszip";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { File } from "@file/file";
@@ -8,8 +7,10 @@ import { LevelFormat } from "@file/numbering";
 import { Bookmark, ExternalHyperlink, ImageRun, Paragraph, TextRun, WpsShapeRun } from "@file/paragraph";
 import { BuilderElement } from "@file/xml-components";
 import * as convenienceFunctions from "@util/convenience-functions";
+import { zipFiles } from "@util/zip";
 
 import { Compiler } from "./next-compiler";
+import { textOf, unzip } from "../../tests/zip";
 
 describe("Compiler", () => {
     let compiler: Compiler;
@@ -17,6 +18,10 @@ describe("Compiler", () => {
     beforeEach(() => {
         compiler = new Compiler();
     });
+
+    // The package's files, zipped as the Packer zips them, and unzipped
+    const compile = (...options: Parameters<Compiler["compile"]>): ReadonlyMap<string, Uint8Array> =>
+        unzip(zipFiles(compiler.compile(...options)));
 
     beforeAll(() => {
         vi.spyOn(convenienceFunctions, "uniqueId").mockReturnValue("test");
@@ -34,11 +39,11 @@ describe("Compiler", () => {
                     children: [{ id: 0, children: [new Paragraph("comment")] }],
                 },
             });
-            const zipFile = compiler.compile(file);
-            const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
+            const zipFile = compile(file);
+            const fileNames = [...zipFile.keys()];
 
             expect(fileNames).is.an.instanceof(Array);
-            expect(fileNames).has.length(24);
+            expect(fileNames).has.length(19);
             expect(fileNames).to.include("word/document.xml");
             expect(fileNames).to.include("word/styles.xml");
             expect(fileNames).to.include("docProps/core.xml");
@@ -59,28 +64,26 @@ describe("Compiler", () => {
             expect(fileNames).to.include("_rels/.rels");
         });
 
-        it("should not pack a comments part, or refer to one, when there are no comments", async () => {
-            const zipFile = compiler.compile(new File({ sections: [], comments: { children: [] } }));
-            const fileNames = Object.keys(zipFile.files);
+        it("should not pack a comments part, or refer to one, when there are no comments", () => {
+            const zipFile = compile(new File({ sections: [], comments: { children: [] } }));
+            const fileNames = [...zipFile.keys()];
 
             expect(fileNames).to.not.include("word/comments.xml");
             expect(fileNames).to.not.include("word/_rels/comments.xml.rels");
-            expect(await zipFile.file("[Content_Types].xml")?.async("text")).to.not.contain("comments");
-            expect(await zipFile.file("word/_rels/document.xml.rels")?.async("text")).to.not.contain("comments");
+            expect(textOf(zipFile, "[Content_Types].xml")).to.not.contain("comments");
+            expect(textOf(zipFile, "word/_rels/document.xml.rels")).to.not.contain("comments");
         });
 
-        it("should pack a comments part, and refer to it, when there are comments", async () => {
-            const zipFile = compiler.compile(
-                new File({ sections: [], comments: { children: [{ id: 0, children: [new Paragraph("comment")] }] } }),
-            );
-            const fileNames = Object.keys(zipFile.files);
+        it("should pack a comments part, and refer to it, when there are comments", () => {
+            const zipFile = compile(new File({ sections: [], comments: { children: [{ id: 0, children: [new Paragraph("comment")] }] } }));
+            const fileNames = [...zipFile.keys()];
 
             expect(fileNames).to.include("word/comments.xml");
             expect(fileNames).to.include("word/_rels/comments.xml.rels");
-            expect(await zipFile.file("[Content_Types].xml")?.async("text")).to.contain(
+            expect(textOf(zipFile, "[Content_Types].xml")).to.contain(
                 '<Override ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml" PartName="/word/comments.xml"/>',
             );
-            expect(await zipFile.file("word/_rels/document.xml.rels")?.async("text")).to.contain(
+            expect(textOf(zipFile, "word/_rels/document.xml.rels")).to.contain(
                 'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments" Target="comments.xml"',
             );
         });
@@ -89,75 +92,71 @@ describe("Compiler", () => {
             // The start of a compound file, which is all the document checks a VBA project for
             const project = Uint8Array.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1, 0x00]);
 
-            it("should pack the VBA project, without the events part when the macros handle no events", async () => {
-                const zipFile = compiler.compile(new File({ sections: [], macros: { project } }));
-                const fileNames = Object.keys(zipFile.files);
+            it("should pack the VBA project, without the events part when the macros handle no events", () => {
+                const zipFile = compile(new File({ sections: [], macros: { project } }));
+                const fileNames = [...zipFile.keys()];
 
-                expect(await zipFile.file("word/vbaProject.bin")?.async("uint8array")).toEqual(project);
+                expect(zipFile.get("word/vbaProject.bin")).toEqual(project);
                 expect(fileNames).not.toContain("word/vbaData.xml");
                 expect(fileNames).not.toContain("word/_rels/vbaProject.bin.rels");
-                expect(await zipFile.file("word/_rels/document.xml.rels")?.async("text")).toContain(
+                expect(textOf(zipFile, "word/_rels/document.xml.rels")).toContain(
                     'Type="http://schemas.microsoft.com/office/2006/relationships/vbaProject" Target="vbaProject.bin"',
                 );
             });
 
-            it("should pack the events the macros handle, and the VBA project's relationship to them", async () => {
-                const zipFile = compiler.compile(new File({ sections: [], macros: { project, events: ["open"] } }));
+            it("should pack the events the macros handle, and the VBA project's relationship to them", () => {
+                const zipFile = compile(new File({ sections: [], macros: { project, events: ["open"] } }));
 
-                expect(await zipFile.file("word/vbaData.xml")?.async("text")).toBe(
+                expect(textOf(zipFile, "word/vbaData.xml")).toBe(
                     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
                         '<wne:vbaSuppData xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml"><wne:docEvents><wne:eventDocOpen/></wne:docEvents></wne:vbaSuppData>',
                 );
-                expect(await zipFile.file("word/_rels/vbaProject.bin.rels")?.async("text")).toContain(
+                expect(textOf(zipFile, "word/_rels/vbaProject.bin.rels")).toContain(
                     '<Relationship Id="rId1" Type="http://schemas.microsoft.com/office/2006/relationships/wordVbaData" Target="vbaData.xml"/>',
                 );
             });
         });
 
-        it("should pack a bibliography's sources as Word does, in a custom XML part with its properties", async () => {
+        it("should pack a bibliography's sources as Word does, in a custom XML part with its properties", () => {
             const sources = new BuilderElement({ name: "b:Sources" });
-            const zipFile = compiler.compile(new File({ sections: [], bibliography: { sources } }));
+            const zipFile = compile(new File({ sections: [], bibliography: { sources } }));
 
-            expect(await zipFile.file("customXml/item1.xml")?.async("text")).toBe(
-                '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><b:Sources/>',
-            );
-            expect(await zipFile.file("customXml/itemProps1.xml")?.async("text")).to.match(
+            expect(textOf(zipFile, "customXml/item1.xml")).toBe('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><b:Sources/>');
+            expect(textOf(zipFile, "customXml/itemProps1.xml")).to.match(
                 /^<\?xml version="1.0" encoding="UTF-8" standalone="no"\?><ds:datastoreItem ds:itemID="\{[0-9A-F-]{36}\}" xmlns:ds="http:\/\/schemas.openxmlformats.org\/officeDocument\/2006\/customXml"><ds:schemaRefs><ds:schemaRef ds:uri="http:\/\/schemas.openxmlformats.org\/officeDocument\/2006\/bibliography"\/><\/ds:schemaRefs><\/ds:datastoreItem>$/,
             );
-            expect(await zipFile.file("customXml/_rels/item1.xml.rels")?.async("text")).toContain(
+            expect(textOf(zipFile, "customXml/_rels/item1.xml.rels")).toContain(
                 '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXmlProps" Target="itemProps1.xml"/>',
             );
-            expect(await zipFile.file("word/_rels/document.xml.rels")?.async("text")).toContain(
+            expect(textOf(zipFile, "word/_rels/document.xml.rels")).toContain(
                 'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml" Target="../customXml/item1.xml"',
             );
         });
 
-        it("should give an image in a comment a relationship from the comments part", async () => {
+        it("should give an image in a comment a relationship from the comments part", () => {
             const image = new ImageRun({ type: "png", data: Buffer.from("", "base64"), transformation: { width: 10, height: 10 } });
-            const zipFile = compiler.compile(
+            const zipFile = compile(
                 new File({ sections: [], comments: { children: [{ id: 0, children: [new Paragraph({ children: [image] })] }] } }),
             );
 
-            expect(await zipFile.file("word/comments.xml")?.async("text")).to.contain('r:embed="rId1"');
-            expect(await zipFile.file("word/_rels/comments.xml.rels")?.async("text")).to.match(
+            expect(textOf(zipFile, "word/comments.xml")).to.contain('r:embed="rId1"');
+            expect(textOf(zipFile, "word/_rels/comments.xml.rels")).to.match(
                 /<Relationship Id="rId1" Type="http:\/\/schemas.openxmlformats.org\/officeDocument\/2006\/relationships\/image" Target="media\/[^"]+\.png"\/>/,
             );
         });
 
-        it("should give an image in an endnote a relationship from the endnotes part", async () => {
+        it("should give an image in an endnote a relationship from the endnotes part", () => {
             const image = new ImageRun({ type: "png", data: Buffer.from("", "base64"), transformation: { width: 10, height: 10 } });
-            const zipFile = compiler.compile(
-                new File({ sections: [], endnotes: { 1: { children: [new Paragraph({ children: [image] })] } } }),
-            );
+            const zipFile = compile(new File({ sections: [], endnotes: { 1: { children: [new Paragraph({ children: [image] })] } } }));
 
-            expect(await zipFile.file("word/endnotes.xml")?.async("text")).to.contain('r:embed="rId1"');
-            expect(await zipFile.file("word/_rels/endnotes.xml.rels")?.async("text")).to.match(
+            expect(textOf(zipFile, "word/endnotes.xml")).to.contain('r:embed="rId1"');
+            expect(textOf(zipFile, "word/_rels/endnotes.xml.rels")).to.match(
                 /<Relationship Id="rId1" Type="http:\/\/schemas.openxmlformats.org\/officeDocument\/2006\/relationships\/image" Target="media\/[^"]+\.png"\/>/,
             );
         });
 
-        it("should write the numbering id of a list in an endnote, and define the list", async () => {
-            const zipFile = compiler.compile(
+        it("should write the numbering id of a list in an endnote, and define the list", () => {
+            const zipFile = compile(
                 new File({
                     numbering: {
                         config: [{ reference: "endnote-list", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }] }],
@@ -169,8 +168,8 @@ describe("Compiler", () => {
                 }),
             );
 
-            expect(await zipFile.file("word/endnotes.xml")?.async("text")).to.contain('<w:numId w:val="2"/>');
-            expect(await zipFile.file("word/numbering.xml")?.async("text")).to.contain('<w:num w:numId="2">');
+            expect(textOf(zipFile, "word/endnotes.xml")).to.contain('<w:numId w:val="2"/>');
+            expect(textOf(zipFile, "word/numbering.xml")).to.contain('<w:num w:numId="2">');
         });
 
         describe("restarting a list", () => {
@@ -197,11 +196,11 @@ describe("Compiler", () => {
                     ],
                 });
 
-            it("should put the restarting paragraph and the paragraphs after it in a new list that starts from 1", async () => {
-                const zipFile = compiler.compile(createRestartedListFile());
+            it("should put the restarting paragraph and the paragraphs after it in a new list that starts from 1", () => {
+                const zipFile = compile(createRestartedListFile());
 
-                const document = (await zipFile.file("word/document.xml")?.async("text")) ?? "";
-                const numbering = (await zipFile.file("word/numbering.xml")?.async("text")) ?? "";
+                const document = textOf(zipFile, "word/document.xml") ?? "";
+                const numbering = textOf(zipFile, "word/numbering.xml") ?? "";
 
                 expect(numIdsIn(document)).to.deep.equal(["2", "2", "3", "3", "4", "4"]);
                 for (const numId of ["2", "3", "4"]) {
@@ -213,13 +212,13 @@ describe("Compiler", () => {
                 }
             });
 
-            it("should write the same lists when the document is compiled again", async () => {
+            it("should write the same lists when the document is compiled again", () => {
                 const file = createRestartedListFile();
                 compiler.compile(file);
-                const zipFile = compiler.compile(file);
+                const zipFile = compile(file);
 
-                const document = (await zipFile.file("word/document.xml")?.async("text")) ?? "";
-                const numbering = (await zipFile.file("word/numbering.xml")?.async("text")) ?? "";
+                const document = textOf(zipFile, "word/document.xml") ?? "";
+                const numbering = textOf(zipFile, "word/numbering.xml") ?? "";
 
                 expect(numIdsIn(document)).to.deep.equal(["2", "2", "3", "3", "4", "4"]);
                 expect(numbering).to.not.contain('w:numId="5"');
@@ -258,11 +257,11 @@ describe("Compiler", () => {
                 ],
             });
 
-            const zipFile = compiler.compile(file);
-            const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
+            const zipFile = compile(file);
+            const fileNames = [...zipFile.keys()];
 
             expect(fileNames).is.an.instanceof(Array);
-            expect(fileNames).has.length(30);
+            expect(fileNames).has.length(25);
 
             expect(fileNames).to.include("word/header1.xml");
             expect(fileNames).to.include("word/_rels/header1.xml.rels");
@@ -274,7 +273,7 @@ describe("Compiler", () => {
             expect(fileNames).to.include("word/_rels/footer2.xml.rels");
         });
 
-        it("should pack subfile overrides", { timeout: 99999999 }, async () => {
+        it("should pack subfile overrides", { timeout: 99999999 }, () => {
             const file = new File({
                 sections: [],
                 comments: {
@@ -287,23 +286,23 @@ describe("Compiler", () => {
                 { path: "word/comments.xml", data: subfileData1 },
                 { path: "word/commentsExtended.xml", data: subfileData2 },
             ];
-            const zipFile = compiler.compile(file, "", overrides);
-            const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
+            const zipFile = compile(file, "", overrides);
+            const fileNames = [...zipFile.keys()];
 
             expect(fileNames).is.an.instanceof(Array);
-            expect(fileNames).has.length(24);
+            expect(fileNames).has.length(19);
 
             expect(fileNames).to.include("word/comments.xml");
             expect(fileNames).to.include("word/commentsExtended.xml");
 
-            const commentsText = await zipFile.file("word/comments.xml")?.async("text");
-            const commentsExtendedText = await zipFile.file("word/commentsExtended.xml")?.async("text");
+            const commentsText = textOf(zipFile, "word/comments.xml");
+            const commentsExtendedText = textOf(zipFile, "word/commentsExtended.xml");
 
             expect(commentsText).toBe(subfileData1);
             expect(commentsExtendedText).toBe(subfileData2);
         });
 
-        it("should include commentsExtended.xml when comments have parentId", { timeout: 99999999 }, async () => {
+        it("should include commentsExtended.xml when comments have parentId", { timeout: 99999999 }, () => {
             const file = new File({
                 sections: [],
                 comments: {
@@ -313,12 +312,12 @@ describe("Compiler", () => {
                     ],
                 },
             });
-            const zipFile = compiler.compile(file);
-            const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
+            const zipFile = compile(file);
+            const fileNames = [...zipFile.keys()];
 
             expect(fileNames).to.include("word/commentsExtended.xml");
 
-            const commentsExtendedText = await zipFile.file("word/commentsExtended.xml")?.async("text");
+            const commentsExtendedText = textOf(zipFile, "word/commentsExtended.xml");
             expect(commentsExtendedText).to.contain("w15:commentsEx");
             expect(commentsExtendedText).to.contain("w15:commentEx");
             expect(commentsExtendedText).to.contain("w15:paraId");
@@ -332,42 +331,42 @@ describe("Compiler", () => {
                     children: [{ id: 0, children: [new Paragraph("comment")] }],
                 },
             });
-            const zipFile = compiler.compile(file);
-            const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
+            const zipFile = compile(file);
+            const fileNames = [...zipFile.keys()];
 
             expect(fileNames).to.not.include("word/commentsIds.xml");
         });
 
-        it("should include commentsIds.xml for a single (non-threaded) comment with durableId", { timeout: 99999999 }, async () => {
+        it("should include commentsIds.xml for a single (non-threaded) comment with durableId", { timeout: 99999999 }, () => {
             const file = new File({
                 sections: [],
                 comments: {
                     children: [{ id: 0, children: [new Paragraph("comment")], durableId: "12AB34CD" }],
                 },
             });
-            const zipFile = compiler.compile(file);
-            const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
+            const zipFile = compile(file);
+            const fileNames = [...zipFile.keys()];
 
             expect(fileNames).to.include("word/commentsIds.xml");
 
-            const commentsIdsText = await zipFile.file("word/commentsIds.xml")?.async("text");
+            const commentsIdsText = textOf(zipFile, "word/commentsIds.xml");
             expect(commentsIdsText).to.contain("w16cid:commentsIds");
             expect(commentsIdsText).to.contain("w16cid:commentId");
             expect(commentsIdsText).to.contain('w16cid:paraId="00000001"');
             expect(commentsIdsText).to.contain('w16cid:durableId="12AB34CD"');
 
             // Content type override is registered
-            const contentTypesText = await zipFile.file("[Content_Types].xml")?.async("text");
+            const contentTypesText = textOf(zipFile, "[Content_Types].xml");
             expect(contentTypesText).to.contain("application/vnd.openxmlformats-officedocument.wordprocessingml.commentsIds+xml");
             expect(contentTypesText).to.contain("/word/commentsIds.xml");
 
             // Relationship is registered
-            const relsText = await zipFile.file("word/_rels/document.xml.rels")?.async("text");
+            const relsText = textOf(zipFile, "word/_rels/document.xml.rels");
             expect(relsText).to.contain("http://schemas.microsoft.com/office/2016/09/relationships/commentsIds");
             expect(relsText).to.contain("commentsIds.xml");
         });
 
-        it("should include commentsIds.xml mapping paraId to durableId for threaded comments", { timeout: 99999999 }, async () => {
+        it("should include commentsIds.xml mapping paraId to durableId for threaded comments", { timeout: 99999999 }, () => {
             const file = new File({
                 sections: [],
                 comments: {
@@ -377,20 +376,20 @@ describe("Compiler", () => {
                     ],
                 },
             });
-            const zipFile = compiler.compile(file);
-            const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
+            const zipFile = compile(file);
+            const fileNames = [...zipFile.keys()];
 
             expect(fileNames).to.include("word/commentsIds.xml");
             expect(fileNames).to.include("word/commentsExtended.xml");
 
-            const commentsIdsText = await zipFile.file("word/commentsIds.xml")?.async("text");
+            const commentsIdsText = textOf(zipFile, "word/commentsIds.xml");
             expect(commentsIdsText).to.contain('w16cid:paraId="00000001"');
             expect(commentsIdsText).to.contain('w16cid:durableId="11112222"');
             expect(commentsIdsText).to.contain('w16cid:paraId="00000002"');
             expect(commentsIdsText).to.contain('w16cid:durableId="33334444"');
         });
 
-        it("should emit commentsIds.xml falling back to paraId for comments without a durableId", { timeout: 99999999 }, async () => {
+        it("should emit commentsIds.xml falling back to paraId for comments without a durableId", { timeout: 99999999 }, () => {
             const file = new File({
                 sections: [],
                 comments: {
@@ -400,12 +399,12 @@ describe("Compiler", () => {
                     ],
                 },
             });
-            const zipFile = compiler.compile(file);
-            const fileNames = Object.keys(zipFile.files).map((f) => zipFile.files[f].name);
+            const zipFile = compile(file);
+            const fileNames = [...zipFile.keys()];
 
             expect(fileNames).to.include("word/commentsIds.xml");
 
-            const commentsIdsText = await zipFile.file("word/commentsIds.xml")?.async("text");
+            const commentsIdsText = textOf(zipFile, "word/commentsIds.xml");
             // Comment WITH a durableId keeps its durableId (paraId 00000001 for id 0)
             expect(commentsIdsText).to.contain('w16cid:paraId="00000001"');
             expect(commentsIdsText).to.contain('w16cid:durableId="12AB34CD"');
@@ -430,11 +429,9 @@ describe("Compiler", () => {
             // Headers and footers are formatted more than once per compile, and a
             // document can be packed repeatedly, so compile twice.
             compiler.compile(file);
-            const zipFile = compiler.compile(file);
+            const zipFile = compile(file);
             const xml = (
-                await Promise.all(
-                    ["word/document.xml", "word/header1.xml", "word/footer1.xml"].map((name) => zipFile.file(name)?.async("text")),
-                )
+                await Promise.all(["word/document.xml", "word/header1.xml", "word/footer1.xml"].map((name) => textOf(zipFile, name)))
             ).join("");
 
             const idsOf = (tag: string): readonly (readonly string[])[] =>
@@ -474,11 +471,9 @@ describe("Compiler", () => {
             // Headers and footers are formatted more than once per compile, and a
             // document can be packed repeatedly, so compile twice.
             compiler.compile(file);
-            const zipFile = compiler.compile(file);
+            const zipFile = compile(file);
             const xml = (
-                await Promise.all(
-                    ["word/document.xml", "word/header1.xml", "word/footer1.xml"].map((name) => zipFile.file(name)?.async("text")),
-                )
+                await Promise.all(["word/document.xml", "word/header1.xml", "word/footer1.xml"].map((name) => textOf(zipFile, name)))
             ).join("");
 
             const ids = [...xml.matchAll(/<wp:docPr id="(\d+)"/g)].map(([, id]) => id);
@@ -487,7 +482,7 @@ describe("Compiler", () => {
             expect(new Set(ids).size).to.equal(6);
         });
 
-        it("should write the same package when a document is packed again", async () => {
+        it("should write the same package when a document is packed again", () => {
             // Packing again used to repeat the lists, custom properties, links on pictures and relationships the first
             // pack wrote, which Word can't open. Apps pack again when a user downloads a document a second time
             const image = (): ImageRun =>
@@ -520,22 +515,16 @@ describe("Compiler", () => {
                     },
                 ],
             });
-            const partsOf = async (zipFile: JSZip): Promise<Record<string, string>> =>
-                Object.fromEntries(
-                    await Promise.all(
-                        Object.values(zipFile.files)
-                            .filter((entry) => !entry.dir)
-                            .map(async (entry) => [entry.name, await entry.async("text")]),
-                    ),
-                );
+            const partsOf = (zipFile: ReadonlyMap<string, Uint8Array>): Record<string, string | undefined> =>
+                Object.fromEntries([...zipFile.keys()].map((path) => [path, textOf(zipFile, path)]));
 
-            const first = await partsOf(compiler.compile(file));
-            const second = await partsOf(compiler.compile(file));
+            const first = partsOf(compile(file));
+            const second = partsOf(compile(file));
 
             expect(second).to.deep.equal(first);
         });
 
-        it("should define a list used only in a footer the first time a document is packed", async () => {
+        it("should define a list used only in a footer the first time a document is packed", () => {
             const file = new File({
                 numbering: { config: [{ reference: "footer-list", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }] }] },
                 sections: [
@@ -550,9 +539,9 @@ describe("Compiler", () => {
                 ],
             });
 
-            const zipFile = compiler.compile(file);
-            const footer = await zipFile.file("word/footer1.xml")?.async("text");
-            const numbering = await zipFile.file("word/numbering.xml")?.async("text");
+            const zipFile = compile(file);
+            const footer = textOf(zipFile, "word/footer1.xml");
+            const numbering = textOf(zipFile, "word/numbering.xml");
             const [, numId] = footer?.match(/<w:numId w:val="(\d+)"\/>/) ?? [];
 
             expect(numId).to.equal("2");
@@ -697,8 +686,8 @@ describe("Compiler", () => {
                 ],
             });
 
-            const zip = compiler.compile(file);
-            const fileNames = Object.keys(zip.files);
+            const zip = compile(file);
+            const fileNames = [...zip.keys()];
             expect(fileNames).to.include("word/fonts/font1.odttf");
             expect(fileNames).to.include("word/fonts/font2.odttf");
             expect(fileNames).to.not.include("word/fonts/EB Garamond.odttf");
@@ -719,10 +708,10 @@ describe("Compiler", () => {
                 ],
             });
 
-            const zip = compiler.compile(file);
-            const written = await Promise.all([1, 2, 3, 4].map((n) => zip.file(`word/fonts/font${n}.odttf`)?.async("uint8array")));
+            const zip = compile(file);
+            const written = await Promise.all([1, 2, 3, 4].map((n) => zip.get(`word/fonts/font${n}.odttf`)));
             expect(written).to.deep.equal(file.FontTable.files.map(({ data, fontKey }) => obfuscate(data, fontKey)));
-            expect(Object.keys(zip.files)).to.not.include("word/fonts/font5.odttf");
+            expect([...zip.keys()]).to.not.include("word/fonts/font5.odttf");
         });
     });
 });

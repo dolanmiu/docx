@@ -5,6 +5,9 @@ import { HeadingLevel, Paragraph } from "@file/paragraph";
 
 import { Packer, PrettifyType } from "./packer";
 
+// How a zip file, such as a .docx, starts
+const ZIP_START = Uint8Array.of(0x50, 0x4b, 0x03, 0x04);
+
 describe("Packer", () => {
     let file: File;
 
@@ -162,13 +165,9 @@ describe("Packer", () => {
         });
 
         it("should create a standard docx file", async () => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            vi.spyOn((Packer as any).compiler, "compile").mockReturnValue({
-                generateAsync: () => vi.fn(),
-            });
-            const str = await Packer.toBlob(file);
+            const blob = await Packer.toBlob(file);
 
-            assert.isDefined(str);
+            expect(new Uint8Array(await blob.arrayBuffer()).subarray(0, 4)).toEqual(ZIP_START);
         });
 
         it("should handle exception if it throws any", () => {
@@ -189,13 +188,10 @@ describe("Packer", () => {
 
     describe("#toArrayBuffer()", () => {
         it("should create a standard docx file", async () => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            vi.spyOn((Packer as any).compiler, "compile").mockReturnValue({
-                generateAsync: () => vi.fn(),
-            });
-            const str = await Packer.toArrayBuffer(file);
+            const buffer = await Packer.toArrayBuffer(file);
 
-            assert.isDefined(str);
+            expect(buffer).toBeInstanceOf(ArrayBuffer);
+            expect(new Uint8Array(buffer).subarray(0, 4)).toEqual(ZIP_START);
         });
 
         it("should handle exception if it throws any", () => {
@@ -216,35 +212,35 @@ describe("Packer", () => {
 
     describe("#toStream()", () => {
         it("should create a standard docx file", async () => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            vi.spyOn((Packer as any).compiler, "compile").mockReturnValue({
-                generateAsync: () => Promise.resolve(vi.fn()),
-            });
             const stream = Packer.toStream(file);
 
-            const p = new Promise<void>((resolve, reject) => {
+            const data = await new Promise<Buffer>((resolve, reject) => {
                 stream.on("error", () => {
                     reject(new Error());
                 });
 
-                stream.on("end", () => {
-                    resolve();
-                });
+                stream.on("data", resolve);
             });
-            await p;
+            expect(Buffer.isBuffer(data)).toBe(true);
+            expect(new Uint8Array(data.subarray(0, 4))).toEqual(ZIP_START);
         });
 
-        it("should handle exception if it throws any", () => {
+        it("should give the document after the caller has had the chance to listen, even after awaiting", async () => {
+            const stream = Packer.toStream(file);
+            await Promise.resolve();
+
+            await new Promise<void>((resolve) => {
+                stream.on("end", resolve);
+            });
+        });
+
+        it("should throw when the document can't be written, rather than give a stream", () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             vi.spyOn((Packer as any).compiler, "compile").mockImplementation(() => {
-                throw new Error();
+                throw new Error("The document can't be written");
             });
 
-            try {
-                Packer.toStream(file);
-            } catch (error) {
-                assert.isDefined(error);
-            }
+            expect(() => Packer.toStream(file)).toThrow("The document can't be written");
         });
 
         afterEach(() => {
