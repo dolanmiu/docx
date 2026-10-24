@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { OutputType } from "./output-type";
 import { unzipFiles, zipFiles, zipOutput } from "./zip";
+import { damaging, declaringSize } from "../tests/zip";
 
 const DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
@@ -66,6 +67,33 @@ describe("zip", () => {
                     ]),
                 ).keys(),
             ]).toEqual(["word/document.xml"]);
+        });
+
+        it("should leave out the files include leaves out, without inflating them", () => {
+            const zip = damaging(
+                zipFiles([
+                    ["word/document.xml", "<w:document/>"],
+                    ["word/media/image1.png", new Uint8Array(1000).fill(7)],
+                ]),
+                "word/media/image1.png",
+            );
+
+            expect(() => unzipFiles(zip)).toThrow();
+            expect([...unzipFiles(zip, (path) => path.endsWith(".xml")).keys()]).toEqual(["word/document.xml"]);
+        });
+
+        it("should refuse a file the zip file gives a size larger than its data, as JSZip did", () => {
+            const zip = zipFiles([["word/document.xml", "<w:document/>"]]);
+
+            expect(() => unzipFiles(declaringSize(zip, "word/document.xml", 100))).toThrow(
+                "Corrupted zip: word/document.xml isn't the size the zip file gives it",
+            );
+        });
+
+        it("should refuse a file the zip file gives a size more than DEFLATE can give its data", () => {
+            const zip = declaringSize(zipFiles([["word/document.xml", "<w:document/>"]]), "word/document.xml", 0xf0000000);
+
+            expect(() => unzipFiles(zip)).toThrow("Corrupted zip: word/document.xml isn't the size the zip file gives it");
         });
     });
 

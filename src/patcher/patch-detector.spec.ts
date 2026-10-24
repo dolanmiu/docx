@@ -6,7 +6,7 @@ import { Document, Packer, Paragraph, TextRun } from "../index";
 import { type IPatch, patchDocument } from "./from-docx";
 import { patchDetector } from "./patch-detector";
 import { PatchType } from "./patch-type";
-import { textOf, unzip, zip } from "../tests/zip";
+import { declaringSize, textOf, unzip, zip } from "../tests/zip";
 
 const MOCK_XML = `
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -422,6 +422,19 @@ describe("patch-detector", () => {
         expect(keys).toEqual(["name"]);
         expect(xml).toMatch(/<w:t[^>]*>Ada<\/w:t>/);
         expect(xml).not.toContain("{{name}}");
+    });
+
+    it("should read only the parts placeholders can be in, leaving a template's images uninflated", async () => {
+        const template = zip({
+            "word/document.xml": MOCK_XML_2,
+            "[Content_Types].xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
+            "word/media/image1.png": new Uint8Array(1000),
+        });
+        // An image that would take all the memory there is, if it were inflated
+        const damaged = declaringSize(template, "word/media/image1.png", 0xf0000000);
+
+        await expect(patchDocument({ outputType: "nodebuffer", data: damaged, patches: {} })).rejects.toThrow("Corrupted zip");
+        expect(await patchDetector({ data: damaged })).toEqual(["school_name", "address"]);
     });
 
     describe("with JSZip instance", () => {

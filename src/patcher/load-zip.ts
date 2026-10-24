@@ -88,5 +88,10 @@ const bytesOf = async (data: InputDataType): Promise<Uint8Array> => {
     return ArrayBuffer.isView(data) ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength) : new Uint8Array(data);
 };
 
-/** The files in the zip file of a template, from any of the forms `patchDocument` and `patchDetector` take it in */
-export const loadZip = async (data: InputDataType): Promise<ReadonlyMap<string, Uint8Array>> => unzipFiles(await bytesOf(data));
+/**
+ * The files in the zip file of a template, from any of the forms `patchDocument` and `patchDetector` take it in
+ *
+ * @param include - Which files to read, by their paths. The others aren't inflated.
+ */
+export const loadZip = async (data: InputDataType, include?: (path: string) => boolean): Promise<ReadonlyMap<string, Uint8Array>> =>
+    unzipFiles(await bytesOf(data), include);

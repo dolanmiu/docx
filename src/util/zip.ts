@@ -30,9 +30,40 @@ const bytesOf = (data: ZipFileData): Uint8Array =>
 export const zipFiles = (files: Iterable<readonly [string, ZipFileData]>): Uint8Array =>
     zipSync(Object.fromEntries([...files].map(([path, data]) => [path, bytesOf(data)])));
 
-/** The files in a zip file by their paths, in the zip file's order. Its folders, which hold nothing, are left out. */
-export const unzipFiles = (data: Uint8Array): ReadonlyMap<string, Uint8Array> =>
-    new Map(Object.entries(unzipSync(data, { filter: ({ name }) => !name.endsWith("/") })));
+// DEFLATE gives at most 1032 bytes for each byte it inflates
+const MAX_DEFLATE_RATIO = 1032;
+
+const wrongSize = (path: string): Error => new Error(`Corrupted zip: ${path} isn't the size the zip file gives it`);
+
+/**
+ * The files in a zip file by their paths, in the zip file's order. Its folders, which hold nothing, are left out, and so
+ * are the files `include` leaves out, which aren't inflated.
+ *
+ * A file must be as large as the zip file says, as JSZip, which docx used to unzip with, checked. fflate takes room for
+ * that size before inflating a file, so a size more than DEFLATE can give is refused before it does. fflate cuts a file
+ * short at a size smaller than its data, which only parsing the zip file again would show.
+ */
+export const unzipFiles = (data: Uint8Array, include: (path: string) => boolean = () => true): ReadonlyMap<string, Uint8Array> => {
+    const sizes = new Map<string, number>();
+    const files = unzipSync(data, {
+        filter: ({ name, size, originalSize }) => {
+            if (name.endsWith("/") || !include(name)) {
+                return false;
+            }
+            if (originalSize > size * MAX_DEFLATE_RATIO) {
+                throw wrongSize(name);
+            }
+            // eslint-disable-next-line functional/immutable-data
+            sizes.set(name, originalSize);
+            return true;
+        },
+    });
+    const wrong = Object.entries(files).find(([path, file]) => file.length !== sizes.get(path));
+    if (wrong !== undefined) {
+        throw wrongSize(wrong[0]);
+    }
+    return new Map(Object.entries(files));
+};
 
 /** A zip file as a string with a character for each byte, as JSZip, which docx used to zip with, gave it */
 const binaryStringOf = (data: Uint8Array): string => {
