@@ -1,5 +1,5 @@
-import JSZip from "jszip";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+/* eslint-disable @typescript-eslint/naming-convention -- The keys of objects here are paths of parts in a package, and the keys of patches */
+import { describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
 import { Packer } from "@export/packer/packer";
@@ -16,6 +16,7 @@ import { BuilderElement, type IContext, type IXmlableObject, XmlComponent } from
 import { type IPatch, type PatchDocumentOptions, PatchType, type TableRowsPatch, patchDocument } from "./from-docx";
 import { traverse } from "./traverser";
 import { toJson } from "./util";
+import { textOf, unzip, zip } from "../tests/zip";
 
 const MOCK_XML = `
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -213,22 +214,15 @@ const MOCK_XML = `
 describe("from-docx", () => {
     describe("patchDocument", () => {
         describe("document.xml and [Content_Types].xml", () => {
-            beforeEach(() => {
-                const zip = new JSZip();
-
-                zip.file("word/document.xml", MOCK_XML);
-                zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
-                vi.spyOn(JSZip, "loadAsync").mockResolvedValue(zip);
-            });
-
-            afterEach(() => {
-                vi.restoreAllMocks();
+            const template = zip({
+                "word/document.xml": MOCK_XML,
+                "[Content_Types].xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
             });
 
             it("should patch the document", async () => {
                 const output = await patchDocument({
                     outputType: "uint8array",
-                    data: Buffer.from(""),
+                    data: template,
                     patches: {
                         name: {
                             type: PatchType.PARAGRAPH,
@@ -248,7 +242,6 @@ describe("from-docx", () => {
                                 }),
                             ],
                         },
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
                         paragraph_replace: {
                             type: PatchType.DOCUMENT,
                             children: [
@@ -272,7 +265,6 @@ describe("from-docx", () => {
                                 }),
                             ],
                         },
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
                         image_test: {
                             type: PatchType.PARAGRAPH,
                             children: [
@@ -291,7 +283,7 @@ describe("from-docx", () => {
             it("should patch the document", async () => {
                 const output = await patchDocument({
                     outputType: "uint8array",
-                    data: Buffer.from(""),
+                    data: template,
                     patches: {},
                 });
                 expect(output).to.not.be.undefined;
@@ -302,9 +294,8 @@ describe("from-docx", () => {
                 // looked its id up from the document threw here.
                 const output = await patchDocument({
                     outputType: "uint8array",
-                    data: Buffer.from(""),
+                    data: template,
                     patches: {
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
                         paragraph_replace: {
                             type: PatchType.DOCUMENT,
                             children: [new Paragraph({ children: [new Bookmark({ id: "anchor", children: [new TextRun("Anchor")] })] })],
@@ -312,8 +303,7 @@ describe("from-docx", () => {
                     },
                 });
 
-                // `JSZip.loadAsync` is mocked above; the instance method reads the real output.
-                const xml = await (await new JSZip().loadAsync(output)).file("word/document.xml")?.async("text");
+                const xml = textOf(unzip(output), "word/document.xml");
                 const start = xml?.match(/<w:bookmarkStart w:name="anchor" w:id="(\d+)"\/>/);
                 const end = xml?.match(/<w:bookmarkEnd w:id="(\d+)"\/>/);
 
@@ -322,26 +312,20 @@ describe("from-docx", () => {
             });
 
             it("should work with the raw JSZip type", async () => {
-                const zip = new JSZip();
-
-                zip.file("word/document.xml", MOCK_XML);
-                zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
+                // A zip file opened with JSZip is read through its generateAsync
                 const output = await patchDocument({
                     outputType: "uint8array",
-                    data: zip,
+                    data: { generateAsync: () => Promise.resolve(template) },
                     patches: {},
                 });
                 expect(output).to.not.be.undefined;
             });
 
-            it("should skiup UTF-16 types", async () => {
-                const zip = new JSZip();
-
-                zip.file("word/document.xml", MOCK_XML);
-                zip.file("[Content_Types].xml", Buffer.from([0xff, 0xfe]));
+            it("should skip UTF-16 types", async () => {
+                const utf16 = zip({ "word/document.xml": MOCK_XML, "[Content_Types].xml": Buffer.from([0xff, 0xfe]) });
                 const output = await patchDocument({
                     outputType: "uint8array",
-                    data: zip,
+                    data: { generateAsync: () => Promise.resolve(utf16) },
                     patches: {},
                 });
                 expect(output).to.not.be.undefined;
@@ -350,7 +334,7 @@ describe("from-docx", () => {
             it("should patch the document", async () => {
                 const output = await patchDocument({
                     outputType: "uint8array",
-                    data: Buffer.from(""),
+                    data: template,
                     placeholderDelimiters: { start: "{{", end: "}}" },
                     patches: {
                         name: {
@@ -371,7 +355,6 @@ describe("from-docx", () => {
                                 }),
                             ],
                         },
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
                         paragraph_replace: {
                             type: PatchType.DOCUMENT,
                             children: [
@@ -395,7 +378,6 @@ describe("from-docx", () => {
                                 }),
                             ],
                         },
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
                         image_test: {
                             type: PatchType.PARAGRAPH,
                             children: [
@@ -414,7 +396,7 @@ describe("from-docx", () => {
             it("should patch the document", async () => {
                 const output = await patchDocument({
                     outputType: "uint8array",
-                    data: Buffer.from(""),
+                    data: template,
                     patches: {},
                 });
                 expect(output).to.not.be.undefined;
@@ -424,7 +406,7 @@ describe("from-docx", () => {
                 await expect(() =>
                     patchDocument({
                         outputType: "uint8array",
-                        data: Buffer.from(""),
+                        data: template,
                         patches: {},
                         placeholderDelimiters: { start: "", end: "" },
                     }),
@@ -435,7 +417,7 @@ describe("from-docx", () => {
                 await expect(() =>
                     patchDocument({
                         outputType: "uint8array",
-                        data: Buffer.from(""),
+                        data: template,
                         patches: {},
                         placeholderDelimiters: { start: " ", end: " " },
                     }),
@@ -444,29 +426,17 @@ describe("from-docx", () => {
         });
 
         describe("document.xml and [Content_Types].xml with relationships", () => {
-            beforeEach(() => {
-                vi.spyOn(JSZip, "loadAsync").mockReturnValue(
-                    new Promise<JSZip>((resolve) => {
-                        const zip = new JSZip();
-
-                        zip.file("word/document.xml", MOCK_XML);
-                        zip.file("word/_rels/document.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
-                        zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
-                        resolve(zip);
-                    }),
-                );
-            });
-
-            afterEach(() => {
-                vi.restoreAllMocks();
+            const template = zip({
+                "word/document.xml": MOCK_XML,
+                "word/_rels/document.xml.rels": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
+                "[Content_Types].xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
             });
 
             it("should use the relationships file rather than create one", async () => {
                 const output = await patchDocument({
                     outputType: "uint8array",
-                    data: Buffer.from(""),
+                    data: template,
                     patches: {
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
                         image_test: {
                             type: PatchType.PARAGRAPH,
                             children: [
@@ -492,28 +462,16 @@ describe("from-docx", () => {
         });
 
         describe("document.xml and [Content_Types].xml without relationships file", () => {
-            beforeEach(() => {
-                vi.spyOn(JSZip, "loadAsync").mockReturnValue(
-                    new Promise<JSZip>((resolve) => {
-                        const zip = new JSZip();
-
-                        zip.file("word/document.xml", MOCK_XML);
-                        zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
-                        resolve(zip);
-                    }),
-                );
-            });
-
-            afterEach(() => {
-                vi.restoreAllMocks();
+            const template = zip({
+                "word/document.xml": MOCK_XML,
+                "[Content_Types].xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
             });
 
             it("should create a relationships file for hyperlink only patches", async () => {
                 const output = await patchDocument({
                     outputType: "uint8array",
-                    data: Buffer.from(""),
+                    data: template,
                     patches: {
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
                         image_test: {
                             type: PatchType.PARAGRAPH,
                             children: [
@@ -545,21 +503,15 @@ describe("from-docx", () => {
     </w:body>
 </w:document>`;
 
-            beforeEach(() => {
-                const zip = new JSZip();
-                zip.file("word/document.xml", MOCK_XML_NO_ATTRS);
-                zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`);
-                vi.spyOn(JSZip, "loadAsync").mockResolvedValue(zip);
-            });
-
-            afterEach(() => {
-                vi.restoreAllMocks();
+            const template = zip({
+                "word/document.xml": MOCK_XML_NO_ATTRS,
+                "[Content_Types].xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
             });
 
             it("should patch a document whose w:document element has no attributes", async () => {
                 const output = await patchDocument({
                     outputType: "uint8array",
-                    data: Buffer.from(""),
+                    data: template,
                     patches: {
                         name: {
                             type: PatchType.PARAGRAPH,
@@ -572,28 +524,14 @@ describe("from-docx", () => {
         });
 
         describe("document.xml", () => {
-            beforeEach(() => {
-                vi.spyOn(JSZip, "loadAsync").mockReturnValue(
-                    new Promise<JSZip>((resolve) => {
-                        const zip = new JSZip();
-
-                        zip.file("word/document.xml", MOCK_XML);
-                        resolve(zip);
-                    }),
-                );
-            });
-
-            afterEach(() => {
-                vi.restoreAllMocks();
-            });
+            const template = zip({ "word/document.xml": MOCK_XML });
 
             it("should throw an error if the content types is not found", () =>
                 expect(
                     patchDocument({
                         outputType: "uint8array",
-                        data: Buffer.from(""),
+                        data: template,
                         patches: {
-                            // eslint-disable-next-line @typescript-eslint/naming-convention
                             image_test: {
                                 type: PatchType.PARAGRAPH,
                                 children: [
@@ -614,19 +552,17 @@ describe("from-docx", () => {
             const theme = (accent1: string): string =>
                 `<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:themeElements><a:clrScheme name="Office"><a:accent1><a:srgbClr val="${accent1}"/></a:accent1></a:clrScheme></a:themeElements></a:theme>`;
 
-            const createZip = (files: readonly (readonly [string, string])[]): JSZip =>
-                files.reduce(
-                    (zip, [path, content]) => zip.file(path, content),
-                    new JSZip()
-                        .file("word/document.xml", MOCK_XML)
-                        .file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`),
-                );
+            const createZip = (files: readonly (readonly [string, string])[]): Uint8Array =>
+                zip({
+                    "word/document.xml": MOCK_XML,
+                    "[Content_Types].xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
+                    ...Object.fromEntries(files),
+                });
 
-            const patchName = async (zip: JSZip): Promise<string> => {
-                vi.spyOn(JSZip, "loadAsync").mockResolvedValue(zip);
+            const patchName = async (template: Uint8Array): Promise<string> => {
                 const output = await patchDocument({
                     outputType: "uint8array",
-                    data: Buffer.from(""),
+                    data: template,
                     patches: {
                         name: {
                             type: PatchType.PARAGRAPH,
@@ -634,13 +570,8 @@ describe("from-docx", () => {
                         },
                     },
                 });
-                const patched = await new JSZip().loadAsync(output);
-                return patched.file("word/document.xml")!.async("text");
+                return textOf(unzip(output), "word/document.xml")!;
             };
-
-            afterEach(() => {
-                vi.restoreAllMocks();
-            });
 
             it("should write theme colors with the hex color they come to in the document's theme", async () => {
                 const document = await patchName(
@@ -663,30 +594,14 @@ describe("from-docx", () => {
         });
 
         describe("Images", () => {
-            beforeEach(() => {
-                vi.spyOn(JSZip, "loadAsync").mockReturnValue(
-                    new Promise<JSZip>((resolve) => {
-                        const zip = new JSZip();
-
-                        zip.file("word/document.xml", MOCK_XML);
-                        zip.file("word/document.bmp", "");
-
-                        resolve(zip);
-                    }),
-                );
-            });
-
-            afterEach(() => {
-                vi.restoreAllMocks();
-            });
+            const template = zip({ "word/document.xml": MOCK_XML, "word/document.bmp": "" });
 
             it("should throw an error if the content types is not found", () =>
                 expect(
                     patchDocument({
                         outputType: "uint8array",
-                        data: Buffer.from(""),
+                        data: template,
                         patches: {
-                            // eslint-disable-next-line @typescript-eslint/naming-convention
                             image_test: {
                                 type: PatchType.PARAGRAPH,
                                 children: [
@@ -704,27 +619,17 @@ describe("from-docx", () => {
 
         describe("A placeholder that is in a paragraph twice", () => {
             const patchName = async (patch: IPatch, recursive?: boolean): Promise<readonly string[]> => {
-                vi.spyOn(JSZip, "loadAsync").mockResolvedValue(
-                    new JSZip()
-                        .file(
-                            "word/document.xml",
-                            `<w:document><w:body><w:p><w:r><w:t>{{name}} and {{name}}</w:t></w:r></w:p></w:body></w:document>`,
-                        )
-                        .file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`),
-                );
                 const output = await patchDocument({
                     outputType: "uint8array",
-                    data: Buffer.from(""),
+                    data: zip({
+                        "word/document.xml": `<w:document><w:body><w:p><w:r><w:t>{{name}} and {{name}}</w:t></w:r></w:p></w:body></w:document>`,
+                        "[Content_Types].xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
+                    }),
                     patches: { name: patch },
                     recursive,
                 });
-                const patched = await new JSZip().loadAsync(output);
-                return traverse(toJson(await patched.file("word/document.xml")!.async("text"))).map((p) => p.text);
+                return traverse(toJson(textOf(unzip(output), "word/document.xml")!)).map((p) => p.text);
             };
-
-            afterEach(() => {
-                vi.restoreAllMocks();
-            });
 
             it("should replace both, and not the placeholder in a paragraph patch's own content", async () => {
                 const texts = await patchName({ type: PatchType.PARAGRAPH, children: [new TextRun("[{{name}}]")] });
@@ -748,28 +653,20 @@ describe("from-docx", () => {
                 body: string,
                 options: Omit<PatchDocumentOptions, "outputType" | "data">,
             ): Promise<{ readonly body: readonly string[]; readonly header: readonly string[] }> => {
-                vi.spyOn(JSZip, "loadAsync").mockResolvedValue(
-                    new JSZip()
-                        .file("word/document.xml", `<w:document><w:body>${body}</w:body></w:document>`)
-                        .file("word/header1.xml", `<w:hdr><w:p><w:r><w:t>{{ name }}</w:t></w:r></w:p></w:hdr>`)
-                        .file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`),
-                );
-                const output = await patchDocument({ outputType: "uint8array", data: Buffer.from(""), ...options });
-                // `JSZip.loadAsync` is mocked; the instance method reads the real output
-                const patched = await new JSZip().loadAsync(output);
-                const textsOf = async (path: string): Promise<readonly string[]> =>
-                    traverse(toJson(await patched.file(path)!.async("text"))).map((p) => p.text);
-                return { body: await textsOf("word/document.xml"), header: await textsOf("word/header1.xml") };
+                const template = zip({
+                    "word/document.xml": `<w:document><w:body>${body}</w:body></w:document>`,
+                    "word/header1.xml": `<w:hdr><w:p><w:r><w:t>{{ name }}</w:t></w:r></w:p></w:hdr>`,
+                    "[Content_Types].xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
+                });
+                const patched = unzip(await patchDocument({ outputType: "uint8array", data: template, ...options }));
+                const textsOf = (path: string): readonly string[] => traverse(toJson(textOf(patched, path)!)).map((p) => p.text);
+                return { body: textsOf("word/document.xml"), header: textsOf("word/header1.xml") };
             };
             const text = (value: string): IPatch => ({ type: PatchType.PARAGRAPH, children: [new TextRun(value)] });
             // {{ name }} split across runs, as Word often saves it, with the first run bold
             const SPLIT =
                 `<w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Dear {{ </w:t></w:r><w:r><w:t>name</w:t></w:r>` +
                 `<w:r><w:t xml:space="preserve"> }}, and {{name }}</w:t></w:r></w:p>`;
-
-            afterEach(() => {
-                vi.restoreAllMocks();
-            });
 
             it("should patch them with trimPlaceholders, in every part, even when split across runs", async () => {
                 const texts = await patchTexts(SPLIT, { patches: { name: text("Ada") }, trimPlaceholders: true });
@@ -784,7 +681,6 @@ describe("from-docx", () => {
             });
 
             it("should keep patching the placeholder of a key with spaces at its ends exactly", async () => {
-                // eslint-disable-next-line @typescript-eslint/naming-convention
                 const texts = await patchTexts("<w:p/>", { patches: { " name ": text("Ada") }, trimPlaceholders: true });
 
                 expect(texts.header).to.deep.equal(["Ada"]);
@@ -832,7 +728,7 @@ describe("from-docx", () => {
                 const template = await Packer.toBuffer(new File({ sections: [{ children: [new Paragraph("{{link}}")] }] }));
                 const target = "https://example.com/?a=1&b=2";
                 const link = `${target}#${fragment}`;
-                const zip = await JSZip.loadAsync(
+                const patched = unzip(
                     await patchDocument({
                         data: template,
                         outputType: "nodebuffer",
@@ -844,16 +740,13 @@ describe("from-docx", () => {
                         },
                     }),
                 );
-                const xml = new DOMParser().parseFromString(await zip.file("word/document.xml")!.async("text"), "text/xml");
+                const xml = new DOMParser().parseFromString(textOf(patched, "word/document.xml")!, "text/xml");
                 const hyperlink = xml.getElementsByTagName("w:hyperlink")[0];
                 expect(hyperlink.hasAttribute("w:anchor")).to.equal(useAnchor);
                 if (useAnchor) {
                     expect(hyperlink.getAttribute("w:anchor")).to.equal(fragment);
                 }
-                const relationships = new DOMParser().parseFromString(
-                    await zip.file("word/_rels/document.xml.rels")!.async("text"),
-                    "text/xml",
-                );
+                const relationships = new DOMParser().parseFromString(textOf(patched, "word/_rels/document.xml.rels")!, "text/xml");
                 const matches = [...relationships.getElementsByTagName("Relationship")].filter(
                     (relationship) => relationship.getAttribute("Id") === hyperlink.getAttribute("r:id"),
                 );
@@ -862,22 +755,17 @@ describe("from-docx", () => {
                 expect(matches[0].getAttribute("TargetMode")).to.equal("External");
             });
 
-            afterEach(() => {
-                vi.restoreAllMocks();
-            });
-
             it("should add a hyperlink's relationship only to the parts that have its placeholder", async () => {
-                vi.spyOn(JSZip, "loadAsync").mockResolvedValue(
-                    new JSZip()
-                        .file("word/document.xml", `<w:document><w:body><w:p><w:r><w:t>Body</w:t></w:r></w:p></w:body></w:document>`)
-                        .file("word/header1.xml", `<w:hdr><w:p><w:r><w:t>{{link}}</w:t></w:r></w:p></w:hdr>`)
-                        .file("word/styles.xml", `<w:styles/>`)
-                        .file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`),
-                );
+                const template = zip({
+                    "word/document.xml": `<w:document><w:body><w:p><w:r><w:t>Body</w:t></w:r></w:p></w:body></w:document>`,
+                    "word/header1.xml": `<w:hdr><w:p><w:r><w:t>{{link}}</w:t></w:r></w:p></w:hdr>`,
+                    "word/styles.xml": `<w:styles/>`,
+                    "[Content_Types].xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
+                });
 
                 const output = await patchDocument({
                     outputType: "uint8array",
-                    data: Buffer.from(""),
+                    data: template,
                     patches: {
                         link: {
                             type: PatchType.PARAGRAPH,
@@ -886,12 +774,10 @@ describe("from-docx", () => {
                     },
                 });
 
-                const patched = await new JSZip().loadAsync(output);
-                expect(await patched.file("word/_rels/header1.xml.rels")!.async("text")).to.contain(
-                    'Target="https://example.com" TargetMode="External"',
-                );
-                expect(patched.file("word/_rels/document.xml.rels")).to.equal(null);
-                expect(patched.file("word/_rels/styles.xml.rels")).to.equal(null);
+                const patched = unzip(output);
+                expect(textOf(patched, "word/_rels/header1.xml.rels")).to.contain('Target="https://example.com" TargetMode="External"');
+                expect(patched.has("word/_rels/document.xml.rels")).to.equal(false);
+                expect(patched.has("word/_rels/styles.xml.rels")).to.equal(false);
             });
 
             it.each([
@@ -914,7 +800,7 @@ describe("from-docx", () => {
                     link: "https://example.com/?a=1&b=2#foo#bar",
                     children: [new TextRun({ text: "Link", bold: true })],
                 });
-                const patched = await JSZip.loadAsync(
+                const patched = unzip(
                     await patchDocument({
                         data: template,
                         outputType: "nodebuffer",
@@ -927,11 +813,11 @@ describe("from-docx", () => {
                     }),
                 );
 
-                const xml = await patched.file(`word/${part}.xml`)!.async("text");
+                const xml = textOf(patched, `word/${part}.xml`)!;
                 const [tag] = xml.match(/<w:hyperlink [^>]+>/)!;
                 expect(tag).to.contain('w:anchor="foo#bar"');
                 const [, id] = tag.match(/r:id="([^"]+)"/)!;
-                const relationships = await patched.file(`word/_rels/${part}.xml.rels`)!.async("text");
+                const relationships = textOf(patched, `word/_rels/${part}.xml.rels`)!;
                 expect(relationships).to.match(
                     new RegExp(`Id="${id}"[^>]*Target="https://example.com/\\?a=1&amp;b=2" TargetMode="External"`),
                 );
@@ -940,7 +826,7 @@ describe("from-docx", () => {
 
             it("should link a picture in a patched hyperlink to the full address, as a picture's link has no anchor", async () => {
                 const template = await Packer.toBuffer(new File({ sections: [{ children: [new Paragraph("{{link}}")] }] }));
-                const patched = await JSZip.loadAsync(
+                const patched = unzip(
                     await patchDocument({
                         data: template,
                         outputType: "nodebuffer",
@@ -960,8 +846,8 @@ describe("from-docx", () => {
                     }),
                 );
 
-                const xml = await patched.file("word/document.xml")!.async("text");
-                const relationships = await patched.file("word/_rels/document.xml.rels")!.async("text");
+                const xml = textOf(patched, "word/document.xml")!;
+                const relationships = textOf(patched, "word/_rels/document.xml.rels")!;
                 const targetOf = (id: string): string | undefined =>
                     relationships.match(new RegExp(`<Relationship Id="${id}"[^>]*Target="([^"]+)"`))?.[1];
 
@@ -976,18 +862,14 @@ describe("from-docx", () => {
 
             // https://github.com/dolanmiu/docx/issues/3265
             it("should link to the address, with the link's text formatted as the placeholder is", async () => {
-                vi.spyOn(JSZip, "loadAsync").mockResolvedValue(
-                    new JSZip()
-                        .file(
-                            "word/document.xml",
-                            `<w:document><w:body><w:p><w:r><w:rPr><w:sz w:val="56"/></w:rPr><w:t>{{link}}</w:t></w:r></w:p></w:body></w:document>`,
-                        )
-                        .file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`),
-                );
+                const template = zip({
+                    "word/document.xml": `<w:document><w:body><w:p><w:r><w:rPr><w:sz w:val="56"/></w:rPr><w:t>{{link}}</w:t></w:r></w:p></w:body></w:document>`,
+                    "[Content_Types].xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
+                });
 
                 const output = await patchDocument({
                     outputType: "uint8array",
-                    data: Buffer.from(""),
+                    data: template,
                     patches: {
                         link: {
                             type: PatchType.PARAGRAPH,
@@ -1001,11 +883,11 @@ describe("from-docx", () => {
                     },
                 });
 
-                const patched = await new JSZip().loadAsync(output);
-                const [, relationshipId] = (await patched.file("word/document.xml")!.async("text")).match(
+                const patched = unzip(output);
+                const [, relationshipId] = textOf(patched, "word/document.xml")!.match(
                     /<w:hyperlink [^>]*r:id="([^"]+)"><w:r><w:rPr><w:color w:val="0563C1"\/><w:sz w:val="56"\/><w:u w:val="single"\/><\/w:rPr>/,
                 )!;
-                expect(await patched.file("word/_rels/document.xml.rels")!.async("text")).to.match(
+                expect(textOf(patched, "word/_rels/document.xml.rels")).to.match(
                     new RegExp(`Id="${relationshipId}"[^>]*Target="https://example.com/projects/1" TargetMode="External"`),
                 );
             });
@@ -1016,14 +898,14 @@ describe("from-docx", () => {
                 const template = await Packer.toBuffer(
                     new File({ sections: [{ children: [new Paragraph("Write &amp; for & in HTML"), new Paragraph("{{patch}}")] }] }),
                 );
-                const zip = await JSZip.loadAsync(
+                const patched = unzip(
                     await patchDocument({
                         outputType: "nodebuffer",
                         data: template,
                         patches: { patch: { type: PatchType.PARAGRAPH, children: [new TextRun("R&amp;D & more")] } },
                     }),
                 );
-                const document = (await zip.file("word/document.xml")?.async("text")) ?? "";
+                const document = textOf(patched, "word/document.xml") ?? "";
 
                 expect(document).to.contain("Write &amp;amp; for &amp; in HTML");
                 expect(document).to.contain("R&amp;amp;D &amp; more");
@@ -1042,7 +924,7 @@ describe("from-docx", () => {
                         ],
                     }),
                 );
-                const zip = await JSZip.loadAsync(
+                const patched = unzip(
                     await patchDocument({
                         outputType: "nodebuffer",
                         data: template,
@@ -1054,7 +936,7 @@ describe("from-docx", () => {
                         },
                     }),
                 );
-                const document = (await zip.file("word/document.xml")?.async("text")) ?? "";
+                const document = textOf(patched, "word/document.xml") ?? "";
 
                 expect(document).to.contain('w:name="Q&amp;amp;A &amp;lt;1&amp;gt;"');
                 expect(document).to.contain('w:name="R&amp;amp;D &amp; &lt;2&gt;"');
@@ -1079,9 +961,7 @@ describe("from-docx", () => {
                         },
                     },
                 });
-                const zip = await JSZip.loadAsync(output);
-
-                expect(await zip.file("word/_rels/header1.xml.rels")?.async("text")).to.match(
+                expect(textOf(unzip(output), "word/_rels/header1.xml.rels")).to.match(
                     /<Relationship Id="rId1" Type="http:\/\/schemas.openxmlformats.org\/officeDocument\/2006\/relationships\/image" Target="media\/[^"]+\.png"\/>/,
                 );
             });
@@ -1135,35 +1015,33 @@ describe("from-docx", () => {
                 return run;
             };
 
-            const patchWith = async (template: Buffer, patches: Readonly<Record<string, IPatch>>): Promise<JSZip> =>
-                JSZip.loadAsync(await patchDocument({ outputType: "nodebuffer", data: template, patches }));
+            const patchWith = async (
+                template: Buffer,
+                patches: Readonly<Record<string, IPatch>>,
+            ): Promise<ReadonlyMap<string, Uint8Array>> =>
+                unzip(await patchDocument({ outputType: "nodebuffer", data: template, patches }));
 
-            const read = async (zip: JSZip, path: string): Promise<string | undefined> => {
-                const text = await zip.file(path)?.async("text");
-                return text;
-            };
+            const read = (files: ReadonlyMap<string, Uint8Array>, path: string): string | undefined => textOf(files, path);
 
             it("should write the part, the parts it refers to, their content types and the relationships to them", async () => {
                 const template = await Packer.toBuffer(new File({ sections: [{ children: [new Paragraph("{{chart}}")] }] }));
                 const { chart, workbook } = createChart();
-                const zip = await patchWith(template, { chart: { type: PatchType.PARAGRAPH, children: [runWith(chart)] } });
+                const files = await patchWith(template, { chart: { type: PatchType.PARAGRAPH, children: [runWith(chart)] } });
 
-                expect(await read(zip, "word/document.xml")).to.contain(`<c:chart>${chart.relationshipId}</c:chart>`);
-                expect(await read(zip, "word/_rels/document.xml.rels")).to.contain(
+                expect(read(files, "word/document.xml")).to.contain(`<c:chart>${chart.relationshipId}</c:chart>`);
+                expect(read(files, "word/_rels/document.xml.rels")).to.contain(
                     `<Relationship Id="${chart.relationshipId}" Type="${CHART_RELATIONSHIP}" Target="charts/chart1.xml"/>`,
                 );
-                expect(await read(zip, "word/charts/chart1.xml")).to.equal(
+                expect(read(files, "word/charts/chart1.xml")).to.equal(
                     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><c:chartSpace><c:externalData>${workbook.relationshipId}</c:externalData></c:chartSpace>`,
                 );
-                expect(await read(zip, "word/charts/_rels/chart1.xml.rels")).to.equal(
+                expect(read(files, "word/charts/_rels/chart1.xml.rels")).to.equal(
                     `<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
                         `<Relationship Id="${workbook.relationshipId}" Type="${PACKAGE_RELATIONSHIP}" Target="../embeddings/Microsoft_Excel_Worksheet1.xlsx"/></Relationships>`,
                 );
-                expect(await zip.file("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")?.async("uint8array")).to.deep.equal(
-                    new Uint8Array([1, 2, 3]),
-                );
+                expect(files.get("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")).to.deep.equal(new Uint8Array([1, 2, 3]));
 
-                const contentTypes = await read(zip, "[Content_Types].xml");
+                const contentTypes = read(files, "[Content_Types].xml");
                 expect(contentTypes).to.contain(`<Override ContentType="${CHART_TYPE}" PartName="/word/charts/chart1.xml"/>`);
                 expect(contentTypes).to.contain(
                     '<Override ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" PartName="/word/embeddings/Microsoft_Excel_Worksheet1.xlsx"/>',
@@ -1188,13 +1066,13 @@ describe("from-docx", () => {
                 );
                 const first = createChart();
                 const second = createChart();
-                const zip = await patchWith(template, {
+                const files = await patchWith(template, {
                     chart: { type: PatchType.PARAGRAPH, children: [runWith(first.chart)] },
                     other: { type: PatchType.DOCUMENT, children: [new Paragraph({ children: [runWith(second.chart)] })] },
                     header: { type: PatchType.PARAGRAPH, children: [runWith(first.chart)] },
                 });
 
-                expect(Object.keys(zip.files).filter((path) => /^word\/(charts|embeddings)\/[^/]+$/.test(path))).to.include.members([
+                expect([...files.keys()].filter((path) => /^word\/(charts|embeddings)\/[^/]+$/.test(path))).to.include.members([
                     "word/charts/chart1.xml",
                     "word/charts/chart2.xml",
                     "word/charts/chart3.xml",
@@ -1202,14 +1080,14 @@ describe("from-docx", () => {
                     "word/embeddings/Microsoft_Excel_Worksheet2.xlsx",
                     "word/embeddings/Microsoft_Excel_Worksheet3.xlsx",
                 ]);
-                expect(zip.file("word/charts/chart4.xml")).to.equal(null);
-                expect(await read(zip, "word/charts/chart2.xml")).to.contain(first.workbook.relationshipId);
-                expect(await read(zip, "word/charts/chart3.xml")).to.contain(second.workbook.relationshipId);
-                expect(await read(zip, "word/charts/_rels/chart2.xml.rels")).to.contain(
+                expect(files.has("word/charts/chart4.xml")).to.equal(false);
+                expect(read(files, "word/charts/chart2.xml")).to.contain(first.workbook.relationshipId);
+                expect(read(files, "word/charts/chart3.xml")).to.contain(second.workbook.relationshipId);
+                expect(read(files, "word/charts/_rels/chart2.xml.rels")).to.contain(
                     'Target="../embeddings/Microsoft_Excel_Worksheet2.xlsx"',
                 );
 
-                const relationships = await read(zip, "word/_rels/document.xml.rels");
+                const relationships = read(files, "word/_rels/document.xml.rels");
                 expect(relationships?.split(first.chart.relationshipId)).to.have.length(2);
                 expect(relationships).to.contain(
                     `Id="${first.chart.relationshipId}" Type="${CHART_RELATIONSHIP}" Target="charts/chart2.xml"`,
@@ -1217,28 +1095,24 @@ describe("from-docx", () => {
                 expect(relationships).to.contain(
                     `Id="${second.chart.relationshipId}" Type="${CHART_RELATIONSHIP}" Target="charts/chart3.xml"`,
                 );
-                expect(await read(zip, "word/_rels/header1.xml.rels")).to.contain(
+                expect(read(files, "word/_rels/header1.xml.rels")).to.contain(
                     `Id="${first.chart.relationshipId}" Type="${CHART_RELATIONSHIP}" Target="charts/chart2.xml"`,
                 );
-                expect((await read(zip, "[Content_Types].xml"))?.split('PartName="/word/charts/chart2.xml"')).to.have.length(2);
+                expect(read(files, "[Content_Types].xml")?.split('PartName="/word/charts/chart2.xml"')).to.have.length(2);
             });
 
             it("should throw when the document has no content types", async () => {
-                vi.spyOn(JSZip, "loadAsync").mockResolvedValue(
-                    new JSZip().file(
-                        "word/document.xml",
-                        `<w:document><w:body><w:p><w:r><w:t>{{chart}}</w:t></w:r></w:p></w:body></w:document>`,
-                    ),
-                );
+                const template = zip({
+                    "word/document.xml": `<w:document><w:body><w:p><w:r><w:t>{{chart}}</w:t></w:r></w:p></w:body></w:document>`,
+                });
 
                 await expect(
                     patchDocument({
                         outputType: "nodebuffer",
-                        data: Buffer.from(""),
+                        data: template,
                         patches: { chart: { type: PatchType.PARAGRAPH, children: [runWith(createChart().chart)] } },
                     }),
                 ).rejects.toThrow("Could not find content types file");
-                vi.restoreAllMocks();
             });
         });
 
@@ -1248,26 +1122,18 @@ describe("from-docx", () => {
                 { body, header }: { readonly body: string; readonly header?: string },
                 patches: Readonly<Record<string, IPatch>>,
             ): Promise<(path: string) => Promise<string | undefined>> => {
-                const template = new JSZip()
-                    .file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`)
-                    .file("word/document.xml", `<w:document><w:body>${body}</w:body></w:document>`);
-                if (header) {
-                    template.file("word/header1.xml", `<w:hdr>${header}</w:hdr>`);
-                }
-                vi.spyOn(JSZip, "loadAsync").mockResolvedValue(template);
+                const template = zip({
+                    "[Content_Types].xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
+                    "word/document.xml": `<w:document><w:body>${body}</w:body></w:document>`,
+                    ...(header ? { "word/header1.xml": `<w:hdr>${header}</w:hdr>` } : {}),
+                });
 
-                const output = await patchDocument({ outputType: "uint8array", data: Buffer.from(""), patches });
-                // `JSZip.loadAsync` is mocked; the instance method reads the real output
-                const zip = await new JSZip().loadAsync(output);
-                return (path) => zip.file(path)?.async("text") ?? Promise.resolve(undefined);
+                const patched = unzip(await patchDocument({ outputType: "uint8array", data: template, patches }));
+                return (path) => Promise.resolve(textOf(patched, path));
             };
 
             // The id the bookmark was given when it was created
             const bookmarkIdOf = (bookmark: Bookmark): number => new Formatter().format(bookmark.start)["w:bookmarkStart"]._attr["w:id"];
-
-            afterEach(() => {
-                vi.restoreAllMocks();
-            });
 
             it("should insert a bookmark in a paragraph patch as its start, its children and its end", async () => {
                 const read = await patchTemplate(
@@ -1382,18 +1248,14 @@ describe("from-docx", () => {
                 { body, header }: { readonly body: string; readonly header?: string },
                 options: Omit<PatchDocumentOptions, "outputType" | "data">,
             ): Promise<(path: string) => Promise<string | undefined>> => {
-                const template = new JSZip()
-                    .file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types/>`)
-                    .file("word/document.xml", `<w:document><w:body>${body}</w:body></w:document>`);
-                if (header) {
-                    template.file("word/header1.xml", `<w:hdr>${header}</w:hdr>`);
-                }
-                vi.spyOn(JSZip, "loadAsync").mockResolvedValue(template);
+                const template = zip({
+                    "[Content_Types].xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types/>`,
+                    "word/document.xml": `<w:document><w:body>${body}</w:body></w:document>`,
+                    ...(header ? { "word/header1.xml": `<w:hdr>${header}</w:hdr>` } : {}),
+                });
 
-                const output = await patchDocument({ outputType: "uint8array", data: Buffer.from(""), ...options });
-                // `JSZip.loadAsync` is mocked; the instance method reads the real output
-                const zip = await new JSZip().loadAsync(output);
-                return (path) => zip.file(path)?.async("text") ?? Promise.resolve(undefined);
+                const patched = unzip(await patchDocument({ outputType: "uint8array", data: template, ...options }));
+                return (path) => Promise.resolve(textOf(patched, path));
             };
 
             const drawing = (id: number): string =>
@@ -1408,10 +1270,6 @@ describe("from-docx", () => {
                 });
             const drawingIdsIn = (xml: string | undefined): readonly number[] =>
                 [...xml!.matchAll(/<wp:docPr id="(\d+)"/g)].map(([, id]) => Number(id));
-
-            afterEach(() => {
-                vi.restoreAllMocks();
-            });
 
             it("should give an inserted drawing an id no drawing in the template has, in any part", async () => {
                 const read = await patchTemplate(
@@ -1464,28 +1322,20 @@ describe("from-docx", () => {
                 { body, header }: { readonly body: string; readonly header?: string },
                 patches: PatchDocumentOptions["patches"],
             ): Promise<(path: string) => Promise<string | undefined>> => {
-                const template = new JSZip()
-                    .file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`)
-                    .file("word/document.xml", `<w:document><w:body>${body}</w:body></w:document>`);
-                if (header) {
-                    template.file("word/header1.xml", `<w:hdr>${header}</w:hdr>`);
-                }
-                vi.spyOn(JSZip, "loadAsync").mockResolvedValue(template);
+                const template = zip({
+                    "[Content_Types].xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
+                    "word/document.xml": `<w:document><w:body>${body}</w:body></w:document>`,
+                    ...(header ? { "word/header1.xml": `<w:hdr>${header}</w:hdr>` } : {}),
+                });
 
-                const output = await patchDocument({ outputType: "uint8array", data: Buffer.from(""), patches });
-                // `JSZip.loadAsync` is mocked; the instance method reads the real output
-                const zip = await new JSZip().loadAsync(output);
-                return (path) => zip.file(path)?.async("text") ?? Promise.resolve(undefined);
+                const patched = unzip(await patchDocument({ outputType: "uint8array", data: template, patches }));
+                return (path) => Promise.resolve(textOf(patched, path));
             };
 
             const text = (value: string): IPatch => ({ type: PatchType.PARAGRAPH, children: [new TextRun(value)] });
             const cell = (value: string): string => `<w:tc><w:p><w:r><w:t>${value}</w:t></w:r></w:p></w:tc>`;
             const TABLE = `<w:tbl><w:tblPr/><w:tblGrid/><w:tr>${cell("Name")}${cell("Price")}</w:tr><w:tr>${cell("{{items.name}}")}${cell("{{currency}}{{items.price}}")}</w:tr></w:tbl>`;
             const textsOf = (xml: string | undefined): readonly string[] => traverse(toJson(xml!)).map((p) => p.text);
-
-            afterEach(() => {
-                vi.restoreAllMocks();
-            });
 
             it("should repeat the rows, and then patch the other placeholders in every copy, whatever the order of the patches", async () => {
                 const read = await patchTemplate(
@@ -1583,31 +1433,24 @@ describe("from-docx", () => {
                 readonly body: string;
                 readonly relationships?: boolean;
                 readonly styles?: string;
-            }): JSZip => {
-                const template = new JSZip()
-                    .file(
-                        "[Content_Types].xml",
-                        `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>`,
-                    )
-                    .file("word/document.xml", `<w:document xmlns:w="${W}"><w:body>${body}</w:body></w:document>`);
-                if (relationships) {
-                    template.file(
-                        "word/_rels/document.xml.rels",
-                        `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>`,
-                    );
-                }
-                if (styles !== undefined) {
-                    template.file("word/styles.xml", `<w:styles xmlns:w="${W}">${styles}</w:styles>`);
-                }
-                return template;
-            };
+            }): Uint8Array =>
+                zip({
+                    "[Content_Types].xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>`,
+                    "word/document.xml": `<w:document xmlns:w="${W}"><w:body>${body}</w:body></w:document>`,
+                    ...(relationships
+                        ? {
+                              "word/_rels/document.xml.rels": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>`,
+                          }
+                        : {}),
+                    ...(styles !== undefined ? { "word/styles.xml": `<w:styles xmlns:w="${W}">${styles}</w:styles>` } : {}),
+                });
 
             const patchWith = async (
-                template: Buffer | JSZip,
+                template: Buffer | Uint8Array,
                 options: Omit<Parameters<typeof patchDocument>[0], "outputType" | "data">,
             ): Promise<(path: string) => Promise<string | undefined>> => {
-                const zip = await JSZip.loadAsync(await patchDocument({ outputType: "nodebuffer", data: template, ...options }));
-                return (path) => zip.file(path)?.async("text") ?? Promise.resolve(undefined);
+                const patched = unzip(await patchDocument({ outputType: "nodebuffer", data: template, ...options }));
+                return (path) => Promise.resolve(textOf(patched, path));
             };
 
             const noteWithText = (text: string): { readonly children: readonly Paragraph[] } => ({ children: [new Paragraph(text)] });
@@ -1978,30 +1821,22 @@ describe("from-docx", () => {
                 { body, numbering, styles }: { readonly body: string; readonly numbering?: string; readonly styles?: string },
                 options: Omit<PatchDocumentOptions, "outputType" | "data">,
             ): Promise<(path: string) => Promise<string | undefined>> => {
-                const template = new JSZip()
-                    .file(
-                        "[Content_Types].xml",
-                        `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>`,
-                    )
-                    .file("word/document.xml", `<w:document xmlns:w="${W}"><w:body>${body}</w:body></w:document>`);
-                if (numbering !== undefined) {
-                    template
-                        .file("word/numbering.xml", numbering)
-                        .file(
-                            "word/_rels/document.xml.rels",
-                            `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
-                                `<Relationship Id="rId1" Type="${NUMBERING_RELATIONSHIP}" Target="numbering.xml"/></Relationships>`,
-                        );
-                }
-                if (styles !== undefined) {
-                    template.file("word/styles.xml", `<w:styles xmlns:w="${W}">${styles}</w:styles>`);
-                }
-                vi.spyOn(JSZip, "loadAsync").mockResolvedValue(template);
+                const template = zip({
+                    "[Content_Types].xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>`,
+                    "word/document.xml": `<w:document xmlns:w="${W}"><w:body>${body}</w:body></w:document>`,
+                    ...(numbering !== undefined
+                        ? {
+                              "word/numbering.xml": numbering,
+                              "word/_rels/document.xml.rels":
+                                  `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+                                  `<Relationship Id="rId1" Type="${NUMBERING_RELATIONSHIP}" Target="numbering.xml"/></Relationships>`,
+                          }
+                        : {}),
+                    ...(styles !== undefined ? { "word/styles.xml": `<w:styles xmlns:w="${W}">${styles}</w:styles>` } : {}),
+                });
 
-                const output = await patchDocument({ outputType: "uint8array", data: Buffer.from(""), ...options });
-                // `JSZip.loadAsync` is mocked; the instance method reads the real output
-                const zip = await new JSZip().loadAsync(output);
-                return (path) => zip.file(path)?.async("text") ?? Promise.resolve(undefined);
+                const patched = unzip(await patchDocument({ outputType: "uint8array", data: template, ...options }));
+                return (path) => Promise.resolve(textOf(patched, path));
             };
 
             const placeholder = (key: string): string => `<w:p><w:r><w:t>{{${key}}}</w:t></w:r></w:p>`;
@@ -2016,10 +1851,6 @@ describe("from-docx", () => {
                 ].map(([, abstractNum, abstractNumId, num, numId, ofAbstractNumId, cleanup]) =>
                     abstractNum ? `abstractNum ${abstractNumId}` : num ? `num ${numId} of ${ofAbstractNumId}` : cleanup,
                 );
-
-            afterEach(() => {
-                vi.restoreAllMocks();
-            });
 
             it("should put the paragraphs in lists from the numbering option, with ids none of the template's lists have", async () => {
                 const read = await patchTemplate(
@@ -2283,20 +2114,13 @@ describe("from-docx", () => {
                 styles: string | undefined,
                 options: Omit<PatchDocumentOptions, "outputType" | "data">,
             ): Promise<(path: string) => Promise<string | undefined>> => {
-                const template = new JSZip()
-                    .file(
-                        "[Content_Types].xml",
-                        `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>`,
-                    )
-                    .file(
-                        "word/document.xml",
-                        `<w:document xmlns:w="${W}"><w:body><w:p><w:r><w:t>{{content}}</w:t></w:r></w:p></w:body></w:document>`,
-                    );
-                if (styles !== undefined) {
-                    template.file("word/styles.xml", `<w:styles xmlns:w="${W}">${styles}</w:styles>`);
-                }
-                const zip = await JSZip.loadAsync(await patchDocument({ outputType: "nodebuffer", data: template, ...options }));
-                return (path) => zip.file(path)?.async("text") ?? Promise.resolve(undefined);
+                const template = zip({
+                    "[Content_Types].xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>`,
+                    "word/document.xml": `<w:document xmlns:w="${W}"><w:body><w:p><w:r><w:t>{{content}}</w:t></w:r></w:p></w:body></w:document>`,
+                    ...(styles !== undefined ? { "word/styles.xml": `<w:styles xmlns:w="${W}">${styles}</w:styles>` } : {}),
+                });
+                const patched = unzip(await patchDocument({ outputType: "nodebuffer", data: template, ...options }));
+                return (path) => Promise.resolve(textOf(patched, path));
             };
 
             const content = (...children: readonly (Paragraph | Table)[]): PatchDocumentOptions["patches"] => ({
@@ -2437,16 +2261,13 @@ describe("from-docx", () => {
             const PAGE_REFERENCE =
                 '<w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc1 \\h </w:instrText></w:r>' +
                 '<w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>9</w:t></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r>';
-            const template = (): JSZip =>
-                new JSZip()
-                    .file("[Content_Types].xml", `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>`)
-                    .file(
-                        "word/document.xml",
-                        `<w:document xmlns:w="${W}"><w:body><w:p>${PAGE_REFERENCE}</w:p><w:p><w:r><w:t>{{name}}</w:t></w:r></w:p></w:body></w:document>`,
-                    );
+            const template = (): Uint8Array =>
+                zip({
+                    "[Content_Types].xml": `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>`,
+                    "word/document.xml": `<w:document xmlns:w="${W}"><w:body><w:p>${PAGE_REFERENCE}</w:p><w:p><w:r><w:t>{{name}}</w:t></w:r></w:p></w:body></w:document>`,
+                });
             const patches = { name: { type: PatchType.PARAGRAPH, children: [new TextRun("Ada")] } } as const;
-            const documentOf = async (output: Buffer): Promise<string> =>
-                (await JSZip.loadAsync(output)).file("word/document.xml")!.async("text");
+            const documentOf = (output: Buffer): string => textOf(unzip(output), "word/document.xml")!;
 
             it("should write the page numbers the estimator works out for the patched template", async () => {
                 const pageNumbers = vi.fn(({ parts }: { readonly parts: ReadonlyMap<string, unknown> }) => {
@@ -2454,18 +2275,14 @@ describe("from-docx", () => {
                     expect(JSON.stringify(parts.get("word/document.xml"))).to.contain("Ada");
                     return { bookmarks: new Map([["_Toc1", "4"]]) };
                 });
-                const document = await documentOf(
-                    await patchDocument({ outputType: "nodebuffer", data: template(), patches, pageNumbers }),
-                );
+                const document = documentOf(await patchDocument({ outputType: "nodebuffer", data: template(), patches, pageNumbers }));
                 expect(pageNumbers).toHaveBeenCalledOnce();
                 expect(document).to.contain('<w:fldChar w:fldCharType="separate"/><w:t xml:space="preserve">4</w:t></w:r><w:r/>');
                 expect(document).not.to.contain("<w:t>9</w:t>");
             });
 
             it("should leave the template's page numbers as they are without an estimator", async () => {
-                expect(await documentOf(await patchDocument({ outputType: "nodebuffer", data: template(), patches }))).to.contain(
-                    "<w:t>9</w:t>",
-                );
+                expect(documentOf(await patchDocument({ outputType: "nodebuffer", data: template(), patches }))).to.contain("<w:t>9</w:t>");
             });
         });
     });
