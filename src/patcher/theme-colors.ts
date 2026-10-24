@@ -5,14 +5,13 @@
  * @module
  */
 // cspell:ignore hlink Hlink
-import type JSZip from "jszip";
 
 import { type ThemeColorValues, themeColorValues } from "@file/theme/color-scheme";
 import type { ThemeColorName } from "@file/theme/theme-color";
 import type { XmlElement as Element } from "@util/xml";
 
 import { resolveTarget } from "./drawing-patch";
-import { toJson } from "./util";
+import { decodeUtf8, toJson } from "./util";
 
 const THEME_RELATIONSHIP_TYPE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme";
 
@@ -55,22 +54,19 @@ const hexValue = (color: Element): string | undefined => {
 // The patcher leaves parts in UTF-16 as they are, so they aren't read here either
 const isUtf16 = (bytes: Uint8Array): boolean => (bytes[0] === 0xff && bytes[1] === 0xfe) || (bytes[0] === 0xfe && bytes[1] === 0xff);
 
-const readPart = async (zip: JSZip, path: string): Promise<Element | undefined> => {
-    const part = zip.file(path);
-    if (part === null) {
-        return undefined;
-    }
-    return isUtf16(await part.async("uint8array")) ? undefined : toJson(await part.async("text"));
+const readPart = (files: ReadonlyMap<string, Uint8Array>, path: string): Element | undefined => {
+    const part = files.get(path);
+    return part === undefined || isUtf16(part) ? undefined : toJson(decodeUtf8(part));
 };
 
 /**
  * The document's theme part, found from the document's relationships.
  */
-const readTheme = async (zip: JSZip): Promise<Element | undefined> => {
-    const relationships = await readPart(zip, "word/_rels/document.xml.rels");
+const readTheme = (files: ReadonlyMap<string, Uint8Array>): Element | undefined => {
+    const relationships = readPart(files, "word/_rels/document.xml.rels");
     const theme = child(relationships, "Relationships")?.elements?.find((item) => item.attributes?.Type === THEME_RELATIONSHIP_TYPE);
     const target = theme?.attributes?.Target;
-    return typeof target === "string" ? readPart(zip, resolveTarget("word/document.xml", target)) : undefined;
+    return typeof target === "string" ? readPart(files, resolveTarget("word/document.xml", target)) : undefined;
 };
 
 /**
@@ -78,8 +74,8 @@ const readTheme = async (zip: JSZip): Promise<Element | undefined> => {
  *
  * @returns The theme's colors, or `undefined` if the document has no theme that can be read
  */
-export const readThemeColors = async (zip: JSZip): Promise<ThemeColorValues | undefined> => {
-    const theme = await readTheme(zip);
+export const readThemeColors = (files: ReadonlyMap<string, Uint8Array>): ThemeColorValues | undefined => {
+    const theme = readTheme(files);
     if (theme === undefined) {
         return undefined;
     }

@@ -7,7 +7,7 @@ import { altTextOf, findDrawings } from "./drawing-patch";
 import type { InputDataType } from "./from-docx";
 import { loadZip } from "./load-zip";
 import { traverse } from "./traverser";
-import { toJson } from "./util";
+import { decodeUtf8, toJson } from "./util";
 
 /**
  * Options for patch detection.
@@ -55,12 +55,12 @@ export const patchDetector = async ({ data, trimPlaceholders = false }: PatchDet
     const zipContent = await loadZip(data);
     const patches = new Set<string>();
 
-    for (const [key, value] of Object.entries(zipContent.files)) {
+    for (const [key, value] of zipContent) {
         if (!key.endsWith(".xml") && !key.endsWith(".rels")) {
             continue;
         }
         if (key.startsWith("word/") && !key.endsWith(".xml.rels")) {
-            const json = toJson(await value.async("text"));
+            const json = toJson(decodeUtf8(value));
             const texts = [...traverse(json).map((p) => p.text), ...findDrawings(json).flatMap(({ properties }) => altTextOf(properties))];
             const keys = texts
                 .flatMap((text) => findPatchKeys(text))

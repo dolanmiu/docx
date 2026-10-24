@@ -4,24 +4,22 @@
  *
  * @module
  */
-import JSZip from "jszip";
-
 import type { File } from "@file/file";
 import type { PackagePart, PackagePartRelationshipType } from "@file/package-part/package-part";
 import { Relationships } from "@file/relationships";
 import type { XmlComponent } from "@file/xml-components";
-import { encodeUtf8 } from "@util/convenience-functions";
 import { stringifyXmlable } from "@util/xml";
+import { zipFiles } from "@util/zip";
 
 import { Formatter } from "../formatter";
 import type { PrettifyType } from "./packer";
 
 /**
  * A part that something in the document adds to the package, such as a chart or its embedded workbook, or the
- * relationships of one. An embedded package is zipped while the document is.
+ * relationships of one.
  */
 export type PackagePartFile = {
-    readonly data: string | Uint8Array | Promise<Uint8Array>;
+    readonly data: string | Uint8Array;
     readonly path: string;
 };
 
@@ -50,14 +48,13 @@ const xmlifyPackagePart = (
     }
 
     if ("files" in content) {
-        const embedded = new JSZip();
-        for (const { path: filePath, content: fileContent } of content.files) {
-            embedded.file(
+        const embedded = zipFiles(
+            content.files.map(({ path: filePath, content: fileContent }) => [
                 filePath,
-                fileContent instanceof Uint8Array ? fileContent : encodeUtf8(xmlifyPart(file, fileContent, prettify, new Relationships())),
-            );
-        }
-        return [{ data: embedded.generateAsync({ type: "uint8array", compression: "DEFLATE" }), path: `word/${path}` }];
+                fileContent instanceof Uint8Array ? fileContent : xmlifyPart(file, fileContent, prettify, new Relationships()),
+            ]),
+        );
+        return [{ data: embedded, path: `word/${path}` }];
     }
 
     // Relationships added while the XML is written, such as to a chart's workbook, are relative to the part's folder

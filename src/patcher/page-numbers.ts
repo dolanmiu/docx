@@ -4,14 +4,14 @@
  *
  * @module
  */
-import JSZip from "jszip";
 
 import { type ElementTree, fillBodyFields, fillPartFields } from "@file/document/body/page-number-fields";
 import type { EstimatedPageNumbers } from "@file/document/body/page-numbers";
 import type { XmlElement as Element } from "@util/xml";
+import { unzipFiles } from "@util/zip";
 
 import { relationshipsPathOf, resolveTarget, sourceOfRelationships } from "./drawing-patch";
-import { toJson } from "./util";
+import { decodeUtf8, toJson } from "./util";
 
 /**
  * A template once `patchDocument` has patched it, as a {@link TemplatePageNumberEstimator} reads it.
@@ -84,19 +84,15 @@ const readPackage = async (data: Uint8Array): Promise<PatchedTemplate | undefine
         return undefined;
     }
     try {
-        const zip = await JSZip.loadAsync(data);
         const parts = new Map<string, Element>();
         const binaryParts = new Map<string, Uint8Array>();
-        for (const [path, file] of Object.entries(zip.files)) {
-            if (file.dir) {
-                continue;
-            }
+        for (const [path, file] of unzipFiles(data)) {
             if (/\.(xml|rels)$/.test(path)) {
                 // eslint-disable-next-line functional/immutable-data
-                parts.set(path, toJson(await file.async("text")));
+                parts.set(path, toJson(decodeUtf8(file)));
             } else {
                 // eslint-disable-next-line functional/immutable-data
-                binaryParts.set(path, await file.async("uint8array"));
+                binaryParts.set(path, file);
             }
         }
         const importedDocuments = await readImportedDocuments(parts, binaryParts);

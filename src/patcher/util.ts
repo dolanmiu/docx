@@ -11,6 +11,15 @@ import { type XmlElement as Element, parseXml, stringifyXmlable } from "@util/xm
 const formatter = new Formatter();
 
 /**
+ * The text of a part, which is UTF-8. A byte order mark at its start is kept, as JSZip, which docx used to unzip with,
+ * kept it.
+ *
+ * @param bytes - The part's bytes
+ * @returns The part's text
+ */
+export const decodeUtf8 = (bytes: Uint8Array): string => new TextDecoder("utf-8", { ignoreBOM: true }).decode(bytes);
+
+/**
  * Converts XML string to JSON element structure.
  *
  * Parses XML text into a JavaScript object representation that can be

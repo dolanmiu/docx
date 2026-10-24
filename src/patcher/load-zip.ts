@@ -1,15 +1,28 @@
-import JSZip from "jszip";
 import type { Stream } from "stream";
+
+import { unzipFiles } from "@util/zip";
 
 import type { InputDataType } from "./from-docx";
 
 type TemplateStream = NodeJS.ReadableStream | Stream;
 
+/** A zip file opened with JSZip, or anything else that gives its bytes the same way. It's read, and left as it was. */
+export type ZipArchive = {
+    readonly generateAsync: (options: { readonly type: "uint8array" }) => Promise<Uint8Array>;
+};
+
 const isStream = (data: InputDataType): data is TemplateStream =>
     typeof data === "object" && data !== null && "on" in data && typeof data.on === "function";
 
+const isZipArchive = (data: InputDataType): data is ZipArchive =>
+    typeof data === "object" && data !== null && "generateAsync" in data && typeof data.generateAsync === "function";
+
+// A Blob from another realm, such as a vm context's, isn't an instance of this realm's, so a Blob is told by its tag, as
+// JSZip did. A File is a Blob
+const isBlob = (data: InputDataType): data is Blob => ["[object Blob]", "[object File]"].includes(Object.prototype.toString.call(data));
+
 /**
- * Reads a stream to its end, as JSZip cannot load a zip file from a stream.
+ * Reads a stream to its end, as a zip file lists its files at its end.
  *
  * It listens for the stream's events, rather than iterating it, so that a stream with no iterator also works, such
  * as `Packer.toStream`'s. A chunk is usually a run of bytes, but a stream made with `Readable.from` of a `Uint8Array`
@@ -53,10 +66,27 @@ const readStream = (stream: TemplateStream): Promise<Uint8Array> =>
         });
     });
 
-/** Opens the zip file of a template, from any of the forms `patchDocument` and `patchDetector` take it in */
-export const loadZip = async (data: InputDataType): Promise<JSZip> => {
-    if (data instanceof JSZip) {
-        return data;
+/** The bytes of a template's zip file, from any of the forms `patchDocument` and `patchDetector` take it in */
+const bytesOf = async (data: InputDataType): Promise<Uint8Array> => {
+    if (isZipArchive(data)) {
+        return data.generateAsync({ type: "uint8array" });
     }
-    return JSZip.loadAsync(isStream(data) ? await readStream(data) : data);
+    if (isStream(data)) {
+        return readStream(data);
+    }
+    if (isBlob(data)) {
+        return new Uint8Array(await data.arrayBuffer());
+    }
+    if (typeof data === "string") {
+        // A string with a character for each byte, as JSZip read it
+        return Uint8Array.from({ length: data.length }, (_, index) => data.charCodeAt(index));
+    }
+    if (Array.isArray(data)) {
+        return Uint8Array.from(data);
+    }
+    // Not `instanceof Uint8Array`, which is false for a Buffer or Uint8Array from another realm, such as a vm context's
+    return ArrayBuffer.isView(data) ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength) : new Uint8Array(data);
 };
+
+/** The files in the zip file of a template, from any of the forms `patchDocument` and `patchDetector` take it in */
+export const loadZip = async (data: InputDataType): Promise<ReadonlyMap<string, Uint8Array>> => unzipFiles(await bytesOf(data));

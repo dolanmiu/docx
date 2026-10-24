@@ -6,7 +6,6 @@
  *
  * @module
  */
-import JSZip from "jszip";
 import type { Stream } from "stream";
 
 import { ImageReplacer } from "@export/packer/image-replacer";
@@ -23,16 +22,17 @@ import { Bookmark, ConcreteHyperlink, ExternalHyperlink, type Paragraph, type Pa
 import { externalHyperlinkTarget } from "@file/paragraph/links/external-hyperlink-target";
 import { type RelationshipType, TargetModeType } from "@file/relationships/relationship/relationship";
 import type { IContext } from "@file/xml-components";
-import { encodeUtf8, uniqueId } from "@util/convenience-functions";
+import { uniqueId } from "@util/convenience-functions";
 import type { OutputByType, OutputType } from "@util/output-type";
 import { type XmlElement as Element, stringifyElement } from "@util/xml";
+import { zipFiles, zipOutput } from "@util/zip";
 
 import { findBookmarkIds, renumberBookmarksAvoiding } from "./bookmark-ids";
 import { appendContentType, appendContentTypeOverride } from "./content-types-manager";
 import { type PatchDocumentProperties, patchCoreProperties } from "./core-properties";
 import { findDrawingIds, renumberDrawingsAvoiding } from "./drawing-ids";
 import { type DrawingPatch, patchDrawings, relationshipsPathOf } from "./drawing-patch";
-import { loadZip } from "./load-zip";
+import { type ZipArchive, loadZip } from "./load-zip";
 import { patchNotes } from "./notes";
 import { patchNumbering } from "./numbering";
 import { type TemplatePageNumberEstimator, fillTemplatePageNumbers } from "./page-numbers";
@@ -43,7 +43,7 @@ import { patchStyles } from "./styles";
 import { patchTableRows } from "./table-rows";
 import { readThemeColors } from "./theme-colors";
 import { trimPlaceholders as trimPlaceholdersIn } from "./trim-placeholders";
-import { toJson } from "./util";
+import { decodeUtf8, toJson } from "./util";
 import { removeShapeTypesIn } from "./vml-shape-types";
 
 /**
@@ -53,7 +53,7 @@ import { removeShapeTypesIn } from "./vml-shape-types";
  * arrays, and streams, such as `fs.createReadStream`'s or `Packer.toStream`'s.
  */
 // eslint-disable-next-line functional/prefer-readonly-type
-export type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob | NodeJS.ReadableStream | Stream | JSZip;
+export type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob | NodeJS.ReadableStream | Stream | ZipArchive;
 
 export { PatchType } from "./patch-type";
 export { DrawingPatch } from "./drawing-patch";
@@ -345,7 +345,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     const zipContent = await loadZip(data);
     const contexts = new Map<string, IContext>();
     // Theme colors in patches are written with the hex color they come to in the document's theme
-    const themeColors = await readThemeColors(zipContent);
+    const themeColors = readThemeColors(zipContent);
     // The content types of parts that patches add to the package, such as charts
     // eslint-disable-next-line functional/prefer-readonly-type
     const contentTypeOverrides: { readonly contentType: string; readonly partName: string }[] = [];
@@ -367,11 +367,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                 addOverride: (contentType: string, partName: string) => contentTypeOverrides.push({ contentType, partName }),
             },
             // New parts take numbers the template's own parts, such as its charts, don't have
-            new Set(
-                Object.keys(zipContent.files)
-                    .filter((path) => path.startsWith("word/"))
-                    .map((path) => path.slice("word/".length)),
-            ),
+            new Set([...zipContent.keys()].filter((path) => path.startsWith("word/")).map((path) => path.slice("word/".length))),
         ),
     } as unknown as File;
 
@@ -394,8 +390,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
         assertValidPatch(key, patch, { inTableRow: false });
     }
 
-    for (const [key, value] of Object.entries(zipContent.files)) {
-        const binaryValue = await value.async("uint8array");
+    for (const [key, binaryValue] of zipContent) {
         const startBytes = binaryValue.slice(0, 2);
         if (compareByteArrays(startBytes, UTF16LE) || compareByteArrays(startBytes, UTF16BE)) {
             // eslint-disable-next-line functional/immutable-data
@@ -409,7 +404,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
             continue;
         }
 
-        const json = toJson(await value.async("text"));
+        const json = toJson(decodeUtf8(binaryValue));
 
         // The root of a part patches are written into: the document, a header, a footer, the notes or the comments
         const root = json.elements?.find((i) => PATCHED_PART_ROOTS.has(i.name ?? ""));
@@ -689,29 +684,12 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
         }
     }
 
-    const zip = new JSZip();
+    const zip = zipFiles([
+        ...[...map].map(([key, value]) => [key, stringifyElement(value)] as const),
+        ...binaryContentMap,
+        ...file.Media.Array.map(({ data: media, fileName }) => [`word/media/${fileName}`, media] as const),
+        ...packageParts.map(({ path, data: partData }) => [path, partData] as const),
+    ]);
 
-    for (const [key, value] of map) {
-        const output = stringifyElement(value);
-
-        zip.file(key, encodeUtf8(output));
-    }
-
-    for (const [key, value] of binaryContentMap) {
-        zip.file(key, value);
-    }
-
-    for (const { data: stream, fileName } of file.Media.Array) {
-        zip.file(`word/media/${fileName}`, stream);
-    }
-
-    for (const { path, data: partData } of packageParts) {
-        zip.file(path, typeof partData === "string" ? encodeUtf8(partData) : partData);
-    }
-
-    return zip.generateAsync({
-        type: outputType,
-        mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        compression: "DEFLATE",
-    });
+    return zipOutput(zip, outputType, "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
 };
