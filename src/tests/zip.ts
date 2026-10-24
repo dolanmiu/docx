@@ -39,10 +39,16 @@ const headerOf = (zipFile: Uint8Array, signature: number, nameAt: number, path: 
     return offset;
 };
 
-/** A copy of a zip file whose central directory gives a file another size, as a damaged or crafted zip file might */
-export const declaringSize = (zipFile: Uint8Array, path: string, size: number): Uint8Array => {
+/**
+ * A copy of a zip file whose central directory gives a file another size, and another size for its compressed data, as a
+ * damaged or crafted zip file might
+ */
+export const declaringSize = (zipFile: Uint8Array, path: string, size: number, compressedSize?: number): Uint8Array => {
     const copy = zipFile.slice();
-    new DataView(copy.buffer).setUint32(headerOf(copy, 0x02014b50, 46, path) + 24, size, true);
+    const view = new DataView(copy.buffer);
+    const header = headerOf(copy, 0x02014b50, 46, path);
+    view.setUint32(header + 24, size, true);
+    view.setUint32(header + 20, compressedSize ?? view.getUint32(header + 20, true), true);
     return copy;
 };
 

@@ -90,10 +90,23 @@ describe("zip", () => {
             );
         });
 
-        it("should refuse a file the zip file gives a size more than DEFLATE can give its data", () => {
-            const zip = declaringSize(zipFiles([["word/document.xml", "<w:document/>"]]), "word/document.xml", 0xf0000000);
+        // The file's data is damaged too, so only a size refused before inflating gives this error, not fflate's own
+        it("should refuse a file the zip file gives a size more than DEFLATE can give its data, before inflating it", () => {
+            const zip = zipFiles([["word/document.xml", "<w:document/>"]]);
+            const forged = declaringSize(damaging(zip, "word/document.xml"), "word/document.xml", 0xf0000000);
 
-            expect(() => unzipFiles(zip)).toThrow("Corrupted zip: word/document.xml isn't the size the zip file gives it");
+            expect(() => unzipFiles(forged)).toThrow("Corrupted zip: word/document.xml isn't the size the zip file gives it");
+        });
+
+        it("should refuse files whose compressed data together is larger than the zip file, before inflating them", () => {
+            const zip = zipFiles([
+                ["word/document.xml", "<w:document/>"],
+                ["word/styles.xml", "<w:styles/>"],
+            ]);
+            // Within DEFLATE's ratio of its claimed compressed data, which with the other file's is more than the zip file holds
+            const forged = declaringSize(damaging(zip, "word/styles.xml"), "word/styles.xml", zip.length * 1000, zip.length);
+
+            expect(() => unzipFiles(forged)).toThrow("Corrupted zip: word/styles.xml isn't the size the zip file gives it");
         });
     });
 

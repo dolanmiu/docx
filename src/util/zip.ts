@@ -40,17 +40,21 @@ const wrongSize = (path: string): Error => new Error(`Corrupted zip: ${path} isn
  * are the files `include` leaves out, which aren't inflated.
  *
  * A file must be as large as the zip file says, as JSZip, which docx used to unzip with, checked. fflate takes room for
- * that size before inflating a file, so a size more than DEFLATE can give is refused before it does. fflate cuts a file
- * short at a size smaller than its data, which only parsing the zip file again would show.
+ * that size before inflating a file, so sizes that can't be are refused before it does: compressed data that together
+ * is larger than the zip file it's in, or a size more than DEFLATE can inflate a file's compressed data to. That keeps
+ * the room taken to what DEFLATE can give for the zip file. fflate cuts a file short at a size smaller than its data,
+ * which only parsing the zip file again would show.
  */
 export const unzipFiles = (data: Uint8Array, include: (path: string) => boolean = () => true): ReadonlyMap<string, Uint8Array> => {
     const sizes = new Map<string, number>();
+    let compressed = 0;
     const files = unzipSync(data, {
         filter: ({ name, size, originalSize }) => {
             if (name.endsWith("/") || !include(name)) {
                 return false;
             }
-            if (originalSize > size * MAX_DEFLATE_RATIO) {
+            compressed += size;
+            if (compressed > data.length || originalSize > size * MAX_DEFLATE_RATIO) {
                 throw wrongSize(name);
             }
             // eslint-disable-next-line functional/immutable-data
