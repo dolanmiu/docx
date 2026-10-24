@@ -11333,6 +11333,8 @@ export declare const PageTextDirectionType: {
  * ```
  */
 export declare class Paragraph extends FileChild {
+    /** The options the paragraph was made with. A paragraph made from a string has it as its `text` */
+    readonly options: IParagraphOptions;
     private readonly properties;
     private readonly alignment;
     constructor(options: string | IParagraphOptions);
@@ -11362,6 +11364,19 @@ export declare class Paragraph extends FileChild {
      * @internal
      */
     get Alignment(): Pick<IParagraphOptions, "alignment" | "bidirectional">;
+    /**
+     * Makes a new paragraph with the paragraph's options and these, which take the place of its own, such as to indent
+     * the paragraphs a parser made. The paragraph itself is left as it is, and the new one has the same children.
+     *
+     * Each option given replaces the paragraph's whole option: to keep the rest of its spacing, give
+     * `spacing: { ...paragraph.options.spacing, before: 240 }`. An option given as `undefined` is removed.
+     *
+     * @example
+     * ```typescript
+     * const indented = paragraphs.map((paragraph) => paragraph.with({ indent: { left: 720, right: 720 } }));
+     * ```
+     */
+    with(options: IParagraphOptions): Paragraph;
     addRunToFront(run: Run): Paragraph;
 }
 

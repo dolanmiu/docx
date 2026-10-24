@@ -13498,11 +13498,18 @@ MAX: 9026 };
 	* });
 	* ```
 	*/
-	var Paragraph = class extends FileChild {
+	var Paragraph = class Paragraph extends FileChild {
 		constructor(options) {
 			super("w:p");
+			_defineProperty(
+				this,
+				/** The options the paragraph was made with. A paragraph made from a string has it as its `text` */
+				"options",
+				void 0
+			);
 			_defineProperty(this, "properties", void 0);
 			_defineProperty(this, "alignment", void 0);
+			this.options = typeof options === "string" ? { text: options } : options;
 			if (typeof options === "string") {
 				this.alignment = {};
 				this.properties = new ParagraphProperties({});
@@ -13566,6 +13573,21 @@ MAX: 9026 };
 		*/
 		get Alignment() {
 			return this.alignment;
+		}
+		/**
+		* Makes a new paragraph with the paragraph's options and these, which take the place of its own, such as to indent
+		* the paragraphs a parser made. The paragraph itself is left as it is, and the new one has the same children.
+		*
+		* Each option given replaces the paragraph's whole option: to keep the rest of its spacing, give
+		* `spacing: { ...paragraph.options.spacing, before: 240 }`. An option given as `undefined` is removed.
+		*
+		* @example
+		* ```typescript
+		* const indented = paragraphs.map((paragraph) => paragraph.with({ indent: { left: 720, right: 720 } }));
+		* ```
+		*/
+		with(options) {
+			return new Paragraph(_objectSpread2(_objectSpread2({}, this.options), options));
 		}
 		addRunToFront(run) {
 			this.root.splice(1, 0, run);

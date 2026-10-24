@@ -92,6 +92,37 @@ const doc = new Document({
 });
 ```
 
+## Changing a Paragraph's Options
+
+`with` makes a new paragraph with a paragraph's options and the ones you give, which take the place of its own. This is useful for paragraphs made elsewhere, such as by a parser of Markdown or LaTeX, that you want to lay out differently. The paragraph itself is left as it is, and the new one has the same children.
+
+```ts live
+import { AlignmentType, Document, Paragraph, TextRun } from "docx";
+
+// Paragraphs made elsewhere, such as by a parser
+const parsed = [
+    new Paragraph("Hello"),
+    new Paragraph({ children: [new TextRun({ text: "World!", bold: true })], spacing: { after: 480 } }),
+];
+
+const doc = new Document({
+    sections: [
+        {
+            children: parsed.map((paragraph) =>
+                paragraph.with({
+                    indent: { left: 720, right: 720 },
+                    // The paragraph's own spacing after it is kept
+                    spacing: { ...paragraph.options.spacing, before: 240 },
+                    alignment: AlignmentType.RIGHT,
+                }),
+            ),
+        },
+    ],
+});
+```
+
+Each option you give replaces the paragraph's whole option, so spread the paragraph's own from its `options` to keep the parts you don't change, as with `spacing` above. An option given as `undefined` is removed. `options` holds the options the paragraph was made with: a paragraph made from a string, such as `new Paragraph("Hello")`, has it as its `text`.
+
 ## Options
 
 This is the list of options for a paragraph. A detailed explanation is below:
