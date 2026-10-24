@@ -8,8 +8,9 @@
  *
  * @module
  */
-import hash from "hash.js";
 import { customAlphabet, nanoid } from "nanoid/non-secure";
+
+import { sha1 } from "./sha";
 
 /**
  * Converts millimeters to TWIP (twentieths of a point).
@@ -210,10 +211,9 @@ export const uniqueId = (): string => nanoid().toLowerCase();
  * ```
  */
 export const hashedId = (data: Buffer | string | Uint8Array | ArrayBuffer): string =>
-    hash
-        .sha1()
-        .update(data instanceof ArrayBuffer ? new Uint8Array(data) : data)
-        .digest("hex");
+    Array.from(sha1(typeof data === "string" ? encodeUtf8(data) : ArrayBuffer.isView(data) ? data : new Uint8Array(data)), (byte) =>
+        byte.toString(16).padStart(2, "0"),
+    ).join("");
 
 /**
  * Generates a random hexadecimal string of specified length.
@@ -241,15 +241,9 @@ export const uniqueUuid = (): string =>
 /**
  * Encode a string to UTF-8 bytes.
  *
- * This is used to pre-encode XML content before passing to JSZip,
- * which avoids a bug where JSZip's string chunking can split UTF-16
- * surrogate pairs for characters above U+FFFF (like emoji).
- *
  * The copy via `new Uint8Array()` ensures the returned array uses the
  * current module's Uint8Array constructor, avoiding cross-realm issues
  * in test environments (jsdom) where TextEncoder returns a different
- * realm's Uint8Array that fails JSZip's instanceof checks.
- *
- * @see https://github.com/Stuk/jszip/pull/963
+ * realm's Uint8Array that fails `instanceof Uint8Array` checks.
  */
 export const encodeUtf8 = (str: string): Uint8Array => new Uint8Array(new TextEncoder().encode(str));
