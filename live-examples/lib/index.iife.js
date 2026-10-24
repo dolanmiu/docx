@@ -24880,6 +24880,33 @@ MAX: 9026 };
 			if (alias) this.root.push(new StringValueElement("w:alias", alias));
 		}
 	};
+	/**
+	* Creates the document part properties of a Structured Document Tag, which make it one of Word's building blocks of the
+	* gallery named, such as "Table of Contents". Word then shows the content control with the gallery's commands, such as
+	* Update Table for a table of contents. It is unique, so inserting another from the gallery replaces it.
+	*
+	* Reference: http://www.datypic.com/sc/ooxml/e-w_docPartObj-1.html
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:complexType name="CT_SdtDocPart">
+	*   <xsd:sequence>
+	*     <xsd:element name="docPartGallery" type="CT_String" minOccurs="0"/>
+	*     <xsd:element name="docPartCategory" type="CT_String" minOccurs="0"/>
+	*     <xsd:element name="docPartUnique" type="CT_OnOff" minOccurs="0"/>
+	*   </xsd:sequence>
+	* </xsd:complexType>
+	* ```
+	*
+	* @example
+	* ```typescript
+	* createDocumentPartObject("Table of Contents");
+	* ```
+	*/
+	var createDocumentPartObject = (gallery) => new BuilderElement({
+		name: "w:docPartObj",
+		children: [new StringValueElement("w:docPartGallery", gallery), new BuilderElement({ name: "w:docPartUnique" })]
+	});
 	//#endregion
 	//#region src/file/table-of-contents/table-of-contents.ts
 	/**
@@ -24909,6 +24936,9 @@ MAX: 9026 };
 	* so it isn't empty before Word updates it or in applications that don't update it.
 	* The page numbers are left for Word to fill in when it updates the field, unless the document's `pageNumbers`
 	* writes them.
+	*
+	* It is written in a content control of Word's Table of Contents gallery, as Word writes its own, so Word shows it as a
+	* table of contents, with Update Table, rather than as a content control named by its alias.
 	*
 	* Reference: http://officeopenxml.com/WPtableOfContents.php
 	*
@@ -24943,7 +24973,9 @@ MAX: 9026 };
 				"fromHeadings",
 				void 0
 			);
-			this.root.push(new StructuredDocumentTagProperties(alias));
+			const sdtProperties = new StructuredDocumentTagProperties(alias);
+			sdtProperties.addChildElement(createDocumentPartObject("Table of Contents"));
+			this.root.push(sdtProperties);
 			const content = new StructuredDocumentTagContent();
 			const beginParagraphMandatoryChildren = [new Run({ children: [
 				beginOf(beginDirty),

@@ -13427,6 +13427,9 @@ export declare const TableLayoutType: {
  * The page numbers are left for Word to fill in when it updates the field, unless the document's `pageNumbers`
  * writes them.
  *
+ * It is written in a content control of Word's Table of Contents gallery, as Word writes its own, so Word shows it as a
+ * table of contents, with Update Table, rather than as a content control named by its alias.
+ *
  * Reference: http://officeopenxml.com/WPtableOfContents.php
  *
  * @publicApi

@@ -4,6 +4,8 @@ You can generate table of contents with `docx`. More information can be found [h
 
 A Table of Contents is a field. `docx` writes it with an entry for each heading it includes, linked to the heading, so it isn't empty when the document is opened, whether or not the application updates fields.
 
+It is written in a content control of Word's Table of Contents gallery, as Word writes the tables of contents it inserts. So when you click in it in Word, Word shows it as a table of contents, with Update Table, rather than as a content control named by its alias (the first argument, such as `"Summary"`).
+
 The page numbers depend on how the document is laid out on the page, so `docx` leaves them for Word to fill in when it updates the field. With `updateFields` on, Word asks "This document contains fields that may refer to other files. Do you want to update the fields in this document?" when the document is opened. Say yes, and Word fills in the page numbers. Applications that don't update fields, such as LibreOffice, show the entries without page numbers until the table is updated there.
 
 To write the page numbers with the document, give it `pageNumbers: estimatePageNumbers` from `docx/layout`, which lays out its pages as Word would. The table is then written as it is, so Word shows it as it is written, and with `updateFields` off, opens the document without asking to update the fields. A page number it couldn't work out is left blank until the table is updated. See [Layout](usage/layout.md#opening-the-document-in-word).
