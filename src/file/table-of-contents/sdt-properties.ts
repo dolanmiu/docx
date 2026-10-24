@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { StringValueElement, XmlComponent } from "@file/xml-components";
+import { BuilderElement, StringValueElement, XmlComponent } from "@file/xml-components";
 
 /**
  * Represents the properties of a Structured Document Tag.
@@ -58,3 +58,32 @@ export class StructuredDocumentTagProperties extends XmlComponent {
         }
     }
 }
+
+/**
+ * Creates the document part properties of a Structured Document Tag, which make it one of Word's building blocks of the
+ * gallery named, such as "Table of Contents". Word then shows the content control with the gallery's commands, such as
+ * Update Table for a table of contents. It is unique, so inserting another from the gallery replaces it.
+ *
+ * Reference: http://www.datypic.com/sc/ooxml/e-w_docPartObj-1.html
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_SdtDocPart">
+ *   <xsd:sequence>
+ *     <xsd:element name="docPartGallery" type="CT_String" minOccurs="0"/>
+ *     <xsd:element name="docPartCategory" type="CT_String" minOccurs="0"/>
+ *     <xsd:element name="docPartUnique" type="CT_OnOff" minOccurs="0"/>
+ *   </xsd:sequence>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * createDocumentPartObject("Table of Contents");
+ * ```
+ */
+export const createDocumentPartObject = (gallery: string): XmlComponent =>
+    new BuilderElement({
+        name: "w:docPartObj",
+        children: [new StringValueElement("w:docPartGallery", gallery), new BuilderElement({ name: "w:docPartUnique" })],
+    });
