@@ -7,7 +7,7 @@ import { altTextOf, findDrawings } from "./drawing-patch";
 import type { InputDataType } from "./from-docx";
 import { loadZip } from "./load-zip";
 import { traverse } from "./traverser";
-import { toJson } from "./util";
+import { decodeUtf8, toJson } from "./util";
 
 /**
  * Options for patch detection.
@@ -23,6 +23,9 @@ type PatchDetectorOptions = {
      */
     readonly trimPlaceholders?: boolean;
 };
+
+// The parts placeholders are looked for in: those in word/ that are XML, other than their relationships
+const isSearched = (path: string): boolean => path.startsWith("word/") && /\.(xml|rels)$/.test(path) && !path.endsWith(".xml.rels");
 
 /**
  * Detects all placeholders present in a document template.
@@ -52,24 +55,20 @@ type PatchDetectorOptions = {
  * ```
  */
 export const patchDetector = async ({ data, trimPlaceholders = false }: PatchDetectorOptions): Promise<readonly string[]> => {
-    const zipContent = await loadZip(data);
+    // Only the parts placeholders can be in are inflated, not a template's images or embedded files
+    const zipContent = await loadZip(data, isSearched);
     const patches = new Set<string>();
 
-    for (const [key, value] of Object.entries(zipContent.files)) {
-        if (!key.endsWith(".xml") && !key.endsWith(".rels")) {
-            continue;
-        }
-        if (key.startsWith("word/") && !key.endsWith(".xml.rels")) {
-            const json = toJson(await value.async("text"));
-            const texts = [...traverse(json).map((p) => p.text), ...findDrawings(json).flatMap(({ properties }) => altTextOf(properties))];
-            const keys = texts
-                .flatMap((text) => findPatchKeys(text))
-                .map((patch) => (trimPlaceholders ? patch.trim() : patch))
-                // A placeholder of only spaces has no key
-                .filter((patch) => patch !== "");
-            // eslint-disable-next-line functional/immutable-data
-            keys.forEach((patch) => patches.add(patch));
-        }
+    for (const [, value] of zipContent) {
+        const json = toJson(decodeUtf8(value));
+        const texts = [...traverse(json).map((p) => p.text), ...findDrawings(json).flatMap(({ properties }) => altTextOf(properties))];
+        const keys = texts
+            .flatMap((text) => findPatchKeys(text))
+            .map((patch) => (trimPlaceholders ? patch.trim() : patch))
+            // A placeholder of only spaces has no key
+            .filter((patch) => patch !== "");
+        // eslint-disable-next-line functional/immutable-data
+        keys.forEach((patch) => patches.add(patch));
     }
     return Array.from(patches);
 };

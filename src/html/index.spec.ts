@@ -1,4 +1,3 @@
-import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -15,6 +14,7 @@ import {
     Textbox,
     patchDocument,
 } from "docx";
+import { textOf, unzip } from "tests/zip";
 
 import * as html from ".";
 
@@ -44,16 +44,16 @@ describe("docx/html", () => {
                 },
             ],
         });
-        const zip = await JSZip.loadAsync(await Packer.toBuffer(doc));
-        const part = (path: string): Promise<string> => zip.file(path)!.async("text");
+        const files = unzip(await Packer.toBuffer(doc));
+        const part = (path: string): string => textOf(files, path)!;
 
-        expect((await part("word/document.xml")).match(/<w:hyperlink /g)).toHaveLength(2);
-        expect(await part("word/header1.xml")).toContain('<w:hyperlink w:history="1" r:id=');
-        expect(await part("word/_rels/header1.xml.rels")).toContain("https://example.com");
-        expect(await part("word/footer1.xml")).toContain("<w:numPr>");
-        expect(await part("word/footnotes.xml")).toContain("<w:i/>");
-        expect((await part("word/numbering.xml")).match(/<w:abstractNum /g)!.length).toBeGreaterThanOrEqual(5);
-        expect(await part("word/document.xml")).toContain("text box");
+        expect(part("word/document.xml").match(/<w:hyperlink /g)).toHaveLength(2);
+        expect(part("word/header1.xml")).toContain('<w:hyperlink w:history="1" r:id=');
+        expect(part("word/_rels/header1.xml.rels")).toContain("https://example.com");
+        expect(part("word/footer1.xml")).toContain("<w:numPr>");
+        expect(part("word/footnotes.xml")).toContain("<w:i/>");
+        expect(part("word/numbering.xml").match(/<w:abstractNum /g)!.length).toBeGreaterThanOrEqual(5);
+        expect(part("word/document.xml")).toContain("text box");
     });
 
     it("writes the HTML's notes as the footnotes of a template it patches, and leaves them out of its header", async () => {
@@ -68,7 +68,7 @@ describe("docx/html", () => {
                 ],
             }),
         );
-        const zip = await JSZip.loadAsync(
+        const files = unzip(
             await patchDocument({
                 outputType: "nodebuffer",
                 data: template,
@@ -78,15 +78,15 @@ describe("docx/html", () => {
                 },
             }),
         );
-        const part = (path: string): Promise<string> => zip.file(path)!.async("text");
+        const part = (path: string): string => textOf(files, path)!;
 
-        expect(await part("word/document.xml")).toContain('<w:footnoteReference w:id="1"/>');
-        expect(await part("word/footnotes.xml")).toMatch(
+        expect(part("word/document.xml")).toContain('<w:footnoteReference w:id="1"/>');
+        expect(part("word/footnotes.xml")).toMatch(
             /<w:footnote w:id="1"><w:p><w:pPr><w:pStyle w:val="FootnoteText"\/><\/w:pPr>.*Its source/,
         );
-        const header = await part("word/header1.xml");
+        const header = part("word/header1.xml");
         expect(header).toContain("Claim");
         expect(header).not.toContain("footnoteReference");
-        expect(await part("word/footnotes.xml")).not.toContain('w:id="2"');
+        expect(part("word/footnotes.xml")).not.toContain('w:id="2"');
     });
 });

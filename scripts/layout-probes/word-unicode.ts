@@ -21,7 +21,7 @@
 //
 // Usage: npm run run-ts -- scripts/layout-probes/word-unicode.ts, which writes build/word-probes/word-unicode.docx
 import * as fs from "fs";
-import JSZip from "jszip";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import { Document, Packer, Paragraph, TextRun } from "docx";
 
 const IDEOGRAPH = "永";
@@ -276,13 +276,13 @@ const doc = new Document({
 });
 
 Packer.toBuffer(doc).then(async (buffer) => {
-    const zip = await JSZip.loadAsync(buffer);
-    const xml = await zip.file("word/document.xml")!.async("string");
+    const zip = unzipSync(buffer, { filter: ({ name }) => !name.endsWith("/") });
+    const xml = strFromU8(zip["word/document.xml"]);
     const injected = Object.entries(INJECTED).reduce(
         (all, [style, properties]) => all.split(`<w:pStyle w:val="${style}"/>`).join(`<w:pStyle w:val="${style}"/>${properties}`),
         xml,
     );
-    zip.file("word/document.xml", injected);
+    zip["word/document.xml"] = strToU8(injected);
     fs.mkdirSync("build/word-probes", { recursive: true });
-    fs.writeFileSync("build/word-probes/word-unicode.docx", await zip.generateAsync({ type: "nodebuffer" }));
+    fs.writeFileSync("build/word-probes/word-unicode.docx", zipSync(zip, { level: 6 }));
 });

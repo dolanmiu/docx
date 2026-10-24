@@ -13,7 +13,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import JSZip from "jszip";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 
 import {
     AlignmentType,
@@ -584,10 +584,10 @@ export const write = async ({
         footnotes: { ...footnoteBodies, ...((options as { footnotes?: object }).footnotes ?? {}) },
         sections: sections ? [...sections] : [{ properties: PAGE, children: [...(children ?? [])] }],
     });
-    const zip = await JSZip.loadAsync(await Packer.toBuffer(doc));
+    const zip: Record<string, Uint8Array> = unzipSync(await Packer.toBuffer(doc), { filter: ({ name }) => !name.endsWith("/") });
     const parts = new Map<string, string>();
-    for (const path of Object.keys(zip.files).filter((file) => /\.(xml|rels)$/.test(file))) {
-        parts.set(path, await zip.file(path)!.async("string"));
+    for (const path of Object.keys(zip).filter((file) => /\.(xml|rels)$/.test(file))) {
+        parts.set(path, strFromU8(zip[path]));
     }
     for (const injection of injections) {
         try {
@@ -600,15 +600,15 @@ export const write = async ({
         }
     }
     for (const [path, text] of parts) {
-        zip.file(path, text);
+        zip[path] = strToU8(text);
     }
     for (const [path, data] of Object.entries(files)) {
-        zip.file(path, data);
+        zip[path] = data;
     }
     const folder = process.argv[2] ?? "build/word-stops";
     mkdirSync(folder, { recursive: true });
     const out = join(folder, `${name}.docx`);
-    writeFileSync(out, await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }));
+    writeFileSync(out, zipSync(zip, { level: 6 }));
     console.log(`wrote ${out}`);
     return out;
 };

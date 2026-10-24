@@ -65,7 +65,7 @@
 // cspell:ignore afchunk
 import { mkdirSync, writeFileSync } from "node:fs";
 
-import JSZip from "jszip";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 
 import {
     Bookmark,
@@ -124,20 +124,23 @@ type Imported = {
 const DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml";
 
 /** The XML of a package's part, changed */
-const edit = async (zip: JSZip, part: string, change: (xml: string) => string): Promise<void> => {
-    const xml = await zip.file(part)!.async("string");
+const edit = (zip: Record<string, Uint8Array>, part: string, change: (xml: string) => string): void => {
+    const xml = strFromU8(zip[part]);
     const changed = change(xml);
     if (changed === xml) {
         throw new Error(`Nothing changed in ${part}`);
     }
-    zip.file(part, changed);
+    zip[part] = strToU8(changed);
 };
 
 /** A document, packed, with changes to the XML of its parts */
-const pack = async (doc: Document, changes: Readonly<Record<string, (xml: string) => string>> = {}): Promise<JSZip> => {
-    const zip = await JSZip.loadAsync(await Packer.toBuffer(doc));
+const pack = async (
+    doc: Document,
+    changes: Readonly<Record<string, (xml: string) => string>> = {},
+): Promise<Record<string, Uint8Array>> => {
+    const zip = unzipSync(await Packer.toBuffer(doc), { filter: ({ name }) => !name.endsWith("/") });
     for (const [part, change] of Object.entries(changes)) {
-        await edit(zip, part, change);
+        edit(zip, part, change);
     }
     return zip;
 };
@@ -152,7 +155,7 @@ const importedDocx = async (
     const zip = await pack(new Document({ styles: STYLES, ...options, sections: [...options.sections] }), changes);
     return {
         name,
-        data: await zip.generateAsync({ type: "uint8array", compression: "DEFLATE" }),
+        data: zipSync(zip, { level: 6 }),
         contentType: DOCX,
         extension: "docx",
         matchSource,
@@ -166,14 +169,14 @@ const styleElement = (id: string): RegExp => new RegExp(`<w:style [^>]*w:styleId
  * Replaces the marker of each imported document in a part with `w:altChunk`, and adds the imported part, the part's
  * relationship to it and its content type to the package.
  */
-const importInto = async (zip: JSZip, part: string, imported: readonly Imported[]): Promise<void> => {
+const importInto = (zip: Record<string, Uint8Array>, part: string, imported: readonly Imported[]): void => {
     const folder = part.slice(0, part.lastIndexOf("/") + 1);
     const relationshipsPath = `${folder}_rels/${part.slice(folder.length)}.rels`;
     for (const { name, data, contentType, extension, matchSource } of imported) {
         const id = `rIdImport${name}`;
         const target = `afchunk-${name}.${extension}`;
         const properties = matchSource ? "<w:altChunkPr><w:matchSrc/></w:altChunkPr>" : "";
-        await edit(zip, part, (xml) =>
+        edit(zip, part, (xml) =>
             xml.replace(
                 new RegExp(`<w:p>(?:(?!<w:p>).)*?@@IMPORT ${name}@@(?:(?!<w:p>).)*?</w:p>`),
                 `<w:altChunk r:id="${id}">${properties}</w:altChunk>`,
@@ -181,21 +184,21 @@ const importInto = async (zip: JSZip, part: string, imported: readonly Imported[
         );
         const relationship = `<Relationship Id="${id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/aFChunk" Target="${target}"/>`;
         // docx writes a part's relationships as an empty element when it has none
-        await edit(zip, relationshipsPath, (xml) =>
+        edit(zip, relationshipsPath, (xml) =>
             xml
                 .replace(/<Relationships ([^>]*?)\/>/, "<Relationships $1></Relationships>")
                 .replace("</Relationships>", `${relationship}</Relationships>`),
         );
-        await edit(zip, "[Content_Types].xml", (xml) =>
+        edit(zip, "[Content_Types].xml", (xml) =>
             xml.replace("</Types>", `<Override ContentType="${contentType}" PartName="/${folder}${target}"/></Types>`),
         );
-        zip.file(`${folder}${target}`, data);
+        zip[`${folder}${target}`] = data;
     }
 };
 
-const write = async (name: string, zip: JSZip): Promise<void> => {
+const write = (name: string, zip: Record<string, Uint8Array>): void => {
     mkdirSync("build/word-probes", { recursive: true });
-    writeFileSync(`build/word-probes/${name}.docx`, await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }));
+    writeFileSync(`build/word-probes/${name}.docx`, zipSync(zip, { level: 6 }));
 };
 
 // A table of one cell 9026 wide
@@ -442,8 +445,8 @@ const importedDocuments = async (): Promise<void> => {
             sections,
         }),
     );
-    await importInto(zip, "word/document.xml", imported);
-    await write("word-imported-documents", zip);
+    importInto(zip, "word/document.xml", imported);
+    write("word-imported-documents", zip);
 };
 
 const importedText = async (): Promise<void> => {
@@ -456,10 +459,10 @@ const importedText = async (): Promise<void> => {
         `AC8 text six ${RULER}`,
     ].join("\r\n");
     const zip = await pack(new Document({ styles: STYLES, sections: [{ children: probe("AC8", marker("AC8")) }] }));
-    await importInto(zip, "word/document.xml", [
+    importInto(zip, "word/document.xml", [
         { name: "AC8", data: new TextEncoder().encode(`${text}\r\n`), contentType: "text/plain", extension: "txt" },
     ]);
-    await write("word-imported-text", zip);
+    write("word-imported-text", zip);
 };
 
 const importedEnds = async (): Promise<void> => {
@@ -490,8 +493,8 @@ const importedEnds = async (): Promise<void> => {
             ],
         }),
     );
-    await importInto(zip, "word/document.xml", imported);
-    await write("word-imported-ends", zip);
+    importInto(zip, "word/document.xml", imported);
+    write("word-imported-ends", zip);
 };
 
 const importedParts = async (): Promise<void> => {
@@ -507,10 +510,10 @@ const importedParts = async (): Promise<void> => {
             sections: [{ children: [line("AC12 outer above"), marker("AC12inner"), line("AC12 outer below")] }],
         }),
     );
-    await importInto(outer, "word/document.xml", [inner]);
+    importInto(outer, "word/document.xml", [inner]);
     const nested: Imported = {
         name: "AC12outer",
-        data: await outer.generateAsync({ type: "uint8array", compression: "DEFLATE" }),
+        data: zipSync(outer, { level: 6 }),
         contentType: DOCX,
         extension: "docx",
     };
@@ -529,10 +532,10 @@ const importedParts = async (): Promise<void> => {
             ],
         }),
     );
-    await importInto(zip, "word/header1.xml", [header]);
-    await importInto(zip, "word/footnotes.xml", [note]);
-    await importInto(zip, "word/document.xml", [nested]);
-    await write("word-imported-parts", zip);
+    importInto(zip, "word/header1.xml", [header]);
+    importInto(zip, "word/footnotes.xml", [note]);
+    importInto(zip, "word/document.xml", [nested]);
+    write("word-imported-parts", zip);
 };
 
 const marked = (name: string, text: string, options: Options = {}): Paragraph =>
@@ -574,8 +577,8 @@ const importedBookmarks = async (): Promise<void> => {
             ],
         }),
     );
-    await importInto(zip, "word/document.xml", [imported]);
-    await write("word-imported-bookmarks", zip);
+    importInto(zip, "word/document.xml", [imported]);
+    write("word-imported-bookmarks", zip);
 };
 
 // The XML of the Normal style, with formatting of its own
@@ -696,8 +699,8 @@ const importedStyles = async (): Promise<void> => {
             ],
         }),
     );
-    await importInto(zip, "word/document.xml", imported);
-    await write("word-imported-styles", zip);
+    importInto(zip, "word/document.xml", imported);
+    write("word-imported-styles", zip);
 };
 
 const main = async (): Promise<void> => {

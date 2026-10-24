@@ -7,6 +7,7 @@ import { Stream } from "stream";
 
 import type { File } from "@file/file";
 import type { OutputByType, OutputType } from "@util/output-type";
+import { zipFiles, zipOutput } from "@util/zip";
 
 import { Compiler, type IXmlifyedFile } from "./next-compiler";
 
@@ -78,12 +79,7 @@ export class Packer {
         prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
         overrides: readonly IXmlifyedFile[] = [],
     ): Promise<OutputByType[T]> {
-        const zip = this.compiler.compile(file, convertPrettifyType(prettify), overrides);
-        return zip.generateAsync({
-            type,
-            mimeType: mimeTypeOf(file),
-            compression: "DEFLATE",
-        });
+        return zipOutput(zipFiles(this.compiler.compile(file, convertPrettifyType(prettify), overrides)), type, mimeTypeOf(file));
     }
 
     /**
@@ -180,14 +176,11 @@ export class Packer {
         overrides: readonly IXmlifyedFile[] = [],
     ): Stream {
         const stream = new Stream();
-        const zip = this.compiler.compile(file, convertPrettifyType(prettify), overrides);
+        const files = this.compiler.compile(file, convertPrettifyType(prettify), overrides);
 
-        zip.generateAsync({
-            type: "nodebuffer",
-            mimeType: mimeTypeOf(file),
-            compression: "DEFLATE",
-        }).then((z) => {
-            stream.emit("data", z);
+        // Zipped and given after the caller has had the chance to listen, as when JSZip zipped it, asynchronously
+        new Promise((resolve) => setTimeout(resolve)).then(() => {
+            stream.emit("data", zipOutput(zipFiles(files), "nodebuffer", mimeTypeOf(file)));
             stream.emit("end");
         });
 

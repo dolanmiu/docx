@@ -32,7 +32,7 @@
 // cspell:ignore bbox Calibri kerned
 import { mkdirSync, writeFileSync } from "node:fs";
 
-import JSZip from "jszip";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 
 import {
     AlignmentType,
@@ -228,17 +228,16 @@ const main = async (): Promise<void> => {
         ["word-compat-on", WORD_COMPATIBILITY],
         ["word-compat-off", ""],
     ] as const) {
-        const zip = await JSZip.loadAsync(await Packer.toBuffer(doc));
-        const styles = await zip.file("word/styles.xml")!.async("string");
-        zip.file("word/styles.xml", styles.replace("</w:styles>", `${TABLE_STYLES}</w:styles>`));
-        const body = await zip.file("word/document.xml")!.async("string");
-        zip.file(
-            "word/document.xml",
-            INJECTIONS.reduce((xml, [marker, replacement]) => xml.replace(marker, replacement), body),
+        const zip = unzipSync(await Packer.toBuffer(doc), { filter: ({ name }) => !name.endsWith("/") });
+        const styles = strFromU8(zip["word/styles.xml"]);
+        zip["word/styles.xml"] = strToU8(styles.replace("</w:styles>", `${TABLE_STYLES}</w:styles>`));
+        const body = strFromU8(zip["word/document.xml"]);
+        zip["word/document.xml"] = strToU8(INJECTIONS.reduce((xml, [marker, replacement]) => xml.replace(marker, replacement), body));
+        const settings = strFromU8(zip["word/settings.xml"]);
+        zip["word/settings.xml"] = strToU8(
+            settings.replace(/(<w:compatSetting [^>]*w:name="compatibilityMode"[^>]*\/>)/, `$1${compatibility}`),
         );
-        const settings = await zip.file("word/settings.xml")!.async("string");
-        zip.file("word/settings.xml", settings.replace(/(<w:compatSetting [^>]*w:name="compatibilityMode"[^>]*\/>)/, `$1${compatibility}`));
-        writeFileSync(`build/word-probes/${name}.docx`, await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }));
+        writeFileSync(`build/word-probes/${name}.docx`, zipSync(zip, { level: 6 }));
     }
 };
 

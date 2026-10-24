@@ -1,9 +1,9 @@
-import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
 
 import { Document, Packer, Paragraph } from "docx";
 import { readCompoundFile } from "tests/compound-file";
 import { decompress } from "tests/macros";
+import { textOf, unzip } from "tests/zip";
 
 import { createMacros } from "./create-macros";
 
@@ -363,11 +363,11 @@ describe("createMacros", () => {
     it("should give a document a VBA project and the events it handles, as a .docm", async () => {
         const macros = createMacros({ thisDocument: 'Private Sub Document_Open()\n    MsgBox "Hi"\nEnd Sub' });
         const doc = new Document({ macros, sections: [{ children: [new Paragraph("Hello")] }] });
-        const zip = await JSZip.loadAsync(await Packer.toArrayBuffer(doc));
+        const files = unzip(await Packer.toArrayBuffer(doc));
 
-        expect(await zip.file("word/vbaProject.bin")!.async("uint8array")).toEqual(macros.project);
-        expect(await zip.file("word/vbaData.xml")!.async("string")).toContain("<wne:docEvents><wne:eventDocOpen/></wne:docEvents>");
-        expect(await zip.file("[Content_Types].xml")!.async("string")).toContain(
+        expect(files.get("word/vbaProject.bin")).toEqual(macros.project);
+        expect(textOf(files, "word/vbaData.xml")).toContain("<wne:docEvents><wne:eventDocOpen/></wne:docEvents>");
+        expect(textOf(files, "[Content_Types].xml")).toContain(
             '<Override ContentType="application/vnd.ms-word.document.macroEnabled.main+xml" PartName="/word/document.xml"/>',
         );
     });

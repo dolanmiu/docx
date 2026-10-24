@@ -1,5 +1,4 @@
 // cspell:ignore Aptos
-import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
@@ -21,6 +20,7 @@ import {
     TableOfContents,
     TextRun,
 } from "docx";
+import { textOf, unzip } from "tests/zip";
 
 import { DEFAULT_MEASURER } from "../text-layout";
 import { estimatePageNumbers, estimatePageNumbersWith } from "./estimate-page-numbers";
@@ -173,7 +173,7 @@ describe("listNumbersOf", () => {
                 },
             ],
         });
-        const xml = await (await JSZip.loadAsync(await Packer.toBuffer(doc))).file("word/document.xml")!.async("string");
+        const xml = textOf(unzip(await Packer.toBuffer(doc)), "word/document.xml")!;
         const entries = [...xml.matchAll(/<w:p><w:pPr><w:pStyle w:val="TOC\d"\/>(.*?)<\/w:p>/g)].map(([, entry]) => ({
             left: /<w:tab w:val="left" w:pos="(\d+)"\/>/.exec(entry)?.[1],
             shown: [...entry.matchAll(/<w:t xml:space="preserve">([^<]*)<\/w:t>|<w:tab\/>/g)].map(([tab, text]) => text ?? tab).join(""),
@@ -189,9 +189,9 @@ describe("listNumbersOf", () => {
 
     describe("where Word puts the tab stop after a number, in the tables of contents Word filled in", () => {
         /** The entries of the table of contents of a document Word saved: its level, its numberText, its title and its left tab stop */
-        const entriesOf = async (dataUrl: string) => {
-            const zip = await JSZip.loadAsync(dataUrl.slice(dataUrl.indexOf(",") + 1), { base64: true });
-            const xml = await zip.file("word/document.xml")!.async("string");
+        const entriesOf = (dataUrl: string) => {
+            const files = unzip(Uint8Array.from(atob(dataUrl.slice(dataUrl.indexOf(",") + 1)), (character) => character.charCodeAt(0)));
+            const xml = textOf(files, "word/document.xml")!;
             return [...xml.matchAll(/<w:p\b[^>]*><w:pPr><w:pStyle w:val="TOC(\d)"\/>(.*?)<\/w:p>/g)].map(([, level, entry]) => {
                 const shown = [...entry.slice(entry.indexOf("<w:hyperlink")).matchAll(/<w:t(?: [^>]*)?>([^<]*)<\/w:t>|<w:tab\/>/g)].map(
                     ([, text]) => text ?? "\t",
@@ -201,8 +201,8 @@ describe("listNumbersOf", () => {
             });
         };
 
-        it("is past the number in Aptos 12 pt by 240 twips, and 240 a level, on multiples of 240 up to 1920 (TN1 to TN4)", async () => {
-            const entries = [...(await entriesOf(wordTocNumbers)), ...(await entriesOf(wordTocNumbersFont))].filter(({ title }) =>
+        it("is past the number in Aptos 12 pt by 240 twips, and 240 a level, on multiples of 240 up to 1920 (TN1 to TN4)", () => {
+            const entries = [...entriesOf(wordTocNumbers), ...entriesOf(wordTocNumbersFont)].filter(({ title }) =>
                 /^TN[1-4] /.test(title ?? ""),
             );
 
@@ -213,8 +213,8 @@ describe("listNumbersOf", () => {
             }
         });
 
-        it("isn't there for a number followed by a space or nothing, which is followed by a space (TN5)", async () => {
-            const entries = (await entriesOf(wordTocNumbers)).filter(({ numberText }) => numberText.includes(" TN5 "));
+        it("isn't there for a number followed by a space or nothing, which is followed by a space (TN5)", () => {
+            const entries = entriesOf(wordTocNumbers).filter(({ numberText }) => numberText.includes(" TN5 "));
 
             expect(entries.map(({ numberText, left }) => ({ numberText, left }))).to.deep.equal([
                 { numberText: "1 TN5 space", left: undefined },

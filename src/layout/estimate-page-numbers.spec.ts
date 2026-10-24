@@ -1,4 +1,3 @@
-import JSZip from "jszip";
 import { describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
@@ -43,6 +42,7 @@ import {
     patchDocument,
 } from "docx";
 import { buildTestFont, buildTestFontCollection, tableOffset } from "tests/font-file";
+import { textOf, unzip, zip } from "tests/zip";
 
 import { OFFICE_COPY } from "../text-layout";
 import { estimatePageNumbers, estimatePageNumbersWith } from "./estimate-page-numbers";
@@ -115,7 +115,7 @@ const patchedTemplateOf = async (pageNumbers: TemplatePageNumberEstimator): Prom
         },
         pageNumbers,
     });
-    return (await JSZip.loadAsync(patched)).file("word/document.xml")!.async("text");
+    return textOf(unzip(patched), "word/document.xml")!;
 };
 
 /** The results written into the fields of a document */
@@ -391,7 +391,7 @@ const pageFieldsProbe = (): IPropertiesOptions => {
 /** The lines of a document written with the page numbers estimatePageNumbers works out whose text starts with a probe's name */
 const probeLines = async (options: IPropertiesOptions, probe: RegExp): Promise<readonly string[]> => {
     const written = await Packer.toBuffer(new Document({ ...options, pageNumbers: estimatePageNumbers }));
-    const document = await (await JSZip.loadAsync(written)).file("word/document.xml")!.async("text");
+    const document = textOf(unzip(written), "word/document.xml")!;
     expect(document).not.to.include("w:dirty");
     return paragraphTexts(document).filter((text) => probe.test(text));
 };
@@ -505,7 +505,7 @@ describe("estimatePageNumbers", () => {
             relativePositions: new Map(),
         });
         const written = await Packer.toBuffer(new Document({ pageNumbers: estimatePageNumbers, sections: [] }));
-        expect((await JSZip.loadAsync(written)).file("word/document.xml")).not.to.equal(null);
+        expect(unzip(written).has("word/document.xml")).to.equal(true);
     });
 
     it("should give the bookmarks after a table that text flows around page numbers, as Word puts the text after it beside it", () => {
@@ -584,7 +584,7 @@ describe("estimatePageNumbers", () => {
                 ],
             }),
         );
-        const template = await JSZip.loadAsync(
+        const template = unzip(
             await Packer.toBuffer(
                 new Document({
                     sections: [
@@ -601,30 +601,32 @@ describe("estimatePageNumbers", () => {
         );
         /** The template importing a part in place of its second paragraph, patched with the page numbers worked out */
         const importing = async (target: string, contentType: string, data: Uint8Array | string): Promise<string> => {
-            const zip = await JSZip.loadAsync(await template.generateAsync({ type: "uint8array" }));
-            const edit = async (path: string, change: (xml: string) => string): Promise<void> => {
-                zip.file(path, change(await zip.file(path)!.async("text")));
+            const files = new Map<string, Uint8Array | string>(template);
+            const edit = (path: string, change: (xml: string) => string): void => {
+                // eslint-disable-next-line functional/immutable-data
+                files.set(path, change(textOf(template, path)!));
             };
-            await edit("word/document.xml", (xml) =>
+            edit("word/document.xml", (xml) =>
                 xml.replace(/<w:p>(?:(?!<w:p>).)*?Imported here.*?<\/w:p>/, '<w:altChunk r:id="rIdImported"/>'),
             );
-            await edit("word/_rels/document.xml.rels", (xml) =>
+            edit("word/_rels/document.xml.rels", (xml) =>
                 xml.replace(
                     "</Relationships>",
                     `<Relationship Id="rIdImported" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/aFChunk" Target="${target}"/></Relationships>`,
                 ),
             );
-            await edit("[Content_Types].xml", (xml) =>
+            edit("[Content_Types].xml", (xml) =>
                 xml.replace("</Types>", `<Override ContentType="${contentType}" PartName="/word/${target}"/></Types>`),
             );
-            zip.file(`word/${target}`, data);
+            // eslint-disable-next-line functional/immutable-data
+            files.set(`word/${target}`, data);
             const patched = await patchDocument({
                 outputType: "nodebuffer",
-                data: await zip.generateAsync({ type: "nodebuffer" }),
+                data: zip(Object.fromEntries(files)),
                 patches: {},
                 pageNumbers: estimatePageNumbers,
             });
-            return (await JSZip.loadAsync(patched)).file("word/document.xml")!.async("text");
+            return textOf(unzip(patched), "word/document.xml")!;
         };
         expect(
             resultsOf(

@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/naming-convention -- The keys of objects here are paths of parts in a package */
-import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
 
 import { PackagePart } from "@file/package-part";
 import { ExternalHyperlink, ImageRun, TextRun } from "@file/paragraph";
 import { BuilderElement } from "@file/xml-components";
 import type { XmlElement as Element } from "@util/xml";
+import { textOf, unzip, zip } from "tests/zip";
 
 import {
     DrawingPatch,
@@ -77,7 +77,7 @@ const CONTENT_TYPES =
 const CHART = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><c:chartSpace ${NAMESPACES}><c:chart/><c:externalData r:id="rId1"/></c:chartSpace>`;
 
 // A document with a chart, whose workbook is a part of its own, and the files given
-const templateWith = (files: Readonly<Record<string, string | Uint8Array | undefined>> = {}): Promise<Buffer> => {
+const templateWith = (files: Readonly<Record<string, string | Uint8Array | undefined>> = {}): Uint8Array => {
     const all: Readonly<Record<string, string | Uint8Array | undefined>> = {
         "[Content_Types].xml": CONTENT_TYPES,
         "_rels/.rels": relationshipsOf(
@@ -92,13 +92,9 @@ const templateWith = (files: Readonly<Record<string, string | Uint8Array | undef
         "word/embeddings/Microsoft_Excel_Worksheet1.xlsx": new Uint8Array([1, 2, 3]),
         ...files,
     };
-    const zip = new JSZip();
-    for (const [path, content] of Object.entries(all)) {
-        if (content !== undefined) {
-            zip.file(path, content);
-        }
-    }
-    return zip.generateAsync({ type: "nodebuffer" });
+    return zip(
+        Object.fromEntries(Object.entries(all).flatMap(([path, content]) => (content === undefined ? [] : [[path, content] as const]))),
+    );
 };
 
 // The elements with a name, in an element and its descendants
@@ -129,15 +125,13 @@ class RecordingPatch extends DrawingPatch {
 }
 
 const patch = async (
-    data: Buffer,
+    data: Uint8Array,
     patches: Readonly<Record<string, IPatch | DrawingPatch>>,
     placeholderDelimiters?: { readonly start: string; readonly end: string },
-): Promise<JSZip> => JSZip.loadAsync(await patchDocument({ outputType: "nodebuffer", data, patches, placeholderDelimiters }));
+): Promise<ReadonlyMap<string, Uint8Array>> =>
+    unzip(await patchDocument({ outputType: "nodebuffer", data, patches, placeholderDelimiters }));
 
-const read = async (zip: JSZip, path: string): Promise<string | undefined> => {
-    const text = await zip.file(path)?.async("text");
-    return text;
-};
+const read = (output: ReadonlyMap<string, Uint8Array>, path: string): string | undefined => textOf(output, path);
 
 // A workbook part, as docx/charts' ChartRun adds
 const createWorkbook = (content: Uint8Array = new Uint8Array([9, 9])): PackagePart =>
@@ -368,7 +362,7 @@ describe("drawing-patch", () => {
         describe("finding the drawings", () => {
             it("should patch a drawing whose description is the placeholder", async () => {
                 const recording = new RecordingPatch();
-                await patch(await templateWith(), { chart: recording });
+                await patch(templateWith(), { chart: recording });
 
                 expect(recording.calls).to.have.length(1);
                 const [{ drawing }] = recording.calls;
@@ -381,7 +375,7 @@ describe("drawing-patch", () => {
 
             it("should patch a drawing whose title is the placeholder", async () => {
                 const recording = new RecordingPatch();
-                await patch(await templateWith({ "word/document.xml": documentOf(chartDrawing({ title: "{{chart}}" })) }), {
+                await patch(templateWith({ "word/document.xml": documentOf(chartDrawing({ title: "{{chart}}" })) }), {
                     chart: recording,
                 });
 
@@ -391,7 +385,7 @@ describe("drawing-patch", () => {
             it("should patch a drawing whose alt text holds the placeholder among other text", async () => {
                 const recording = new RecordingPatch();
                 const descr = "Chart, bar chart&#10;&#10;  {{chart}}  and more";
-                await patch(await templateWith({ "word/document.xml": documentOf(chartDrawing({ descr })) }), { chart: recording });
+                await patch(templateWith({ "word/document.xml": documentOf(chartDrawing({ descr })) }), { chart: recording });
 
                 expect(recording.calls).to.have.length(1);
             });
@@ -401,7 +395,7 @@ describe("drawing-patch", () => {
                 const body = ["{{Chart}}", "{{ chart }}", "{chart}", "{{chart}", "chart", "{{charts}}", "{{chart2}}", ""]
                     .map((descr) => chartDrawing({ descr }))
                     .join("");
-                await patch(await templateWith({ "word/document.xml": documentOf(body) }), { chart: recording });
+                await patch(templateWith({ "word/document.xml": documentOf(body) }), { chart: recording });
 
                 expect(recording.calls).to.deep.equal([]);
             });
@@ -409,15 +403,15 @@ describe("drawing-patch", () => {
             it("should not patch the placeholder in text, nor a drawing without alt text", async () => {
                 const recording = new RecordingPatch();
                 const body = `<w:p><w:r><w:t>{{chart}}</w:t></w:r></w:p>${chartDrawing({})}`;
-                const zip = await patch(await templateWith({ "word/document.xml": documentOf(body) }), { chart: recording });
+                const output = await patch(templateWith({ "word/document.xml": documentOf(body) }), { chart: recording });
 
                 expect(recording.calls).to.deep.equal([]);
-                expect(await read(zip, "word/document.xml")).to.contain("<w:t>{{chart}}</w:t>");
+                expect(read(output, "word/document.xml")).to.contain("<w:t>{{chart}}</w:t>");
             });
 
             it("should not patch a drawing whose placeholder is only in its name", async () => {
                 const recording = new RecordingPatch();
-                await patch(await templateWith({ "word/document.xml": documentOf(chartDrawing({ name: "{{chart}}" })) }), {
+                await patch(templateWith({ "word/document.xml": documentOf(chartDrawing({ name: "{{chart}}" })) }), {
                     chart: recording,
                 });
 
@@ -428,7 +422,7 @@ describe("drawing-patch", () => {
                 const recording = new RecordingPatch();
                 const header = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:hdr ${NAMESPACES}>${chartDrawing({ descr: "{{chart}}" })}</w:hdr>`;
                 await patch(
-                    await templateWith({
+                    templateWith({
                         "word/document.xml": documentOf(
                             `${chartDrawing({ descr: "{{chart}}", name: "One" })}${chartDrawing({ title: "{{chart}}", name: "Two" })}`,
                         ),
@@ -451,7 +445,7 @@ describe("drawing-patch", () => {
             it("should only look for drawings in word/, and not in relationships parts", async () => {
                 const recording = new RecordingPatch();
                 await patch(
-                    await templateWith({
+                    templateWith({
                         "word/document.xml": documentOf(""),
                         "customXml/item1.xml": documentOf(chartDrawing({ descr: "{{chart}}" })),
                         "word/_rels/document.xml.rels": documentOf(chartDrawing({ descr: "{{chart}}" })),
@@ -465,7 +459,7 @@ describe("drawing-patch", () => {
             it("should use the placeholder delimiters, whatever characters they are", async () => {
                 const recording = new RecordingPatch();
                 await patch(
-                    await templateWith({ "word/document.xml": documentOf(chartDrawing({ descr: "&lt;&amp;chart&quot;&gt;" })) }),
+                    templateWith({ "word/document.xml": documentOf(chartDrawing({ descr: "&lt;&amp;chart&quot;&gt;" })) }),
                     { chart: recording },
                     { start: "<&", end: '">' },
                 );
@@ -475,7 +469,7 @@ describe("drawing-patch", () => {
             });
 
             it("should patch a drawing whose placeholder has spaces inside its delimiters with trimPlaceholders, and only with it", async () => {
-                const data = await templateWith({ "word/document.xml": documentOf(chartDrawing({ descr: "Sales {{ chart }}" })) });
+                const data = templateWith({ "word/document.xml": documentOf(chartDrawing({ descr: "Sales {{ chart }}" })) });
                 const trimmed = new RecordingPatch();
                 const exact = new RecordingPatch();
                 await patchDocument({ outputType: "nodebuffer", data, patches: { chart: trimmed }, trimPlaceholders: true });
@@ -490,7 +484,7 @@ describe("drawing-patch", () => {
             it("should throw when a drawing's alt text holds the placeholders of two drawing patches", async () => {
                 const body = chartDrawing({ descr: "{{first}}", title: "{{second}}", name: "Both" });
                 await expect(
-                    patch(await templateWith({ "word/document.xml": documentOf(body) }), {
+                    patch(templateWith({ "word/document.xml": documentOf(body) }), {
                         first: new RecordingPatch(),
                         second: new RecordingPatch(),
                     }),
@@ -500,7 +494,7 @@ describe("drawing-patch", () => {
             it("should throw for two placeholders in the alt text of a drawing without a name", async () => {
                 const body = chartDrawing({ descr: "{{first}} {{second}}" }).replace(' name="Chart 1"', "");
                 await expect(
-                    patch(await templateWith({ "word/document.xml": documentOf(body) }), {
+                    patch(templateWith({ "word/document.xml": documentOf(body) }), {
                         first: new RecordingPatch(),
                         second: new RecordingPatch(),
                     }),
@@ -510,7 +504,7 @@ describe("drawing-patch", () => {
             it("should not count a text patch's placeholder in a drawing's alt text", async () => {
                 const recording = new RecordingPatch();
                 const body = chartDrawing({ descr: "{{chart}} {{text}}" });
-                await patch(await templateWith({ "word/document.xml": documentOf(body) }), {
+                await patch(templateWith({ "word/document.xml": documentOf(body) }), {
                     chart: recording,
                     text: { type: PatchType.PARAGRAPH, children: [new TextRun("Text")] },
                 });
@@ -529,17 +523,17 @@ describe("drawing-patch", () => {
                     other.properties.attributes!.descr = "{{second}}";
                 });
                 const body = chartDrawing({ descr: "{{first}}" }) + chartDrawing({ descr: "Nothing", name: "Other" });
-                const zip = await patch(await templateWith({ "word/document.xml": documentOf(body) }), { first, second });
+                const output = await patch(templateWith({ "word/document.xml": documentOf(body) }), { first, second });
 
                 expect(first.calls).to.have.length(1);
                 expect(second.calls).to.deep.equal([]);
-                expect(await read(zip, "word/document.xml")).to.contain('descr="{{second}}"');
+                expect(read(output, "word/document.xml")).to.contain('descr="{{second}}"');
             });
 
             it("should patch drawings before text, so drawings the text patches add aren't patched", async () => {
                 const recording = new RecordingPatch();
-                const zip = await patch(
-                    await templateWith({ "word/document.xml": documentOf("<w:p><w:r><w:t>{{image}}</w:t></w:r></w:p>") }),
+                const output = await patch(
+                    templateWith({ "word/document.xml": documentOf("<w:p><w:r><w:t>{{image}}</w:t></w:r></w:p>") }),
                     {
                         chart: recording,
                         image: {
@@ -557,11 +551,11 @@ describe("drawing-patch", () => {
                 );
 
                 expect(recording.calls).to.deep.equal([]);
-                expect(await read(zip, "word/document.xml")).to.contain('descr="{{chart}}"');
+                expect(read(output, "word/document.xml")).to.contain('descr="{{chart}}"');
             });
 
             it("should keep the changes a patch makes to the drawing and its part", async () => {
-                const zip = await patch(await templateWith(), {
+                const output = await patch(templateWith(), {
                     chart: new RecordingPatch(({ properties, element }) => {
                         properties.attributes = { ...properties.attributes, descr: "Patched & done" };
                         // eslint-disable-next-line functional/immutable-data
@@ -569,14 +563,14 @@ describe("drawing-patch", () => {
                     }),
                 });
 
-                const document = await read(zip, "word/document.xml");
+                const document = read(output, "word/document.xml");
                 expect(document).to.contain('descr="Patched &amp; done"');
                 expect(document).to.contain('<wp:inline distT="1">');
             });
 
             it("should stop patching, with the patch's error, when a patch throws", async () => {
                 await expect(
-                    patch(await templateWith(), {
+                    patch(templateWith(), {
                         chart: new RecordingPatch(() => {
                             throw new Error("Not this one");
                         }),
@@ -586,8 +580,8 @@ describe("drawing-patch", () => {
 
             it("should patch with text patches and drawing patches together", async () => {
                 const recording = new RecordingPatch();
-                const zip = await patch(
-                    await templateWith({
+                const output = await patch(
+                    templateWith({
                         "word/document.xml": documentOf(
                             `<w:p><w:r><w:t>Hello {{name}}</w:t></w:r></w:p>${chartDrawing({ descr: "{{chart}}" })}`,
                         ),
@@ -596,7 +590,7 @@ describe("drawing-patch", () => {
                 );
 
                 expect(recording.calls).to.have.length(1);
-                expect(await read(zip, "word/document.xml")).to.contain("Ada");
+                expect(read(output, "word/document.xml")).to.contain("Ada");
             });
         });
 
@@ -604,7 +598,7 @@ describe("drawing-patch", () => {
             const relatedPart = async (files: Readonly<Record<string, string | Uint8Array | undefined>>, id = "rId5") => {
                 // eslint-disable-next-line functional/prefer-readonly-type
                 const parts: (ReturnType<TemplatePackage["getRelatedPart"]> | "none")[] = [];
-                await patch(await templateWith(files), {
+                await patch(templateWith(files), {
                     chart: new RecordingPatch(({ part }, template) => {
                         // eslint-disable-next-line functional/immutable-data
                         parts.push(template.getRelatedPart(part, id) ?? "none");
@@ -633,7 +627,7 @@ describe("drawing-patch", () => {
 
             it("should give a part the relationships of another part refer to, from its folder", async () => {
                 let workbook: ReturnType<TemplatePackage["getRelatedPart"]>;
-                await patch(await templateWith(), {
+                await patch(templateWith(), {
                     chart: new RecordingPatch(({ part }, template) => {
                         const chart = template.getRelatedPart(part, "rId5")!;
                         workbook = template.getRelatedPart(chart, "rId1");
@@ -699,7 +693,7 @@ describe("drawing-patch", () => {
 
             it("should format XML as the template's parts are parsed", async () => {
                 let formatted: Element | undefined;
-                await patch(await templateWith(), {
+                await patch(templateWith(), {
                     chart: new RecordingPatch((_, template) => {
                         formatted = template.format(
                             new BuilderElement({ name: "c:v", attributes: { a: { key: "a", value: "1 & 2" } } }).addChildElement("<text>"),
@@ -720,29 +714,27 @@ describe("drawing-patch", () => {
                     files: Readonly<Record<string, string | Uint8Array | undefined>>,
                     id: string | null = "rId1",
                     workbook: PackagePart = createWorkbook(),
-                ): Promise<{ readonly zip: JSZip; readonly returned: string }> => {
+                ): Promise<{ readonly output: ReadonlyMap<string, Uint8Array>; readonly returned: string }> => {
                     let returned = "";
-                    const zip = await patch(await templateWith(files), {
+                    const output = await patch(templateWith(files), {
                         chart: new RecordingPatch(({ part }, template) => {
                             returned = template.replaceRelatedPart(template.getRelatedPart(part, "rId5")!, id ?? undefined, workbook);
                         }),
                     });
-                    return { zip, returned };
+                    return { output, returned };
                 };
 
                 it("should point the relationship to the new part, and remove the part it pointed to", async () => {
-                    const { zip, returned } = await replaceWith({});
+                    const { output, returned } = await replaceWith({});
 
                     expect(returned).to.equal("rId1");
-                    expect(await read(zip, "word/charts/_rels/chart1.xml.rels")).to.contain(
+                    expect(read(output, "word/charts/_rels/chart1.xml.rels")).to.contain(
                         relationship("rId1", PACKAGE_RELATIONSHIP, "../embeddings/Microsoft_Excel_Worksheet2.xlsx"),
                     );
-                    expect(await zip.file("word/embeddings/Microsoft_Excel_Worksheet2.xlsx")?.async("uint8array")).to.deep.equal(
-                        new Uint8Array([9, 9]),
-                    );
-                    expect(zip.file("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")).to.equal(null);
+                    expect(output.get("word/embeddings/Microsoft_Excel_Worksheet2.xlsx")).to.deep.equal(new Uint8Array([9, 9]));
+                    expect(output.has("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")).to.equal(false);
 
-                    const contentTypes = await read(zip, "[Content_Types].xml");
+                    const contentTypes = read(output, "[Content_Types].xml");
                     expect(contentTypes).to.not.contain("/word/embeddings/Microsoft_Excel_Worksheet1.xlsx");
                     expect(contentTypes).to.contain(
                         `<Override ContentType="${WORKBOOK_TYPE}" PartName="/word/embeddings/Microsoft_Excel_Worksheet2.xlsx"/>`,
@@ -750,7 +742,7 @@ describe("drawing-patch", () => {
                 });
 
                 it("should keep the relationship's other attributes, and its place", async () => {
-                    const { zip } = await replaceWith({
+                    const { output } = await replaceWith({
                         "word/charts/_rels/chart1.xml.rels": relationshipsOf(
                             relationship("rId0", "http://schemas.microsoft.com/office/2011/relationships/chartStyle", "style1.xml"),
                             `<Relationship Id="rId1" Type="${PACKAGE_RELATIONSHIP}" Target="../embeddings/Microsoft_Excel_Worksheet1.xlsx" Extra="kept"/>`,
@@ -760,16 +752,16 @@ describe("drawing-patch", () => {
                         "word/charts/colors1.xml": "<cs:colorStyle/>",
                     });
 
-                    const relationships = await read(zip, "word/charts/_rels/chart1.xml.rels");
+                    const relationships = read(output, "word/charts/_rels/chart1.xml.rels");
                     expect(relationships).to.match(
                         /Id="rId0".*Id="rId1" Type="[^"]+\/package" Target="[^"]+Worksheet2\.xlsx" Extra="kept".*Id="rId2"/,
                     );
-                    expect(await read(zip, "word/charts/style1.xml")).to.equal("<cs:chartStyle/>");
-                    expect(await read(zip, "word/charts/colors1.xml")).to.equal("<cs:colorStyle/>");
+                    expect(read(output, "word/charts/style1.xml")).to.equal("<cs:chartStyle/>");
+                    expect(read(output, "word/charts/colors1.xml")).to.equal("<cs:colorStyle/>");
                 });
 
                 it("should point a relationship to outside the package to the new part, which is inside it", async () => {
-                    const { zip } = await replaceWith({
+                    const { output } = await replaceWith({
                         "word/charts/_rels/chart1.xml.rels": relationshipsOf(
                             relationship(
                                 "rId1",
@@ -780,43 +772,43 @@ describe("drawing-patch", () => {
                         ),
                     });
 
-                    const relationships = await read(zip, "word/charts/_rels/chart1.xml.rels");
+                    const relationships = read(output, "word/charts/_rels/chart1.xml.rels");
                     expect(relationships).to.contain(
                         relationship("rId1", PACKAGE_RELATIONSHIP, "../embeddings/Microsoft_Excel_Worksheet2.xlsx"),
                     );
                     expect(relationships).to.not.contain("TargetMode");
                     // The template's own workbook part, which nothing referred to, is left as it is
-                    expect(zip.file("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")).to.not.equal(null);
+                    expect(output.has("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")).to.equal(true);
                 });
 
                 it("should add the relationship with the id given, when the part has none with it", async () => {
-                    const { zip, returned } = await replaceWith({}, "rId7");
+                    const { output, returned } = await replaceWith({}, "rId7");
 
                     expect(returned).to.equal("rId7");
-                    const relationships = await read(zip, "word/charts/_rels/chart1.xml.rels");
+                    const relationships = read(output, "word/charts/_rels/chart1.xml.rels");
                     expect(relationships).to.contain(
                         relationship("rId1", PACKAGE_RELATIONSHIP, "../embeddings/Microsoft_Excel_Worksheet1.xlsx"),
                     );
                     expect(relationships).to.contain(
                         relationship("rId7", PACKAGE_RELATIONSHIP, "../embeddings/Microsoft_Excel_Worksheet2.xlsx"),
                     );
-                    expect(zip.file("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")).to.not.equal(null);
+                    expect(output.has("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")).to.equal(true);
                 });
 
                 it("should add a relationship with the next id, when no id is given", async () => {
-                    const { zip, returned } = await replaceWith({}, null);
+                    const { output, returned } = await replaceWith({}, null);
 
                     expect(returned).to.equal("rId2");
-                    expect(await read(zip, "word/charts/_rels/chart1.xml.rels")).to.contain(
+                    expect(read(output, "word/charts/_rels/chart1.xml.rels")).to.contain(
                         relationship("rId2", PACKAGE_RELATIONSHIP, "../embeddings/Microsoft_Excel_Worksheet2.xlsx"),
                     );
                 });
 
                 it("should create the relationships part of a part that has none", async () => {
-                    const { zip, returned } = await replaceWith({ "word/charts/_rels/chart1.xml.rels": undefined }, "rId3");
+                    const { output, returned } = await replaceWith({ "word/charts/_rels/chart1.xml.rels": undefined }, "rId3");
 
                     expect(returned).to.equal("rId3");
-                    expect(await read(zip, "word/charts/_rels/chart1.xml.rels")).to.equal(
+                    expect(read(output, "word/charts/_rels/chart1.xml.rels")).to.equal(
                         `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
                             `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
                             `${relationship("rId3", PACKAGE_RELATIONSHIP, "../embeddings/Microsoft_Excel_Worksheet2.xlsx")}</Relationships>`,
@@ -824,45 +816,48 @@ describe("drawing-patch", () => {
                 });
 
                 it("should give an empty relationships part a root element", async () => {
-                    const { zip } = await replaceWith({ "word/charts/_rels/chart1.xml.rels": "" }, null);
+                    const { output } = await replaceWith({ "word/charts/_rels/chart1.xml.rels": "" }, null);
 
-                    expect(await read(zip, "word/charts/_rels/chart1.xml.rels")).to.contain(
+                    expect(read(output, "word/charts/_rels/chart1.xml.rels")).to.contain(
                         relationship("rId1", PACKAGE_RELATIONSHIP, "../embeddings/Microsoft_Excel_Worksheet2.xlsx"),
                     );
                 });
 
                 it("should give a relationships part without its root element one", async () => {
-                    const { zip } = await replaceWith({ "word/charts/_rels/chart1.xml.rels": `<?xml version="1.0"?><!-- empty -->` }, null);
+                    const { output } = await replaceWith(
+                        { "word/charts/_rels/chart1.xml.rels": `<?xml version="1.0"?><!-- empty -->` },
+                        null,
+                    );
 
-                    expect(await read(zip, "word/charts/_rels/chart1.xml.rels")).to.contain(
+                    expect(read(output, "word/charts/_rels/chart1.xml.rels")).to.contain(
                         relationship("rId1", PACKAGE_RELATIONSHIP, "../embeddings/Microsoft_Excel_Worksheet2.xlsx"),
                     );
                 });
 
                 it("should keep the part it pointed to when another relationship refers to it", async () => {
-                    const { zip } = await replaceWith({
+                    const { output } = await replaceWith({
                         "word/_rels/document.xml.rels": relationshipsOf(
                             relationship("rId5", CHART_RELATIONSHIP, "charts/chart1.xml"),
                             relationship("rId6", PACKAGE_RELATIONSHIP, "embeddings/Microsoft_Excel_Worksheet1.xlsx"),
                         ),
                     });
 
-                    expect(zip.file("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")).to.not.equal(null);
-                    expect(await read(zip, "[Content_Types].xml")).to.contain("/word/embeddings/Microsoft_Excel_Worksheet1.xlsx");
+                    expect(output.has("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")).to.equal(true);
+                    expect(read(output, "[Content_Types].xml")).to.contain("/word/embeddings/Microsoft_Excel_Worksheet1.xlsx");
                 });
 
                 it("should keep the part it pointed to when another chart's relationship refers to it, by another path", async () => {
-                    const { zip } = await replaceWith({
+                    const { output } = await replaceWith({
                         "word/charts/_rels/chart2.xml.rels": relationshipsOf(
                             relationship("rId1", PACKAGE_RELATIONSHIP, "/word/embeddings/Microsoft_Excel_Worksheet1.xlsx"),
                         ),
                     });
 
-                    expect(zip.file("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")).to.not.equal(null);
+                    expect(output.has("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")).to.equal(true);
                 });
 
                 it("should remove the part when only a relationship to outside the package has its path", async () => {
-                    const { zip } = await replaceWith({
+                    const { output } = await replaceWith({
                         "word/_rels/document.xml.rels": relationshipsOf(
                             relationship("rId5", CHART_RELATIONSHIP, "charts/chart1.xml"),
                             relationship(
@@ -874,30 +869,30 @@ describe("drawing-patch", () => {
                         ),
                     });
 
-                    expect(zip.file("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")).to.equal(null);
+                    expect(output.has("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")).to.equal(false);
                 });
 
                 it("should remove the old part's own relationships part", async () => {
-                    const { zip } = await replaceWith({
+                    const { output } = await replaceWith({
                         "word/embeddings/_rels/Microsoft_Excel_Worksheet1.xlsx.rels": relationshipsOf(),
                     });
 
-                    expect(zip.file("word/embeddings/_rels/Microsoft_Excel_Worksheet1.xlsx.rels")).to.equal(null);
+                    expect(output.has("word/embeddings/_rels/Microsoft_Excel_Worksheet1.xlsx.rels")).to.equal(false);
                 });
 
                 it("should remove an old part that is XML", async () => {
-                    const { zip } = await replaceWith({
+                    const { output } = await replaceWith({
                         "word/charts/_rels/chart1.xml.rels": relationshipsOf(
                             relationship("rId1", PACKAGE_RELATIONSHIP, "../embeddings/old.xml"),
                         ),
                         "word/embeddings/old.xml": "<old/>",
                     });
 
-                    expect(zip.file("word/embeddings/old.xml")).to.equal(null);
+                    expect(output.has("word/embeddings/old.xml")).to.equal(false);
                 });
 
                 it("should remove an old part found by other capitals, and its content type whatever its capitals", async () => {
-                    const { zip } = await replaceWith({
+                    const { output } = await replaceWith({
                         "[Content_Types].xml": CONTENT_TYPES.replace(
                             "/word/embeddings/Microsoft_Excel_Worksheet1.xlsx",
                             "/WORD/embeddings/microsoft_excel_worksheet1.XLSX",
@@ -907,19 +902,19 @@ describe("drawing-patch", () => {
                         ),
                     });
 
-                    expect(zip.file("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")).to.equal(null);
-                    expect(await read(zip, "[Content_Types].xml")).to.not.match(/worksheet1/i);
+                    expect(output.has("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")).to.equal(false);
+                    expect(read(output, "[Content_Types].xml")).to.not.match(/worksheet1/i);
                 });
 
                 it("should never remove the content types, a relationships part, or the part itself", async () => {
                     for (const target of ["../../[Content_Types].xml", "../_rels/document.xml.rels", "chart1.xml"]) {
-                        const { zip } = await replaceWith({
+                        const { output } = await replaceWith({
                             "word/charts/_rels/chart1.xml.rels": relationshipsOf(relationship("rId1", PACKAGE_RELATIONSHIP, target)),
                         });
 
-                        expect(zip.file("[Content_Types].xml"), target).to.not.equal(null);
-                        expect(zip.file("word/_rels/document.xml.rels"), target).to.not.equal(null);
-                        expect(zip.file("word/charts/chart1.xml"), target).to.not.equal(null);
+                        expect(output.has("[Content_Types].xml"), target).to.equal(true);
+                        expect(output.has("word/_rels/document.xml.rels"), target).to.equal(true);
+                        expect(output.has("word/charts/chart1.xml"), target).to.equal(true);
                     }
                 });
 
@@ -929,27 +924,18 @@ describe("drawing-patch", () => {
 
                 it("should number the new part after the template's parts, and those other patches add", async () => {
                     let returned = "";
-                    const zip = await patch(
-                        await templateWith({ "word/embeddings/Microsoft_Excel_Worksheet2.xlsx": new Uint8Array([2]) }),
-                        {
-                            chart: new RecordingPatch(({ part }, template) => {
-                                const chart = template.getRelatedPart(part, "rId5")!;
-                                template.replaceRelatedPart(chart, "rId1", createWorkbook(new Uint8Array([3])));
-                                returned = template.replaceRelatedPart(chart, undefined, createWorkbook(new Uint8Array([4])));
-                            }),
-                        },
-                    );
+                    const output = await patch(templateWith({ "word/embeddings/Microsoft_Excel_Worksheet2.xlsx": new Uint8Array([2]) }), {
+                        chart: new RecordingPatch(({ part }, template) => {
+                            const chart = template.getRelatedPart(part, "rId5")!;
+                            template.replaceRelatedPart(chart, "rId1", createWorkbook(new Uint8Array([3])));
+                            returned = template.replaceRelatedPart(chart, undefined, createWorkbook(new Uint8Array([4])));
+                        }),
+                    });
 
                     expect(returned).to.equal("rId2");
-                    expect(await zip.file("word/embeddings/Microsoft_Excel_Worksheet3.xlsx")?.async("uint8array")).to.deep.equal(
-                        new Uint8Array([3]),
-                    );
-                    expect(await zip.file("word/embeddings/Microsoft_Excel_Worksheet4.xlsx")?.async("uint8array")).to.deep.equal(
-                        new Uint8Array([4]),
-                    );
-                    expect(await zip.file("word/embeddings/Microsoft_Excel_Worksheet2.xlsx")?.async("uint8array")).to.deep.equal(
-                        new Uint8Array([2]),
-                    );
+                    expect(output.get("word/embeddings/Microsoft_Excel_Worksheet3.xlsx")).to.deep.equal(new Uint8Array([3]));
+                    expect(output.get("word/embeddings/Microsoft_Excel_Worksheet4.xlsx")).to.deep.equal(new Uint8Array([4]));
+                    expect(output.get("word/embeddings/Microsoft_Excel_Worksheet2.xlsx")).to.deep.equal(new Uint8Array([2]));
                 });
 
                 it("should write a new part whose content is XML or a package's files", async () => {
@@ -961,12 +947,12 @@ describe("drawing-patch", () => {
                         relationshipType: PACKAGE_RELATIONSHIP,
                         content: new BuilderElement({ name: "thing" }),
                     });
-                    const { zip } = await replaceWith({}, "rId1", xmlPart);
+                    const { output } = await replaceWith({}, "rId1", xmlPart);
 
-                    expect(await read(zip, "word/things/thing1.xml")).to.equal(
+                    expect(read(output, "word/things/thing1.xml")).to.equal(
                         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><thing/>',
                     );
-                    expect(await read(zip, "word/charts/_rels/chart1.xml.rels")).to.contain('Target="../things/thing1.xml"');
+                    expect(read(output, "word/charts/_rels/chart1.xml.rels")).to.contain('Target="../things/thing1.xml"');
                 });
             });
         });
@@ -982,44 +968,44 @@ describe("drawing-patch", () => {
                 });
 
             it("should remove the relationship, and the part it referred to, with the parts only that part referred to", async () => {
-                const zip = await patch(await templateWith(), { chart: repoint() });
+                const output = await patch(templateWith(), { chart: repoint() });
 
-                const relationships = await read(zip, "word/_rels/document.xml.rels");
+                const relationships = read(output, "word/_rels/document.xml.rels");
                 expect(relationships).to.not.contain('Id="rId5"');
                 expect(relationships).to.contain(relationship("rId6", PACKAGE_RELATIONSHIP, "embeddings/Microsoft_Excel_Worksheet2.xlsx"));
-                expect(zip.file("word/charts/chart1.xml")).to.equal(null);
-                expect(zip.file("word/charts/_rels/chart1.xml.rels")).to.equal(null);
-                expect(zip.file("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")).to.equal(null);
+                expect(output.has("word/charts/chart1.xml")).to.equal(false);
+                expect(output.has("word/charts/_rels/chart1.xml.rels")).to.equal(false);
+                expect(output.has("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")).to.equal(false);
 
-                const contentTypes = await read(zip, "[Content_Types].xml");
+                const contentTypes = read(output, "[Content_Types].xml");
                 expect(contentTypes).to.not.contain("/word/charts/chart1.xml");
                 expect(contentTypes).to.not.contain("/word/embeddings/Microsoft_Excel_Worksheet1.xlsx");
             });
 
             it("should keep the relationship when something else in the part refers to it", async () => {
-                const zip = await patch(
-                    await templateWith({ "word/document.xml": documentOf(chartDrawing({ descr: "{{chart}}" }) + chartDrawing({})) }),
+                const output = await patch(
+                    templateWith({ "word/document.xml": documentOf(chartDrawing({ descr: "{{chart}}" }) + chartDrawing({})) }),
                     { chart: repoint() },
                 );
 
-                expect(await read(zip, "word/_rels/document.xml.rels")).to.contain(
+                expect(read(output, "word/_rels/document.xml.rels")).to.contain(
                     relationship("rId5", CHART_RELATIONSHIP, "charts/chart1.xml"),
                 );
-                expect(zip.file("word/charts/chart1.xml")).to.not.equal(null);
-                expect(zip.file("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")).to.not.equal(null);
+                expect(output.has("word/charts/chart1.xml")).to.equal(true);
+                expect(output.has("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")).to.equal(true);
             });
 
             it("should keep the part when another part refers to it", async () => {
-                const zip = await patch(
-                    await templateWith({
+                const output = await patch(
+                    templateWith({
                         "word/header1.xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:hdr ${NAMESPACES}>${chartDrawing({})}</w:hdr>`,
                         "word/_rels/header1.xml.rels": relationshipsOf(relationship("rId5", CHART_RELATIONSHIP, "charts/chart1.xml")),
                     }),
                     { chart: repoint() },
                 );
 
-                expect(await read(zip, "word/_rels/document.xml.rels")).to.not.contain('Id="rId5"');
-                expect(zip.file("word/charts/chart1.xml")).to.not.equal(null);
+                expect(read(output, "word/_rels/document.xml.rels")).to.not.contain('Id="rId5"');
+                expect(output.has("word/charts/chart1.xml")).to.equal(true);
             });
 
             it("should keep the relationships the drawing never referred to, such as those to the styles", async () => {
@@ -1028,8 +1014,8 @@ describe("drawing-patch", () => {
                     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles",
                     "styles.xml",
                 );
-                const zip = await patch(
-                    await templateWith({
+                const output = await patch(
+                    templateWith({
                         "word/_rels/document.xml.rels": relationshipsOf(
                             styles,
                             relationship("rId5", CHART_RELATIONSHIP, "charts/chart1.xml"),
@@ -1038,16 +1024,16 @@ describe("drawing-patch", () => {
                     { chart: repoint() },
                 );
 
-                expect(await read(zip, "word/_rels/document.xml.rels")).to.contain(styles);
+                expect(read(output, "word/_rels/document.xml.rels")).to.contain(styles);
             });
 
             it("should keep every relationship when the patch changes nothing the drawing refers to", async () => {
-                const zip = await patch(await templateWith(), { chart: new RecordingPatch() });
+                const output = await patch(templateWith(), { chart: new RecordingPatch() });
 
-                expect(await read(zip, "word/_rels/document.xml.rels")).to.contain(
+                expect(read(output, "word/_rels/document.xml.rels")).to.contain(
                     relationship("rId5", CHART_RELATIONSHIP, "charts/chart1.xml"),
                 );
-                expect(zip.file("word/charts/chart1.xml")).to.not.equal(null);
+                expect(output.has("word/charts/chart1.xml")).to.equal(true);
             });
 
             it("should remove a relationship to outside the package that the drawing no longer refers to", async () => {
@@ -1057,8 +1043,8 @@ describe("drawing-patch", () => {
                     "https://example.com",
                     "External",
                 );
-                const zip = await patch(
-                    await templateWith({
+                const output = await patch(
+                    templateWith({
                         "word/document.xml": documentOf(
                             chartDrawing({ descr: "{{chart}}" }).replace(
                                 'descr="{{chart}}"/>',
@@ -1077,15 +1063,15 @@ describe("drawing-patch", () => {
                     },
                 );
 
-                const relationships = await read(zip, "word/_rels/document.xml.rels");
+                const relationships = read(output, "word/_rels/document.xml.rels");
                 expect(relationships).to.not.contain('Id="rId7"');
                 expect(relationships).to.contain('Id="rId5"');
             });
 
             it("should find the relationships by any prefix the part gives their namespace", async () => {
                 const rel = 'xmlns:rel="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
-                const zip = await patch(
-                    await templateWith({
+                const output = await patch(
+                    templateWith({
                         "word/document.xml": documentOf(
                             `${chartDrawing({ descr: "{{chart}}" }).replace('<c:chart r:id="rId5"/>', `<c:chart ${rel} rel:id="rId5"/>`)}<w:p><w:hyperlink ${rel} rel:id="rId8"/></w:p>`,
                         ),
@@ -1108,29 +1094,29 @@ describe("drawing-patch", () => {
                     },
                 );
 
-                const relationships = await read(zip, "word/_rels/document.xml.rels");
+                const relationships = read(output, "word/_rels/document.xml.rels");
                 expect(relationships).to.not.contain('Id="rId5"');
                 expect(relationships).to.contain('Id="rId8"');
-                expect(zip.file("word/charts/chart1.xml")).to.equal(null);
+                expect(output.has("word/charts/chart1.xml")).to.equal(false);
             });
         });
 
         describe("invalid patches", () => {
             it("should throw for a patch without children", async () => {
-                await expect(patch(await templateWith(), { chart: { type: PatchType.PARAGRAPH } as unknown as IPatch })).rejects.toThrow(
+                await expect(patch(templateWith(), { chart: { type: PatchType.PARAGRAPH } as unknown as IPatch })).rejects.toThrow(
                     'Invalid patch "chart". Expected { type: PatchType.PARAGRAPH or PatchType.DOCUMENT, children: [...] }',
                 );
             });
 
             it("should throw for a drawing patch without a patch function", async () => {
-                await expect(
-                    patch(await templateWith(), { chart: { type: PatchType.DRAWING } as unknown as DrawingPatch }),
-                ).rejects.toThrow('Invalid patch "chart"');
+                await expect(patch(templateWith(), { chart: { type: PatchType.DRAWING } as unknown as DrawingPatch })).rejects.toThrow(
+                    'Invalid patch "chart"',
+                );
             });
 
             it("should throw for a patch that isn't an object", async () => {
                 for (const value of [undefined, null, "text", 1, new TextRun("A run")]) {
-                    await expect(patch(await templateWith(), { chart: value as unknown as IPatch }), String(value)).rejects.toThrow(
+                    await expect(patch(templateWith(), { chart: value as unknown as IPatch }), String(value)).rejects.toThrow(
                         'Invalid patch "chart"',
                     );
                 }
@@ -1139,7 +1125,7 @@ describe("drawing-patch", () => {
             it("should accept a drawing patch whose class docx doesn't know, by its type", async () => {
                 // eslint-disable-next-line functional/prefer-readonly-type
                 const calls: string[] = [];
-                await patch(await templateWith(), {
+                await patch(templateWith(), {
                     chart: {
                         type: PatchType.DRAWING,
                         // eslint-disable-next-line functional/immutable-data
@@ -1153,18 +1139,18 @@ describe("drawing-patch", () => {
         describe("text patches in a part in a folder of its own", () => {
             it("should add their relationships to the part's own relationships part", async () => {
                 const glossary = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:glossaryDocument ${NAMESPACES}><w:docParts><w:docPart><w:docPartBody><w:p><w:r><w:t>{{link}}</w:t></w:r></w:p></w:docPartBody></w:docPart></w:docParts></w:glossaryDocument>`;
-                const zip = await patch(await templateWith({ "word/glossary/document.xml": glossary }), {
+                const output = await patch(templateWith({ "word/glossary/document.xml": glossary }), {
                     link: {
                         type: PatchType.PARAGRAPH,
                         children: [new ExternalHyperlink({ link: "https://example.com", children: [new TextRun("Example")] })],
                     },
                 });
 
-                expect(await read(zip, "word/glossary/_rels/document.xml.rels")).to.contain(
+                expect(read(output, "word/glossary/_rels/document.xml.rels")).to.contain(
                     'Target="https://example.com" TargetMode="External"',
                 );
                 // The placeholder isn't in the document, so it has no relationship to the address
-                expect(await read(zip, "word/_rels/document.xml.rels")).not.to.contain("example.com");
+                expect(read(output, "word/_rels/document.xml.rels")).not.to.contain("example.com");
             });
         });
     });
@@ -1175,14 +1161,14 @@ describe("drawing-patch", () => {
                 descr: "Sales: {{sales}}",
                 title: "{{title}} {{other}}",
             })}${chartDrawing({ name: "{{not in the name}}" })}`;
-            const placeholders = await patchDetector({ data: await templateWith({ "word/document.xml": documentOf(body) }) });
+            const placeholders = await patchDetector({ data: templateWith({ "word/document.xml": documentOf(body) }) });
 
             expect(placeholders).to.have.members(["name", "chart", "sales", "title", "other"]);
         });
 
         it("should find placeholders in drawings in headers and footers", async () => {
             const header = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:hdr ${NAMESPACES}>${chartDrawing({ descr: "{{header chart}}" })}</w:hdr>`;
-            const placeholders = await patchDetector({ data: await templateWith({ "word/header1.xml": header }) });
+            const placeholders = await patchDetector({ data: templateWith({ "word/header1.xml": header }) });
 
             expect(placeholders).to.have.members(["chart", "header chart"]);
         });

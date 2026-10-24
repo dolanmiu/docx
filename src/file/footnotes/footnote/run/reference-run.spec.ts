@@ -1,4 +1,3 @@
-import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
@@ -8,6 +7,7 @@ import { File } from "@file/file";
 import { Header } from "@file/header";
 import { Paragraph, TextRun } from "@file/paragraph";
 import { Table, TableCell, TableRow } from "@file/table";
+import { textOf, unzip } from "tests/zip";
 
 import { FootnoteReferenceRun } from "./reference-run";
 
@@ -16,8 +16,8 @@ const ENDNOTE_MARK = `<w:r><w:rPr><w:rStyle w:val="EndnoteReference"/></w:rPr><w
 
 /** The parts of a document, packed */
 const partsOf = async (document: File): Promise<(path: string) => Promise<string>> => {
-    const zip = await JSZip.loadAsync(await Packer.toBuffer(document));
-    return (path) => zip.file(path)!.async("text");
+    const files = unzip(await Packer.toBuffer(document));
+    return (path) => Promise.resolve(textOf(files, path)!);
 };
 
 /** The notes of a part, other than the separators, as their ids and text */

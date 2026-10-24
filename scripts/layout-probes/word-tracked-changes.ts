@@ -32,7 +32,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { deflateSync } from "node:zlib";
 
-import JSZip from "jszip";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 
 import {
     AlignmentType,
@@ -493,12 +493,12 @@ const viewProbe = (probe: string): ISectionOptions => ({
 });
 
 const write = async (name: string, doc: Document, inject: (part: string, xml: string) => string): Promise<void> => {
-    const zip = await JSZip.loadAsync(await Packer.toBuffer(doc));
+    const zip = unzipSync(await Packer.toBuffer(doc), { filter: ({ name }) => !name.endsWith("/") });
     for (const part of ["word/document.xml", "word/settings.xml"]) {
-        zip.file(part, inject(part, await zip.file(part)!.async("string")));
+        zip[part] = strToU8(inject(part, strFromU8(zip[part])));
     }
     mkdirSync("build/word-probes", { recursive: true });
-    writeFileSync(`build/word-probes/${name}.docx`, await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }));
+    writeFileSync(`build/word-probes/${name}.docx`, zipSync(zip, { level: 6 }));
 };
 
 const main = async (): Promise<void> => {

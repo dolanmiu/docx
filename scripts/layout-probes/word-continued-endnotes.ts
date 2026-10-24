@@ -42,7 +42,7 @@
 // cspell:ignore bbox
 import { mkdirSync, writeFileSync } from "node:fs";
 
-import JSZip from "jszip";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 
 import { Document, EndnoteReferenceRun, LineRuleType, Packer, Paragraph, TextRun } from "docx";
 
@@ -99,12 +99,12 @@ const separatorWith = (xml: string, which: string, properties: string, name: str
     changed(xml, which + SPACING, which + properties, name);
 
 const write = async (document: Document, name: string, change?: (endnotes: string) => string): Promise<void> => {
-    const zip = await JSZip.loadAsync(await Packer.toBuffer(document));
+    const zip = unzipSync(await Packer.toBuffer(document), { filter: ({ name }) => !name.endsWith("/") });
     if (change) {
-        zip.file("word/endnotes.xml", change(await zip.file("word/endnotes.xml")!.async("string")));
+        zip["word/endnotes.xml"] = strToU8(change(strFromU8(zip["word/endnotes.xml"])));
     }
     mkdirSync("build/word-probes", { recursive: true });
-    writeFileSync(`build/word-probes/${name}.docx`, await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }));
+    writeFileSync(`build/word-probes/${name}.docx`, zipSync(zip, { level: 6 }));
 };
 
 const main = async (): Promise<void> => {

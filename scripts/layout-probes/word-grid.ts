@@ -45,7 +45,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { deflateSync } from "node:zlib";
 
-import JSZip from "jszip";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 
 import {
     AlignmentType,
@@ -478,20 +478,13 @@ const doc2 = new Document({
 });
 
 const write = async (document: Document, name: string): Promise<void> => {
-    const zip = await JSZip.loadAsync(await Packer.toBuffer(document));
-    const inject = (path: string, injections: readonly (readonly [RegExp, string])[]): Promise<void> =>
-        zip
-            .file(path)!
-            .async("string")
-            .then((xml) => {
-                zip.file(
-                    path,
-                    injections.reduce((text, [marker, replacement]) => text.replace(marker, replacement), xml),
-                );
-            });
-    await inject("word/document.xml", [...INJECTIONS, ...CHAR_INJECTIONS]);
-    await inject("word/styles.xml", STYLE_INJECTIONS);
-    writeFileSync(`build/word-probes/${name}.docx`, await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }));
+    const zip = unzipSync(await Packer.toBuffer(document), { filter: ({ name }) => !name.endsWith("/") });
+    const inject = (path: string, injections: readonly (readonly [RegExp, string])[]): void => {
+        zip[path] = strToU8(injections.reduce((text, [marker, replacement]) => text.replace(marker, replacement), strFromU8(zip[path])));
+    };
+    inject("word/document.xml", [...INJECTIONS, ...CHAR_INJECTIONS]);
+    inject("word/styles.xml", STYLE_INJECTIONS);
+    writeFileSync(`build/word-probes/${name}.docx`, zipSync(zip, { level: 6 }));
 };
 
 const main = async (): Promise<void> => {

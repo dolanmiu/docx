@@ -3,13 +3,11 @@
  *
  * @module
  */
-import JSZip from "jszip";
-
 import type { File } from "@file/file";
 import { obfuscate } from "@file/fonts/obfuscate-ttf-to-odttf";
 import { Relationships } from "@file/relationships";
-import { encodeUtf8 } from "@util/convenience-functions";
 import { stringifyXmlable } from "@util/xml";
+import type { ZipFileData } from "@util/zip";
 
 import { Formatter } from "../formatter";
 import { ImageReplacer } from "./image-replacer";
@@ -100,7 +98,7 @@ type IXmlifyedFileMapping = {
 };
 
 /**
- * Compiles File objects into OOXML-compliant ZIP archives.
+ * Compiles File objects into the files of OOXML-compliant packages.
  *
  * The Compiler is responsible for converting the internal document representation
  * into the complete set of XML files required for a .docx document, managing
@@ -109,7 +107,7 @@ type IXmlifyedFileMapping = {
  * @example
  * ```typescript
  * const compiler = new Compiler();
- * const zip = compiler.compile(file, PrettifyType.WITH_2_BLANKS);
+ * const files = compiler.compile(file, PrettifyType.WITH_2_BLANKS);
  * ```
  */
 export class Compiler {
@@ -129,69 +127,51 @@ export class Compiler {
     }
 
     /**
-     * Compiles a File object into a JSZip archive containing the complete OOXML package.
+     * Compiles a File object into the files of the complete OOXML package, which the Packer zips.
      *
      * This method orchestrates the entire compilation process:
      * - Converts all document components to XML
      * - Manages image and numbering placeholder replacements
      * - Creates relationship files
      * - Packages fonts and media files
-     * - Assembles everything into a ZIP archive
      *
      * @param file - The document to compile
      * @param prettifyXml - Optional XML formatting style
      * @param overrides - Optional custom XML file overrides
-     * @returns A JSZip instance containing the complete .docx package
+     * @returns The package's files by their paths, in the order they are zipped
      */
     public compile(
         file: File,
         prettifyXml?: (typeof PrettifyType)[keyof typeof PrettifyType],
         overrides: readonly IXmlifyedFile[] = [],
-    ): JSZip {
-        const zip = new JSZip();
+    ): ReadonlyMap<string, ZipFileData> {
         const { PackageParts: packageParts, ...xmlifiedFileMapping } = this.xmlifyFile(file, prettifyXml);
-        const map = new Map<string, IXmlifyedFile | readonly IXmlifyedFile[]>(Object.entries(xmlifiedFileMapping));
+        const xmlifiedFiles = Object.values(xmlifiedFileMapping).flatMap((obj: IXmlifyedFile | readonly IXmlifyedFile[]) =>
+            Array.isArray(obj) ? (obj as readonly IXmlifyedFile[]) : [obj as IXmlifyedFile],
+        );
 
-        for (const [, obj] of map) {
-            if (Array.isArray(obj)) {
-                for (const subFile of obj as readonly IXmlifyedFile[]) {
-                    zip.file(subFile.path, encodeUtf8(subFile.data));
-                }
-            } else {
-                zip.file((obj as IXmlifyedFile).path, encodeUtf8((obj as IXmlifyedFile).data));
-            }
-        }
-
-        for (const { path, data } of packageParts) {
-            zip.file(path, typeof data === "string" ? encodeUtf8(data) : data);
-        }
-
-        for (const subFile of overrides) {
-            zip.file(subFile.path, encodeUtf8(subFile.data));
-        }
-
-        if (file.Macros !== undefined) {
-            zip.file("word/vbaProject.bin", file.Macros.project);
-        }
-
-        for (const data of file.Media.Array) {
-            if (data.type !== "svg") {
-                zip.file(`word/media/${data.fileName}`, data.data);
-            } else {
-                zip.file(`word/media/${data.fileName}`, data.data);
-                zip.file(`word/media/${data.fallback.fileName}`, data.fallback.data);
-            }
-        }
-
-        // Sequential filenames (font1.odttf, font2.odttf, …) — must match the
-        // Target paths set in FontWrapper. Word rejects embedded-font paths
-        // containing spaces or non-ASCII when those characters appear in the
-        // package zip entry; see https://github.com/dolanmiu/docx/issues/3019.
-        for (const [i, { data: buffer, fontKey }] of file.FontTable.files.entries()) {
-            zip.file(`word/fonts/font${i + 1}.odttf`, obfuscate(buffer, fontKey));
-        }
-
-        return zip;
+        // A path given again, such as by an override, keeps its place with the later data
+        return new Map<string, ZipFileData>([
+            ...xmlifiedFiles.map(({ path, data }) => [path, data] as const),
+            ...packageParts.map(({ path, data }) => [path, data] as const),
+            ...overrides.map(({ path, data }) => [path, data] as const),
+            ...(file.Macros === undefined ? [] : [["word/vbaProject.bin", file.Macros.project] as const]),
+            ...file.Media.Array.flatMap((data) =>
+                data.type !== "svg"
+                    ? [[`word/media/${data.fileName}`, data.data] as const]
+                    : [
+                          [`word/media/${data.fileName}`, data.data] as const,
+                          [`word/media/${data.fallback.fileName}`, data.fallback.data] as const,
+                      ],
+            ),
+            // Sequential filenames (font1.odttf, font2.odttf, …) — must match the
+            // Target paths set in FontWrapper. Word rejects embedded-font paths
+            // containing spaces or non-ASCII when those characters appear in the
+            // package zip entry; see https://github.com/dolanmiu/docx/issues/3019.
+            ...file.FontTable.files.map(
+                ({ data: buffer, fontKey }, i) => [`word/fonts/font${i + 1}.odttf`, obfuscate(buffer, fontKey)] as const,
+            ),
+        ]);
     }
 
     private xmlifyFile(file: File, prettify?: (typeof PrettifyType)[keyof typeof PrettifyType]): IXmlifyedFileMapping {

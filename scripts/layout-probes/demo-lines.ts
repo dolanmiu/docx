@@ -21,7 +21,7 @@
 // or isn't found, or when the layout stopped.
 import { readFileSync } from "node:fs";
 
-import JSZip from "jszip";
+import { strFromU8, unzipSync } from "fflate";
 import { type XmlElement as Element, parseXml } from "../../src/util/xml";
 
 import type { BlockLayout } from "../../src/layout";
@@ -60,13 +60,11 @@ const WORD = [...readFileSync(htmlPath, "utf8").matchAll(/<page[\s\S]*?<\/page>/
     .filter(({ text }) => text.length > 0)
     .sort((a, b) => a.page - b.page || a.y - b.y || a.x - b.x);
 
-const zip = await JSZip.loadAsync(readFileSync(docxPath));
+const zip = unzipSync(readFileSync(docxPath), { filter: ({ name }) => !name.endsWith("/") });
 const parts = new Map(
-    await Promise.all(
-        Object.keys(zip.files)
-            .filter((file) => file.endsWith(".xml") || file.endsWith(".rels"))
-            .map(async (file) => [file, parseXml(await zip.file(file)!.async("string"), { keepWhitespaceText: true })] as const),
-    ),
+    Object.entries(zip)
+        .filter(([file]) => file.endsWith(".xml") || file.endsWith(".rels"))
+        .map(([file, data]) => [file, parseXml(strFromU8(data), { keepWhitespaceText: true })] as const),
 );
 
 const textOf = (element: Element): string =>

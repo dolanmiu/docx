@@ -6,8 +6,8 @@
  *
  * @module
  */
-/* eslint-disable no-bitwise -- the legacy key is made of 16-bit words, and the iteration numbers are hashed as bytes */
-import hash from "hash.js";
+/* eslint-disable no-bitwise -- the legacy key is made of 16-bit words */
+import { sha256 } from "@util/sha";
 
 /** How many times Word hashes the password again, which is what it writes in `w:cryptSpinCount` */
 export const PROTECTION_PASSWORD_SPIN_COUNT = 100000;
@@ -80,7 +80,7 @@ export const legacyPasswordKey = (password: string): string => {
  * legacy key (in UTF-16LE), then SHA-256 of each hash and its iteration number (32-bit little-endian), `spinCount`
  * times.
  *
- * Word itself uses SHA-512, and reads either. hash.js's SHA-512 works its 64-bit words out in 32-bit halves, so
+ * Word itself uses SHA-512, and reads either. JavaScript works SHA-512's 64-bit words out in 32-bit halves, so
  * 100,000 rounds of it take a second or more, where SHA-256 takes about a tenth of that.
  *
  * @param password - The password, of at least one character
@@ -93,15 +93,16 @@ export const legacyPasswordKey = (password: string): string => {
 export const hashProtectionPassword = (password: string, salt: readonly number[], spinCount: number): readonly number[] => {
     const key = [...legacyPasswordKey(password)].flatMap((character) => [character.charCodeAt(0), 0]);
 
-    let digest: readonly number[] = hash.sha256().update(salt).update(key).digest();
+    let digest = sha256(Uint8Array.from([...salt, ...key]));
+    // The hash and the iteration number after it, which is 32-bit little-endian
+    const block = new Uint8Array(digest.length + 4);
+    const view = new DataView(block.buffer);
     for (let iteration = 0; iteration < spinCount; iteration++) {
-        digest = hash
-            .sha256()
-            .update(digest)
-            .update([iteration & 0xff, (iteration >> 8) & 0xff, (iteration >> 16) & 0xff, (iteration >>> 24) & 0xff])
-            .digest();
+        block.set(digest);
+        view.setUint32(digest.length, iteration, true);
+        digest = sha256(block);
     }
-    return digest;
+    return Array.from(digest);
 };
 
 /**

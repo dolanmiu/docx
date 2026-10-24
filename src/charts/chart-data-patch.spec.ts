@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/naming-convention -- The keys of objects here are paths of parts in a package */
-import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
 
 import { type XmlElement as Element, parseXml } from "@util/xml";
@@ -20,6 +19,7 @@ import {
     patchDetector,
     patchDocument,
 } from "docx";
+import * as zips from "tests/zip";
 
 import {
     type CategoryChartDataPatchOptions,
@@ -43,9 +43,12 @@ import { attributeOf, childOf, childrenOf, descendantsOf, elementsOf, textOf, va
 // Parsed with the spaces in text, such as a category that is a space
 const parse = (text: string): Element => parseXml(text, { keepWhitespaceText: true });
 
-const readText = async (zip: JSZip, path: string): Promise<string> => (await zip.file(path)?.async("text")) ?? "";
+// A package's files, by their paths
+type Package = ReadonlyMap<string, Uint8Array>;
 
-const readXml = async (zip: JSZip, path: string): Promise<Element> => parse(await readText(zip, path));
+const readText = (zip: Package, path: string): string => zips.textOf(zip, path) ?? "";
+
+const readXml = (zip: Package, path: string): Element => parse(readText(zip, path));
 
 const folderOf = (path: string): string => path.slice(0, path.lastIndexOf("/") + 1);
 
@@ -70,8 +73,8 @@ type Relationship = {
     readonly external: boolean;
 };
 
-const relationshipsOf = async (zip: JSZip, part: string): Promise<readonly Relationship[]> =>
-    descendantsOf(await readXml(zip, relationshipsPathOf(part)), "Relationship").map((relationship) => {
+const relationshipsOf = (zip: Package, part: string): readonly Relationship[] =>
+    descendantsOf(readXml(zip, relationshipsPathOf(part)), "Relationship").map((relationship) => {
         const external = attributeOf(relationship, "TargetMode") === "External";
         const target = attributeOf(relationship, "Target") ?? "";
         return {
@@ -82,7 +85,17 @@ const relationshipsOf = async (zip: JSZip, part: string): Promise<readonly Relat
         };
     });
 
-const filesOf = (zip: JSZip): readonly string[] => Object.keys(zip.files).filter((path) => !zip.files[path].dir);
+const filesOf = (zip: Package): readonly string[] => [...zip.keys()];
+
+/** A package zipped again, with files replaced or added, or for null, removed */
+const rezip = (zip: Package, files: Readonly<Record<string, string | Uint8Array | null>> = {}): Uint8Array =>
+    zips.zip(
+        Object.fromEntries(
+            Object.entries({ ...Object.fromEntries(zip), ...files }).flatMap(([path, data]) =>
+                data === null ? [] : [[path, data] as const],
+            ),
+        ),
+    );
 
 type Cell = {
     readonly value: string;
@@ -90,10 +103,10 @@ type Cell = {
 };
 
 // A workbook's cells, by their names, with their number formats
-const readCells = async (zip: JSZip, path: string): Promise<ReadonlyMap<string, Cell>> => {
-    const workbook = await JSZip.loadAsync((await zip.file(path)!.async("uint8array"))!);
-    const strings = descendantsOf(await readXml(workbook, "xl/sharedStrings.xml"), "si").map((si) => textOf(descendantsOf(si, "t")[0]));
-    const styles = await readXml(workbook, "xl/styles.xml");
+const readCells = (zip: Package, path: string): ReadonlyMap<string, Cell> => {
+    const workbook = zips.unzip(zip.get(path)!);
+    const strings = descendantsOf(readXml(workbook, "xl/sharedStrings.xml"), "si").map((si) => textOf(descendantsOf(si, "t")[0]));
+    const styles = readXml(workbook, "xl/styles.xml");
     const formats = new Map(
         descendantsOf(styles, "numFmt").map((format) => [attributeOf(format, "numFmtId"), attributeOf(format, "formatCode") ?? ""]),
     );
@@ -101,7 +114,7 @@ const readCells = async (zip: JSZip, path: string): Promise<ReadonlyMap<string, 
         (xf) => formats.get(attributeOf(xf, "numFmtId")) ?? "General",
     );
     return new Map(
-        descendantsOf(await readXml(workbook, "xl/worksheets/sheet1.xml"), "c").map((cell) => {
+        descendantsOf(readXml(workbook, "xl/worksheets/sheet1.xml"), "c").map((cell) => {
             const value = textOf(descendantsOf(cell, "v")[0]);
             return [
                 attributeOf(cell, "r") ?? "",
@@ -142,22 +155,19 @@ type Chart = {
 };
 
 // Each chart a part shows, in order
-const chartsIn = async (zip: JSZip, part = "word/document.xml"): Promise<readonly Chart[]> => {
-    const relationships = await relationshipsOf(zip, part);
-    const drawings = [
-        ...descendantsOf(await readXml(zip, part), "wp:inline"),
-        ...descendantsOf(await readXml(zip, part), "wp:anchor"),
-    ].filter((drawing) => descendantsOf(drawing, "c:chart").length > 0);
-    return Promise.all(
-        drawings.map(async (drawing) => {
-            const id = attributeOf(descendantsOf(drawing, "c:chart")[0], "r:id");
-            const path = relationships.find((relationship) => relationship.id === id)!.path;
-            const chartSpace = childOf(await readXml(zip, path), "c:chartSpace")!;
-            const workbookId = attributeOf(childOf(chartSpace, "c:externalData"), "r:id");
-            const workbook = (await relationshipsOf(zip, path)).find((relationship) => relationship.id === workbookId)?.path;
-            return { part, properties: descendantsOf(drawing, "wp:docPr")[0], path, chartSpace, workbook };
-        }),
+const chartsIn = (zip: Package, part = "word/document.xml"): readonly Chart[] => {
+    const relationships = relationshipsOf(zip, part);
+    const drawings = [...descendantsOf(readXml(zip, part), "wp:inline"), ...descendantsOf(readXml(zip, part), "wp:anchor")].filter(
+        (drawing) => descendantsOf(drawing, "c:chart").length > 0,
     );
+    return drawings.map((drawing) => {
+        const id = attributeOf(descendantsOf(drawing, "c:chart")[0], "r:id");
+        const path = relationships.find((relationship) => relationship.id === id)!.path;
+        const chartSpace = childOf(readXml(zip, path), "c:chartSpace")!;
+        const workbookId = attributeOf(childOf(chartSpace, "c:externalData"), "r:id");
+        const workbook = relationshipsOf(zip, path).find((relationship) => relationship.id === workbookId)?.path;
+        return { part, properties: descendantsOf(drawing, "wp:docPr")[0], path, chartSpace, workbook };
+    });
 };
 
 type Series = {
@@ -204,10 +214,10 @@ const seriesIn = (chart: Chart): readonly Series[] =>
  * - each chart's references hold what its workbook's cells hold, and refer to nothing else;
  * - each chart's series have unique indexes and orders, and their children are in the schema's order.
  */
-const checkPackage = async (zip: JSZip): Promise<void> => {
+const checkPackage = (zip: Package): void => {
     const files = filesOf(zip);
     const lowerFiles = new Set(files.map((path) => path.toLowerCase()));
-    const contentTypes = await readXml(zip, "[Content_Types].xml");
+    const contentTypes = readXml(zip, "[Content_Types].xml");
     const defaults = new Set(
         descendantsOf(contentTypes, "Default").map((element) => (attributeOf(element, "Extension") ?? "").toLowerCase()),
     );
@@ -225,7 +235,7 @@ const checkPackage = async (zip: JSZip): Promise<void> => {
     const referenced = new Set<string>();
     for (const relationshipsPath of files.filter((path) => path.endsWith(".rels"))) {
         const source = relationshipsPath.replace(/(^|\/)_rels\/([^/]*)\.rels$/, "$1$2");
-        for (const { path, external } of await relationshipsOf(zip, source)) {
+        for (const { path, external } of relationshipsOf(zip, source)) {
             if (!external) {
                 expect(lowerFiles.has(path.toLowerCase()), `${path}, which ${relationshipsPath} refers to`).to.equal(true);
                 // eslint-disable-next-line functional/immutable-data
@@ -238,13 +248,13 @@ const checkPackage = async (zip: JSZip): Promise<void> => {
     }
 
     for (const path of files.filter((file) => /^word\/charts\/[^/]+\.xml$/.test(file) && !/(style|colors)\d*\.xml$/.test(file))) {
-        const chartSpace = childOf(await readXml(zip, path), "c:chartSpace")!;
+        const chartSpace = childOf(readXml(zip, path), "c:chartSpace")!;
         const workbookId = attributeOf(childOf(chartSpace, "c:externalData"), "r:id");
-        const workbook = (await relationshipsOf(zip, path)).find(({ id }) => id === workbookId);
+        const workbook = relationshipsOf(zip, path).find(({ id }) => id === workbookId);
         const references = [...descendantsOf(chartSpace, "c:strRef"), ...descendantsOf(chartSpace, "c:numRef")];
         if (references.length > 0) {
             expect(workbook, `the workbook of ${path}`).to.not.equal(undefined);
-            const cells = await readCells(zip, workbook!.path);
+            const cells = readCells(zip, workbook!.path);
             for (const reference of references) {
                 const names = cellNamesOf(textOf(childOf(reference, "c:f")));
                 expect(cacheOf(reference), `${path}: ${textOf(childOf(reference, "c:f"))}`).to.deep.equal(
@@ -381,8 +391,8 @@ const templateOf = (charts: Readonly<Record<string, ChartRunOptions>>): Promise<
         }),
     );
 
-const patch = async (data: Buffer | Uint8Array, patches: Readonly<Record<string, ChartDataPatch | DrawingPatch>>): Promise<JSZip> =>
-    JSZip.loadAsync(await patchDocument({ outputType: "uint8array", data, patches }));
+const patch = async (data: Buffer | Uint8Array, patches: Readonly<Record<string, ChartDataPatch | DrawingPatch>>): Promise<Package> =>
+    zips.unzip(await patchDocument({ outputType: "uint8array", data, patches }));
 
 // New data with categories: each series' values are its number times ten, plus each point's
 const categoryData = (series: number, points: number): CategoryChartDataPatchOptions => ({
@@ -424,10 +434,10 @@ const expectedSeries = (data: ChartDataPatchOptions): readonly Pick<Series, "nam
               values: points.map(({ y }) => String(y)),
           }));
 
-const patchOne = async (template: TemplateName, data: ChartDataPatchOptions): Promise<{ readonly zip: JSZip; readonly chart: Chart }> => {
+const patchOne = async (template: TemplateName, data: ChartDataPatchOptions): Promise<{ readonly zip: Package; readonly chart: Chart }> => {
     const zip = await patch(await templateOf({ chart: TEMPLATES[template] }), { chart: new ChartDataPatch(data) });
-    await checkPackage(zip);
-    const [chart] = await chartsIn(zip);
+    checkPackage(zip);
+    const [chart] = chartsIn(zip);
     return { zip, chart };
 };
 
@@ -602,7 +612,7 @@ describe("ChartDataPatch", () => {
                 b: pointPatch,
                 c: datePatch,
             });
-            const [column, scatter, dated] = await chartsIn(zip);
+            const [column, scatter, dated] = chartsIn(zip);
             expect(seriesIn(column).map(({ name, categories: all, values: numbers }) => ({ name, all, numbers }))).to.deep.equal([
                 { name: "S", all: ["A", "B"], numbers: ["1", "2"] },
             ]);
@@ -663,7 +673,7 @@ describe("ChartDataPatch", () => {
     describe("the template's look", () => {
         it("should keep the chart's title, type, axes, labels and legend", async () => {
             const template = await templateOf({ chart: TEMPLATES.column });
-            const [before] = await chartsIn(await JSZip.loadAsync(template));
+            const [before] = chartsIn(zips.unzip(template));
             const { chart } = await patchOne("column", categoryData(2, 3));
 
             for (const name of ["c:title", "c:autoTitleDeleted", "c:legend", "c:plotVisOnly", "c:dispBlanksAs"]) {
@@ -719,7 +729,7 @@ describe("ChartDataPatch", () => {
             const template = await templateOf({
                 chart: { type: "column", categories: QUARTERS, series: [{ name: "Red", values: [1, 2, 3], color: "C00000" }] },
             });
-            const [chart] = await chartsIn(await patch(template, { chart: new ChartDataPatch(categoryData(3, 3)) }));
+            const [chart] = chartsIn(await patch(template, { chart: new ChartDataPatch(categoryData(3, 3)) }));
             const series = descendantsOf(chart.chartSpace, "c:ser");
             expect(descendantsOf(childOf(series[0], "c:spPr"), "a:srgbClr").map(valueOf)).to.deep.equal(["C00000"]);
             expect(descendantsOf(childOf(series[1], "c:spPr"), "a:schemeClr").map(valueOf)).to.deep.equal(["accent2"]);
@@ -754,21 +764,22 @@ describe("ChartDataPatch", () => {
         it("should keep the template's number formats in the caches and the workbook's cells", async () => {
             const template = await templateOf({ chart: TEMPLATES.column });
             // A template whose values are percentages and categories numbers, as a chart made in Word may have
-            const zip = await JSZip.loadAsync(template);
+            const zip = zips.unzip(template);
             const path = "word/charts/chart1.xml";
-            zip.file(
-                path,
-                (await readText(zip, path)).replace(/<c:formatCode>General<\/c:formatCode>/g, "<c:formatCode>0.0%</c:formatCode>"),
+            const patched = await patch(
+                rezip(zip, {
+                    [path]: readText(zip, path).replace(/<c:formatCode>General<\/c:formatCode>/g, "<c:formatCode>0.0%</c:formatCode>"),
+                }),
+                {
+                    chart: new ChartDataPatch({ categories: [2024, 2025], series: [{ name: "Share", values: [0.25, 0.5] }] }),
+                },
             );
-            const patched = await patch(await zip.generateAsync({ type: "uint8array" }), {
-                chart: new ChartDataPatch({ categories: [2024, 2025], series: [{ name: "Share", values: [0.25, 0.5] }] }),
-            });
-            await checkPackage(patched);
+            checkPackage(patched);
 
-            const [chart] = await chartsIn(patched);
+            const [chart] = chartsIn(patched);
             const [series] = descendantsOf(chart.chartSpace, "c:ser");
             expect(textOf(descendantsOf(childOf(series, "c:val"), "c:formatCode")[0])).to.equal("0.0%");
-            const cells = await readCells(patched, chart.workbook!);
+            const cells = readCells(patched, chart.workbook!);
             expect(cells.get("B2")).to.deep.equal({ value: "0.25", format: "0.0%" });
             expect(cells.get("B3")).to.deep.equal({ value: "0.5", format: "0.0%" });
             expect(cells.get("B1")).to.deep.equal({ value: "Share", format: "General" });
@@ -776,18 +787,19 @@ describe("ChartDataPatch", () => {
 
         it("should keep a template's date format for new dates, and its number format for new numbers, but not the other way", async () => {
             const withFormat = async (format: string, categories: ChartDataPatchOptions): Promise<readonly string[]> => {
-                const zip = await JSZip.loadAsync(
+                const zip = zips.unzip(
                     await templateOf({ chart: { type: "line", categories: [1, 2], series: [{ name: "A", values: [1, 2] }] } }),
                 );
-                zip.file(
-                    "word/charts/chart1.xml",
-                    (await readText(zip, "word/charts/chart1.xml")).replace(
-                        /(<c:cat><c:numRef><c:f>[^<]*<\/c:f><c:numCache><c:formatCode>)General/,
-                        `$1${format}`,
+                const [chart] = chartsIn(
+                    await patch(
+                        rezip(zip, {
+                            "word/charts/chart1.xml": readText(zip, "word/charts/chart1.xml").replace(
+                                /(<c:cat><c:numRef><c:f>[^<]*<\/c:f><c:numCache><c:formatCode>)General/,
+                                `$1${format}`,
+                            ),
+                        }),
+                        { chart: new ChartDataPatch(categories) },
                     ),
-                );
-                const [chart] = await chartsIn(
-                    await patch(await zip.generateAsync({ type: "uint8array" }), { chart: new ChartDataPatch(categories) }),
                 );
                 return descendantsOf(childOf(descendantsOf(chart.chartSpace, "c:ser")[0], "c:cat"), "c:formatCode").map(textOf);
             };
@@ -803,16 +815,17 @@ describe("ChartDataPatch", () => {
         });
 
         it("should keep a new series' number formats from the last series", async () => {
-            const zip = await JSZip.loadAsync(await templateOf({ chart: TEMPLATES.column }));
-            zip.file(
-                "word/charts/chart1.xml",
-                (await readText(zip, "word/charts/chart1.xml")).replace(
-                    /(.*)<c:formatCode>General<\/c:formatCode>/s,
-                    "$1<c:formatCode>0%</c:formatCode>",
+            const zip = zips.unzip(await templateOf({ chart: TEMPLATES.column }));
+            const [chart] = chartsIn(
+                await patch(
+                    rezip(zip, {
+                        "word/charts/chart1.xml": readText(zip, "word/charts/chart1.xml").replace(
+                            /(.*)<c:formatCode>General<\/c:formatCode>/s,
+                            "$1<c:formatCode>0%</c:formatCode>",
+                        ),
+                    }),
+                    { chart: new ChartDataPatch(categoryData(3, 2)) },
                 ),
-            );
-            const [chart] = await chartsIn(
-                await patch(await zip.generateAsync({ type: "uint8array" }), { chart: new ChartDataPatch(categoryData(3, 2)) }),
             );
             expect(
                 descendantsOf(chart.chartSpace, "c:ser").map((one) => textOf(descendantsOf(childOf(one, "c:val"), "c:formatCode")[0])),
@@ -848,9 +861,9 @@ describe("ChartDataPatch", () => {
         it("should replace the workbook with one holding the new data, and remove the template's", async () => {
             const { zip, chart } = await patchOne("column", categoryData(2, 3));
             expect(chart.workbook).to.equal("word/embeddings/Microsoft_Excel_Worksheet2.xlsx");
-            expect(zip.file("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")).to.equal(null);
+            expect(zip.has("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")).to.equal(false);
 
-            const cells = await readCells(zip, chart.workbook!);
+            const cells = readCells(zip, chart.workbook!);
             expect([...cells].map(([name, { value }]) => `${name}=${value}`)).to.deep.equal([
                 "B1=S1",
                 "C1=S2",
@@ -873,7 +886,7 @@ describe("ChartDataPatch", () => {
                 b: new ChartDataPatch(categoryData(1, 1)),
                 c: new ChartDataPatch(categoryData(1, 1)),
             });
-            await checkPackage(zip);
+            checkPackage(zip);
             const workbooks = filesOf(zip).filter((path) => path.includes("embeddings"));
             expect(workbooks).to.deep.equal([
                 "word/embeddings/Microsoft_Excel_Worksheet4.xlsx",
@@ -881,7 +894,7 @@ describe("ChartDataPatch", () => {
                 "word/embeddings/Microsoft_Excel_Worksheet6.xlsx",
             ]);
             for (const path of workbooks) {
-                const values = [...(await readCells(zip, path)).values()].map(({ value }) => value);
+                const values = [...readCells(zip, path).values()].map(({ value }) => value);
                 expect(values).to.not.include("2024");
                 expect(values).to.not.include("Q1");
             }
@@ -899,7 +912,7 @@ describe("ChartDataPatch", () => {
                     sections: [{ children: [new Paragraph({ children: [new ChartRun({ ...TEMPLATES.column, altText, decorative })] })] }],
                 }),
             );
-            const [chart] = await chartsIn(await patch(template, { chart: new ChartDataPatch(data) }));
+            const [chart] = chartsIn(await patch(template, { chart: new ChartDataPatch(data) }));
             return {
                 descr: attributeOf(chart.properties, "descr"),
                 title: attributeOf(chart.properties, "title"),
@@ -989,7 +1002,7 @@ describe("ChartDataPatch", () => {
                             ),
                     },
                 });
-                return attributeOf((await chartsIn(await patchChart(template, categoryData(1, 1))))[0].properties, "descr");
+                return attributeOf(chartsIn(await patchChart(template, categoryData(1, 1)))[0].properties, "descr");
             };
             expect(await descriptionWith("")).to.equal(undefined);
             expect(await descriptionWith(' val="1"')).to.equal(undefined);
@@ -1047,12 +1060,10 @@ describe("ChartDataPatch", () => {
                 table: new ChartDataPatch(categoryData(3, 1)),
                 footnote: new ChartDataPatch(categoryData(4, 1)),
             });
-            await checkPackage(zip);
+            checkPackage(zip);
 
-            const counts = await Promise.all(
-                ["word/header1.xml", "word/footer1.xml", "word/document.xml", "word/footnotes.xml"].map(
-                    async (part) => seriesIn((await chartsIn(zip, part))[0]).length,
-                ),
+            const counts = ["word/header1.xml", "word/footer1.xml", "word/document.xml", "word/footnotes.xml"].map(
+                (part) => seriesIn(chartsIn(zip, part)[0]).length,
             );
             expect(counts).to.deep.equal([1, 2, 3, 4]);
         });
@@ -1062,9 +1073,9 @@ describe("ChartDataPatch", () => {
                 chart: { ...TEMPLATES.column, floating: { horizontalPosition: { offset: 10 }, verticalPosition: { offset: 10 } } },
             });
             const zip = await patch(template, { chart: new ChartDataPatch(categoryData(3, 3)) });
-            await checkPackage(zip);
-            expect(await readText(zip, "word/document.xml")).to.contain("<wp:anchor");
-            expect(seriesIn((await chartsIn(zip))[0])).to.have.length(3);
+            checkPackage(zip);
+            expect(readText(zip, "word/document.xml")).to.contain("<wp:anchor");
+            expect(seriesIn(chartsIn(zip)[0])).to.have.length(3);
         });
 
         it("should patch each chart with the placeholder, each with a workbook of its own", async () => {
@@ -1085,9 +1096,9 @@ describe("ChartDataPatch", () => {
                 }),
             );
             const zip = await patch(template, { sales: new ChartDataPatch(categoryData(1, 4)) });
-            await checkPackage(zip);
+            checkPackage(zip);
 
-            const charts = await chartsIn(zip);
+            const charts = chartsIn(zip);
             expect(new Set(charts.map(({ workbook }) => workbook)).size).to.equal(3);
             expect(charts.map((chart) => seriesIn(chart)[0].values)).to.deep.equal([
                 ["10", "11", "12", "13"],
@@ -1098,14 +1109,14 @@ describe("ChartDataPatch", () => {
 
         it("should patch only the charts whose placeholders are given, and leave the others as they are", async () => {
             const template = await templateOf({ a: TEMPLATES.column, b: TEMPLATES.line });
-            const before = await chartsIn(await JSZip.loadAsync(template));
+            const before = chartsIn(zips.unzip(template));
             const zip = await patch(template, {
                 a: new ChartDataPatch(categoryData(1, 1)),
                 missing: new ChartDataPatch(categoryData(1, 1)),
             });
-            await checkPackage(zip);
+            checkPackage(zip);
 
-            const [a, b] = await chartsIn(zip);
+            const [a, b] = chartsIn(zip);
             expect(seriesIn(a)).to.have.length(1);
             expect(b.chartSpace).to.deep.equal(before[1].chartSpace);
             expect(attributeOf(b.properties, "descr")).to.equal("{{b}}");
@@ -1115,7 +1126,7 @@ describe("ChartDataPatch", () => {
         it("should leave a template without charts as it is", async () => {
             const template = await Packer.toBuffer(new Document({ sections: [{ children: [new Paragraph("{{chart}}")] }] }));
             const zip = await patch(template, { chart: new ChartDataPatch(categoryData(1, 1)) });
-            expect(await readText(zip, "word/document.xml")).to.contain("{{chart}}");
+            expect(readText(zip, "word/document.xml")).to.contain("{{chart}}");
             expect(filesOf(zip).filter((path) => path.includes("charts"))).to.deep.equal([]);
         });
 
@@ -1133,7 +1144,7 @@ describe("ChartDataPatch", () => {
                     ],
                 }),
             );
-            const zip = await JSZip.loadAsync(
+            const zip = zips.unzip(
                 await patchDocument({
                     outputType: "uint8array",
                     data: template,
@@ -1141,7 +1152,7 @@ describe("ChartDataPatch", () => {
                     placeholderDelimiters: { start: "<<", end: ">>" },
                 }),
             );
-            expect(seriesIn((await chartsIn(zip))[0])).to.have.length(3);
+            expect(seriesIn(chartsIn(zip)[0])).to.have.length(3);
         });
 
         it("should patch with text patches and new charts at the same time, numbering the new parts after each other", async () => {
@@ -1160,7 +1171,7 @@ describe("ChartDataPatch", () => {
                     ],
                 }),
             );
-            const zip = await JSZip.loadAsync(
+            const zip = zips.unzip(
                 await patchDocument({
                     outputType: "uint8array",
                     data: template,
@@ -1175,10 +1186,10 @@ describe("ChartDataPatch", () => {
                     },
                 }),
             );
-            await checkPackage(zip);
+            checkPackage(zip);
 
-            expect(await readText(zip, "word/document.xml")).to.contain("Ada");
-            const [patched, added] = await chartsIn(zip);
+            expect(readText(zip, "word/document.xml")).to.contain("Ada");
+            const [patched, added] = chartsIn(zip);
             expect(seriesIn(patched).map(({ name }) => name)).to.deep.equal(["S1", "S2"]);
             expect(seriesIn(added).map(({ name }) => name)).to.deep.equal(["2024", "2025"]);
             expect(attributeOf(added.properties, "descr")).to.equal("{{sales}}");
@@ -1203,10 +1214,10 @@ describe("ChartDataPatch", () => {
             const chartPatch = new ChartDataPatch(categoryData(2, 2));
             const first = await patch(await templateOf({ a: TEMPLATES.column, b: TEMPLATES.line }), { a: chartPatch, b: chartPatch });
             const second = await patch(await templateOf({ a: TEMPLATES.area }), { a: chartPatch });
-            await checkPackage(first);
-            await checkPackage(second);
+            checkPackage(first);
+            checkPackage(second);
 
-            for (const chart of [...(await chartsIn(first)), ...(await chartsIn(second))]) {
+            for (const chart of [...chartsIn(first), ...chartsIn(second)]) {
                 expect(seriesIn(chart).map(({ values }) => values)).to.deep.equal([
                     ["10", "11"],
                     ["20", "21"],
@@ -1221,9 +1232,9 @@ describe("ChartDataPatch", () => {
                 patches: { chart: new ChartDataPatch({ ...categoryData(5, 5), description: "{{chart}}" }) },
             });
             const twice = await patch(once, { chart: new ChartDataPatch(categoryData(2, 3)) });
-            await checkPackage(twice);
+            checkPackage(twice);
 
-            const [chart] = await chartsIn(twice);
+            const [chart] = chartsIn(twice);
             expect(seriesIn(chart).map(({ name, categories, values }) => ({ name, categories, values }))).to.deep.equal(
                 expectedSeries(categoryData(2, 3)),
             );
@@ -1238,7 +1249,7 @@ describe("ChartDataPatch", () => {
             const chartPatch = new ChartDataPatch(categoryData(3, 3));
             const [first, second] = await Promise.all([patch(template, { chart: chartPatch }), patch(template, { chart: chartPatch })]);
             for (const path of filesOf(first).filter((file) => file.endsWith(".xml") || file.endsWith(".rels"))) {
-                expect(await readText(second, path), path).to.equal(await readText(first, path));
+                expect(readText(second, path), path).to.equal(readText(first, path));
             }
         });
     });
@@ -1353,18 +1364,8 @@ type TemplateChanges = {
  * application writes it.
  */
 const templateWith = async ({ chart = TEMPLATES.column, files = {}, changes = {} }: TemplateChanges): Promise<Uint8Array> => {
-    const zip = await JSZip.loadAsync(await templateOf({ chart }));
-    for (const [path, content] of Object.entries(files)) {
-        if (content === null) {
-            zip.remove(path);
-        } else {
-            zip.file(path, content);
-        }
-    }
-    for (const [path, change] of Object.entries(changes)) {
-        zip.file(path, change(await readText(zip, path)));
-    }
-    return zip.generateAsync({ type: "uint8array" });
+    const zip = zips.unzip(rezip(zips.unzip(await templateOf({ chart })), files));
+    return rezip(zip, Object.fromEntries(Object.entries(changes).map(([path, change]) => [path, change(readText(zip, path))])));
 };
 
 const templateWithFiles = (files: Readonly<Record<string, string | Uint8Array | null>>, chart?: ChartRunOptions): Promise<Uint8Array> =>
@@ -1392,7 +1393,7 @@ const WITHOUT_WORKBOOK: TemplateChanges = {
     changes: { "[Content_Types].xml": (text) => text.replace(/<Override[^>]*Microsoft_Excel_Worksheet1\.xlsx"\/>/, "") },
 };
 
-const patchChart = (template: Uint8Array | Buffer, data: ChartDataPatchOptions = categoryData(2, 3)): Promise<JSZip> =>
+const patchChart = (template: Uint8Array | Buffer, data: ChartDataPatchOptions = categoryData(2, 3)): Promise<Package> =>
     patch(template, { chart: new ChartDataPatch(data) });
 
 describe("ChartDataPatch with templates from other applications", () => {
@@ -1405,12 +1406,11 @@ describe("ChartDataPatch with templates from other applications", () => {
                     '<cs:colorStyle xmlns:cs="http://schemas.microsoft.com/office/drawing/2012/chartStyle" meth="cycle" id="10"/>',
                 "word/embeddings/Microsoft_Excel_Worksheet.xlsx": new Uint8Array([80, 75, 3, 4]),
                 "word/embeddings/Microsoft_Excel_Worksheet1.xlsx": null,
-            }).then(async (template) => {
+            }).then((template) => {
                 // Word gives workbooks a content type by their extension, and charts' styles and colours their own
-                const zip = await JSZip.loadAsync(template);
-                zip.file(
-                    "[Content_Types].xml",
-                    (await readText(zip, "[Content_Types].xml"))
+                const zip = zips.unzip(template);
+                return rezip(zip, {
+                    "[Content_Types].xml": readText(zip, "[Content_Types].xml")
                         .replace(/<Override[^>]*Microsoft_Excel_Worksheet1\.xlsx"\/>/, "")
                         .replace(
                             "</Types>",
@@ -1418,15 +1418,14 @@ describe("ChartDataPatch with templates from other applications", () => {
                                 '<Override PartName="/word/charts/style1.xml" ContentType="application/vnd.ms-office.chartstyle+xml"/>' +
                                 '<Override PartName="/word/charts/colors1.xml" ContentType="application/vnd.ms-office.chartcolorstyle+xml"/></Types>',
                         ),
-                );
-                return zip.generateAsync({ type: "uint8array" });
+                });
             });
 
         it("should replace its data, keeping its style, colours, extensions and Office's ids of the series it keeps", async () => {
             const zip = await patchChart(await wordTemplate(), categoryData(2, 5));
-            await checkPackage(zip);
+            checkPackage(zip);
 
-            const [chart] = await chartsIn(zip);
+            const [chart] = chartsIn(zip);
             expect(seriesIn(chart).map(({ name, categories, values }) => ({ name, categories, values }))).to.deep.equal(
                 expectedSeries(categoryData(2, 5)),
             );
@@ -1434,23 +1433,23 @@ describe("ChartDataPatch with templates from other applications", () => {
                 "{00000000-6F3E-4E1C-9D9A-3C0E4B3A1C01}",
                 "{00000001-6F3E-4E1C-9D9A-3C0E4B3A1C01}",
             ]);
-            const text = await readText(zip, chart.path);
+            const text = readText(zip, chart.path);
             expect(text).to.contain('<c14:style val="102"/>');
             expect(text).to.contain('<c16r3:dispNaAsBlank val="1"/>');
             expect(text).to.contain('<c:externalData r:id="rId3"><c:autoUpdate val="0"/></c:externalData>');
 
-            const relationships = await relationshipsOf(zip, chart.path);
+            const relationships = relationshipsOf(zip, chart.path);
             expect(relationships.map(({ id, path }) => `${id} ${path}`)).to.deep.equal([
                 "rId3 word/embeddings/Microsoft_Excel_Worksheet1.xlsx",
                 "rId2 word/charts/colors1.xml",
                 "rId1 word/charts/style1.xml",
             ]);
-            expect(zip.file("word/embeddings/Microsoft_Excel_Worksheet.xlsx")).to.equal(null);
-            expect(await readText(zip, "word/charts/style1.xml")).to.contain('id="201"');
+            expect(zip.has("word/embeddings/Microsoft_Excel_Worksheet.xlsx")).to.equal(false);
+            expect(readText(zip, "word/charts/style1.xml")).to.contain('id="201"');
         });
 
         it("should give new series no ids of Office's, and the next colours", async () => {
-            const [chart] = await chartsIn(await patchChart(await wordTemplate(), categoryData(5, 2)));
+            const [chart] = chartsIn(await patchChart(await wordTemplate(), categoryData(5, 2)));
             const series = descendantsOf(chart.chartSpace, "c:ser");
             expect(series.map((one) => descendantsOf(one, "c16:uniqueId").length)).to.deep.equal([1, 1, 1, 0, 0]);
             expect(series.map((one) => valueOf(descendantsOf(childOf(one, "c:spPr"), "a:schemeClr")[0]))).to.deep.equal([
@@ -1463,7 +1462,7 @@ describe("ChartDataPatch with templates from other applications", () => {
         });
 
         it("should describe it without a title, as Word's chart has none of its own", async () => {
-            const [chart] = await chartsIn(await patchChart(await wordTemplate(), categoryData(1, 1)));
+            const [chart] = chartsIn(await patchChart(await wordTemplate(), categoryData(1, 1)));
             expect(attributeOf(chart.properties, "descr")).to.equal("Column chart. S1: C1 10.");
         });
     });
@@ -1474,9 +1473,9 @@ describe("ChartDataPatch with templates from other applications", () => {
                 await templateWithForeignChart(LIBREOFFICE_CHART, LIBREOFFICE_CHART_RELATIONSHIPS),
                 categoryData(3, 4),
             );
-            await checkPackage(zip);
+            checkPackage(zip);
 
-            const [chart] = await chartsIn(zip);
+            const [chart] = chartsIn(zip);
             expect(seriesIn(chart).map(({ name, values }) => ({ name, values }))).to.deep.equal(
                 expectedSeries(categoryData(3, 4)).map(({ name, values }) => ({ name, values })),
             );
@@ -1485,7 +1484,7 @@ describe("ChartDataPatch with templates from other applications", () => {
         });
 
         it("should keep its hex colours, and give a new series the next of the theme's accents", async () => {
-            const [chart] = await chartsIn(
+            const [chart] = chartsIn(
                 await patchChart(await templateWithForeignChart(LIBREOFFICE_CHART, LIBREOFFICE_CHART_RELATIONSHIPS), categoryData(3, 2)),
             );
             const colors = descendantsOf(chart.chartSpace, "c:ser").map((one) => {
@@ -1496,7 +1495,7 @@ describe("ChartDataPatch with templates from other applications", () => {
         });
 
         it("should describe it with its title", async () => {
-            const [chart] = await chartsIn(
+            const [chart] = chartsIn(
                 await patchChart(await templateWithForeignChart(LIBREOFFICE_CHART, LIBREOFFICE_CHART_RELATIONSHIPS), categoryData(1, 1)),
             );
             expect(attributeOf(chart.properties, "descr")).to.equal("Column chart, Sales. S1: C1 10.");
@@ -1515,8 +1514,8 @@ describe("ChartDataPatch with templates from other applications", () => {
 
         const patchPlotArea = async (groups: string, data: ChartDataPatchOptions = categoryData(2, 3), axes = AXES): Promise<Chart> => {
             const zip = await patchChart(await templateWithForeignChart(plotAreaOf(groups, axes), relationships), data);
-            await checkPackage(zip);
-            return (await chartsIn(zip))[0];
+            checkPackage(zip);
+            return chartsIn(zip)[0];
         };
 
         it("should replace literal data, which isn't in a workbook, keeping its number format", async () => {
@@ -1652,11 +1651,11 @@ describe("ChartDataPatch with templates from other applications", () => {
         });
 
         it("should patch a chart whose XML is laid out with spaces and line breaks", async () => {
-            const template = await JSZip.loadAsync(await templateOf({ chart: TEMPLATES.pie }));
-            const pretty = (await readText(template, "word/charts/chart1.xml")).replace(/></g, ">\n    <");
+            const template = zips.unzip(await templateOf({ chart: TEMPLATES.pie }));
+            const pretty = readText(template, "word/charts/chart1.xml").replace(/></g, ">\n    <");
             const zip = await patchChart(await templateWithFiles({ "word/charts/chart1.xml": pretty }, TEMPLATES.pie), categoryData(1, 5));
-            await checkPackage(zip);
-            expect(seriesIn((await chartsIn(zip))[0])[0].values).to.deep.equal(["10", "11", "12", "13", "14"]);
+            checkPackage(zip);
+            expect(seriesIn(chartsIn(zip)[0])[0].values).to.deep.equal(["10", "11", "12", "13", "14"]);
         });
 
         it("should count dates from 1900 in a chart counting them from 1904", async () => {
@@ -1665,7 +1664,7 @@ describe("ChartDataPatch with templates from other applications", () => {
                 TEMPLATES.dates,
             );
             const zip = await patchChart(template, { categories: [new Date("2025-01-01")], series: [{ name: "D", values: [1] }] });
-            const [chart] = await chartsIn(zip);
+            const [chart] = chartsIn(zip);
             expect(valueOf(childOf(chart.chartSpace, "c:date1904"))).to.equal("0");
             expect(seriesIn(chart)[0].categories).to.deep.equal(["45658"]);
         });
@@ -1674,22 +1673,22 @@ describe("ChartDataPatch with templates from other applications", () => {
             const template = await templateWithChart((part) =>
                 part.replace("</c:chartSpace>", '<c:userShapes r:id="rIdShapes"/></c:chartSpace>'),
             );
-            const zip0 = await JSZip.loadAsync(template);
+            const zip0 = zips.unzip(template);
             const relationshipsPath = "word/charts/_rels/chart1.xml.rels";
-            zip0.file(
-                relationshipsPath,
-                (await readText(zip0, relationshipsPath)).replace(
-                    "</Relationships>",
-                    '<Relationship Id="rIdShapes" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/chartUserShapes" Target="../drawings/drawing1.xml"/></Relationships>',
-                ),
+            const zip = await patchChart(
+                rezip(zip0, {
+                    [relationshipsPath]: readText(zip0, relationshipsPath).replace(
+                        "</Relationships>",
+                        '<Relationship Id="rIdShapes" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/chartUserShapes" Target="../drawings/drawing1.xml"/></Relationships>',
+                    ),
+                    "word/drawings/drawing1.xml": '<c:userShapes xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart"/>',
+                }),
             );
-            zip0.file("word/drawings/drawing1.xml", '<c:userShapes xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart"/>');
-            const zip = await patchChart(await zip0.generateAsync({ type: "uint8array" }));
 
-            const [chart] = await chartsIn(zip);
-            expect(await readText(zip, chart.path)).to.contain('<c:userShapes r:id="rIdShapes"/>');
-            expect((await relationshipsOf(zip, chart.path)).map(({ path }) => path)).to.include("word/drawings/drawing1.xml");
-            expect(zip.file("word/drawings/drawing1.xml")).to.not.equal(null);
+            const [chart] = chartsIn(zip);
+            expect(readText(zip, chart.path)).to.contain('<c:userShapes r:id="rIdShapes"/>');
+            expect(relationshipsOf(zip, chart.path).map(({ path }) => path)).to.include("word/drawings/drawing1.xml");
+            expect(zip.has("word/drawings/drawing1.xml")).to.equal(true);
         });
     });
 
@@ -1708,10 +1707,10 @@ describe("ChartDataPatch with templates from other applications", () => {
                 },
             });
             const zip = await patchChart(template);
-            await checkPackage(zip);
+            checkPackage(zip);
 
-            const [chart] = await chartsIn(zip);
-            expect(await readText(zip, chart.path)).to.match(
+            const [chart] = chartsIn(zip);
+            expect(readText(zip, chart.path)).to.match(
                 /<c:txPr>.*<\/c:txPr><c:externalData r:id="rId1"><c:autoUpdate val="0"\/><\/c:externalData><\/c:chartSpace>$/,
             );
             expect(chart.workbook).to.equal("word/embeddings/Microsoft_Excel_Worksheet1.xlsx");
@@ -1729,8 +1728,8 @@ describe("ChartDataPatch with templates from other applications", () => {
                 },
             });
             const zip = await patchChart(template);
-            await checkPackage(zip);
-            expect(await readText(zip, "word/charts/chart1.xml")).to.match(
+            checkPackage(zip);
+            expect(readText(zip, "word/charts/chart1.xml")).to.match(
                 /<\/c:txPr><c:externalData r:id="rId1"><c:autoUpdate val="0"\/><\/c:externalData><c:printSettings\/><\/c:chartSpace>$/,
             );
         });
@@ -1740,36 +1739,35 @@ describe("ChartDataPatch with templates from other applications", () => {
                 ...WITHOUT_WORKBOOK,
                 files: { ...WITHOUT_WORKBOOK.files, "word/charts/_rels/chart1.xml.rels": chartRelationships("") },
             });
-            const id = workbookIdOf(await readText(await JSZip.loadAsync(template), "word/charts/chart1.xml"));
+            const id = workbookIdOf(readText(zips.unzip(template), "word/charts/chart1.xml"));
             const zip = await patchChart(template);
-            await checkPackage(zip);
+            checkPackage(zip);
 
-            expect((await relationshipsOf(zip, "word/charts/chart1.xml")).map(({ id: own, path }) => `${own} ${path}`)).to.deep.equal([
+            expect(relationshipsOf(zip, "word/charts/chart1.xml").map(({ id: own, path }) => `${own} ${path}`)).to.deep.equal([
                 `${id} word/embeddings/Microsoft_Excel_Worksheet1.xlsx`,
             ]);
         });
 
         it("should point a reference to a workbook the package doesn't have to the new one", async () => {
             const zip = await patchChart(await templateWith(WITHOUT_WORKBOOK));
-            await checkPackage(zip);
-            expect((await chartsIn(zip))[0].workbook).to.equal("word/embeddings/Microsoft_Excel_Worksheet1.xlsx");
+            checkPackage(zip);
+            expect(chartsIn(zip)[0].workbook).to.equal("word/embeddings/Microsoft_Excel_Worksheet1.xlsx");
         });
 
         it("should embed the new data in place of a workbook linked from outside the document", async () => {
             const template = await templateWith(WITHOUT_WORKBOOK);
-            const id = workbookIdOf(await readText(await JSZip.loadAsync(template), "word/charts/chart1.xml"));
+            const id = workbookIdOf(readText(zips.unzip(template), "word/charts/chart1.xml"));
             const relationshipsPath = "word/charts/_rels/chart1.xml.rels";
-            const linked = await JSZip.loadAsync(template);
-            linked.file(
-                relationshipsPath,
-                chartRelationships(
-                    `<Relationship Id="${id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject" Target="file:///C:\\Reports\\Sales.xlsx" TargetMode="External"/>`,
-                ),
+            const zip = await patchChart(
+                rezip(zips.unzip(template), {
+                    [relationshipsPath]: chartRelationships(
+                        `<Relationship Id="${id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject" Target="file:///C:\\Reports\\Sales.xlsx" TargetMode="External"/>`,
+                    ),
+                }),
             );
-            const zip = await patchChart(await linked.generateAsync({ type: "uint8array" }));
-            await checkPackage(zip);
+            checkPackage(zip);
 
-            expect(await readText(zip, relationshipsPath)).to.equal(
+            expect(readText(zip, relationshipsPath)).to.equal(
                 chartRelationships(
                     `<Relationship Id="${id}" Type="${PACKAGE_TYPE}" Target="../embeddings/Microsoft_Excel_Worksheet1.xlsx"/>`,
                 ),
@@ -1779,13 +1777,13 @@ describe("ChartDataPatch with templates from other applications", () => {
         it("should keep a workbook the chart doesn't refer to", async () => {
             const template = await templateWith({ files: { "word/embeddings/Other.xlsx": new Uint8Array([1]) } });
             const zip = await patchChart(template);
-            expect(zip.file("word/embeddings/Other.xlsx")).to.not.equal(null);
-            expect(zip.file("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")).to.equal(null);
+            expect(zip.has("word/embeddings/Other.xlsx")).to.equal(true);
+            expect(zip.has("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")).to.equal(false);
         });
 
         it("should replace an old Excel workbook, and its content type", async () => {
             const template = await templateWith(WITHOUT_WORKBOOK);
-            const id = workbookIdOf(await readText(await JSZip.loadAsync(template), "word/charts/chart1.xml"));
+            const id = workbookIdOf(readText(zips.unzip(template), "word/charts/chart1.xml"));
             const old = await templateWith({
                 ...WITHOUT_WORKBOOK,
                 files: {
@@ -1807,31 +1805,29 @@ describe("ChartDataPatch with templates from other applications", () => {
                 },
             });
             const zip = await patchChart(old);
-            await checkPackage(zip);
-            expect(zip.file("word/embeddings/Microsoft_Excel_97-2003_Worksheet1.xls")).to.equal(null);
-            expect(await readText(zip, "[Content_Types].xml")).to.not.contain("97-2003");
+            checkPackage(zip);
+            expect(zip.has("word/embeddings/Microsoft_Excel_97-2003_Worksheet1.xls")).to.equal(false);
+            expect(readText(zip, "[Content_Types].xml")).to.not.contain("97-2003");
         });
 
         it("should keep a workbook two charts share when only one is patched, and remove it when both are", async () => {
-            const template = await JSZip.loadAsync(await templateOf({ a: TEMPLATES.column, b: TEMPLATES.line }));
+            const template = zips.unzip(await templateOf({ a: TEMPLATES.column, b: TEMPLATES.line }));
             // Chart 2 refers to chart 1's workbook, and its own is removed
             const second = "word/charts/_rels/chart2.xml.rels";
-            template.file(second, (await readText(template, second)).replace("Worksheet2", "Worksheet1"));
-            template.remove("word/embeddings/Microsoft_Excel_Worksheet2.xlsx");
-            template.file(
-                "[Content_Types].xml",
-                (await readText(template, "[Content_Types].xml")).replace(/<Override[^>]*Worksheet2\.xlsx"\/>/, ""),
-            );
-            const shared = await template.generateAsync({ type: "uint8array" });
+            const shared = rezip(template, {
+                [second]: readText(template, second).replace("Worksheet2", "Worksheet1"),
+                "word/embeddings/Microsoft_Excel_Worksheet2.xlsx": null,
+                "[Content_Types].xml": readText(template, "[Content_Types].xml").replace(/<Override[^>]*Worksheet2\.xlsx"\/>/, ""),
+            });
 
             const one = await patch(shared, { a: new ChartDataPatch(categoryData(1, 1)) });
-            await checkPackage(one);
-            const [a, b] = await chartsIn(one);
+            checkPackage(one);
+            const [a, b] = chartsIn(one);
             expect(b.workbook).to.equal("word/embeddings/Microsoft_Excel_Worksheet1.xlsx");
             expect(a.workbook).to.equal("word/embeddings/Microsoft_Excel_Worksheet2.xlsx");
 
             const both = await patch(shared, { a: new ChartDataPatch(categoryData(1, 1)), b: new ChartDataPatch(categoryData(1, 1)) });
-            await checkPackage(both);
+            checkPackage(both);
             expect(filesOf(both).filter((path) => path.includes("embeddings"))).to.deep.equal([
                 "word/embeddings/Microsoft_Excel_Worksheet2.xlsx",
                 "word/embeddings/Microsoft_Excel_Worksheet3.xlsx",
@@ -1844,9 +1840,9 @@ describe("ChartDataPatch with templates from other applications", () => {
                 return document.replace(paragraph, paragraph + paragraph.replace(/name="chart"/, 'name="copy"'));
             });
             const zip = await patchChart(template, categoryData(4, 2));
-            await checkPackage(zip);
+            checkPackage(zip);
 
-            const charts = await chartsIn(zip);
+            const charts = chartsIn(zip);
             expect(charts).to.have.length(2);
             expect(charts[0].path).to.equal(charts[1].path);
             expect(seriesIn(charts[0])).to.have.length(4);
@@ -1904,7 +1900,7 @@ describe("ChartDataPatch with templates from other applications", () => {
                 ),
             );
             const zip = await patchChart(oneChart, categoryData(3, 3));
-            expect(await readText(zip, "word/document.xml")).to.contain("Column chart, Sales. S1");
+            expect(readText(zip, "word/document.xml")).to.contain("Column chart, Sales. S1");
 
             const twoCharts = await templateWithDrawing((document) => document.replace(/(<c:chart [^>]*\/>)/, "$1$1"));
             await expectError(twoCharts, "It is a group of 2 charts. Put the placeholder in the alt text of one of them");
@@ -2001,8 +1997,8 @@ describe("ChartDataPatch with templates from other applications", () => {
                 ),
             );
             const zip = await patchChart(template, categoryData(1, 3));
-            await checkPackage(zip);
-            expect(await readText(zip, "word/charts/chart1.xml")).to.not.contain("errBars");
+            checkPackage(zip);
+            expect(readText(zip, "word/charts/chart1.xml")).to.not.contain("errBars");
         });
 
         it("should throw for data of the wrong kind for the chart's type", async () => {
@@ -2124,7 +2120,7 @@ describe("ChartDataPatch with templates from other applications", () => {
         it("should throw for charts it can't patch only when they have a placeholder", async () => {
             const template = await templateWithChart((part) => part.replace(/c:barChart/g, "c:stockChart"));
             const zip = await patch(template, { other: new ChartDataPatch(categoryData(1, 1)) });
-            expect(await readText(zip, "word/charts/chart1.xml")).to.contain("c:stockChart");
+            expect(readText(zip, "word/charts/chart1.xml")).to.contain("c:stockChart");
         });
     });
 });
@@ -2339,13 +2335,13 @@ describe("ChartDataPatch with extreme data", () => {
                 const once = await patch(await templateOf({ chart: TEMPLATES[template] }), {
                     chart: new ChartDataPatch({ ...data, description: "{{chart}}" }),
                 });
-                await checkPackage(once);
+                checkPackage(once);
                 const other = dataFor(template, template === "pie" ? 1 : whole(4), whole(5));
-                const twice = await patch(await once.generateAsync({ type: "uint8array" }), { chart: new ChartDataPatch(other) });
-                await checkPackage(twice);
-                expect(
-                    seriesIn((await chartsIn(twice))[0]).map(({ name, categories, values }) => ({ name, categories, values })),
-                ).to.deep.equal(expectedSeries(other));
+                const twice = await patch(rezip(once), { chart: new ChartDataPatch(other) });
+                checkPackage(twice);
+                expect(seriesIn(chartsIn(twice)[0]).map(({ name, categories, values }) => ({ name, categories, values }))).to.deep.equal(
+                    expectedSeries(other),
+                );
             });
         }
     });
@@ -2359,10 +2355,10 @@ describe("ChartDataPatch with the newer chart types and options", () => {
     const patchTemplate = async (
         template: ChartRunOptions,
         data: ChartDataPatchOptions,
-    ): Promise<{ readonly zip: JSZip; readonly chart: Chart }> => {
+    ): Promise<{ readonly zip: Package; readonly chart: Chart }> => {
         const zip = await patch(await templateOf({ chart: template }), { chart: new ChartDataPatch(data) });
-        await checkPackage(zip);
-        return { zip, chart: (await chartsIn(zip))[0] };
+        checkPackage(zip);
+        return { zip, chart: chartsIn(zip)[0] };
     };
     const expectError = async (template: ChartRunOptions, data: ChartDataPatchOptions, message: string): Promise<void> => {
         await expect(patch(await templateOf({ chart: template }), { chart: new ChartDataPatch(data) })).rejects.toThrow(
@@ -2437,7 +2433,7 @@ describe("ChartDataPatch with the newer chart types and options", () => {
             // eslint-disable-next-line functional/immutable-data, functional/prefer-readonly-type -- Changed after the patch is made
             (categories[0] as { name: string }).name = "Changed";
             const zip = await patch(await templateOf({ chart: TEMPLATES.column }), { chart: chartPatch });
-            const [chart] = await chartsIn(zip);
+            const [chart] = chartsIn(zip);
             expect(attributeOf(chart.properties, "descr")).to.equal("Column chart, Sales. S: 2025 Q1 1, 2025 Q2 2.");
         });
 
@@ -2561,14 +2557,14 @@ describe("ChartDataPatch with the newer chart types and options", () => {
                 ...prices,
                 categories: [new Date("2025-01-01"), new Date("2025-02-01"), new Date("2025-03-01")],
             });
-            await checkPackage(dated);
-            const [datedChart] = await chartsIn(dated);
+            checkPackage(dated);
+            const [datedChart] = chartsIn(dated);
             expect(descendantsOf(datedChart.chartSpace, "c:dateAx")).to.have.length(1);
             expect(descendantsOf(datedChart.chartSpace, "c:baseTimeUnit").map(valueOf)).to.deep.equal(["days"]);
 
             const text = await patchChart(template, prices);
-            await checkPackage(text);
-            const [textChart] = await chartsIn(text);
+            checkPackage(text);
+            const [textChart] = chartsIn(text);
             expect(descendantsOf(textChart.chartSpace, "c:dateAx")).to.deep.equal([]);
             expect(descendantsOf(textChart.chartSpace, "c:catAx")).to.have.length(1);
         });
@@ -2582,7 +2578,7 @@ describe("ChartDataPatch with the newer chart types and options", () => {
             // eslint-disable-next-line functional/immutable-data, functional/prefer-readonly-type -- Changed after the patch is made
             (names as { close: string }).close = "Changed";
             const zip = await patch(await templateOf({ chart: HIGH_LOW_CLOSE }), { chart: chartPatch });
-            const [chart] = await chartsIn(zip);
+            const [chart] = chartsIn(zip);
             expect(seriesIn(chart).map(({ name, values }) => `${name} ${values[0]}`)).to.deep.equal(["High 12", "Low 10", "Last 11"]);
         });
 
@@ -2654,8 +2650,8 @@ describe("ChartDataPatch with the newer chart types and options", () => {
                 changes: { "word/charts/chart1.xml": (part: string) => part.replace('<c:secondPiePt val="2"/>', "<c:secondPiePt/>") },
             });
             const zip = await patchChart(template, categoryData(1, 4));
-            await checkPackage(zip);
-            const [chart] = await chartsIn(zip);
+            checkPackage(zip);
+            const [chart] = chartsIn(zip);
             expect(descendantsOf(chart.chartSpace, "c:secondPiePt").map(valueOf)).to.deep.equal(["3"]);
         });
 

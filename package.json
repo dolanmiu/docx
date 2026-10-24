@@ -182,8 +182,7 @@
     ],
     "dependencies": {
         "@types/node": "^26.6.2",
-        "hash.js": "^1.1.7",
-        "jszip": "^3.10.1",
+        "fflate": "^0.8.3",
         "nanoid": "^6.0.1"
     },
     "author": "Dolan Miu",

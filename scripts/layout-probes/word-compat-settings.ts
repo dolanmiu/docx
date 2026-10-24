@@ -68,7 +68,7 @@
 // cspell:ignore Calibri Mincho incomprehensibilities kerned Punct conv Txbx
 import { mkdirSync, writeFileSync } from "node:fs";
 
-import JSZip from "jszip";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 
 import {
     AlignmentType,
@@ -478,14 +478,14 @@ const main = async (): Promise<void> => {
         ...[["", [], []] as const, ...SECOND_ROUND, TOGETHER].map(([name, settings, words]) => [2, name, settings, words] as const),
     ];
     for (const [round, name, settings, words] of documents) {
-        const zip = await JSZip.loadAsync(await Packer.toBuffer(documentOf(round)));
-        const styles = await zip.file("word/styles.xml")!.async("string");
-        zip.file("word/styles.xml", styles.replace("</w:styles>", `${STYLES}</w:styles>`));
-        const xml = await zip.file("word/settings.xml")!.async("string");
-        zip.file("word/settings.xml", xml.replace("<w:compat>", `<w:compat>${compatibilityOf(settings, words)}`));
+        const zip = unzipSync(await Packer.toBuffer(documentOf(round)), { filter: ({ name }) => !name.endsWith("/") });
+        const styles = strFromU8(zip["word/styles.xml"]);
+        zip["word/styles.xml"] = strToU8(styles.replace("</w:styles>", `${STYLES}</w:styles>`));
+        const xml = strFromU8(zip["word/settings.xml"]);
+        zip["word/settings.xml"] = strToU8(xml.replace("<w:compat>", `<w:compat>${compatibilityOf(settings, words)}`));
         const base = round === 1 ? "word-compat-settings" : "word-compat-settings2";
         const file = name === "" ? base : `${base}-${name}`;
-        writeFileSync(`build/word-probes/${file}.docx`, await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }));
+        writeFileSync(`build/word-probes/${file}.docx`, zipSync(zip, { level: 6 }));
     }
 };
 

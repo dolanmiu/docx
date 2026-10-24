@@ -38,7 +38,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { deflateSync } from "node:zlib";
 
-import JSZip from "jszip";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 
 import {
     AlignmentType,
@@ -540,15 +540,15 @@ const doc = new Document({
 });
 
 const main = async (): Promise<void> => {
-    const zip = await JSZip.loadAsync(await Packer.toBuffer(doc));
+    const zip = unzipSync(await Packer.toBuffer(doc), { filter: ({ name }) => !name.endsWith("/") });
     const xml = INJECTIONS.reduce(
         (text, [marker, replacement]) =>
             typeof replacement === "string" ? text.replace(marker, replacement) : text.replace(marker, replacement),
-        await zip.file("word/document.xml")!.async("string"),
+        strFromU8(zip["word/document.xml"]),
     );
-    zip.file("word/document.xml", xml);
+    zip["word/document.xml"] = strToU8(xml);
     mkdirSync("build/word-probes", { recursive: true });
-    writeFileSync("build/word-probes/word-watertight-text.docx", await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }));
+    writeFileSync("build/word-probes/word-watertight-text.docx", zipSync(zip, { level: 6 }));
 };
 
 void main();

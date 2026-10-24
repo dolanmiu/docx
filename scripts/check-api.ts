@@ -42,7 +42,9 @@ type PackageJson = {
 };
 
 const ROOT = resolve(import.meta.dirname, "..");
-// Inside the repository, so the declarations' imports of jszip and Node's types resolve
+// Inside the repository, so the declarations' imports of Node's types resolve. Those of releases up to 9.14.0 also
+// import jszip, which isn't installed any more, so what they take from it is any, which the build's types are
+// compatible with
 const WORK = join(ROOT, "build", "api-check");
 
 const readPackage = (directory: string): PackageJson => JSON.parse(readFileSync(join(directory, "package.json"), "utf8")) as PackageJson;

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention -- The keys of objects here are paths of parts in a package */
-import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
+
+import { textOf, unzip, zip } from "tests/zip";
 
 import { DrawingPatch } from "./drawing-patch";
 import { type IPatch, PatchType, patchDocument } from "./from-docx";
@@ -103,7 +104,7 @@ const CONTENT_TYPES =
     `</Types>`;
 
 // A document with a picture whose description is {{logo}}, and the files given
-const templateWith = (files: Readonly<Record<string, string | Uint8Array | undefined>> = {}): Promise<Buffer> => {
+const templateWith = (files: Readonly<Record<string, string | Uint8Array | undefined>> = {}): Uint8Array => {
     const all: Readonly<Record<string, string | Uint8Array | undefined>> = {
         "[Content_Types].xml": CONTENT_TYPES,
         "_rels/.rels": relationshipsOf(
@@ -114,33 +115,25 @@ const templateWith = (files: Readonly<Record<string, string | Uint8Array | undef
         "word/media/image1.png": TEMPLATE_IMAGE,
         ...files,
     };
-    const zip = new JSZip();
-    for (const [path, content] of Object.entries(all)) {
-        if (content !== undefined) {
-            zip.file(path, content);
-        }
-    }
-    return zip.generateAsync({ type: "nodebuffer" });
+    return zip(
+        Object.fromEntries(Object.entries(all).flatMap(([path, content]) => (content === undefined ? [] : [[path, content] as const]))),
+    );
 };
 
-const patch = async (data: Buffer, patches: Readonly<Record<string, IPatch | DrawingPatch>>): Promise<JSZip> =>
-    JSZip.loadAsync(await patchDocument({ outputType: "nodebuffer", data, patches }));
+const patch = async (
+    data: Uint8Array,
+    patches: Readonly<Record<string, IPatch | DrawingPatch>>,
+): Promise<ReadonlyMap<string, Uint8Array>> => unzip(await patchDocument({ outputType: "nodebuffer", data, patches }));
 
-const read = async (zip: JSZip, path: string): Promise<string | undefined> => {
-    const text = await zip.file(path)?.async("text");
-    return text;
-};
+const read = (output: ReadonlyMap<string, Uint8Array>, path: string): string | undefined => textOf(output, path);
 
-const bytes = async (zip: JSZip, path: string): Promise<Uint8Array | undefined> => {
-    const data = await zip.file(path)?.async("uint8array");
-    return data;
-};
+const bytes = (output: ReadonlyMap<string, Uint8Array>, path: string): Uint8Array | undefined => output.get(path);
 
 // The template patched with an image patch for {{logo}}
-const patchLogo = async (
+const patchLogo = (
     options: ImagePatchOptions = { type: "jpg", data: JPEG },
     files: Readonly<Record<string, string | Uint8Array | undefined>> = {},
-): Promise<JSZip> => patch(await templateWith(files), { logo: new ImagePatch(options) });
+): Promise<ReadonlyMap<string, Uint8Array>> => patch(templateWith(files), { logo: new ImagePatch(options) });
 
 describe("ImagePatch", () => {
     describe("#constructor()", () => {
@@ -151,8 +144,8 @@ describe("ImagePatch", () => {
         });
 
         it("should read the type of an image given without one, as JavaScript can, from its data", async () => {
-            const zip = await patchLogo({ data: GIF } as unknown as ImagePatchOptions);
-            expect(await bytes(zip, "word/media/image1.gif")).to.deep.equal(GIF);
+            const output = await patchLogo({ data: GIF } as unknown as ImagePatchOptions);
+            expect(bytes(output, "word/media/image1.gif")).to.deep.equal(GIF);
         });
 
         it("should throw for an image without a type whose data isn't a PNG, JPEG, GIF or BMP file", () => {
@@ -198,16 +191,16 @@ describe("ImagePatch", () => {
 
     describe("patching a picture", () => {
         it("should point the picture to the new image, in word/media with its content type, and remove the template's", async () => {
-            const zip = await patchLogo();
+            const output = await patchLogo();
 
-            const document = await read(zip, "word/document.xml");
+            const document = read(output, "word/document.xml");
             expect(document).to.contain('<a:blip r:embed="rId6"/>');
-            expect(await read(zip, "word/_rels/document.xml.rels")).to.equal(
+            expect(read(output, "word/_rels/document.xml.rels")).to.equal(
                 relationshipsOf(relationship("rId6", IMAGE_RELATIONSHIP, "media/image1.jpg")),
             );
-            expect(await bytes(zip, "word/media/image1.jpg")).to.deep.equal(JPEG);
-            expect(zip.file("word/media/image1.png")).to.equal(null);
-            expect(await read(zip, "[Content_Types].xml")).to.contain(
+            expect(bytes(output, "word/media/image1.jpg")).to.deep.equal(JPEG);
+            expect(output.has("word/media/image1.png")).to.equal(false);
+            expect(read(output, "[Content_Types].xml")).to.contain(
                 '<Override ContentType="image/jpeg" PartName="/word/media/image1.jpg"/>',
             );
         });
@@ -219,12 +212,12 @@ describe("ImagePatch", () => {
                 ["gif", GIF, "image/gif"],
                 ["bmp", BMP, "image/bmp"],
             ] as const) {
-                const zip = await patchLogo({ type, data });
+                const output = await patchLogo({ type, data });
                 // The template's image is image1.png
                 const path = `word/media/image${type === "png" ? 2 : 1}.${type}`;
 
-                expect(await bytes(zip, path), type).to.deep.equal(data);
-                expect(await read(zip, "[Content_Types].xml"), type).to.contain(
+                expect(bytes(output, path), type).to.deep.equal(data);
+                expect(read(output, "[Content_Types].xml"), type).to.contain(
                     `<Override ContentType="${contentType}" PartName="/${path}"/>`,
                 );
             }
@@ -233,71 +226,71 @@ describe("ImagePatch", () => {
         it("should take image data as a Buffer, an ArrayBuffer or a data URI, as an ImageRun does", async () => {
             const slice = Buffer.from([0, ...PNG]).subarray(1);
             for (const data of [slice, PNG.slice().buffer, `data:image/png;base64,${Buffer.from(PNG).toString("base64")}`]) {
-                const zip = await patchLogo({ type: "png", data });
-                expect(await bytes(zip, "word/media/image2.png")).to.deep.equal(PNG);
+                const output = await patchLogo({ type: "png", data });
+                expect(bytes(output, "word/media/image2.png")).to.deep.equal(PNG);
             }
         });
 
         it("should keep the template's image, and its relationship, for the other pictures that show it", async () => {
-            const zip = await patchLogo(undefined, {
+            const output = await patchLogo(undefined, {
                 "word/document.xml": documentOf(
                     pictureOf({ descr: "{{logo}}" }) + pictureOf({ descr: "Another picture of the template's image" }),
                 ),
             });
 
-            const document = await read(zip, "word/document.xml");
+            const document = read(output, "word/document.xml");
             expect(document).to.contain('<a:blip r:embed="rId6"/>');
             expect(document).to.contain('<a:blip r:embed="rId5"/>');
-            const relationships = await read(zip, "word/_rels/document.xml.rels");
+            const relationships = read(output, "word/_rels/document.xml.rels");
             expect(relationships).to.contain(relationship("rId5", IMAGE_RELATIONSHIP, "media/image1.png"));
             expect(relationships).to.contain(relationship("rId6", IMAGE_RELATIONSHIP, "media/image1.jpg"));
-            expect(await bytes(zip, "word/media/image1.png")).to.deep.equal(TEMPLATE_IMAGE);
+            expect(bytes(output, "word/media/image1.png")).to.deep.equal(TEMPLATE_IMAGE);
         });
 
         it("should keep the template's image for a picture in another part that shows it", async () => {
-            const zip = await patchLogo(undefined, {
+            const output = await patchLogo(undefined, {
                 "word/header1.xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:hdr ${NAMESPACES}>${pictureOf({})}</w:hdr>`,
                 "word/_rels/header1.xml.rels": relationshipsOf(relationship("rId5", IMAGE_RELATIONSHIP, "media/image1.png")),
             });
 
-            expect(await read(zip, "word/_rels/document.xml.rels")).to.not.contain("media/image1.png");
-            expect(await bytes(zip, "word/media/image1.png")).to.deep.equal(TEMPLATE_IMAGE);
+            expect(read(output, "word/_rels/document.xml.rels")).to.not.contain("media/image1.png");
+            expect(bytes(output, "word/media/image1.png")).to.deep.equal(TEMPLATE_IMAGE);
         });
 
         it("should add the image once, for each picture the patch is for, in each part", async () => {
-            const zip = await patchLogo(undefined, {
+            const output = await patchLogo(undefined, {
                 "word/document.xml": documentOf(pictureOf({ descr: "{{logo}}" }) + pictureOf({ title: "{{logo}}" })),
                 "word/header1.xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:hdr ${NAMESPACES}>${pictureOf({ descr: "{{logo}}" })}</w:hdr>`,
                 "word/_rels/header1.xml.rels": relationshipsOf(relationship("rId5", IMAGE_RELATIONSHIP, "media/image1.png")),
             });
 
-            expect(Object.keys(zip.files).filter((path) => path.startsWith("word/media/") && !path.endsWith("/"))).to.deep.equal([
-                "word/media/image1.jpg",
-            ]);
-            expect(await read(zip, "word/document.xml")).to.not.contain('r:embed="rId5"');
-            expect(await read(zip, "word/_rels/header1.xml.rels")).to.equal(
+            expect([...output.keys()].filter((path) => path.startsWith("word/media/"))).to.deep.equal(["word/media/image1.jpg"]);
+            expect(read(output, "word/document.xml")).to.not.contain('r:embed="rId5"');
+            expect(read(output, "word/_rels/header1.xml.rels")).to.equal(
                 relationshipsOf(relationship("rId6", IMAGE_RELATIONSHIP, "media/image1.jpg")),
             );
-            expect(await read(zip, "word/header1.xml")).to.contain('<a:blip r:embed="rId6"/>');
-            expect(zip.file("word/media/image1.png")).to.equal(null);
+            expect(read(output, "word/header1.xml")).to.contain('<a:blip r:embed="rId6"/>');
+            expect(output.has("word/media/image1.png")).to.equal(false);
         });
 
         it("should give an image in a part in a folder of its own a relationship from that folder", async () => {
-            const zip = await patchLogo(undefined, {
+            const output = await patchLogo(undefined, {
                 "word/document.xml": documentOf(""),
                 "word/glossary/document.xml": documentOf(pictureOf({ descr: "{{logo}}" })),
                 "word/glossary/_rels/document.xml.rels": relationshipsOf(relationship("rId5", IMAGE_RELATIONSHIP, "../media/image1.png")),
             });
 
-            expect(await read(zip, "word/glossary/_rels/document.xml.rels")).to.contain(
+            expect(read(output, "word/glossary/_rels/document.xml.rels")).to.contain(
                 relationship("rId6", IMAGE_RELATIONSHIP, "../media/image1.jpg"),
             );
         });
 
         it("should keep the picture's size, position, wrapping, rotation, shape and border, and remove the crop of the template's image", async () => {
-            const zip = await patchLogo(undefined, { "word/document.xml": documentOf(pictureOf({ descr: "{{logo}}", floating: true })) });
+            const output = await patchLogo(undefined, {
+                "word/document.xml": documentOf(pictureOf({ descr: "{{logo}}", floating: true })),
+            });
 
-            const document = await read(zip, "word/document.xml");
+            const document = read(output, "word/document.xml");
             expect(document).to.contain('<wp:anchor distT="0" distB="0" distL="0" distR="0">');
             expect(document).to.contain('<wp:positionH relativeFrom="column"><wp:posOffset>0</wp:posOffset></wp:positionH>');
             expect(document).to.contain('<wp:extent cx="1905000" cy="952500"/>');
@@ -309,7 +302,7 @@ describe("ImagePatch", () => {
         });
 
         it("should keep the image's effects, such as its transparency, and its other attributes", async () => {
-            const zip = await patchLogo(undefined, {
+            const output = await patchLogo(undefined, {
                 "word/document.xml": documentOf(
                     pictureOf({
                         descr: "{{logo}}",
@@ -318,21 +311,21 @@ describe("ImagePatch", () => {
                 ),
             });
 
-            expect(await read(zip, "word/document.xml")).to.contain(
+            expect(read(output, "word/document.xml")).to.contain(
                 '<a:blip r:embed="rId6" cstate="print"><a:alphaModFix amt="50000"/><a:lum bright="20000"/></a:blip>',
             );
         });
 
         it("should give the picture a new size, in pixels", async () => {
-            const zip = await patchLogo({ type: "jpg", data: JPEG, transformation: { width: 100, height: 50.5 } });
+            const output = await patchLogo({ type: "jpg", data: JPEG, transformation: { width: 100, height: 50.5 } });
 
-            const document = await read(zip, "word/document.xml");
+            const document = read(output, "word/document.xml");
             expect(document).to.contain('<wp:extent cx="952500" cy="481013"/>');
             expect(document).to.contain('<a:ext cx="952500" cy="481013"/>');
         });
 
         it("should patch a picture without a size or properties of its own, which Word always writes", async () => {
-            const zip = await patchLogo(
+            const output = await patchLogo(
                 { type: "jpg", data: JPEG, transformation: { width: 100, height: 50 } },
                 {
                     "word/document.xml": documentOf(
@@ -344,42 +337,42 @@ describe("ImagePatch", () => {
                 },
             );
 
-            const document = await read(zip, "word/document.xml");
+            const document = read(output, "word/document.xml");
             expect(document).to.contain('<a:blip r:embed="rId6"/>');
             expect(document).to.not.contain("extent");
             expect(document).to.contain('<wp:docPr id="1" name="Picture 1"/>');
         });
 
         it("should give an image to a picture that had none", async () => {
-            const zip = await patchLogo(undefined, {
+            const output = await patchLogo(undefined, {
                 "word/document.xml": documentOf(pictureOf({ descr: "{{logo}}", blip: "<a:blip/>" })),
                 "word/_rels/document.xml.rels": undefined,
                 "word/media/image1.png": undefined,
             });
 
-            expect(await read(zip, "word/document.xml")).to.contain('<a:blip r:embed="rId1"/>');
-            expect(await read(zip, "word/_rels/document.xml.rels")).to.equal(
+            expect(read(output, "word/document.xml")).to.contain('<a:blip r:embed="rId1"/>');
+            expect(read(output, "word/_rels/document.xml.rels")).to.equal(
                 relationshipsOf(relationship("rId1", IMAGE_RELATIONSHIP, "media/image1.jpg")),
             );
         });
 
         it("should embed the image of a picture that was linked to a file, and remove the link", async () => {
             const link = relationship("rId7", IMAGE_RELATIONSHIP, "file:///C:/logo.png", "External");
-            const zip = await patchLogo(undefined, {
+            const output = await patchLogo(undefined, {
                 "word/document.xml": documentOf(pictureOf({ descr: "{{logo}}", blip: '<a:blip r:link="rId7"/>' })),
                 "word/_rels/document.xml.rels": relationshipsOf(link),
                 "word/media/image1.png": undefined,
             });
 
-            expect(await read(zip, "word/document.xml")).to.contain('<a:blip r:embed="rId8"/>');
-            const relationships = await read(zip, "word/_rels/document.xml.rels");
+            expect(read(output, "word/document.xml")).to.contain('<a:blip r:embed="rId8"/>');
+            const relationships = read(output, "word/_rels/document.xml.rels");
             expect(relationships).to.not.contain("rId7");
             expect(relationships).to.contain(relationship("rId8", IMAGE_RELATIONSHIP, "media/image1.jpg"));
         });
 
         it("should keep the picture's hyperlink", async () => {
             const link = relationship("rId7", HYPERLINK_RELATIONSHIP, "https://example.com", "External");
-            const zip = await patchLogo(undefined, {
+            const output = await patchLogo(undefined, {
                 "word/document.xml": documentOf(
                     pictureOf({
                         descr: "{{logo}}",
@@ -389,8 +382,8 @@ describe("ImagePatch", () => {
                 "word/_rels/document.xml.rels": relationshipsOf(relationship("rId5", IMAGE_RELATIONSHIP, "media/image1.png"), link),
             });
 
-            expect(await read(zip, "word/document.xml")).to.contain('r:id="rId7"');
-            expect(await read(zip, "word/_rels/document.xml.rels")).to.contain(link);
+            expect(read(output, "word/document.xml")).to.contain('r:id="rId7"');
+            expect(read(output, "word/_rels/document.xml.rels")).to.contain(link);
         });
     });
 
@@ -400,23 +393,23 @@ describe("ImagePatch", () => {
         const localDpi = `<a:ext uri="${LOCAL_DPI_EXTENSION}"><a14:useLocalDpi xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main" val="0"/></a:ext>`;
 
         it("should give an SVG image its fallback as the picture's image, and the SVG image as its SVG version", async () => {
-            const zip = await patchLogo({ type: "svg", data: SVG, fallback: { type: "png", data: PNG } });
+            const output = await patchLogo({ type: "svg", data: SVG, fallback: { type: "png", data: PNG } });
 
-            expect(await read(zip, "word/document.xml")).to.contain(
+            expect(read(output, "word/document.xml")).to.contain(
                 `<a:blip r:embed="rId6"><a:extLst>${svgExtension("rId7")}</a:extLst></a:blip>`,
             );
-            const relationships = await read(zip, "word/_rels/document.xml.rels");
+            const relationships = read(output, "word/_rels/document.xml.rels");
             expect(relationships).to.contain(relationship("rId6", IMAGE_RELATIONSHIP, "media/image2.png"));
             expect(relationships).to.contain(relationship("rId7", IMAGE_RELATIONSHIP, "media/image1.svg"));
-            expect(await bytes(zip, "word/media/image2.png")).to.deep.equal(PNG);
-            expect(await bytes(zip, "word/media/image1.svg")).to.deep.equal(SVG);
-            expect(await read(zip, "[Content_Types].xml")).to.contain(
+            expect(bytes(output, "word/media/image2.png")).to.deep.equal(PNG);
+            expect(bytes(output, "word/media/image1.svg")).to.deep.equal(SVG);
+            expect(read(output, "[Content_Types].xml")).to.contain(
                 '<Override ContentType="image/svg+xml" PartName="/word/media/image1.svg"/>',
             );
         });
 
         it("should replace the template's SVG version, and remove its image, keeping the image's other extensions", async () => {
-            const zip = await patchLogo(
+            const output = await patchLogo(
                 { type: "jpg", data: JPEG },
                 {
                     "word/document.xml": documentOf(
@@ -433,16 +426,16 @@ describe("ImagePatch", () => {
                 },
             );
 
-            expect(await read(zip, "word/document.xml")).to.contain(`<a:blip r:embed="rId7"><a:extLst>${localDpi}</a:extLst></a:blip>`);
-            expect(await read(zip, "word/_rels/document.xml.rels")).to.equal(
+            expect(read(output, "word/document.xml")).to.contain(`<a:blip r:embed="rId7"><a:extLst>${localDpi}</a:extLst></a:blip>`);
+            expect(read(output, "word/_rels/document.xml.rels")).to.equal(
                 relationshipsOf(relationship("rId7", IMAGE_RELATIONSHIP, "media/image1.jpg")),
             );
-            expect(zip.file("word/media/image1.png")).to.equal(null);
-            expect(zip.file("word/media/image2.svg")).to.equal(null);
+            expect(output.has("word/media/image1.png")).to.equal(false);
+            expect(output.has("word/media/image2.svg")).to.equal(false);
         });
 
         it("should replace the template's SVG version with the new image's", async () => {
-            const zip = await patchLogo(
+            const output = await patchLogo(
                 { type: "svg", data: SVG, fallback: { type: "png", data: PNG } },
                 {
                     "word/document.xml": documentOf(
@@ -456,19 +449,19 @@ describe("ImagePatch", () => {
                 },
             );
 
-            expect(await read(zip, "word/document.xml")).to.contain(
+            expect(read(output, "word/document.xml")).to.contain(
                 `<a:blip r:embed="rId7"><a:extLst>${svgExtension("rId8")}</a:extLst></a:blip>`,
             );
-            expect(await bytes(zip, "word/media/image2.png")).to.deep.equal(PNG);
-            expect(await bytes(zip, "word/media/image1.svg")).to.deep.equal(SVG);
-            expect(zip.file("word/media/image2.svg")).to.equal(null);
+            expect(bytes(output, "word/media/image2.png")).to.deep.equal(PNG);
+            expect(bytes(output, "word/media/image1.svg")).to.deep.equal(SVG);
+            expect(output.has("word/media/image2.svg")).to.equal(false);
         });
 
         it("should remove Word's artistic effects, which keep the template's image, and that image", async () => {
             const imageProperties =
                 `<a:ext uri="${IMAGE_PROPERTIES_EXTENSION.toLowerCase()}"><a14:imgProps xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main">` +
                 `<a14:imgLayer r:embed="rId6"><a14:imgEffect><a14:artisticBlur/></a14:imgEffect></a14:imgLayer></a14:imgProps></a:ext>`;
-            const zip = await patchLogo(undefined, {
+            const output = await patchLogo(undefined, {
                 "word/document.xml": documentOf(
                     pictureOf({ descr: "{{logo}}", blip: blipOf({ children: `<a:extLst>${imageProperties}</a:extLst>` }) }),
                 ),
@@ -479,41 +472,41 @@ describe("ImagePatch", () => {
                 "word/media/hdphoto1.wdp": new Uint8Array([5]),
             });
 
-            expect(await read(zip, "word/document.xml")).to.contain('<a:blip r:embed="rId7"/>');
-            expect(zip.file("word/media/hdphoto1.wdp")).to.equal(null);
-            expect(await read(zip, "word/_rels/document.xml.rels")).to.not.contain("hdphoto");
+            expect(read(output, "word/document.xml")).to.contain('<a:blip r:embed="rId7"/>');
+            expect(output.has("word/media/hdphoto1.wdp")).to.equal(false);
+            expect(read(output, "word/_rels/document.xml.rels")).to.not.contain("hdphoto");
         });
     });
 
     describe("the alt text", () => {
         it("should take the placeholder out of the description and the title, and remove what is left empty", async () => {
-            const zip = await patchLogo(undefined, {
+            const output = await patchLogo(undefined, {
                 "word/document.xml": documentOf(pictureOf({ descr: "Our logo {{logo}}", title: "{{logo}}", pictureDescr: "{{logo}}" })),
             });
 
-            const document = await read(zip, "word/document.xml");
+            const document = read(output, "word/document.xml");
             expect(document).to.contain('<wp:docPr id="1" name="Picture 1" descr="Our logo"/>');
             expect(document).to.contain('<pic:cNvPr id="1" name="Picture 1"/>');
         });
 
         it("should give the picture the alt text given", async () => {
-            const zip = await patchLogo(
+            const output = await patchLogo(
                 { type: "jpg", data: JPEG, altText: { description: "A cat & a dog", title: "Pets" } },
                 { "word/document.xml": documentOf(pictureOf({ descr: "{{logo}}", pictureDescr: "{{logo}}" })) },
             );
 
-            const document = await read(zip, "word/document.xml");
+            const document = read(output, "word/document.xml");
             expect(document).to.contain('<wp:docPr id="1" name="Picture 1" descr="A cat &amp; a dog" title="Pets"/>');
             expect(document).to.contain('<pic:cNvPr id="1" name="Picture 1" descr="A cat &amp; a dog" title="Pets"/>');
         });
 
         it("should remove the description or the title given as empty", async () => {
-            const zip = await patchLogo(
+            const output = await patchLogo(
                 { type: "jpg", data: JPEG, altText: { description: "", title: "" } },
                 { "word/document.xml": documentOf(pictureOf({ descr: "Logo {{logo}}", title: "A title" })) },
             );
 
-            expect(await read(zip, "word/document.xml")).to.contain('<wp:docPr id="1" name="Picture 1"/>');
+            expect(read(output, "word/document.xml")).to.contain('<wp:docPr id="1" name="Picture 1"/>');
         });
     });
 
@@ -563,15 +556,15 @@ describe("ImagePatch", () => {
 
     describe("with other patches", () => {
         it("should leave the placeholder in text as it is, for a text patch", async () => {
-            const zip = await patchLogo(undefined, {
+            const output = await patchLogo(undefined, {
                 "word/document.xml": documentOf(`${pictureOf({ descr: "{{logo}}" })}<w:p><w:r><w:t>{{logo}}</w:t></w:r></w:p>`),
             });
 
-            expect(await read(zip, "word/document.xml")).to.contain("<w:t>{{logo}}</w:t>");
+            expect(read(output, "word/document.xml")).to.contain("<w:t>{{logo}}</w:t>");
         });
 
         it("should be found by patchDetector", async () => {
-            expect(await patchDetector({ data: await templateWith() })).to.deep.equal(["logo"]);
+            expect(await patchDetector({ data: templateWith() })).to.deep.equal(["logo"]);
         });
     });
 });

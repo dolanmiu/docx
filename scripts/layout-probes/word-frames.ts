@@ -71,7 +71,7 @@
 // cspell:ignore pdftocairo
 import * as fs from "fs";
 
-import JSZip from "jszip";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 
 import {
     AlignmentType,
@@ -257,17 +257,17 @@ const doc = new Document({
 });
 
 const main = async (): Promise<void> => {
-    const zip = await JSZip.loadAsync(await Packer.toBuffer(doc));
-    const written = await zip.file("word/document.xml")!.async("string");
+    const zip = unzipSync(await Packer.toBuffer(doc), { filter: ({ name }) => !name.endsWith("/") });
+    const written = strFromU8(zip["word/document.xml"]);
     const xml = INJECTIONS.reduce((text, [marker, replacement]) => {
         if (!marker.test(text)) {
             throw new Error(`No ${marker} to replace`);
         }
         return text.replace(marker, replacement);
     }, written);
-    zip.file("word/document.xml", xml);
+    zip["word/document.xml"] = strToU8(xml);
     fs.mkdirSync("build/word-probes", { recursive: true });
-    fs.writeFileSync("build/word-probes/word-frames.docx", await zip.generateAsync({ type: "nodebuffer" }));
+    fs.writeFileSync("build/word-probes/word-frames.docx", zipSync(zip, { level: 6 }));
 };
 
 main();

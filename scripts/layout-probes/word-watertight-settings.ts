@@ -11,7 +11,7 @@
 // cspell:ignore bbox
 import { mkdirSync, writeFileSync } from "node:fs";
 
-import JSZip from "jszip";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 
 import {
     Bookmark,
@@ -116,22 +116,18 @@ const doc = new Document({
 });
 
 const main = async (): Promise<void> => {
-    const zip = await JSZip.loadAsync(await Packer.toBuffer(doc));
-    const styles = await zip.file("word/styles.xml")!.async("string");
-    zip.file("word/styles.xml", styles.replace("</w:styles>", `${TABLE_STYLES.replace(/\n\s*/g, "")}</w:styles>`));
-    const settings = await zip.file("word/settings.xml")!.async("string");
-    zip.file(
-        "word/settings.xml",
+    const zip = unzipSync(await Packer.toBuffer(doc), { filter: ({ name }) => !name.endsWith("/") });
+    const styles = strFromU8(zip["word/styles.xml"]);
+    zip["word/styles.xml"] = strToU8(styles.replace("</w:styles>", `${TABLE_STYLES.replace(/\n\s*/g, "")}</w:styles>`));
+    const settings = strFromU8(zip["word/settings.xml"]);
+    zip["word/settings.xml"] = strToU8(
         settings
             // gutterAtTop goes after displayBackgroundShape and before evenAndOddHeaders, in the schema's order
             .replace(/(<w:displayBackgroundShape\/>)/, "$1<w:gutterAtTop/>")
             .replace(/(<w:compatSetting [^>]*w:name="compatibilityMode"[^>]*\/>)/, `$1${WORD_COMPATIBILITY}`),
     );
     mkdirSync("build/word-probes", { recursive: true });
-    writeFileSync(
-        "build/word-probes/word-watertight-settings.docx",
-        await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }),
-    );
+    writeFileSync("build/word-probes/word-watertight-settings.docx", zipSync(zip, { level: 6 }));
 };
 
 void main();

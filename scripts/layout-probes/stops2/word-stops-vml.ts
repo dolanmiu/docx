@@ -69,8 +69,6 @@
  */
 import { deflateSync } from "node:zlib";
 
-import JSZip from "jszip";
-
 import { AlignmentType, Document, Header, LevelFormat, Packer, Paragraph, TextRun } from "docx";
 
 import { type Child, type Injection, PAGE, PNG, marker, probe, prose, write } from "./kit";
