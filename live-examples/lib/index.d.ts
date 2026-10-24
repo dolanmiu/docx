@@ -3091,8 +3091,8 @@ declare class DeletedTextRunWrapper extends XmlComponent {
  * Options for configuring document properties of a drawing: its name and alternative text, written in `wp:docPr`.
  */
 export declare type DocPropertiesOptions = {
-    /** Name of the drawing element (used for identification) */
-    readonly name: string;
+    /** The drawing's name, which Word shows in its Selection Pane. Default is an empty name */
+    readonly name?: string;
     /** Description/alt text for accessibility */
     readonly description?: string;
     /** Title of the drawing element */

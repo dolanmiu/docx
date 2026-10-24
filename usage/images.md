@@ -488,7 +488,7 @@ To place an image at page coordinates or control text wrapping, use [`floating`]
 
 ## Alternative Text
 
-Specifies common non-visual DrawingML properties. A name, title and description for a picture can be specified.
+Give a picture a `description` for screen readers, as Word's **Alt Text** does, and optionally a `title`. Its `name` is what Word's Selection Pane calls it, and is empty unless given. All three are optional.
 
 ```ts live
 import { Document, ImageRun, Paragraph } from "docx";
@@ -518,9 +518,9 @@ const doc = new Document({
 
 | Property    | Type     | Notes    | Possible Values                      |
 | ----------- | -------- | -------- | ------------------------------------ |
-| name        | `string` | Required | `Specimen A`                         |
-| title       | `string` | Required | `My awesome title of my image`       |
-| description | `string` | Required | `My awesome description of my image` |
+| name        | `string` | Optional | `Specimen A`                         |
+| title       | `string` | Optional | `My awesome title of my image`       |
+| description | `string` | Optional | `My awesome description of my image` |
 
 ## Links and Decorative Images
 

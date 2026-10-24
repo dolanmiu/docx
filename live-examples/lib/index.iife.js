@@ -8480,7 +8480,7 @@ EXTERNAL: "External" };
 	* ```
 	*/
 	var DocProperties = class extends XmlComponent {
-		constructor({ name, description, title, id } = { name: "" }, { link, decorative } = {}) {
+		constructor({ name = "", description, title, id } = {}, { link, decorative } = {}) {
 			super("wp:docPr");
 			_defineProperty(this, "link", void 0);
 			_defineProperty(this, "decorative", void 0);
