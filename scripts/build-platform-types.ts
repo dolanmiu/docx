@@ -49,7 +49,9 @@ export const platformTypes = (): Plugin => {
                     .get(entry)!
                     .replace(/from (["'])(?:\.\.\/\.\.\/file\/file|\.\/(?:next-compiler|packer-core))\1/g, 'from "./_model.js"')
                     .replace(/Packer as CorePacker/g, "PackerCore as CorePacker");
-                const combined = `export { ${modelNames.join(", ")} } from "./_model.js";\n` + declaration;
+                const names =
+                    name === "index.browser" ? modelNames.filter((name) => name !== "OutputByType" && name !== "OutputType") : modelNames;
+                const combined = `export { ${names.join(", ")} } from "./_model.js";\n` + declaration;
                 writeFileSync(resolve(output, `${name}.d.ts`), combined);
                 writeFileSync(resolve(output, `${name}.d.cts`), combined.replaceAll("./_model.js", "./_model.cjs"));
             }
