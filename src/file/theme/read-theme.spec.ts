@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { Packer } from "@export/packer/packer";
 import { File } from "@file/file";
 import { encodeUtf8 } from "@util/convenience-functions";
-import { zip } from "tests/zip";
+import { damaging, zip } from "tests/zip";
 
 import { readTheme, readThemeColorValues, themePathOf } from "./read-theme";
 
@@ -62,6 +62,34 @@ describe("readTheme", () => {
         const padded = new Uint8Array(bytes.length + 8);
         padded.set(bytes, 4);
         expect(readTheme(padded.subarray(4, 4 + bytes.length))).to.deep.equal(HARBOUR_OPTIONS);
+    });
+
+    it("should read the XML of a theme in UTF-16, which starts with its byte order mark", () => {
+        const xml = `\uFEFF${HARBOUR.replace('encoding="UTF-8"', 'encoding="UTF-16"')}`;
+        const codeUnits = [...Array(xml.length).keys()].map((index) => xml.charCodeAt(index));
+        const littleEndian = new Uint8Array(codeUnits.flatMap((unit) => [unit % 0x100, Math.floor(unit / 0x100)]));
+        const bigEndian = new Uint8Array(codeUnits.flatMap((unit) => [Math.floor(unit / 0x100), unit % 0x100]));
+        expect(readTheme(littleEndian)).to.deep.equal(HARBOUR_OPTIONS);
+        expect(readTheme(bigEndian)).to.deep.equal(HARBOUR_OPTIONS);
+        expect(
+            readTheme(
+                zip({
+                    "_rels/.rels": relationships([MAIN_PART, "word/document.xml"]),
+                    "word/_rels/document.xml.rels": relationships([THEME, "theme/theme1.xml"]),
+                    "word/theme/theme1.xml": littleEndian,
+                }),
+            ),
+        ).to.deep.equal(HARBOUR_OPTIONS);
+    });
+
+    it("should inflate only a package's relationships and its theme, so its other parts don't stop it", () => {
+        const document = zip({
+            "_rels/.rels": relationships([MAIN_PART, "word/document.xml"]),
+            "word/_rels/document.xml.rels": relationships([THEME, "theme/theme1.xml"]),
+            "word/document.xml": "<w:document/>",
+            "word/theme/theme1.xml": HARBOUR,
+        });
+        expect(readTheme(damaging(document, "word/document.xml"))).to.deep.equal(HARBOUR_OPTIONS);
     });
 
     it("should read the theme of a document, with the colors and fonts `docx` gave it", async () => {

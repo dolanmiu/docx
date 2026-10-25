@@ -64,7 +64,11 @@ const attribute = (element: XmlElement | undefined, name: string): string | unde
 // A zip file starts with the signature of its first file's header, "PK\x03\x04"
 const isZip = (bytes: Uint8Array): boolean => bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 0x03 && bytes[3] === 0x04;
 
-const decode = (bytes: Uint8Array): string => new TextDecoder().decode(bytes);
+// A part's text, in UTF-16 when it starts with UTF-16's byte order mark, as XML may be, or else in UTF-8
+const decode = (bytes: Uint8Array): string =>
+    new TextDecoder(
+        bytes[0] === 0xff && bytes[1] === 0xfe ? "utf-16le" : bytes[0] === 0xfe && bytes[1] === 0xff ? "utf-16be" : "utf-8",
+    ).decode(bytes);
 
 // The object without its properties that are undefined
 const defined = <T extends object>(object: T): T =>
@@ -96,13 +100,14 @@ export const themePathOf = (files: ReadonlyMap<string, Uint8Array>, part: string
  * @throws If the package has no main part, or its main part has no theme
  */
 const packageThemeXml = (bytes: Uint8Array): string => {
-    const files = unzipFiles(bytes, (path) => path.endsWith(".rels") || path.endsWith(".xml"));
-    const mainPart = relatedPart(files, "", MAIN_PART_TYPES);
+    // Only the package's relationships are inflated, and then its theme, however large its other parts are
+    const relationships = unzipFiles(bytes, (path) => path.endsWith(".rels"));
+    const mainPart = relatedPart(relationships, "", MAIN_PART_TYPES);
     if (mainPart === undefined) {
         throw new Error("Invalid file: a zip file that isn't a Word, PowerPoint or Excel file or an Office theme (.thmx)");
     }
-    const themePath = themePathOf(files, mainPart);
-    const theme = themePath === undefined ? undefined : files.get(themePath);
+    const themePath = themePathOf(relationships, mainPart);
+    const theme = themePath === undefined ? undefined : unzipFiles(bytes, (path) => path === themePath).get(themePath);
     if (theme === undefined) {
         throw new Error(`The file has no theme: its main part, ${mainPart}, refers to none`);
     }
