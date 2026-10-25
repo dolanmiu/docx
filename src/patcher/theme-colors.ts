@@ -6,6 +6,7 @@
  */
 import { type ThemeColorValues, themeColorValues } from "@file/theme/color-scheme";
 import { readThemeColorValues, themePathOf } from "@file/theme/read-theme";
+import { isSamePart } from "@util/package-paths";
 
 import { decodeUtf8 } from "./util";
 
@@ -19,6 +20,6 @@ const isUtf16 = (bytes: Uint8Array): boolean => (bytes[0] === 0xff && bytes[1] =
  */
 export const readThemeColors = (files: ReadonlyMap<string, Uint8Array>): ThemeColorValues | undefined => {
     const path = themePathOf(files, "word/document.xml");
-    const theme = path === undefined ? undefined : files.get(path);
+    const theme = path === undefined ? undefined : [...files].find(([name]) => isSamePart(name, path))?.[1];
     return theme === undefined || isUtf16(theme) ? undefined : themeColorValues(readThemeColorValues(decodeUtf8(theme)));
 };

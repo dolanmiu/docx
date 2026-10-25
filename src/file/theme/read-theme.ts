@@ -5,7 +5,7 @@
  * @module
  */
 // cspell:ignore hlink Hlink purl oclc thmx dotm
-import { relationshipsPathOf, resolveTarget } from "@util/package-paths";
+import { isSamePart, relationshipsPathOf, resolveTarget } from "@util/package-paths";
 import { type XmlElement, parseXml } from "@util/xml";
 import { unzipFiles } from "@util/zip";
 
@@ -107,7 +107,8 @@ const packageThemeXml = (bytes: Uint8Array): string => {
         throw new Error("Invalid file: a zip file that isn't a Word, PowerPoint or Excel file or an Office theme (.thmx)");
     }
     const themePath = themePathOf(relationships, mainPart);
-    const theme = themePath === undefined ? undefined : unzipFiles(bytes, (path) => path === themePath).get(themePath);
+    // The theme's path in the zip file may differ in case from the relationship's target, and is the same part's
+    const theme = themePath === undefined ? undefined : [...unzipFiles(bytes, (path) => isSamePart(path, themePath)).values()][0];
     if (theme === undefined) {
         throw new Error(`The file has no theme: its main part, ${mainPart}, refers to none`);
     }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { relationshipsPathOf, relativeTarget, resolveTarget, sourceOfRelationships } from "./package-paths";
+import { isSamePart, relationshipsPathOf, relativeTarget, resolveTarget, sourceOfRelationships } from "./package-paths";
 
 describe("relationshipsPathOf", () => {
     it("should give the relationships part of a part in word/", () => {
@@ -94,5 +94,17 @@ describe("relativeTarget", () => {
                 expect(resolveTarget(from, relativeTarget(from, to)), `${from} to ${to}`).to.equal(to);
             }
         }
+    });
+});
+
+describe("isSamePart", () => {
+    it("should be the same part for paths that differ only in case", () => {
+        expect(isSamePart("word/theme/theme1.xml", "word/theme/theme1.xml")).to.equal(true);
+        expect(isSamePart("word/Theme/THEME1.xml", "word/theme/theme1.xml")).to.equal(true);
+    });
+
+    it("should be another part for another path", () => {
+        expect(isSamePart("word/theme/theme1.xml", "word/theme/theme2.xml")).to.equal(false);
+        expect(isSamePart("word/theme1.xml", "word/theme/theme1.xml")).to.equal(false);
     });
 });

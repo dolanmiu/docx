@@ -115,6 +115,18 @@ describe("readTheme", () => {
         expect(theme.fonts?.body).to.have.nested.property("scripts.Hang", "맑은 고딕");
     });
 
+    it("should find a theme whose relationship's target is in another case, as part names are the same whatever their case", () => {
+        expect(
+            readTheme(
+                zip({
+                    "_rels/.rels": relationships([MAIN_PART, "word/document.xml"]),
+                    "word/_rels/document.xml.rels": relationships([THEME, "Theme/THEME1.xml"]),
+                    "word/theme/theme1.xml": HARBOUR,
+                }),
+            ),
+        ).to.deep.equal(HARBOUR_OPTIONS);
+    });
+
     it("should read the theme of a presentation, a workbook or a theme file from its main part's relationships", () => {
         const presentation = zip({
             "_rels/.rels": relationships([MAIN_PART, "ppt/presentation.xml"]),

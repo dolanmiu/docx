@@ -54,3 +54,10 @@ export const relativeTarget = (from: string, to: string): string => {
     const shared = common === -1 ? folders.length : common;
     return [...folders.slice(shared).map(() => ".."), ...segments.slice(shared)].join("/");
 };
+
+/**
+ * Whether two paths are the same part's. Part names are compared without regard to case, as the Open Packaging
+ * Conventions compare them, so a relationship's target such as "Theme/THEME1.xml" from word/document.xml names
+ * word/theme/theme1.xml.
+ */
+export const isSamePart = (path: string, other: string): boolean => path.toLowerCase() === other.toLowerCase();
