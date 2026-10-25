@@ -3,43 +3,15 @@
  *
  * @module
  */
-import { Stream } from "stream";
+import { Buffer as PlatformBuffer } from "node:buffer";
+import { Stream as PlatformStream } from "node:stream";
 
 import type { File } from "@file/file";
-import type { OutputByType, OutputType } from "@util/output-type";
-import { zipFiles, zipOutput } from "@util/zip";
 
-import { Compiler, type IXmlifyedFile } from "./next-compiler";
+import type { IXmlifyedFile } from "./next-compiler";
+import { EventPacker, type PackerPlatform, type PrettifyType } from "./packer-core";
 
-/**
- * Prettify options for formatting XML output.
- *
- * Controls the indentation style used when formatting the generated XML.
- * Prettified output is more human-readable but results in larger file sizes.
- *
- * @publicApi
- */
-export const PrettifyType = {
-    /** No prettification (smallest file size) */
-    NONE: "",
-    /** Indent with 2 spaces */
-    WITH_2_BLANKS: "  ",
-    /** Indent with 4 spaces */
-    WITH_4_BLANKS: "    ",
-    /** Indent with tab character */
-    WITH_TAB: "\t",
-} as const;
-
-const convertPrettifyType = (
-    prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
-): (typeof PrettifyType)[keyof typeof PrettifyType] | undefined =>
-    prettify === true ? PrettifyType.WITH_2_BLANKS : prettify === false ? undefined : prettify;
-
-// A document with macros is a .docm, whose type isn't a .docx's
-const mimeTypeOf = (file: File): string =>
-    file.Macros === undefined
-        ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        : "application/vnd.ms-word.document.macroEnabled.12";
+export { PrettifyType } from "./packer-core";
 
 /**
  * Exports documents to various output formats.
@@ -62,26 +34,14 @@ const mimeTypeOf = (file: File): string =>
  * const buffer = await Packer.toBuffer(doc, PrettifyType.WITH_2_BLANKS);
  * ```
  */
-export class Packer {
-    /**
-     * Exports a document to the specified output format.
-     *
-     * @param file - The document to export
-     * @param type - The output format type (e.g., "nodebuffer", "blob", "string")
-     * @param prettify - Whether to prettify the XML output (boolean or PrettifyType)
-     * @param overrides - Optional array of file overrides for custom XML content
-     * @returns A promise resolving to the exported document in the specified format
-     */
-    // eslint-disable-next-line require-await
-    public static async pack<T extends OutputType>(
-        file: File,
-        type: T,
-        prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
-        overrides: readonly IXmlifyedFile[] = [],
-    ): Promise<OutputByType[T]> {
-        return zipOutput(zipFiles(this.compiler.compile(file, convertPrettifyType(prettify), overrides)), type, mimeTypeOf(file));
-    }
+export class Packer extends EventPacker {
+    protected static override readonly platform: PackerPlatform = {
+        createStream: () => new PlatformStream(),
+        bufferFrom: (bytes) =>
+            (typeof Buffer === "undefined" ? PlatformBuffer : Buffer).from(bytes.buffer, bytes.byteOffset, bytes.byteLength),
+    };
 
+    // Bind output helpers to this public class, including when callers detach them.
     /**
      * Exports a document to a string representation.
      *
@@ -90,7 +50,7 @@ export class Packer {
      * @param overrides - Optional array of file overrides
      * @returns A promise resolving to the document as a string
      */
-    public static toString(
+    public static override toString(
         file: File,
         prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
         overrides: readonly IXmlifyedFile[] = [],
@@ -122,7 +82,7 @@ export class Packer {
      * @param overrides - Optional array of file overrides
      * @returns A promise resolving to the document as a base64 string
      */
-    public static toBase64String(
+    public static override toBase64String(
         file: File,
         prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
         overrides: readonly IXmlifyedFile[] = [],
@@ -138,7 +98,7 @@ export class Packer {
      * @param overrides - Optional array of file overrides
      * @returns A promise resolving to the document as a Blob
      */
-    public static toBlob(
+    public static override toBlob(
         file: File,
         prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
         overrides: readonly IXmlifyedFile[] = [],
@@ -154,38 +114,11 @@ export class Packer {
      * @param overrides - Optional array of file overrides
      * @returns A promise resolving to the document as an ArrayBuffer
      */
-    public static toArrayBuffer(
+    public static override toArrayBuffer(
         file: File,
         prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
         overrides: readonly IXmlifyedFile[] = [],
     ): Promise<ArrayBuffer> {
         return Packer.pack(file, "arraybuffer", prettify, overrides);
     }
-
-    /**
-     * Exports a document to a Node.js Stream.
-     *
-     * @param file - The document to export
-     * @param prettify - Whether to prettify the XML output
-     * @param overrides - Optional array of file overrides
-     * @returns A readable stream containing the document data
-     */
-    public static toStream(
-        file: File,
-        prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
-        overrides: readonly IXmlifyedFile[] = [],
-    ): Stream {
-        const stream = new Stream();
-        const files = this.compiler.compile(file, convertPrettifyType(prettify), overrides);
-
-        // Zipped and given after the caller has had the chance to listen, as when JSZip zipped it, asynchronously
-        new Promise((resolve) => setTimeout(resolve)).then(() => {
-            stream.emit("data", zipOutput(zipFiles(files), "nodebuffer", mimeTypeOf(file)));
-            stream.emit("end");
-        });
-
-        return stream;
-    }
-
-    private static readonly compiler = new Compiler();
 }

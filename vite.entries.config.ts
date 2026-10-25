@@ -8,8 +8,8 @@ import { type Plugin, defineConfig } from "vite";
 // Builds one of docx's optional entries, such as docx/shapes, into dist, after docx itself (vite.config.ts). The entry
 // is chosen by the mode: `vite build --config vite.entries.config.ts --mode shapes`.
 //
-// An entry imports docx by name, and the build leaves it out, so the package has one copy of each of docx's classes and
-// of its id counters. Node and bundlers resolve "docx" to the package itself, the types import it from "docx", and the
+// Source and type imports still use docx by name. Module output binds those names to the internal shared model,
+// so optional entries do not load the compatibility Packer or duplicate classes/counters with the lean facade. The
 // UMD and IIFE files use the `docx` global, so a page loads index.umd.cjs before, say, shapes.umd.cjs.
 
 type Entry = {
@@ -161,13 +161,17 @@ export default defineConfig(({ mode }) => {
 
                     return "unknown";
                 },
-                formats: ["iife", "es", "cjs", "umd"],
             },
             // docx/html turns math into docx/math's equations, so it leaves docx/math out too, and a page loads
             // math.umd.cjs before html.umd.cjs
             rolldownOptions: {
                 external: ["docx", "docx/math"],
-                output: { globals: { docx: "docx", "docx/math": "docxMath" } },
+                output: [
+                    { format: "iife", name: entry.global, globals: { docx: "docx", "docx/math": "docxMath" } },
+                    { format: "es", paths: { docx: "./_model.js", "docx/math": "./math.mjs" } },
+                    { format: "cjs", paths: { docx: "./_model.cjs", "docx/math": "./math.cjs" } },
+                    { format: "umd", name: entry.global, globals: { docx: "docx", "docx/math": "docxMath" } },
+                ],
             },
             outDir: resolve(__dirname, "dist"),
         },

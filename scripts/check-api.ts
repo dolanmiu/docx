@@ -20,7 +20,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import ts from "typescript";
@@ -220,6 +220,22 @@ const COMPILER_OPTIONS: ts.CompilerOptions = {
     types: ["node"],
 };
 
+/** Copies an entry's relative declaration dependencies so re-exports and base classes resolve in the comparison. */
+const copyDeclarations = (source: string, destination: string, copied = new Set<string>()): void => {
+    if (copied.has(source)) return;
+    copied.add(source);
+    const text = readFileSync(source, "utf8");
+    mkdirSync(dirname(destination), { recursive: true });
+    writeFileSync(destination, withoutHiddenMembers(destination, text));
+    for (const { fileName } of ts.preProcessFile(text).importedFiles) {
+        if (!fileName.startsWith(".")) continue;
+        const dependency = ts.resolveModuleName(fileName, source, COMPILER_OPTIONS, ts.sys).resolvedModule?.resolvedFileName;
+        if (dependency) {
+            copyDeclarations(dependency, resolve(dirname(destination), relative(dirname(source), dependency)), copied);
+        }
+    }
+};
+
 const exportsOf = (fileName: string): readonly ExportInfo[] => {
     const program = ts.createProgram([fileName], COMPILER_OPTIONS);
     const checker = program.getTypeChecker();
@@ -251,9 +267,10 @@ const checkTypes = (release: string, releaseEntry: Entry, builtEntry: Entry, ind
     }
     const releasedTypes = join(directory, "released", "index.d.ts");
     const builtTypes = join(directory, "built", "index.d.ts");
-    const released = withoutHiddenMembers(releasedTypes, readFileSync(join(release, releaseEntry.types), "utf8"));
-    writeFileSync(releasedTypes, released);
-    writeFileSync(builtTypes, withoutHiddenMembers(builtTypes, readFileSync(join(ROOT, builtEntry.types), "utf8")));
+    copyDeclarations(join(release, releaseEntry.types), releasedTypes);
+    copyDeclarations(join(ROOT, builtEntry.types), builtTypes);
+    copyDeclarations(join(release, releaseEntry.types), join(directory, "released-types", "index.d.ts"));
+    const released = readFileSync(releasedTypes, "utf8");
 
     const releasedExports = exportsOf(releasedTypes);
     const builtNames = new Set(exportsOf(builtTypes).map(({ name }) => name));

@@ -3,11 +3,32 @@
     "version": "9.14.0",
     "description": "Easily generate .docx files with JS/TS with a nice declarative API. Works for Node and on the Browser.",
     "type": "module",
+    "sideEffects": false,
     "main": "dist/index.umd.cjs",
     "module": "./dist/index.mjs",
     "types": "./dist/index.d.ts",
     "exports": {
         ".": {
+            "browser": {
+                "import": {
+                    "types": "./dist/index.d.ts",
+                    "default": "./dist/index.mjs"
+                },
+                "require": {
+                    "types": "./dist/index.d.cts",
+                    "default": "./dist/index.cjs"
+                }
+            },
+            "node": {
+                "import": {
+                    "types": "./dist/index.d.ts",
+                    "default": "./dist/index.node.mjs"
+                },
+                "require": {
+                    "types": "./dist/index.d.cts",
+                    "default": "./dist/index.node.cjs"
+                }
+            },
             "import": {
                 "types": "./dist/index.d.ts",
                 "default": "./dist/index.mjs"
@@ -15,6 +36,26 @@
             "require": {
                 "types": "./dist/index.d.cts",
                 "default": "./dist/index.cjs"
+            }
+        },
+        "./browser": {
+            "import": {
+                "types": "./dist/index.browser.d.ts",
+                "default": "./dist/index.browser.mjs"
+            },
+            "require": {
+                "types": "./dist/index.browser.d.cts",
+                "default": "./dist/index.browser.cjs"
+            }
+        },
+        "./node": {
+            "import": {
+                "types": "./dist/index.d.ts",
+                "default": "./dist/index.node.mjs"
+            },
+            "require": {
+                "types": "./dist/index.d.cts",
+                "default": "./dist/index.node.cjs"
             }
         },
         "./shapes": {
@@ -110,6 +151,12 @@
     },
     "typesVersions": {
         "*": {
+            "browser": [
+                "./dist/index.browser.d.ts"
+            ],
+            "node": [
+                "./dist/index.d.ts"
+            ],
             "shapes": [
                 "./dist/shapes.d.ts"
             ],
@@ -143,7 +190,7 @@
         "dist"
     ],
     "scripts": {
-        "build": "tsc && vite build && vite build --config vite.entries.config.ts --mode shapes && vite build --config vite.entries.config.ts --mode watermarks && vite build --config vite.entries.config.ts --mode charts && vite build --config vite.entries.config.ts --mode math && vite build --config vite.entries.config.ts --mode layout && vite build --config vite.entries.config.ts --mode html && vite build --config vite.entries.config.ts --mode macros && vite build --config vite.entries.config.ts --mode embedded-files && vite build --config vite.entries.config.ts --mode bibliography",
+        "build": "tsc && vite build && vite build --mode legacy && vite build --config vite.entries.config.ts --mode shapes && vite build --config vite.entries.config.ts --mode watermarks && vite build --config vite.entries.config.ts --mode charts && vite build --config vite.entries.config.ts --mode math && vite build --config vite.entries.config.ts --mode layout && vite build --config vite.entries.config.ts --mode html && vite build --config vite.entries.config.ts --mode macros && vite build --config vite.entries.config.ts --mode embedded-files && vite build --config vite.entries.config.ts --mode bibliography",
         "test": "vitest --ui --coverage",
         "test:ci": "vitest run --coverage",
         "prepublishOnly": "npm run build --omit=dev",

@@ -316,7 +316,12 @@ declare module "stream" {
         });
         // "docx" and "docx/shapes" resolve to these as they would in node_modules
         const types = await Promise.all(
-            Object.values(MODULES).map(async ({ file }) => [file, await fetch(`${LIB}${file}.d.ts`).then((response) => response.text())]),
+            [
+                ...Object.values(MODULES).map(({ file }) => [file, file]),
+                ["_model", "_model"],
+                ["browser", "index.browser"],
+                ["node", "index"],
+            ].map(async ([name, file]) => [name, await fetch(`${LIB}${file}.d.ts`).then((response) => response.text())]),
         );
         for (const [file, text] of types) {
             typescript.typescriptDefaults.addExtraLib(text, `file:///node_modules/docx/${file}.d.ts`);

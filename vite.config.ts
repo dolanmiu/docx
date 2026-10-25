@@ -1,40 +1,16 @@
 import { resolve } from "path";
-import dts from "vite-plugin-dts";
+
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 import { configDefaults, defineConfig } from "vitest/config";
-import { copyFileSync } from "node:fs";
 
-export default defineConfig({
+import { platformTypes } from "./scripts/build-platform-types";
+
+export default defineConfig(({ mode }) => ({
     plugins: [
-        dts({
-            bundleTypes: {
-                // Keep every declaration. API Extractor's default output leaves out those whose JSDoc says @internal,
-                // which would remove exported names from the types
-                extractorConfig: {
-                    dtsRollup: { publicTrimmedFilePath: "", untrimmedFilePath: resolve(__dirname, "dist/index.d.ts") },
-                },
-                // API Extractor reads the declarations with the TypeScript it comes with, so it needs that version's
-                // lib files too. The plugin would point it at the project's TypeScript, which is a newer version whose
-                // lib files it can't follow symbols such as Readonly into
-                invokeOptions: { typescriptCompilerFolder: undefined },
-            },
-            // tsconfig.json removes comments, but the JSDoc in declarations is what users see in their editors
-            compilerOptions: { removeComments: false },
-            afterBuild: () => {
-                // https://github.com/dolanmiu/docx/pull/2883
-                // To pass publint - `npx publint@latest`
-                copyFileSync("dist/index.d.ts", "dist/index.d.cts");
-            },
-        }),
-        nodePolyfills({
-            exclude: [],
-            globals: {
-                Buffer: false,
-            },
-            protocolImports: true,
-        }),
+        // Native Node adapters use node: imports, which stay external. Only the compatibility facade uses shims.
+        nodePolyfills({ globals: { Buffer: false }, protocolImports: false }),
+        ...(mode !== "legacy" ? [platformTypes()] : []),
     ],
-    // Lets specs import Word documents with ?inline, such as the corpus src/util/xml reads
     assetsInclude: ["**/*.docx", "**/*.dotx"],
     resolve: {
         tsconfigPaths: true,
@@ -46,36 +22,31 @@ export default defineConfig({
         },
     },
     build: {
+        emptyOutDir: mode !== "legacy",
         minify: false,
         target: "es2015",
         lib: {
-            entry: [resolve(__dirname, "src/index.ts")],
+            entry:
+                mode === "legacy"
+                    ? resolve(__dirname, "src/index.compat.ts")
+                    : {
+                          index: resolve(__dirname, "src/index.compat.ts"),
+                          "index.node": resolve(__dirname, "src/index.ts"),
+                          "index.browser": resolve(__dirname, "src/index.browser.ts"),
+                          _model: resolve(__dirname, "src/platform/shared.ts"),
+                      },
             name: "docx",
-            fileName: (d) => {
-                if (d === "umd") {
-                    return "index.umd.cjs";
-                }
-
-                if (d === "cjs") {
-                    return "index.cjs";
-                }
-
-                if (d === "es") {
-                    return "index.mjs";
-                }
-
-                if (d === "iife") {
-                    return "index.iife.js";
-                }
-
-                return "unknown";
+            formats: mode === "legacy" ? ["iife", "umd"] : ["es", "cjs"],
+            fileName: (format, name) => {
+                if (format === "iife") return "index.iife.js";
+                if (format === "umd") return "index.umd.cjs";
+                if (format === "cjs") return `${name}.cjs`;
+                return name === "_model" ? "_model.js" : `${name}.mjs`;
             },
-            formats: ["iife", "es", "cjs", "umd"],
         },
+        rolldownOptions: { external: [/^node:/] },
         outDir: resolve(__dirname, "dist"),
-        commonjsOptions: {
-            include: [/node_modules/],
-        },
+        commonjsOptions: { include: [/node_modules/] },
     },
     test: {
         environment: "jsdom",
@@ -95,6 +66,10 @@ export default defineConfig({
                 "**/docs/**",
                 "**/scripts/**",
                 "**/src/**/index.ts",
+                "**/src/index.shared.ts",
+                "**/src/index.browser.ts",
+                "**/src/index.compat.ts",
+                "**/src/platform/shared.ts",
                 "**/src/**/types.ts",
                 "**/src/util/output-type.ts",
                 "**/*.spec.ts",
@@ -103,4 +78,4 @@ export default defineConfig({
         include: ["**/src/**/*.spec.ts", "**/packages/**/*.spec.ts"],
         exclude: [...configDefaults.exclude, "**/build/**", "**/demo/**", "**/docs/**", "**/scripts/**", ".claude/**"],
     },
-});
+}));
