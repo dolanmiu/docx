@@ -46,13 +46,19 @@
 import { ChangeAttributes, type IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { BuilderElement, IgnoreIfEmptyXmlComponent, StringValueElement, XmlComponent } from "@file/xml-components";
 
-import { type AlignmentType, createAlignment } from "../../paragraph";
+import { AlignmentType, createAlignment } from "../../paragraph";
 import { type IShadingAttributesProperties, createShading } from "../../shading";
 import { createOnOffOnlyElement } from "../on-off-only-element";
 import { type ITableWidthProperties, createTableWidthElement } from "../table-width";
 import { type ITableBordersOptions, TableBorders } from "./table-borders";
 import { type ITableCellMarginOptions, createTableCellMargin } from "./table-cell-margin";
-import { type ITableFloatOptions, type OverlapType, createTableFloatProperties } from "./table-float-properties";
+import {
+    type ITableFloatOptions,
+    type OverlapType,
+    RelativeHorizontalPosition,
+    RelativeVerticalPosition,
+    createTableFloatProperties,
+} from "./table-float-properties";
 import { type TableLayoutType, createTableLayout } from "./table-layout";
 import { type ITableCellSpacingProperties, createTableCellSpacing } from "../table-cell-spacing";
 import { type ITableLookOptions, createTableLook } from "./table-look";
@@ -85,6 +91,16 @@ const createTableOverlap = (overlap: (typeof OverlapType)[keyof typeof OverlapTy
         },
     });
 
+// How a table in line with the text is lined up across the column, by where it asks to be lined up as a floating table,
+// as Word's row alignment reports a floating table's left, center and right
+const INLINE_ALIGNMENTS: Partial<
+    Record<(typeof RelativeHorizontalPosition)[keyof typeof RelativeHorizontalPosition], (typeof AlignmentType)[keyof typeof AlignmentType]>
+> = {
+    [RelativeHorizontalPosition.LEFT]: AlignmentType.LEFT,
+    [RelativeHorizontalPosition.CENTER]: AlignmentType.CENTER,
+    [RelativeHorizontalPosition.RIGHT]: AlignmentType.RIGHT,
+};
+
 /**
  * Options for configuring table properties.
  *
@@ -111,13 +127,18 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
             this.root.push(new StringValueElement("w:tblStyle", options.style));
         }
 
-        if (options.float) {
-            this.root.push(createTableFloatProperties(options.float));
+        // Word places a table lined up inline down the page (w:tblpYSpec="inline") at the top of the paragraph after it,
+        // with text beside it, so such a table is written in line with the text, as Word writes one with no text wrapping
+        const inline = options.float?.relativeVerticalPosition === RelativeVerticalPosition.INLINE;
+        const float = inline ? undefined : options.float;
+
+        if (float) {
+            this.root.push(createTableFloatProperties(float));
         }
 
         // w:tblOverlap goes beside w:tblpPr, which can't have children
-        if (options.float?.overlap) {
-            this.root.push(createTableOverlap(options.float.overlap));
+        if (float?.overlap) {
+            this.root.push(createTableOverlap(float.overlap));
         }
 
         if (options.visuallyRightToLeft !== undefined) {
@@ -128,8 +149,11 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
             this.root.push(createTableWidthElement("w:tblW", options.width));
         }
 
-        if (options.alignment) {
-            this.root.push(createAlignment(options.alignment));
+        const alignment =
+            options.alignment ??
+            (inline && options.float?.relativeHorizontalPosition ? INLINE_ALIGNMENTS[options.float.relativeHorizontalPosition] : undefined);
+        if (alignment) {
+            this.root.push(createAlignment(alignment));
         }
 
         if (options.cellSpacing) {

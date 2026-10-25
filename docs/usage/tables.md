@@ -140,6 +140,39 @@ const doc = new Document({
 });
 ```
 
+### Alignment
+
+A table starts at the left margin. Set `alignment` to center it in the column, or put it against the right margin. It stays in line with the text, with the paragraphs before it above it and the paragraphs after it below it.
+
+```ts live
+import { AlignmentType, Document, Paragraph, Table, TableCell, TableRow, WidthType } from "docx";
+
+const table = new Table({
+    rows: [
+        new TableRow({
+            children: [new TableCell({ children: [new Paragraph("Hello")] }), new TableCell({ children: [new Paragraph("World")] })],
+        }),
+    ],
+    width: {
+        size: 4000,
+        type: WidthType.DXA,
+    },
+    alignment: AlignmentType.CENTER,
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph("The table below is centered between the margins."),
+                table,
+                new Paragraph("This paragraph is below it."),
+            ],
+        },
+    ],
+});
+```
+
 ### Borders and table styles
 
 A table without a `style` has thin single borders, unless `borders` gives it others. Each side that `borders` leaves out stays a thin single line.
@@ -1006,6 +1039,10 @@ Example showing merging of columns and rows
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/images/image-in-merged-table-cell.ts_
 
 ### Floating tables
+
+A table with `float` floats: it's placed against the page, the margins or the text, and the text flows around it.
+
+Word can't float a table in line with the text. It places a floating table lined up inline down the page at the top of the paragraph after it, with text beside it. So a table with `relativeVerticalPosition: RelativeVerticalPosition.INLINE` is written in line with the text instead, as Word writes a table with no text wrapping, and the rest of `float` is left out. Its `relativeHorizontalPosition` lines it up across the column: `LEFT`, `CENTER` and `RIGHT` give it that [alignment](#alignment), unless it has an `alignment` of its own.
 
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/tables/floating-tables.ts ":include")
 

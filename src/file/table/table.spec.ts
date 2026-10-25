@@ -1178,5 +1178,29 @@ describe("Table", () => {
                 ],
             });
         });
+
+        it("writes a table lined up inline down the page and centered across it as a centered table in line with the text", () => {
+            const table = new Table({
+                rows: [
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                children: [new Paragraph("hello")],
+                            }),
+                        ],
+                    }),
+                ],
+                float: {
+                    horizontalAnchor: TableAnchorType.TEXT,
+                    verticalAnchor: TableAnchorType.TEXT,
+                    relativeHorizontalPosition: RelativeHorizontalPosition.CENTER,
+                    relativeVerticalPosition: RelativeVerticalPosition.INLINE,
+                },
+            });
+            const tree = new Formatter().format(table);
+            expect(tree["w:tbl"][0]).to.deep.equal({
+                "w:tblPr": [WIDTHS, { "w:jc": { _attr: { "w:val": "center" } } }, BORDERS],
+            });
+        });
     });
 });

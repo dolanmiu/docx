@@ -41,6 +41,10 @@ export const RelativeVerticalPosition = {
     INSIDE: "inside",
     BOTTOM: "bottom",
     OUTSIDE: "outside",
+    /**
+     * In line with the text, with no text beside it. Word places a floating table lined up inline at the top of the
+     * paragraph after it, with text beside it, so the table is written in line with the text instead.
+     */
     INLINE: "inline",
     TOP: "top",
 } as const;
@@ -125,6 +129,11 @@ export type ITableFloatOptions = {
      * outside - the table should be vertically aligned to the edge of the anchor and outside the anchor
      * inline - the table should be vertically aligned in line with the surrounding text (so as to not allow any text wrapping around it)
      * top - the table should be vertically aligned to the top edge of the anchor
+     *
+     * Word places a floating table lined up inline at the top of the paragraph after it, with text beside it. So a table
+     * lined up inline is written in line with the text instead, as Word writes a table with no text wrapping, and lined up
+     * across the column by relativeHorizontalPosition's left, center or right when the table has no alignment of its own.
+     * The anchors, absolute positions, distances from the text and overlap are for a floating table, and aren't written.
      */
     readonly relativeVerticalPosition?: (typeof RelativeVerticalPosition)[keyof typeof RelativeVerticalPosition];
 
