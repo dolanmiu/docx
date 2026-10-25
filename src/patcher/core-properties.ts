@@ -4,9 +4,9 @@
  * @module
  */
 import type { IPropertiesOptions } from "@file/core-properties";
+import { resolveTarget } from "@util/package-paths";
 import type { XmlElement as Element } from "@util/xml";
 
-import { resolveTarget } from "./drawing-patch";
 import { appendRelationship, createRelationshipFile, getNextRelationshipIndex } from "./relationship-manager";
 import { getFirstLevelElements, toJson } from "./util";
 

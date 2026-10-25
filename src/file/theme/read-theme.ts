@@ -1,20 +1,18 @@
 /**
- * Reads the theme of a Word document or template, of another Office file, or of a theme file, as the options of a
- * document's `theme`, so a document `docx` writes can have it.
+ * Reads themes: the theme of a Word document or template, of another Office file, or of a theme file, as the options of
+ * a document's `theme`, so a document `docx` writes can have it, and the colors of a document's theme for the patcher.
  *
  * @module
  */
 // cspell:ignore hlink Hlink purl oclc thmx dotm
-import {
-    type IThemeColorsOptions,
-    type IThemeFontOptions,
-    type IThemeFontsOptions,
-    type IThemeOptions,
-    type ThemeColorName,
-    type XmlElement,
-    parseXml,
-    unzipFiles,
-} from "docx";
+import { relationshipsPathOf, resolveTarget } from "@util/package-paths";
+import { type XmlElement, parseXml } from "@util/xml";
+import { unzipFiles } from "@util/zip";
+
+import type { IThemeColorsOptions } from "./color-scheme";
+import type { IThemeFontOptions, IThemeFontsOptions } from "./font-scheme";
+import type { IThemeOptions } from "./theme";
+import type { ThemeColorName } from "./theme-color";
 
 /* cspell:disable */
 const COLOR_NAMES: ReadonlyMap<string, ThemeColorName> = new Map([
@@ -66,26 +64,6 @@ const attribute = (element: XmlElement | undefined, name: string): string | unde
 // A zip file starts with the signature of its first file's header, "PK\x03\x04"
 const isZip = (bytes: Uint8Array): boolean => bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 0x03 && bytes[3] === 0x04;
 
-// A part's folder, with its slash, such as "word/" for word/document.xml, or "" for the package itself
-const folderOf = (path: string): string => path.slice(0, path.lastIndexOf("/") + 1);
-
-/**
- * The path of the part a relationship's target refers to: relative to the folder of the part the relationship belongs
- * to, or from the package's root if it starts with "/". Backslashes, which some applications write, are read as slashes.
- */
-const resolveTarget = (from: string, target: string): string => {
-    const normalized = target.replace(/\\/g, "/");
-    return (normalized.startsWith("/") ? normalized : `${folderOf(from)}${normalized}`)
-        .split("/")
-        .reduce<readonly string[]>((segments, segment) => {
-            if (segment === "" || segment === ".") {
-                return segments;
-            }
-            return segment === ".." ? segments.slice(0, -1) : [...segments, segment];
-        }, [])
-        .join("/");
-};
-
 const decode = (bytes: Uint8Array): string => new TextDecoder().decode(bytes);
 
 // The object without its properties that are undefined
@@ -97,13 +75,20 @@ const defined = <T extends object>(object: T): T =>
  * itself (`""`) refers to.
  */
 const relatedPart = (files: ReadonlyMap<string, Uint8Array>, from: string, types: ReadonlySet<string>): string | undefined => {
-    const relationships = files.get(`${folderOf(from)}_rels/${from.slice(folderOf(from).length)}.rels`);
+    const relationships = files.get(relationshipsPathOf(from));
     const relationship =
         relationships &&
         childElements(child(parseXml(decode(relationships)), "Relationships")).find((item) => types.has(attribute(item, "Type") ?? ""));
     const target = attribute(relationship, "Target");
     return target === undefined ? undefined : resolveTarget(from, target);
 };
+
+/**
+ * The path of the theme a part of a package refers to, such as word/theme/theme1.xml for a Word document's
+ * word/document.xml.
+ */
+export const themePathOf = (files: ReadonlyMap<string, Uint8Array>, part: string): string | undefined =>
+    relatedPart(files, part, THEME_TYPES);
 
 /**
  * The XML of a package's theme: the theme its main part refers to, such as word/theme/theme1.xml in a Word document.
@@ -116,8 +101,8 @@ const packageThemeXml = (bytes: Uint8Array): string => {
     if (mainPart === undefined) {
         throw new Error("Invalid file: a zip file that isn't a Word, PowerPoint or Excel file or an Office theme (.thmx)");
     }
-    const themePart = relatedPart(files, mainPart, THEME_TYPES);
-    const theme = themePart === undefined ? undefined : files.get(themePart);
+    const themePath = themePathOf(files, mainPart);
+    const theme = themePath === undefined ? undefined : files.get(themePath);
     if (theme === undefined) {
         throw new Error(`The file has no theme: its main part, ${mainPart}, refers to none`);
     }
@@ -125,29 +110,40 @@ const packageThemeXml = (bytes: Uint8Array): string => {
 };
 
 /**
- * A theme color's 6-digit hex color: an RGB color's value, or a system color's last value. The first dark and light
- * colors are left out when they are the system's window text and window colors, as `docx` writes them then.
+ * A theme color's 6-digit hex color: an RGB color's value, or a system color's last value. Unless `withSystemColors`,
+ * the first dark and light colors are left out when they are the system's window text and window colors, as `docx`
+ * writes them then.
  */
-const colorValue = (name: ThemeColorName, color: XmlElement): string | undefined => {
+const colorValue = (name: ThemeColorName, color: XmlElement, withSystemColors: boolean): string | undefined => {
     // A theme's color is one color, of one of the kinds DrawingML has
     const [value] = childElements(color);
     const hex =
         localName(value) === "srgbClr"
             ? attribute(value, "val")
-            : localName(value) === "sysClr" && attribute(value, "val") !== DEFAULT_SYSTEM_COLORS.get(name)
+            : localName(value) === "sysClr" && (withSystemColors || attribute(value, "val") !== DEFAULT_SYSTEM_COLORS.get(name))
               ? attribute(value, "lastClr")
               : undefined;
     return hex !== undefined && /^[0-9A-Fa-f]{6}$/.test(hex) ? hex.toUpperCase() : undefined;
 };
 
-const readColors = (scheme: XmlElement): IThemeColorsOptions =>
+const readColors = (scheme: XmlElement, withSystemColors = false): IThemeColorsOptions =>
     Object.fromEntries(
         childElements(scheme).flatMap((color) => {
             const name = COLOR_NAMES.get(localName(color));
-            const value = name && colorValue(name, color);
+            const value = name && colorValue(name, color, withSystemColors);
             return name && value ? [[name, value]] : [];
         }),
     );
+
+/**
+ * The colors of a theme's XML, each a 6-digit hex color, with the first dark and light colors as their last values when
+ * they are system colors. The patcher writes theme colors in patches with the hex colors they come to in them.
+ */
+export const readThemeColorValues = (xml: string): IThemeColorsOptions => {
+    const [root] = childElements(parseXml(xml));
+    const scheme = localName(root) === "theme" ? child(child(root, "themeElements"), "clrScheme") : undefined;
+    return scheme ? readColors(scheme, true) : {};
+};
 
 // A font's typeface, or `undefined` for none, which a theme writes as ""
 const typefaceOf = (font: XmlElement | undefined): string | undefined => attribute(font, "typeface") || undefined;
@@ -207,8 +203,7 @@ const xmlOf = (data: string | Uint8Array | ArrayBuffer): string => {
  * @example
  * ```typescript
  * import * as fs from "fs";
- * import { Document } from "docx";
- * import { readTheme } from "docx/theme";
+ * import { Document, readTheme } from "docx";
  *
  * // The template's styles, and its theme, whose colors and fonts its styles use
  * const doc = new Document({

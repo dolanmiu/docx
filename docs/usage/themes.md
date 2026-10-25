@@ -4,14 +4,6 @@ A document's theme gives it twelve colors, a font for headings and a font for bo
 
 Every document `docx` writes has a theme (`word/theme/theme1.xml`): Office's theme from Office 2016 to 2021, with Calibri Light for headings and Calibri for body text, unless the `theme` option changes it.
 
-Word's own themes, colors and fonts, as its **Design** tab offers them, and a reader for the theme of a Word document or template, come with the `docx` package, from `docx/theme`:
-
-```ts
-import { ColorSchemes, FontSchemes, Themes, readTheme } from "docx/theme";
-```
-
-In a page without a bundler, load `dist/theme.umd.cjs` after `dist/index.umd.cjs` (or `dist/theme.iife.js` after `dist/index.iife.js`). It adds a `docxTheme` global, such as `docxTheme.Themes.FACET`.
-
 ## A theme of your own
 
 ```ts live
@@ -108,168 +100,13 @@ const doc = new Document({
 });
 ```
 
-## Word's themes
-
-`Themes` has each of the themes of Word's **Design > Themes** gallery, with its name, its colors, and its fonts for headings and body text, as Word has them. Give one to `theme`:
-
-```ts live
-import { Document, HeadingLevel, Paragraph, ShadingType, Table, TableCell, TableRow, TextRun, WidthType } from "docx";
-import { Themes } from "docx/theme";
-
-const accents = ["accent1", "accent2", "accent3", "accent4", "accent5", "accent6"] as const;
-
-const doc = new Document({
-    // Try another of Word's themes, such as Themes.ION or Themes.WOOD_TYPE
-    theme: Themes.FACET,
-    styles: {
-        default: {
-            document: { run: { font: { theme: "body" }, size: 22 } },
-            heading1: { run: { font: { theme: "headings" }, size: 36, color: { theme: "accent1", darker: 25 } } },
-        },
-    },
-    sections: [
-        {
-            children: [
-                new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun("A heading in the theme's font")] }),
-                new Paragraph("Body text in the theme's font for body text, above the theme's six accent colors."),
-                new Table({
-                    width: { size: 100, type: WidthType.PERCENTAGE },
-                    rows: [
-                        new TableRow({
-                            children: accents.map(
-                                (theme) =>
-                                    new TableCell({
-                                        shading: { type: ShadingType.CLEAR, fill: { theme } },
-                                        children: [new Paragraph({ children: [new TextRun({ text: theme, color: { theme: "light1" } })] })],
-                                    }),
-                            ),
-                        }),
-                    ],
-                }),
-            ],
-        },
-    ],
-});
-```
-
-Styles, tables and text that use the theme's fonts and colors, as here, take them from the theme. Choosing another theme on Word's **Design** tab changes them all, as it would for a document made in Word.
-
-<!-- cspell:disable -->
-
-| Theme              | Word's name              | Font for headings    | Font for body text   | Accent 1 |
-| ------------------ | ------------------------ | -------------------- | -------------------- | -------- |
-| `OFFICE`           | Office Theme             | Aptos Display        | Aptos                | `156082` |
-| `OFFICE_2013_2022` | Office 2013 - 2022 Theme | Calibri Light        | Calibri              | `4472C4` |
-| `ATLAS`            | Atlas                    | Calibri Light        | Rockwell             | `F81B02` |
-| `BADGE`            | Badge                    | Impact               | Gill Sans MT         | `F8B323` |
-| `BERLIN`           | Berlin                   | Trebuchet MS         | Trebuchet MS         | `F09415` |
-| `CELESTIAL`        | Celestial                | Calibri Light        | Calibri              | `AC3EC1` |
-| `CROP`             | Crop                     | Franklin Gothic Book | Franklin Gothic Book | `8C8D86` |
-| `DEPTH`            | Depth                    | Corbel               | Corbel               | `41AEBD` |
-| `DROPLET`          | Droplet                  | Tw Cen MT            | Tw Cen MT            | `2FA3EE` |
-| `FACET`            | Facet                    | Trebuchet MS         | Trebuchet MS         | `90C226` |
-| `FEATHERED`        | Feathered                | Century Schoolbook   | Calibri              | `606372` |
-| `GALLERY`          | Gallery                  | Gill Sans MT         | Gill Sans MT         | `B71E42` |
-| `HEADLINES`        | Headlines                | Century Schoolbook   | Corbel               | `439EB7` |
-| `INTEGRAL`         | Integral                 | Tw Cen MT Condensed  | Tw Cen MT            | `1CADE4` |
-| `ION`              | Ion                      | Century Gothic       | Century Gothic       | `B01513` |
-| `ION_BOARDROOM`    | Ion Boardroom            | Century Gothic       | Century Gothic       | `B31166` |
-| `MADISON`          | Madison                  | Arial                | Arial                | `A1D68B` |
-| `MAIN_EVENT`       | Main Event               | Impact               | Impact               | `B80E0F` |
-| `MESH`             | Mesh                     | Century Gothic       | Century Gothic       | `6F6F6F` |
-| `ORGANIC`          | Organic                  | Garamond             | Garamond             | `83992A` |
-| `PARALLAX`         | Parallax                 | Corbel               | Corbel               | `30ACEC` |
-| `PARCEL`           | Parcel                   | Gill Sans MT         | Gill Sans MT         | `F6A21D` |
-| `RETROSPECT`       | Retrospect               | Calibri Light        | Calibri              | `E48312` |
-| `SAVON`            | Savon                    | Century Gothic       | Century Gothic       | `1CADE4` |
-| `SLICE`            | Slice                    | Century Gothic       | Century Gothic       | `052F61` |
-| `VAPOR_TRAIL`      | Vapor Trail              | Century Gothic       | Century Gothic       | `DF2E28` |
-| `VIEW`             | View                     | Century Schoolbook   | Century Schoolbook   | `6F6F74` |
-| `WISP`             | Wisp                     | Century Gothic       | Century Gothic       | `A53010` |
-| `WOOD_TYPE`        | Wood Type                | Rockwell Condensed   | Rockwell             | `D34817` |
-
-<!-- cspell:enable -->
-
-`OFFICE` is the theme of new documents in Word today, with Aptos. `OFFICE_2013_2022` is the one before it, whose colors and fonts are those of the theme `docx` writes when no `theme` is given. The themes are Word for Mac's, from Word's own theme files, and have its fonts for other scripts, such as Japanese, where they differ from Office's.
-
-A theme also has the fills, lines and effects of shapes that Word's shape styles use, which Word's **Design > Effects** gallery chooses. The theme `docx` writes always has Office's, whichever theme is given. Text, tables and the shapes of `docx/shapes` don't use them.
-
-## Word's colors and fonts
-
-`ColorSchemes` has the colors of Word's **Design > Colors** gallery, and `FontSchemes` the fonts of its **Design > Fonts** gallery. Give one to a theme's `colors` or `fonts`, to mix them with another theme, as Word's **Design** tab does:
-
-```ts live
-import { Document, HeadingLevel, Paragraph, TextRun } from "docx";
-import { ColorSchemes, FontSchemes, Themes } from "docx/theme";
-
-const doc = new Document({
-    // Word's Facet theme, with its Blue Green colors and Georgia
-    theme: { ...Themes.FACET, colors: ColorSchemes.BLUE_GREEN, fonts: FontSchemes.GEORGIA },
-    styles: {
-        default: {
-            heading1: { run: { font: { theme: "headings" }, size: 32, color: { theme: "accent1" } } },
-        },
-    },
-    sections: [
-        {
-            children: [
-                new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun("In Georgia, and Blue Green's accent 1")] }),
-                new Paragraph({ children: [new TextRun({ text: "Accent 2", color: { theme: "accent2" }, font: { theme: "body" } })] }),
-            ],
-        },
-    ],
-});
-```
-
-Or change only some of a theme's colors or fonts, keeping the rest:
-
-```ts
-theme: { ...Themes.FACET, colors: { ...Themes.FACET.colors, accent1: "1F6F8B" } },
-```
-
-<!-- cspell:disable -->
-
-The colors are `OFFICE`, `OFFICE_2013_2022`, `OFFICE_2007_2010`, `ASPECT`, `BLUE`, `BLUE_GREEN`, `BLUE_II`, `BLUE_WARM`, `GRAYSCALE`, `GREEN`, `GREEN_YELLOW`, `MARQUEE`, `MEDIAN`, `ORANGE`, `ORANGE_RED`, `PAPER`, `RED`, `RED_ORANGE`, `RED_VIOLET`, `SLIPSTREAM`, `VIOLET`, `VIOLET_II`, `YELLOW` and `YELLOW_ORANGE`.
-
-| Fonts                              | Font for headings      | Font for body text   |
-| ---------------------------------- | ---------------------- | -------------------- |
-| `OFFICE`                           | Aptos Display          | Aptos                |
-| `OFFICE_2013_2022`                 | Calibri Light          | Calibri              |
-| `OFFICE_2007_2010`                 | Cambria                | Calibri              |
-| `ARIAL`                            | Arial                  | Arial                |
-| `ARIAL_BLACK_ARIAL`                | Arial Black            | Arial                |
-| `ARIAL_TIMES_NEW_ROMAN`            | Arial                  | Times New Roman      |
-| `CALIBRI`                          | Calibri                | Calibri              |
-| `CALIBRI_CAMBRIA`                  | Calibri                | Cambria              |
-| `CALIBRI_LIGHT_CONSTANTIA`         | Calibri Light          | Constantia           |
-| `CAMBRIA`                          | Cambria                | Cambria              |
-| `CANDARA`                          | Candara                | Candara              |
-| `CENTURY_GOTHIC`                   | Century Gothic         | Century Gothic       |
-| `CENTURY_GOTHIC_PALATINO_LINOTYPE` | Century Gothic         | Palatino Linotype    |
-| `CENTURY_SCHOOLBOOK`               | Century Schoolbook     | Century Schoolbook   |
-| `CONSOLAS_VERDANA`                 | Consolas               | Verdana              |
-| `CONSTANTIA_FRANKLIN_GOTHIC_BOOK`  | Constantia             | Franklin Gothic Book |
-| `CORBEL`                           | Corbel                 | Corbel               |
-| `FRANKLIN_GOTHIC`                  | Franklin Gothic Medium | Franklin Gothic Book |
-| `GARAMOND`                         | Garamond               | Garamond             |
-| `GARAMOND_TREBUCHET_MS`            | Garamond               | Trebuchet MS         |
-| `GEORGIA`                          | Georgia                | Georgia              |
-| `GILL_SANS_MT`                     | Gill Sans MT           | Gill Sans MT         |
-| `TIMES_NEW_ROMAN_ARIAL`            | Times New Roman        | Arial                |
-| `TREBUCHET_MS`                     | Trebuchet MS           | Trebuchet MS         |
-| `TW_CEN_MT`                        | Tw Cen MT              | Tw Cen MT            |
-| `TW_CEN_MT_ROCKWELL`               | Tw Cen MT              | Rockwell             |
-
-<!-- cspell:enable -->
-
 ## The theme of a Word document or template
 
 Styles made in Word, such as those of a template given in [`externalStyles`](usage/styling-with-xml.md), usually name the theme's fonts and colors rather than a font or a color: "(Headings)", or a table's shading in "Accent 5, Lighter 60%". They look as they did in Word only with the theme of the document they came from. `readTheme` reads that theme, to give `theme`:
 
 ```ts live
 import * as fs from "fs";
-import { Document, HeadingLevel, Paragraph, TextRun } from "docx";
-import { readTheme } from "docx/theme";
+import { Document, HeadingLevel, Paragraph, TextRun, readTheme } from "docx";
 
 // A document made in Word, whose theme is Office 2007's: Cambria for headings, Calibri for body text, and blue accents
 const theme = readTheme(fs.readFileSync("./demo/assets/field-trip.docx"));
@@ -305,7 +142,7 @@ It reads:
 - the XML of a theme, such as a document's `word/theme/theme1.xml`, as text or bytes;
 - the XML of colors or fonts that Word saves on their own, from **Design > Colors > Customize Colors** or **Design > Fonts > Customize Fonts**, as the theme's `colors` or `fonts`.
 
-It gives the options of `theme`: the theme's `name`, its `colors`, and its `fonts` for headings and body text, with their fonts for other scripts. Change them before giving them to `theme` if you like, as for Word's themes. The fills, lines and effects of the theme's shape styles are Office's in the new document, as they are for every theme `docx` writes.
+It gives the options of `theme`: the theme's `name`, its `colors`, and its `fonts` for headings and body text, with their fonts for other scripts. Change them before giving them to `theme` if you like, such as `{ ...theme, colors: { ...theme.colors, accent1: "1F6F8B" } }`. The fills, lines and effects of the theme's shape styles are Office's in the new document, as they are for every theme `docx` writes.
 
 It throws for a file that isn't one of those, or that has no theme.
 
@@ -419,12 +256,6 @@ const doc = new Document({
 ```
 
 ## Examples
-
-### Word's themes
-
-[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/styles/word-themes.ts ":include")
-
-_Source: https://github.com/dolanmiu/docx/blob/master/demo/styles/word-themes.ts_
 
 ### The theme of a Word document
 

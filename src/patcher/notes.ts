@@ -21,11 +21,11 @@ import {
 } from "@file/styles/style/default-styles";
 import type { IContext, XmlComponent } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
+import { relationshipsPathOf, relativeTarget, resolveTarget } from "@util/package-paths";
 import { type XmlElement as Element, stringifyXmlable } from "@util/xml";
 
 import type { RenumberBookmarks } from "./bookmark-ids";
 import type { RenumberDrawings } from "./drawing-ids";
-import { relationshipsPathOf, relativeTarget, resolveTarget } from "./drawing-patch";
 import { getFirstLevelElements, toJson } from "./util";
 
 const formatter = new Formatter();

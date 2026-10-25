@@ -2,10 +2,12 @@
 // cspell:ignore hlink Hlink purl oclc DRAWINGML Jpan
 import { describe, expect, it } from "vitest";
 
-import { Document, Packer } from "docx";
+import { Packer } from "@export/packer/packer";
+import { File } from "@file/file";
+import { encodeUtf8 } from "@util/convenience-functions";
 import { zip } from "tests/zip";
 
-import { readTheme } from "./read-theme";
+import { readTheme, readThemeColorValues, themePathOf } from "./read-theme";
 
 const DRAWINGML = "http://schemas.openxmlformats.org/drawingml/2006/main";
 const RELATIONSHIPS = "http://schemas.openxmlformats.org/package/2006/relationships";
@@ -65,7 +67,7 @@ describe("readTheme", () => {
     it("should read the theme of a document, with the colors and fonts `docx` gave it", async () => {
         const theme = readTheme(
             await Packer.toBuffer(
-                new Document({
+                new File({
                     theme: {
                         name: "Harbour",
                         colors: { accent1: "1F6F8B", dark1: "1B1B1B" },
@@ -210,5 +212,33 @@ describe("readTheme", () => {
                 }),
             ),
         ).to.throw("The file has no theme");
+    });
+});
+
+describe("themePathOf", () => {
+    it("should give the path of the theme a part refers to", () => {
+        const files = new Map([["ppt/_rels/presentation.xml.rels", encodeUtf8(relationships([THEME, "../themes/ocean.xml"]))]]);
+        expect(themePathOf(files, "ppt/presentation.xml")).to.equal("themes/ocean.xml");
+        expect(themePathOf(files, "word/document.xml")).to.equal(undefined);
+    });
+});
+
+describe("readThemeColorValues", () => {
+    it("should read every color of a theme, with the first dark and light colors' last values when they are system colors", () => {
+        expect(
+            readThemeColorValues(
+                themeXml(
+                    colorScheme(
+                        `<a:dk1><a:sysClr val="windowText" lastClr="1A1A1A"/></a:dk1><a:lt1><a:sysClr val="window" lastClr="FAFAFA"/></a:lt1>` +
+                            `<a:accent1><a:srgbClr val="1f6f8b"/></a:accent1>`,
+                    ),
+                ),
+            ),
+        ).to.deep.equal({ dark1: "1A1A1A", light1: "FAFAFA", accent1: "1F6F8B" });
+    });
+
+    it("should read no colors from XML that isn't a theme, or a theme with no colors", () => {
+        expect(readThemeColorValues(colorScheme(`<a:accent1><a:srgbClr val="1F6F8B"/></a:accent1>`))).to.deep.equal({});
+        expect(readThemeColorValues(themeXml(""))).to.deep.equal({});
     });
 });

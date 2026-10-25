@@ -1,11 +1,10 @@
-// The theme of a document made in Word, read with docx/theme's readTheme, so text and tables in the theme's fonts and
+// The theme of a document made in Word, read with readTheme, so text and tables in the theme's fonts and
 // colors look as they do in that document. field-trip.docx has Office 2007's theme: Cambria for headings, Calibri for
 // body text, and its blue, red and green accents.
 // See docs/usage/themes.md.
 
 import * as fs from "fs";
-import { Document, HeadingLevel, Packer, Paragraph, ShadingType, Table, TableCell, TableRow, TextRun, WidthType } from "docx";
-import { readTheme } from "docx/theme";
+import { Document, HeadingLevel, Packer, Paragraph, ShadingType, Table, TableCell, TableRow, TextRun, WidthType, readTheme } from "docx";
 
 const theme = readTheme(fs.readFileSync("./demo/assets/field-trip.docx"));
 

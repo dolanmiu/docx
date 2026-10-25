@@ -78,12 +78,11 @@ const doc = new Document({
 
 Styles made in Word often name the theme's fonts and colors rather than a font or a color: "(Headings)" is written as `w:asciiTheme="majorHAnsi"`, and "Accent 1" as `w:themeColor="accent1"`. Word looks them up in the document's theme, which is the one `docx` writes, not the theme of the document your `styles.xml` came from. It's Office's theme, with Calibri Light for headings and Calibri for body text, unless the [`theme`](usage/themes.md) option changes it.
 
-To keep the fonts and colors of the document the styles came from, give it that document's theme, read with [`readTheme`](usage/themes.md#the-theme-of-a-word-document-or-template) from `docx/theme`. It reads the document itself, or its `word/theme/theme1.xml`:
+To keep the fonts and colors of the document the styles came from, give it that document's theme, read with [`readTheme`](usage/themes.md#the-theme-of-a-word-document-or-template). It reads the document itself, or its `word/theme/theme1.xml`:
 
 ```ts live
 import * as fs from "fs";
-import { Document, HeadingLevel, Paragraph } from "docx";
-import { readTheme } from "docx/theme";
+import { Document, HeadingLevel, Paragraph, readTheme } from "docx";
 
 const doc = new Document({
     externalStyles: fs.readFileSync("./demo/assets/custom-styles.xml", "utf-8"),
