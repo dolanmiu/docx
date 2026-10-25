@@ -99,24 +99,6 @@ const stream = Packer.toStream(doc);
 // read from stream
 ```
 
-Node stream compilation errors throw synchronously. Errors during deferred archive generation or event delivery are emitted through the stream's `error` event.
-
-### Browser entry
-
-Import from `docx/browser` to omit the Node Buffer and event-stream polyfills. The existing `docx` entry keeps its API; `docx/node` explicitly selects the native Node implementation. Optional features such as `docx/shapes` work with either entry.
-
-```ts
-import { Document, Packer, Paragraph } from "docx/browser";
-
-const doc = new Document({ sections: [{ children: [new Paragraph("Hello World")] }] });
-const blob = await Packer.toBlob(doc);
-saveAs(blob, "example.docx");
-```
-
-The browser entry has no `Packer.toBuffer`. Its `Packer.toStream(doc)` returns a `ReadableStream<Uint8Array>` with `.getReader()` instead of Node's `.on` and `.pipe`. It requires Web Streams support; `toBlob` requires `Blob` support. Other output methods are available as usual.
-
-Streams contain the completed ZIP archive, buffered in memory. Browser generation errors reject reads, and cancelling a reader stops delivery. To pass a Web Stream to `patchDocument` or `patchDetector`, first convert it to bytes with `await new Response(stream).arrayBuffer()`.
-
 ### Export using optional arguments
 
 The `Packer` methods support 2 optional arguments.
