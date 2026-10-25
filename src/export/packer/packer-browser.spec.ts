@@ -1,8 +1,9 @@
 import { ReadableStream as WebReadableStream } from "node:stream/web";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 
 import { File } from "@file/file";
 import { Paragraph } from "@file/paragraph";
+import type { OutputType } from "@util/output-type";
 
 import { Compiler } from "./next-compiler";
 import { Packer, PrettifyType } from "./packer-browser";
@@ -20,6 +21,10 @@ describe("browser Packer", () => {
     });
 
     const document = (): File => new File({ sections: [{ children: [new Paragraph("Browser 世界 😀")] }] });
+
+    it("only accepts portable output formats", () => {
+        expectTypeOf<Parameters<typeof Packer.pack>[1]>().toEqualTypeOf<Exclude<OutputType, "nodebuffer">>();
+    });
 
     it.each([{ overrides: undefined }, { overrides: [{ path: "custom.xml", data: "<custom/>" }] }])(
         "exports portable document formats with $overrides",

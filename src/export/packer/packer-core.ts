@@ -64,13 +64,13 @@ export class Packer {
      * Exports a document to the specified output format.
      *
      * @param file - The document to export
-     * @param type - The output format type (e.g., "nodebuffer", "blob", "string")
+     * @param type - The output format type (e.g., "uint8array", "blob", "string")
      * @param prettify - Whether to prettify the XML output (boolean or PrettifyType)
      * @param overrides - Optional array of file overrides for custom XML content
      * @returns A promise resolving to the exported document in the specified format
      */
     // eslint-disable-next-line require-await
-    public static async pack<T extends OutputType>(
+    public static async pack<T extends Exclude<OutputType, "nodebuffer">>(
         file: File,
         type: T,
         prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
@@ -167,10 +167,13 @@ export class EventPacker extends Packer {
             const bytes = await super.pack(file, "uint8array", prettify, overrides);
             return this.platform.bufferFrom(bytes) as OutputByType[T];
         }
-        return super.pack(file, type, prettify, overrides);
+        return super.pack(file, type as Exclude<T, "nodebuffer">, prettify, overrides);
     }
 
-    /** Emits the completed archive after callers can attach stream listeners. */
+    /**
+     * Emits the completed archive after callers can attach listeners. Compilation errors
+     * throw synchronously; deferred generation or listener failures emit an error.
+     */
     public static toStream(
         file: File,
         prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
@@ -178,11 +181,15 @@ export class EventPacker extends Packer {
     ): Stream {
         const stream = this.platform.createStream();
         const files = this.compiler.compile(file, convertPrettifyType(prettify), overrides);
-        new Promise((resolve) => setTimeout(resolve)).then(() => {
-            const bytes = zipFiles(files);
-            stream.emit("data", this.platform.bufferFrom(bytes));
-            stream.emit("end");
-        });
+        new Promise((resolve) => setTimeout(resolve))
+            .then(() => {
+                const bytes = zipFiles(files);
+                stream.emit("data", this.platform.bufferFrom(bytes));
+                stream.emit("end");
+            })
+            .catch((error: unknown) => {
+                stream.emit("error", error);
+            });
         return stream;
     }
 }

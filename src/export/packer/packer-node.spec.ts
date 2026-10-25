@@ -1,9 +1,11 @@
 import { Buffer } from "node:buffer";
 import { Stream } from "node:stream";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 
 import { File } from "@file/file";
 import { Paragraph } from "@file/paragraph";
+import type { OutputType } from "@util/output-type";
+import * as zip from "@util/zip";
 
 import { Compiler } from "./next-compiler";
 import { Packer as NativePacker } from "./packer";
@@ -42,6 +44,7 @@ describe.each([
     });
 
     it("exports Buffer and byte output without installing a global shim", async () => {
+        expectTypeOf<Parameters<typeof Packer.pack>[1]>().toEqualTypeOf<OutputType>();
         const file = document();
         vi.stubGlobal("Buffer", undefined);
         const bytes = await Packer.toBuffer(file);
@@ -74,6 +77,35 @@ describe.each([
             stream.on("end", resolve);
         });
         expect(textOf(unzip(Buffer.concat(chunks)), "word/document.xml")).toContain(`${name} 世界 😀`);
+    });
+
+    it("emits deferred ZIP failures as errors without ending the stream", async () => {
+        const error = new Error("Compression failed");
+        vi.spyOn(zip, "zipFiles").mockImplementation(() => {
+            throw error;
+        });
+        const stream = Packer.toStream(document());
+        const data = vi.fn();
+        const end = vi.fn();
+        stream.on("data", data);
+        stream.on("end", end);
+        const received = await new Promise<Error>((resolve) => stream.on("error", resolve));
+        expect(received).toBe(error);
+        expect(data).not.toHaveBeenCalled();
+        expect(end).not.toHaveBeenCalled();
+    });
+
+    it("emits deferred listener failures as errors without ending the stream", async () => {
+        const error = new Error("Data listener failed");
+        const stream = Packer.toStream(document());
+        const end = vi.fn();
+        stream.on("data", () => {
+            throw error;
+        });
+        stream.on("end", end);
+        const received = await new Promise<Error>((resolve) => stream.on("error", resolve));
+        expect(received).toBe(error);
+        expect(end).not.toHaveBeenCalled();
     });
 
     it("keeps stream compilation throws synchronous and Buffer failures rejected", async () => {

@@ -99,6 +99,8 @@ const stream = Packer.toStream(doc);
 // read from stream
 ```
 
+Node stream compilation errors throw synchronously. Errors during deferred archive generation or event delivery are emitted through the stream's `error` event.
+
 ### Browser entry
 
 Import from `docx/browser` to omit the Node Buffer and event-stream polyfills. The existing `docx` entry keeps its API; `docx/node` explicitly selects the native Node implementation. Optional features such as `docx/shapes` work with either entry.
