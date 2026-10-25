@@ -5,7 +5,7 @@ import { AlignmentType } from "@file/paragraph";
 import { ShadingType } from "@file/shading";
 
 import { WidthType } from "../table-width";
-import { OverlapType, TableAnchorType } from "./table-float-properties";
+import { OverlapType, RelativeHorizontalPosition, RelativeVerticalPosition, TableAnchorType } from "./table-float-properties";
 import { TableLayoutType } from "./table-layout";
 import { TableProperties } from "./table-properties";
 import { CellSpacingType } from "../table-cell-spacing";
@@ -141,6 +141,84 @@ describe("TableProperties", () => {
                     { "w:tblOverlap": { _attr: { "w:val": "never" } } },
                     { "w:bidiVisual": {} },
                 ],
+            });
+        });
+
+        it("should write a table lined up inline down the page in line with the text, without w:tblpPr or w:tblOverlap, as Word places a floating one beside the text", () => {
+            const tp = new TableProperties({
+                float: {
+                    horizontalAnchor: TableAnchorType.TEXT,
+                    verticalAnchor: TableAnchorType.TEXT,
+                    absoluteVerticalPosition: 200,
+                    relativeVerticalPosition: RelativeVerticalPosition.INLINE,
+                    leftFromText: 100,
+                    overlap: OverlapType.NEVER,
+                },
+                width: { size: 3000, type: WidthType.DXA },
+            });
+            const tree = new Formatter().format(tp);
+            expect(tree).to.deep.equal({
+                "w:tblPr": [{ "w:tblW": { _attr: { "w:type": "dxa", "w:w": 3000 } } }],
+            });
+        });
+
+        it.each([
+            [RelativeHorizontalPosition.LEFT, "left"],
+            [RelativeHorizontalPosition.CENTER, "center"],
+            [RelativeHorizontalPosition.RIGHT, "right"],
+        ])("should align a table lined up inline down the page and %s across it with w:jc %s", (position, alignment) => {
+            const tp = new TableProperties({
+                float: {
+                    relativeHorizontalPosition: position,
+                    relativeVerticalPosition: RelativeVerticalPosition.INLINE,
+                },
+            });
+            const tree = new Formatter().format(tp);
+            expect(tree).to.deep.equal({
+                "w:tblPr": [{ "w:jc": { _attr: { "w:val": alignment } } }],
+            });
+        });
+
+        it("should leave a table lined up inline down the page and inside or outside across it unaligned, as w:jc has no inside or outside", () => {
+            for (const position of [RelativeHorizontalPosition.INSIDE, RelativeHorizontalPosition.OUTSIDE]) {
+                const tp = new TableProperties({
+                    float: {
+                        relativeHorizontalPosition: position,
+                        relativeVerticalPosition: RelativeVerticalPosition.INLINE,
+                    },
+                    width: { size: 3000, type: WidthType.DXA },
+                });
+                const tree = new Formatter().format(tp);
+                expect(tree).to.deep.equal({
+                    "w:tblPr": [{ "w:tblW": { _attr: { "w:type": "dxa", "w:w": 3000 } } }],
+                });
+            }
+        });
+
+        it("should align a table lined up inline down the page by its own alignment over its float's", () => {
+            const tp = new TableProperties({
+                float: {
+                    relativeHorizontalPosition: RelativeHorizontalPosition.CENTER,
+                    relativeVerticalPosition: RelativeVerticalPosition.INLINE,
+                },
+                alignment: AlignmentType.RIGHT,
+            });
+            const tree = new Formatter().format(tp);
+            expect(tree).to.deep.equal({
+                "w:tblPr": [{ "w:jc": { _attr: { "w:val": "right" } } }],
+            });
+        });
+
+        it("should keep a floating table lined up across the page by w:tblpPr, not by w:jc", () => {
+            const tp = new TableProperties({
+                float: {
+                    relativeHorizontalPosition: RelativeHorizontalPosition.CENTER,
+                    relativeVerticalPosition: RelativeVerticalPosition.TOP,
+                },
+            });
+            const tree = new Formatter().format(tp);
+            expect(tree).to.deep.equal({
+                "w:tblPr": [{ "w:tblpPr": { _attr: { "w:tblpXSpec": "center", "w:tblpYSpec": "top" } } }],
             });
         });
 
