@@ -8,6 +8,7 @@
  *
  * @module
  */
+// cspell:ignore Jpan
 import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
 /**
@@ -22,6 +23,12 @@ export type IThemeFontOptions = {
     readonly eastAsia?: string;
     /** The font for complex scripts, such as Arabic and Hebrew. By default Word picks a font for each script */
     readonly complexScript?: string;
+    /**
+     * The fonts for text in particular scripts, by the script's ISO 15924 code, such as `{ Jpan: "Meiryo", Arab: "Arial" }`
+     * for Japanese and Arabic text. They take the place of Office's fonts for those scripts, and Office's fonts are kept
+     * for the others
+     */
+    readonly scripts?: Readonly<Record<string, string>>;
 };
 
 /**
@@ -121,9 +128,25 @@ const themeLatinFont = (use: keyof IThemeFontsOptions, fonts: IThemeFontsOptions
     return latin ?? OFFICE_FONTS[use].latin;
 };
 
+/**
+ * The font for each script of one of a theme's fonts: Office's, in Office's order, with those given in their place, and
+ * then the scripts Office has no font for, in the order given.
+ */
+const themeScriptFonts = (
+    use: keyof IThemeFontsOptions,
+    scripts: Readonly<Record<string, string>> = {},
+): readonly (readonly [string, string])[] => {
+    const office = OFFICE_SCRIPT_FONTS.map(([script, headings, body = headings]): readonly [string, string] => [
+        script,
+        scripts[script] ?? (use === "headings" ? headings : body),
+    ]);
+    const officeScripts = new Set(office.map(([script]) => script));
+    return [...office, ...Object.entries(scripts).filter(([script]) => !officeScripts.has(script))];
+};
+
 const createFontCollection = (use: keyof IThemeFontsOptions, fonts: IThemeFontsOptions): XmlComponent => {
     const font = fonts[use];
-    const { eastAsia = "", complexScript = "" } = typeof font === "object" ? font : {};
+    const { eastAsia = "", complexScript = "", scripts } = typeof font === "object" ? font : {};
     const latin = themeLatinFont(use, fonts);
     const office = OFFICE_FONTS[use];
     return new BuilderElement({
@@ -133,13 +156,13 @@ const createFontCollection = (use: keyof IThemeFontsOptions, fonts: IThemeFontsO
             createTextFont("a:latin", latin, latin === office.latin ? office.panose : undefined),
             createTextFont("a:ea", eastAsia),
             createTextFont("a:cs", complexScript),
-            ...OFFICE_SCRIPT_FONTS.map(
-                ([script, headings, body = headings]) =>
+            ...themeScriptFonts(use, scripts).map(
+                ([script, typeface]) =>
                     new BuilderElement<{ readonly script: string; readonly typeface: string }>({
                         name: "a:font",
                         attributes: {
                             script: { key: "script", value: script },
-                            typeface: { key: "typeface", value: use === "headings" ? headings : body },
+                            typeface: { key: "typeface", value: typeface },
                         },
                     }),
             ),

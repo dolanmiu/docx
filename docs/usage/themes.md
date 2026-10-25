@@ -46,11 +46,11 @@ Colors and fonts that aren't given are Office's.
 
 ### Theme Options
 
-| Property | Type                  | Notes    | Description                                                                             |
-| -------- | --------------------- | -------- | --------------------------------------------------------------------------------------- |
-| `name`   | `string`              | Optional | The theme's name, as Word shows it. Default is `"Office Theme"`                         |
-| `colors` | `IThemeColorsOptions` | Optional | The theme's colors, each a 6-digit hex color such as `"4472C4"`                         |
-| `fonts`  | `IThemeFontsOptions`  | Optional | `headings` and `body`: a font name, or `{ latin, eastAsia, complexScript }` for scripts |
+| Property | Type                  | Notes    | Description                                                                                                                                                     |
+| -------- | --------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`   | `string`              | Optional | The theme's name, as Word shows it. Default is `"Office Theme"`                                                                                                 |
+| `colors` | `IThemeColorsOptions` | Optional | The theme's colors, each a 6-digit hex color such as `"4472C4"`                                                                                                 |
+| `fonts`  | `IThemeFontsOptions`  | Optional | `headings` and `body`: a font name, or `{ latin, eastAsia, complexScript, scripts }` for other scripts. See [Fonts for other scripts](#fonts-for-other-scripts) |
 
 ### Theme Colors
 
@@ -72,6 +72,79 @@ Colors and fonts that aren't given are Office's.
 | `followedHyperlink` | `folHlink` | `954F72`                               |
 
 <!-- cspell:enable -->
+
+### Fonts for other scripts
+
+Each of the theme's fonts can have a font for East Asian text (`eastAsia`), a font for complex scripts such as Arabic and Hebrew (`complexScript`), and a font for each script of its own (`scripts`), by the script's [ISO 15924](https://en.wikipedia.org/wiki/ISO_15924) code, such as `Jpan` for Japanese, `Hans` for simplified Chinese or `Arab` for Arabic. Word uses them for text in those scripts that is in the theme's fonts.
+
+The fonts given in `scripts` take the place of Office's for those scripts, and Office's are kept for the others, as Office's theme has a font for each of about fifty scripts.
+
+```ts live
+import { Document, Paragraph, TextRun } from "docx";
+
+const doc = new Document({
+    theme: {
+        fonts: {
+            headings: { latin: "Georgia", scripts: { Jpan: "Yu Mincho" } },
+            body: { latin: "Verdana", scripts: { Jpan: "Meiryo", Arab: "Tahoma" } },
+        },
+    },
+    sections: [
+        {
+            children: [
+                new Paragraph({ children: [new TextRun({ text: "Body text, 本文", font: { theme: "body" } })] }),
+                new Paragraph({ children: [new TextRun({ text: "A heading, 見出し", font: { theme: "headings" } })] }),
+            ],
+        },
+    ],
+});
+```
+
+## The theme of a Word document or template
+
+Styles made in Word, such as those of a template given in [`externalStyles`](usage/styling-with-xml.md), usually name the theme's fonts and colors rather than a font or a color: "(Headings)", or a table's shading in "Accent 5, Lighter 60%". They look as they did in Word only with the theme of the document they came from. `readTheme` reads that theme, to give `theme`:
+
+```ts live
+import * as fs from "fs";
+import { Document, HeadingLevel, Paragraph, TextRun, readTheme } from "docx";
+
+// A document made in Word, whose theme is Office 2007's: Cambria for headings, Calibri for body text, and blue accents
+const theme = readTheme(fs.readFileSync("./demo/assets/field-trip.docx"));
+
+const doc = new Document({
+    theme,
+    styles: {
+        default: {
+            heading1: { run: { font: { theme: "headings" }, size: 32, color: { theme: "accent1" } } },
+        },
+    },
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    heading: HeadingLevel.HEADING_1,
+                    children: [new TextRun("In the theme's font for headings, and accent 1")],
+                }),
+                new Paragraph({
+                    children: [
+                        new TextRun({ text: "Accent 2, in the font for body text", color: { theme: "accent2" }, font: { theme: "body" } }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
+```
+
+It reads:
+
+- a Word document or template (`.docx`, `.docm`, `.dotx` or `.dotm`), a PowerPoint presentation (`.pptx`), an Excel workbook (`.xlsx`) or an Office theme (`.thmx`), as bytes, such as a `Buffer`, a `Uint8Array` or an `ArrayBuffer`;
+- the XML of a theme, such as a document's `word/theme/theme1.xml`, as text or bytes;
+- the XML of colors or fonts that Word saves on their own, from **Design > Colors > Customize Colors** or **Design > Fonts > Customize Fonts**, as the theme's `colors` or `fonts`.
+
+It gives the options of `theme`: the theme's `name`, its `colors`, and its `fonts` for headings and body text, with their fonts for other scripts. Change them before giving them to `theme` if you like, such as `{ ...theme, colors: { ...theme.colors, accent1: "1F6F8B" } }`. The fills, lines and effects of the theme's shape styles are Office's in the new document, as they are for every theme `docx` writes.
+
+It throws for a file that isn't one of those, or that has no theme.
 
 ## Text in the theme's fonts
 
@@ -102,7 +175,7 @@ const doc = new Document({
 });
 ```
 
-The library's own styles don't use the theme's fonts, so text looks as it always has until a style or a run asks for them. Word's styles, such as those in `externalStyles` taken from a Word document, use them: Word's `Normal` style is in the theme's font for body text, and its headings in the font for headings. The theme is the one `docx` writes, not the theme of the document the styles came from, so give that theme's fonts and colors in `theme` to keep them.
+The library's own styles don't use the theme's fonts, so text looks as it always has until a style or a run asks for them. Word's styles, such as those in `externalStyles` taken from a Word document, use them: Word's `Normal` style is in the theme's font for body text, and its headings in the font for headings. The theme is the one `docx` writes, not the theme of the document the styles came from, so give that document's theme with [`readTheme`](#the-theme-of-a-word-document-or-template) to keep its fonts and colors.
 
 ## Text, tables and borders in the theme's colors
 
@@ -183,6 +256,12 @@ const doc = new Document({
 ```
 
 ## Examples
+
+### The theme of a Word document
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/styles/theme-from-a-document.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/styles/theme-from-a-document.ts_
 
 ### A theme of its own
 

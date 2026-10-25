@@ -7,10 +7,10 @@
 
 import { type ElementTree, fillBodyFields, fillPartFields } from "@file/document/body/page-number-fields";
 import type { EstimatedPageNumbers } from "@file/document/body/page-numbers";
+import { relationshipsPathOf, resolveTarget, sourceOfRelationships } from "@util/package-paths";
 import type { XmlElement as Element } from "@util/xml";
 import { unzipFiles } from "@util/zip";
 
-import { relationshipsPathOf, resolveTarget, sourceOfRelationships } from "./drawing-patch";
 import { decodeUtf8, toJson } from "./util";
 
 /**

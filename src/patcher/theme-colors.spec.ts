@@ -142,6 +142,14 @@ describe("readThemeColors", () => {
         expect(readThemeColors(zip)).to.deep.equal({ ...OFFICE_COLORS, accent1: "2E7D32" });
     });
 
+    it("should find a theme whose target is in another case", () => {
+        const zip = createZip([
+            ["word/_rels/document.xml.rels", RELATIONSHIPS("Theme/THEME1.xml")],
+            ["word/theme/theme1.xml", THEME(`<a:accent1><a:srgbClr val="2E7D32"/></a:accent1>`)],
+        ]);
+        expect(readThemeColors(zip)).to.deep.equal({ ...OFFICE_COLORS, accent1: "2E7D32" });
+    });
+
     it("should use Office's colors for a theme without a color scheme", () => {
         const zip = createZip([
             ["word/_rels/document.xml.rels", RELATIONSHIPS("theme/theme1.xml")],

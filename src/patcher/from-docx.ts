@@ -24,6 +24,7 @@ import { type RelationshipType, TargetModeType } from "@file/relationships/relat
 import type { IContext } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 import type { OutputByType, OutputType } from "@util/output-type";
+import { relationshipsPathOf } from "@util/package-paths";
 import { type XmlElement as Element, stringifyElement } from "@util/xml";
 import { zipFiles, zipOutput } from "@util/zip";
 
@@ -31,7 +32,7 @@ import { findBookmarkIds, renumberBookmarksAvoiding } from "./bookmark-ids";
 import { appendContentType, appendContentTypeOverride } from "./content-types-manager";
 import { type PatchDocumentProperties, patchCoreProperties } from "./core-properties";
 import { findDrawingIds, renumberDrawingsAvoiding } from "./drawing-ids";
-import { type DrawingPatch, patchDrawings, relationshipsPathOf } from "./drawing-patch";
+import { type DrawingPatch, patchDrawings } from "./drawing-patch";
 import { type ZipArchive, loadZip } from "./load-zip";
 import { patchNotes } from "./notes";
 import { patchNumbering } from "./numbering";

@@ -4,70 +4,14 @@
  *
  * @module
  */
-// cspell:ignore hlink Hlink
-
 import { type ThemeColorValues, themeColorValues } from "@file/theme/color-scheme";
-import type { ThemeColorName } from "@file/theme/theme-color";
-import type { XmlElement as Element } from "@util/xml";
+import { readThemeColorValues, themePathOf } from "@file/theme/read-theme";
+import { isSamePart } from "@util/package-paths";
 
-import { resolveTarget } from "./drawing-patch";
-import { decodeUtf8, toJson } from "./util";
-
-const THEME_RELATIONSHIP_TYPE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme";
-
-/* cspell:disable */
-const COLOR_NAMES: ReadonlyMap<string, ThemeColorName> = new Map([
-    ["dk1", "dark1"],
-    ["lt1", "light1"],
-    ["dk2", "dark2"],
-    ["lt2", "light2"],
-    ["accent1", "accent1"],
-    ["accent2", "accent2"],
-    ["accent3", "accent3"],
-    ["accent4", "accent4"],
-    ["accent5", "accent5"],
-    ["accent6", "accent6"],
-    ["hlink", "hyperlink"],
-    ["folHlink", "followedHyperlink"],
-]);
-/* cspell:enable */
-
-// An element's name without its namespace prefix, which a document may choose
-const localName = (element: Element): string | undefined => element.name?.slice(element.name.indexOf(":") + 1);
-
-const child = (element: Element | undefined, name: string): Element | undefined =>
-    element?.elements?.find((item) => localName(item) === name);
-
-/**
- * The hex value of a theme's color: an RGB color's value, or the last value of a system color, as Word writes them.
- * Other kinds of color aren't read.
- */
-const hexValue = (color: Element): string | undefined => {
-    const value = color.elements
-        ?.map((item) =>
-            localName(item) === "srgbClr" ? item.attributes?.val : localName(item) === "sysClr" ? item.attributes?.lastClr : undefined,
-        )
-        .find((item) => item !== undefined);
-    return typeof value === "string" && /^[0-9A-Fa-f]{6}$/.test(value) ? value.toUpperCase() : undefined;
-};
+import { decodeUtf8 } from "./util";
 
 // The patcher leaves parts in UTF-16 as they are, so they aren't read here either
 const isUtf16 = (bytes: Uint8Array): boolean => (bytes[0] === 0xff && bytes[1] === 0xfe) || (bytes[0] === 0xfe && bytes[1] === 0xff);
-
-const readPart = (files: ReadonlyMap<string, Uint8Array>, path: string): Element | undefined => {
-    const part = files.get(path);
-    return part === undefined || isUtf16(part) ? undefined : toJson(decodeUtf8(part));
-};
-
-/**
- * The document's theme part, found from the document's relationships.
- */
-const readTheme = (files: ReadonlyMap<string, Uint8Array>): Element | undefined => {
-    const relationships = readPart(files, "word/_rels/document.xml.rels");
-    const theme = child(relationships, "Relationships")?.elements?.find((item) => item.attributes?.Type === THEME_RELATIONSHIP_TYPE);
-    const target = theme?.attributes?.Target;
-    return typeof target === "string" ? readPart(files, resolveTarget("word/document.xml", target)) : undefined;
-};
 
 /**
  * Reads the colors of the document's theme. Colors it doesn't give, or gives in a way that isn't read, are Office's.
@@ -75,15 +19,7 @@ const readTheme = (files: ReadonlyMap<string, Uint8Array>): Element | undefined 
  * @returns The theme's colors, or `undefined` if the document has no theme that can be read
  */
 export const readThemeColors = (files: ReadonlyMap<string, Uint8Array>): ThemeColorValues | undefined => {
-    const theme = readTheme(files);
-    if (theme === undefined) {
-        return undefined;
-    }
-    const scheme = child(child(child(theme, "theme"), "themeElements"), "clrScheme");
-    const colors = (scheme?.elements ?? []).flatMap((color) => {
-        const name = COLOR_NAMES.get(localName(color) ?? "");
-        const value = hexValue(color);
-        return name && value ? [[name, value] as const] : [];
-    });
-    return themeColorValues(Object.fromEntries(colors));
+    const path = themePathOf(files, "word/document.xml");
+    const theme = path === undefined ? undefined : [...files].find(([name]) => isSamePart(name, path))?.[1];
+    return theme === undefined || isUtf16(theme) ? undefined : themeColorValues(readThemeColorValues(decodeUtf8(theme)));
 };
