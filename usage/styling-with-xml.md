@@ -78,7 +78,30 @@ const doc = new Document({
 
 Styles made in Word often name the theme's fonts and colors rather than a font or a color: "(Headings)" is written as `w:asciiTheme="majorHAnsi"`, and "Accent 1" as `w:themeColor="accent1"`. Word looks them up in the document's theme, which is the one `docx` writes, not the theme of the document your `styles.xml` came from. It's Office's theme, with Calibri Light for headings and Calibri for body text, unless the [`theme`](usage/themes.md) option changes it.
 
-To keep the fonts and colors of the document the styles came from, give its theme's fonts and colors in `theme`. They're in that document's `word/theme/theme1.xml`: the `typeface` of `a:latin` in `a:majorFont` is the font for headings, the one in `a:minorFont` is the font for body text, and `a:clrScheme` has the colors.
+To keep the fonts and colors of the document the styles came from, give it that document's theme, read with [`readTheme`](usage/themes.md#the-theme-of-a-word-document-or-template). It reads the document itself, or its `word/theme/theme1.xml`:
+
+```ts live
+import * as fs from "fs";
+import { Document, HeadingLevel, Paragraph, readTheme } from "docx";
+
+const doc = new Document({
+    externalStyles: fs.readFileSync("./demo/assets/custom-styles.xml", "utf-8"),
+    // The theme of the document the styles came from. Here, that of another document made in Word, with Cambria for headings
+    theme: readTheme(fs.readFileSync("./demo/assets/field-trip.docx")),
+    sections: [
+        {
+            children: [
+                // The styles' Heading 1 is in the theme's sixth accent color, darker 25%
+                new Paragraph({ text: "A heading in the theme's accent 6", heading: HeadingLevel.HEADING_1 }),
+                // Their Normal style is in the theme's font for body text
+                new Paragraph("Body text in the theme's font for body text"),
+            ],
+        },
+    ],
+});
+```
+
+Or give its theme's fonts and colors in `theme` yourself. They're in that document's `word/theme/theme1.xml`: the `typeface` of `a:latin` in `a:majorFont` is the font for headings, the one in `a:minorFont` is the font for body text, and `a:clrScheme` has the colors.
 
 ```ts live
 import { Document, HeadingLevel, Paragraph } from "docx";

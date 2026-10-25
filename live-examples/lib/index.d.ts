@@ -8563,6 +8563,12 @@ export declare type IThemeFontOptions = {
     readonly eastAsia?: string;
     /** The font for complex scripts, such as Arabic and Hebrew. By default Word picks a font for each script */
     readonly complexScript?: string;
+    /**
+     * The fonts for text in particular scripts, by the script's ISO 15924 code, such as `{ Jpan: "Meiryo", Arab: "Arial" }`
+     * for Japanese and Arabic text. They take the place of Office's fonts for those scripts, and Office's fonts are kept
+     * for the others
+     */
+    readonly scripts?: Readonly<Record<string, string>>;
 };
 
 /**
@@ -12048,6 +12054,41 @@ export declare const PrettifyType: {
     /** Indent with tab character */
     readonly WITH_TAB: "\t";
 };
+
+/**
+ * Reads a theme, such as the theme of a Word document or template, as the options of a document's `theme`. The new
+ * document then has the theme's colors and fonts, so the styles, tables and text that use them look as they do in the
+ * file the theme came from:
+ *
+ * - its name;
+ * - its colors, each an RGB color or a system color's last value;
+ * - its fonts for headings and body text, with their fonts for East Asian text, complex scripts and each other script.
+ *
+ * The fills, lines and effects of shapes styled by the theme are Office's in the new document, as `docx` writes them.
+ *
+ * It reads the colors or fonts Word saves on their own too, from Design > Colors > Customize Colors or Design > Fonts >
+ * Customize Fonts, as the theme's `colors` or `fonts`.
+ *
+ * @param data - A Word document or template (.docx, .docm, .dotx or .dotm), a PowerPoint presentation (.pptx), an Excel
+ * workbook (.xlsx), an Office theme (.thmx), or the XML of a theme, such as a document's word/theme/theme1.xml, or of a
+ * theme's colors or fonts, as text or bytes
+ * @returns The theme's options, to give `Document`'s `theme`, or to change before giving it
+ * @throws If the data isn't one of those, or the file has no theme
+ *
+ * @example
+ * ```typescript
+ * import * as fs from "fs";
+ * import { Document, readTheme } from "docx";
+ *
+ * // The template's styles, and its theme, whose colors and fonts its styles use
+ * const doc = new Document({
+ *   theme: readTheme(fs.readFileSync("template.dotx")),
+ *   externalStyles: fs.readFileSync("styles.xml", "utf-8"),
+ *   sections: [],
+ * });
+ * ```
+ */
+export declare const readTheme: (data: string | Uint8Array | ArrayBuffer) => IThemeOptions;
 
 /**
  * The data of images, for `ImageRun` and the patcher's `ImagePatch`: their formats, read from their bytes when not given,

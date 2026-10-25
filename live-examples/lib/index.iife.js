@@ -22714,9 +22714,21 @@ MAX: 9026 };
 		const latin = typeof font === "string" ? font : font === null || font === void 0 ? void 0 : font.latin;
 		return latin !== null && latin !== void 0 ? latin : OFFICE_FONTS[use].latin;
 	};
+	/**
+	* The font for each script of one of a theme's fonts: Office's, in Office's order, with those given in their place, and
+	* then the scripts Office has no font for, in the order given.
+	*/
+	var themeScriptFonts = (use, scripts = {}) => {
+		const office = OFFICE_SCRIPT_FONTS.map(([script, headings, body = headings]) => {
+			var _scripts$script;
+			return [script, (_scripts$script = scripts[script]) !== null && _scripts$script !== void 0 ? _scripts$script : use === "headings" ? headings : body];
+		});
+		const officeScripts = new Set(office.map(([script]) => script));
+		return [...office, ...Object.entries(scripts).filter(([script]) => !officeScripts.has(script))];
+	};
 	var createFontCollection = (use, fonts) => {
 		const font = fonts[use];
-		const { eastAsia = "", complexScript = "" } = typeof font === "object" ? font : {};
+		const { eastAsia = "", complexScript = "", scripts } = typeof font === "object" ? font : {};
 		const latin = themeLatinFont(use, fonts);
 		const office = OFFICE_FONTS[use];
 		return new BuilderElement({
@@ -22725,7 +22737,7 @@ MAX: 9026 };
 				createTextFont("a:latin", latin, latin === office.latin ? office.panose : void 0),
 				createTextFont("a:ea", eastAsia),
 				createTextFont("a:cs", complexScript),
-				...OFFICE_SCRIPT_FONTS.map(([script, headings, body = headings]) => new BuilderElement({
+				...themeScriptFonts(use, scripts).map(([script, typeface]) => new BuilderElement({
 					name: "a:font",
 					attributes: {
 						script: {
@@ -22734,7 +22746,7 @@ MAX: 9026 };
 						},
 						typeface: {
 							key: "typeface",
-							value: use === "headings" ? headings : body
+							value: typeface
 						}
 					}
 				}))
@@ -23116,6 +23128,1246 @@ MAX: 9026 };
 		get Colors() {
 			return this.colors;
 		}
+	};
+	//#endregion
+	//#region src/util/package-paths.ts
+	/**
+	* The paths of a package's parts, such as word/document.xml in a .docx file, and the targets of the relationships
+	* between them.
+	*
+	* @module
+	*/
+	/**
+	* The path of a part's relationships part, such as word/_rels/document.xml.rels for word/document.xml.
+	*/
+	var relationshipsPathOf = (path) => {
+		const slash = path.lastIndexOf("/");
+		return `${path.slice(0, slash + 1)}_rels/${path.slice(slash + 1)}.rels`;
+	};
+	/**
+	* The part a relationships part belongs to, or "" for the package's own (_rels/.rels), whose targets are from its root.
+	*/
+	var sourceOfRelationships = (path) => path.replace(/(^|\/)_rels\/([^/]*)\.rels$/, "$1$2");
+	var folderOf = (path) => path.slice(0, path.lastIndexOf("/") + 1);
+	/**
+	* The path of the part a relationship's target refers to: relative to the folder of the part the relationship belongs
+	* to, or from the package's root if it starts with "/". Backslashes, which some applications write, are read as slashes.
+	*
+	* @param from - The path of the part the relationship belongs to
+	*/
+	var resolveTarget = (from, target) => {
+		const normalized = target.replace(/\\/g, "/");
+		return (normalized.startsWith("/") ? normalized : `${folderOf(from)}${normalized}`).split("/").reduce((segments, segment) => {
+			if (segment === "" || segment === ".") return segments;
+			return segment === ".." ? segments.slice(0, -1) : [...segments, segment];
+		}, []).join("/");
+	};
+	/**
+	* A relationship's target for a part, relative to the folder of the part the relationship belongs to, such as
+	* "../embeddings/Microsoft_Excel_Worksheet1.xlsx" from word/charts/chart1.xml.
+	*
+	* @param from - The path of the part the relationship belongs to
+	* @param to - The path of the part it refers to
+	*/
+	var relativeTarget = (from, to) => {
+		const folders = folderOf(from).split("/").filter(Boolean);
+		const segments = to.split("/");
+		const common = folders.findIndex((folder, index) => index >= segments.length - 1 || segments[index] !== folder);
+		const shared = common === -1 ? folders.length : common;
+		return [...folders.slice(shared).map(() => ".."), ...segments.slice(shared)].join("/");
+	};
+	/**
+	* Whether two paths are the same part's. Part names are compared without regard to case, as the Open Packaging
+	* Conventions compare them, so a relationship's target such as "Theme/THEME1.xml" from word/document.xml names
+	* word/theme/theme1.xml.
+	*/
+	var isSamePart = (path, other) => path.toLowerCase() === other.toLowerCase();
+	//#endregion
+	//#region node_modules/fflate/esm/browser.js
+	var u8 = Uint8Array;
+	var u16 = Uint16Array;
+	var i32 = Int32Array;
+	var fleb = new u8([
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		1,
+		1,
+		1,
+		1,
+		2,
+		2,
+		2,
+		2,
+		3,
+		3,
+		3,
+		3,
+		4,
+		4,
+		4,
+		4,
+		5,
+		5,
+		5,
+		5,
+		0,
+		0,
+		0,
+		0
+	]);
+	var fdeb = new u8([
+		0,
+		0,
+		0,
+		0,
+		1,
+		1,
+		2,
+		2,
+		3,
+		3,
+		4,
+		4,
+		5,
+		5,
+		6,
+		6,
+		7,
+		7,
+		8,
+		8,
+		9,
+		9,
+		10,
+		10,
+		11,
+		11,
+		12,
+		12,
+		13,
+		13,
+		0,
+		0
+	]);
+	var clim = new u8([
+		16,
+		17,
+		18,
+		0,
+		8,
+		7,
+		9,
+		6,
+		10,
+		5,
+		11,
+		4,
+		12,
+		3,
+		13,
+		2,
+		14,
+		1,
+		15
+	]);
+	var freb = function(eb, start) {
+		var b = new u16(31);
+		for (var i = 0; i < 31; ++i) b[i] = start += 1 << eb[i - 1];
+		var r = new i32(b[30]);
+		for (var i = 1; i < 30; ++i) for (var j = b[i]; j < b[i + 1]; ++j) r[j] = j - b[i] << 5 | i;
+		return {
+			b,
+			r
+		};
+	};
+	var _a = freb(fleb, 2);
+	var fl = _a.b;
+	var revfl = _a.r;
+	fl[28] = 258, revfl[258] = 28;
+	var _b = freb(fdeb, 0);
+	var fd = _b.b;
+	var revfd = _b.r;
+	var rev = new u16(32768);
+	for (var i = 0; i < 32768; ++i) {
+		var x = (i & 43690) >> 1 | (i & 21845) << 1;
+		x = (x & 52428) >> 2 | (x & 13107) << 2;
+		x = (x & 61680) >> 4 | (x & 3855) << 4;
+		rev[i] = ((x & 65280) >> 8 | (x & 255) << 8) >> 1;
+	}
+	var hMap = (function(cd, mb, r) {
+		var s = cd.length;
+		var i = 0;
+		var l = new u16(mb);
+		for (; i < s; ++i) if (cd[i]) ++l[cd[i] - 1];
+		var le = new u16(mb);
+		for (i = 1; i < mb; ++i) le[i] = le[i - 1] + l[i - 1] << 1;
+		var co;
+		if (r) {
+			co = new u16(1 << mb);
+			var rvb = 15 - mb;
+			for (i = 0; i < s; ++i) if (cd[i]) {
+				var sv = i << 4 | cd[i];
+				var r_1 = mb - cd[i];
+				var v = le[cd[i] - 1]++ << r_1;
+				for (var m = v | (1 << r_1) - 1; v <= m; ++v) co[rev[v] >> rvb] = sv;
+			}
+		} else {
+			co = new u16(s);
+			for (i = 0; i < s; ++i) if (cd[i]) co[i] = rev[le[cd[i] - 1]++] >> 15 - cd[i];
+		}
+		return co;
+	});
+	var flt = new u8(288);
+	for (var i = 0; i < 144; ++i) flt[i] = 8;
+	for (var i = 144; i < 256; ++i) flt[i] = 9;
+	for (var i = 256; i < 280; ++i) flt[i] = 7;
+	for (var i = 280; i < 288; ++i) flt[i] = 8;
+	var fdt = new u8(32);
+	for (var i = 0; i < 32; ++i) fdt[i] = 5;
+	var flm = /*#__PURE__*/ hMap(flt, 9, 0);
+	var flrm = /*#__PURE__*/ hMap(flt, 9, 1);
+	var fdm = /*#__PURE__*/ hMap(fdt, 5, 0);
+	var fdrm = /*#__PURE__*/ hMap(fdt, 5, 1);
+	var max = function(a) {
+		var m = a[0];
+		for (var i = 1; i < a.length; ++i) if (a[i] > m) m = a[i];
+		return m;
+	};
+	var bits = function(d, p, m) {
+		var o = p / 8 | 0;
+		return (d[o] | d[o + 1] << 8) >> (p & 7) & m;
+	};
+	var bits16 = function(d, p) {
+		var o = p / 8 | 0;
+		return (d[o] | d[o + 1] << 8 | d[o + 2] << 16) >> (p & 7);
+	};
+	var shft = function(p) {
+		return (p + 7) / 8 | 0;
+	};
+	var slc = function(v, s, e) {
+		if (s == null || s < 0) s = 0;
+		if (e == null || e > v.length) e = v.length;
+		return new u8(v.subarray(s, e));
+	};
+	var ec = [
+		"unexpected EOF",
+		"invalid block type",
+		"invalid length/literal",
+		"invalid distance",
+		"stream finished",
+		"no stream handler",
+		,
+		"no callback",
+		"invalid UTF-8 data",
+		"extra field too long",
+		"date not in range 1980-2099",
+		"filename too long",
+		"stream finishing",
+		"invalid zip data"
+	];
+	var err = function(ind, msg, nt) {
+		var e = new Error(msg || ec[ind]);
+		e.code = ind;
+		if (Error.captureStackTrace) Error.captureStackTrace(e, err);
+		if (!nt) throw e;
+		return e;
+	};
+	var inflt = function(dat, st, buf, dict) {
+		var sl = dat.length, dl = dict ? dict.length : 0;
+		if (!sl || st.f && !st.l) return buf || new u8(0);
+		var noBuf = !buf;
+		var resize = noBuf || st.i != 2;
+		var noSt = st.i;
+		if (noBuf) buf = new u8(sl * 3);
+		var cbuf = function(l) {
+			var bl = buf.length;
+			if (l > bl) {
+				var nbuf = new u8(Math.max(bl * 2, l));
+				nbuf.set(buf);
+				buf = nbuf;
+			}
+		};
+		var final = st.f || 0, pos = st.p || 0, bt = st.b || 0, lm = st.l, dm = st.d, lbt = st.m, dbt = st.n;
+		var tbts = sl * 8;
+		do {
+			if (!lm) {
+				final = bits(dat, pos, 1);
+				var type = bits(dat, pos + 1, 3);
+				pos += 3;
+				if (!type) {
+					var s = shft(pos) + 4, l = dat[s - 4] | dat[s - 3] << 8, t = s + l;
+					if (t > sl) {
+						if (noSt) err(0);
+						break;
+					}
+					if (resize) cbuf(bt + l);
+					buf.set(dat.subarray(s, t), bt);
+					st.b = bt += l, st.p = pos = t * 8, st.f = final;
+					continue;
+				} else if (type == 1) lm = flrm, dm = fdrm, lbt = 9, dbt = 5;
+				else if (type == 2) {
+					var hLit = bits(dat, pos, 31) + 257, hcLen = bits(dat, pos + 10, 15) + 4;
+					var tl = hLit + bits(dat, pos + 5, 31) + 1;
+					pos += 14;
+					var ldt = new u8(tl);
+					var clt = new u8(19);
+					for (var i = 0; i < hcLen; ++i) clt[clim[i]] = bits(dat, pos + i * 3, 7);
+					pos += hcLen * 3;
+					var clb = max(clt), clbmsk = (1 << clb) - 1;
+					var clm = hMap(clt, clb, 1);
+					for (var i = 0; i < tl;) {
+						var r = clm[bits(dat, pos, clbmsk)];
+						pos += r & 15;
+						var s = r >> 4;
+						if (s < 16) ldt[i++] = s;
+						else {
+							var c = 0, n = 0;
+							if (s == 16) n = 3 + bits(dat, pos, 3), pos += 2, c = ldt[i - 1];
+							else if (s == 17) n = 3 + bits(dat, pos, 7), pos += 3;
+							else if (s == 18) n = 11 + bits(dat, pos, 127), pos += 7;
+							while (n--) ldt[i++] = c;
+						}
+					}
+					var lt = ldt.subarray(0, hLit), dt = ldt.subarray(hLit);
+					lbt = max(lt);
+					dbt = max(dt);
+					lm = hMap(lt, lbt, 1);
+					dm = hMap(dt, dbt, 1);
+				} else err(1);
+				if (pos > tbts) {
+					if (noSt) err(0);
+					break;
+				}
+			}
+			if (resize) cbuf(bt + 131072);
+			var lms = (1 << lbt) - 1, dms = (1 << dbt) - 1;
+			var lpos = pos;
+			for (;; lpos = pos) {
+				var c = lm[bits16(dat, pos) & lms], sym = c >> 4;
+				pos += c & 15;
+				if (pos > tbts) {
+					if (noSt) err(0);
+					break;
+				}
+				if (!c) err(2);
+				if (sym < 256) buf[bt++] = sym;
+				else if (sym == 256) {
+					lpos = pos, lm = null;
+					break;
+				} else {
+					var add = sym - 254;
+					if (sym > 264) {
+						var i = sym - 257, b = fleb[i];
+						add = bits(dat, pos, (1 << b) - 1) + fl[i];
+						pos += b;
+					}
+					var d = dm[bits16(dat, pos) & dms], dsym = d >> 4;
+					if (!d) err(3);
+					pos += d & 15;
+					var dt = fd[dsym];
+					if (dsym > 3) {
+						var b = fdeb[dsym];
+						dt += bits16(dat, pos) & (1 << b) - 1, pos += b;
+					}
+					if (pos > tbts) {
+						if (noSt) err(0);
+						break;
+					}
+					if (resize) cbuf(bt + 131072);
+					var end = bt + add;
+					if (bt < dt) {
+						var shift = dl - dt, dend = Math.min(dt, end);
+						if (shift + bt < 0) err(3);
+						for (; bt < dend; ++bt) buf[bt] = dict[shift + bt];
+					}
+					for (; bt < end; ++bt) buf[bt] = buf[bt - dt];
+				}
+			}
+			st.l = lm, st.p = lpos, st.b = bt, st.f = final;
+			if (lm) final = 1, st.m = lbt, st.d = dm, st.n = dbt;
+		} while (!final);
+		return bt != buf.length && noBuf ? slc(buf, 0, bt) : buf.subarray(0, bt);
+	};
+	var wbits = function(d, p, v) {
+		v <<= p & 7;
+		var o = p / 8 | 0;
+		d[o] |= v;
+		d[o + 1] |= v >> 8;
+	};
+	var wbits16 = function(d, p, v) {
+		v <<= p & 7;
+		var o = p / 8 | 0;
+		d[o] |= v;
+		d[o + 1] |= v >> 8;
+		d[o + 2] |= v >> 16;
+	};
+	var hTree = function(d, mb) {
+		var t = [];
+		for (var i = 0; i < d.length; ++i) if (d[i]) t.push({
+			s: i,
+			f: d[i]
+		});
+		var s = t.length;
+		var t2 = t.slice();
+		if (!s) return {
+			t: et,
+			l: 0
+		};
+		if (s == 1) {
+			var v = new u8(t[0].s + 1);
+			v[t[0].s] = 1;
+			return {
+				t: v,
+				l: 1
+			};
+		}
+		t.sort(function(a, b) {
+			return a.f - b.f;
+		});
+		t.push({
+			s: -1,
+			f: 25001
+		});
+		var l = t[0], r = t[1], i0 = 0, i1 = 1, i2 = 2;
+		t[0] = {
+			s: -1,
+			f: l.f + r.f,
+			l,
+			r
+		};
+		while (i1 != s - 1) {
+			l = t[t[i0].f < t[i2].f ? i0++ : i2++];
+			r = t[i0 != i1 && t[i0].f < t[i2].f ? i0++ : i2++];
+			t[i1++] = {
+				s: -1,
+				f: l.f + r.f,
+				l,
+				r
+			};
+		}
+		var maxSym = t2[0].s;
+		for (var i = 1; i < s; ++i) if (t2[i].s > maxSym) maxSym = t2[i].s;
+		var tr = new u16(maxSym + 1);
+		var mbt = ln(t[i1 - 1], tr, 0);
+		if (mbt > mb) {
+			var i = 0, dt = 0;
+			var lft = mbt - mb, cst = 1 << lft;
+			t2.sort(function(a, b) {
+				return tr[b.s] - tr[a.s] || a.f - b.f;
+			});
+			for (; i < s; ++i) {
+				var i2_1 = t2[i].s;
+				if (tr[i2_1] > mb) {
+					dt += cst - (1 << mbt - tr[i2_1]);
+					tr[i2_1] = mb;
+				} else break;
+			}
+			dt >>= lft;
+			while (dt > 0) {
+				var i2_2 = t2[i].s;
+				if (tr[i2_2] < mb) dt -= 1 << mb - tr[i2_2]++ - 1;
+				else ++i;
+			}
+			for (; i >= 0 && dt; --i) {
+				var i2_3 = t2[i].s;
+				if (tr[i2_3] == mb) {
+					--tr[i2_3];
+					++dt;
+				}
+			}
+			mbt = mb;
+		}
+		return {
+			t: new u8(tr),
+			l: mbt
+		};
+	};
+	var ln = function(n, l, d) {
+		return n.s == -1 ? Math.max(ln(n.l, l, d + 1), ln(n.r, l, d + 1)) : l[n.s] = d;
+	};
+	var lc = function(c) {
+		var s = c.length;
+		while (s && !c[--s]);
+		var cl = new u16(++s);
+		var cli = 0, cln = c[0], cls = 1;
+		var w = function(v) {
+			cl[cli++] = v;
+		};
+		for (var i = 1; i <= s; ++i) if (c[i] == cln && i != s) ++cls;
+		else {
+			if (!cln && cls > 2) {
+				for (; cls > 138; cls -= 138) w(32754);
+				if (cls > 2) {
+					w(cls > 10 ? cls - 11 << 5 | 28690 : cls - 3 << 5 | 12305);
+					cls = 0;
+				}
+			} else if (cls > 3) {
+				w(cln), --cls;
+				for (; cls > 6; cls -= 6) w(8304);
+				if (cls > 2) w(cls - 3 << 5 | 8208), cls = 0;
+			}
+			while (cls--) w(cln);
+			cls = 1;
+			cln = c[i];
+		}
+		return {
+			c: cl.subarray(0, cli),
+			n: s
+		};
+	};
+	var clen = function(cf, cl) {
+		var l = 0;
+		for (var i = 0; i < cl.length; ++i) l += cf[i] * cl[i];
+		return l;
+	};
+	var wfblk = function(out, pos, dat) {
+		var s = dat.length;
+		var o = shft(pos + 2);
+		out[o] = s & 255;
+		out[o + 1] = s >> 8;
+		out[o + 2] = out[o] ^ 255;
+		out[o + 3] = out[o + 1] ^ 255;
+		for (var i = 0; i < s; ++i) out[o + i + 4] = dat[i];
+		return (o + 4 + s) * 8;
+	};
+	var wblk = function(dat, out, final, syms, lf, df, eb, li, bs, bl, p) {
+		wbits(out, p++, final);
+		++lf[256];
+		var _a = hTree(lf, 15), dlt = _a.t, mlb = _a.l;
+		var _b = hTree(df, 15), ddt = _b.t, mdb = _b.l;
+		var _c = lc(dlt), lclt = _c.c, nlc = _c.n;
+		var _d = lc(ddt), lcdt = _d.c, ndc = _d.n;
+		var lcfreq = new u16(19);
+		for (var i = 0; i < lclt.length; ++i) ++lcfreq[lclt[i] & 31];
+		for (var i = 0; i < lcdt.length; ++i) ++lcfreq[lcdt[i] & 31];
+		var _e = hTree(lcfreq, 7), lct = _e.t, mlcb = _e.l;
+		var nlcc = 19;
+		for (; nlcc > 4 && !lct[clim[nlcc - 1]]; --nlcc);
+		var flen = bl + 5 << 3;
+		var ftlen = clen(lf, flt) + clen(df, fdt) + eb;
+		var dtlen = clen(lf, dlt) + clen(df, ddt) + eb + 14 + 3 * nlcc + clen(lcfreq, lct) + 2 * lcfreq[16] + 3 * lcfreq[17] + 7 * lcfreq[18];
+		if (bs >= 0 && flen <= ftlen && flen <= dtlen) return wfblk(out, p, dat.subarray(bs, bs + bl));
+		var lm, ll, dm, dl;
+		wbits(out, p, 1 + (dtlen < ftlen)), p += 2;
+		if (dtlen < ftlen) {
+			lm = hMap(dlt, mlb, 0), ll = dlt, dm = hMap(ddt, mdb, 0), dl = ddt;
+			var llm = hMap(lct, mlcb, 0);
+			wbits(out, p, nlc - 257);
+			wbits(out, p + 5, ndc - 1);
+			wbits(out, p + 10, nlcc - 4);
+			p += 14;
+			for (var i = 0; i < nlcc; ++i) wbits(out, p + 3 * i, lct[clim[i]]);
+			p += 3 * nlcc;
+			var lcts = [lclt, lcdt];
+			for (var it = 0; it < 2; ++it) {
+				var clct = lcts[it];
+				for (var i = 0; i < clct.length; ++i) {
+					var len = clct[i] & 31;
+					wbits(out, p, llm[len]), p += lct[len];
+					if (len > 15) wbits(out, p, clct[i] >> 5 & 127), p += clct[i] >> 12;
+				}
+			}
+		} else lm = flm, ll = flt, dm = fdm, dl = fdt;
+		for (var i = 0; i < li; ++i) {
+			var sym = syms[i];
+			if (sym > 255) {
+				var len = sym >> 18 & 31;
+				wbits16(out, p, lm[len + 257]), p += ll[len + 257];
+				if (len > 7) wbits(out, p, sym >> 23 & 31), p += fleb[len];
+				var dst = sym & 31;
+				wbits16(out, p, dm[dst]), p += dl[dst];
+				if (dst > 3) wbits16(out, p, sym >> 5 & 8191), p += fdeb[dst];
+			} else wbits16(out, p, lm[sym]), p += ll[sym];
+		}
+		wbits16(out, p, lm[256]);
+		return p + ll[256];
+	};
+	var deo = /*#__PURE__*/ new i32([
+		65540,
+		131080,
+		131088,
+		131104,
+		262176,
+		1048704,
+		1048832,
+		2114560,
+		2117632
+	]);
+	var et = /*#__PURE__*/ new u8(0);
+	var dflt = function(dat, lvl, plvl, pre, post, st) {
+		var s = st.z || dat.length;
+		var o = new u8(pre + s + 5 * (1 + Math.ceil(s / 7e3)) + post);
+		var w = o.subarray(pre, o.length - post);
+		var lst = st.l;
+		var pos = (st.r || 0) & 7;
+		if (lvl) {
+			if (pos) w[0] = st.r >> 3;
+			var opt = deo[lvl - 1];
+			var n = opt >> 13, c = opt & 8191;
+			var msk_1 = (1 << plvl) - 1;
+			var prev = st.p || new u16(32768), head = st.h || new u16(msk_1 + 1);
+			var bs1_1 = Math.ceil(plvl / 3), bs2_1 = 2 * bs1_1;
+			var hsh = function(i) {
+				return (dat[i] ^ dat[i + 1] << bs1_1 ^ dat[i + 2] << bs2_1) & msk_1;
+			};
+			var syms = new i32(25e3);
+			var lf = new u16(288), df = new u16(32);
+			var lc_1 = 0, eb = 0, i = st.i || 0, li = 0, wi = st.w || 0, bs = 0;
+			for (; i + 2 < s; ++i) {
+				var hv = hsh(i);
+				var imod = i & 32767, pimod = head[hv];
+				prev[imod] = pimod;
+				head[hv] = imod;
+				if (wi <= i) {
+					var rem = s - i;
+					if ((lc_1 > 7e3 || li > 24576) && (rem > 423 || !lst)) {
+						pos = wblk(dat, w, 0, syms, lf, df, eb, li, bs, i - bs, pos);
+						li = lc_1 = eb = 0, bs = i;
+						for (var j = 0; j < 286; ++j) lf[j] = 0;
+						for (var j = 0; j < 30; ++j) df[j] = 0;
+					}
+					var l = 2, d = 0, ch_1 = c, dif = imod - pimod & 32767;
+					if (rem > 2 && hv == hsh(i - dif)) {
+						var maxn = Math.min(n, rem) - 1;
+						var maxd = Math.min(32767, i);
+						var ml = Math.min(258, rem);
+						while (dif <= maxd && --ch_1 && imod != pimod) {
+							if (dat[i + l] == dat[i + l - dif]) {
+								var nl = 0;
+								for (; nl < ml && dat[i + nl] == dat[i + nl - dif]; ++nl);
+								if (nl > l) {
+									l = nl, d = dif;
+									if (nl > maxn) break;
+									var mmd = Math.min(dif, nl - 2);
+									var md = 0;
+									for (var j = 0; j < mmd; ++j) {
+										var ti = i - dif + j & 32767;
+										var cd = ti - prev[ti] & 32767;
+										if (cd > md) md = cd, pimod = ti;
+									}
+								}
+							}
+							imod = pimod, pimod = prev[imod];
+							dif += imod - pimod & 32767;
+						}
+					}
+					if (d) {
+						syms[li++] = 268435456 | revfl[l] << 18 | revfd[d];
+						var lin = revfl[l] & 31, din = revfd[d] & 31;
+						eb += fleb[lin] + fdeb[din];
+						++lf[257 + lin];
+						++df[din];
+						wi = i + l;
+						++lc_1;
+					} else {
+						syms[li++] = dat[i];
+						++lf[dat[i]];
+					}
+				}
+			}
+			for (i = Math.max(i, wi); i < s; ++i) {
+				syms[li++] = dat[i];
+				++lf[dat[i]];
+			}
+			pos = wblk(dat, w, lst, syms, lf, df, eb, li, bs, i - bs, pos);
+			if (!lst) {
+				st.r = pos & 7 | w[pos / 8 | 0] << 3;
+				pos -= 7;
+				st.h = head, st.p = prev, st.i = i, st.w = wi;
+			}
+		} else {
+			for (var i = st.w || 0; i < s + lst; i += 65535) {
+				var e = i + 65535;
+				if (e >= s) {
+					w[pos / 8 | 0] = lst;
+					e = s;
+				}
+				pos = wfblk(w, pos + 1, dat.subarray(i, e));
+			}
+			st.i = s;
+		}
+		return slc(o, 0, pre + shft(pos) + post);
+	};
+	var crct = /*#__PURE__*/ (function() {
+		var t = /* @__PURE__ */ new Int32Array(256);
+		for (var i = 0; i < 256; ++i) {
+			var c = i, k = 9;
+			while (--k) c = (c & 1 && -306674912) ^ c >>> 1;
+			t[i] = c;
+		}
+		return t;
+	})();
+	var crc = function() {
+		var c = -1;
+		return {
+			p: function(d) {
+				var cr = c;
+				for (var i = 0; i < d.length; ++i) cr = crct[cr & 255 ^ d[i]] ^ cr >>> 8;
+				c = cr;
+			},
+			d: function() {
+				return ~c;
+			}
+		};
+	};
+	var dopt = function(dat, opt, pre, post, st) {
+		if (!st) {
+			st = { l: 1 };
+			if (opt.dictionary) {
+				var dict = opt.dictionary.subarray(-32768);
+				var newDat = new u8(dict.length + dat.length);
+				newDat.set(dict);
+				newDat.set(dat, dict.length);
+				dat = newDat;
+				st.w = dict.length;
+			}
+		}
+		return dflt(dat, opt.level == null ? 6 : opt.level, opt.mem == null ? st.l ? Math.ceil(Math.max(8, Math.min(13, Math.log(dat.length))) * 1.5) : 20 : 12 + opt.mem, pre, post, st);
+	};
+	var mrg = function(a, b) {
+		var o = {};
+		for (var k in a) o[k] = a[k];
+		for (var k in b) o[k] = b[k];
+		return o;
+	};
+	var b2 = function(d, b) {
+		return d[b] | d[b + 1] << 8;
+	};
+	var b4 = function(d, b) {
+		return (d[b] | d[b + 1] << 8 | d[b + 2] << 16 | d[b + 3] << 24) >>> 0;
+	};
+	var b8 = function(d, b) {
+		return b4(d, b) + b4(d, b + 4) * 4294967296;
+	};
+	var wbytes = function(d, b, v) {
+		for (; v; ++b) d[b] = v, v >>>= 8;
+	};
+	/**
+	* Compresses data with DEFLATE without any wrapper
+	* @param data The data to compress
+	* @param opts The compression options
+	* @returns The deflated version of the data
+	*/
+	function deflateSync(data, opts) {
+		return dopt(data, opts || {}, 0, 0);
+	}
+	function inflateSync(data, opts) {
+		return inflt(data, { i: 2 }, opts && opts.out, opts && opts.dictionary);
+	}
+	var fltn = function(d, p, t, o) {
+		for (var k in d) {
+			var val = d[k], n = p + k, op = o;
+			if (Array.isArray(val)) op = mrg(o, val[1]), val = val[0];
+			if (ArrayBuffer.isView(val)) t[n] = [val, op];
+			else {
+				t[n += "/"] = [new u8(0), op];
+				fltn(val, n, t, o);
+			}
+		}
+	};
+	var te = typeof TextEncoder != "undefined" && /*#__PURE__*/ new TextEncoder();
+	var td = typeof TextDecoder != "undefined" && /*#__PURE__*/ new TextDecoder();
+	try {
+		td.decode(et, { stream: true });
+	} catch (e) {}
+	var dutf8 = function(d) {
+		for (var r = "", i = 0;;) {
+			var c = d[i++];
+			var eb = (c > 127) + (c > 223) + (c > 239);
+			if (i + eb > d.length) return {
+				s: r,
+				r: slc(d, i - 1)
+			};
+			if (!eb) r += String.fromCharCode(c);
+			else if (eb == 3) c = ((c & 15) << 18 | (d[i++] & 63) << 12 | (d[i++] & 63) << 6 | d[i++] & 63) - 65536, r += String.fromCharCode(55296 | c >> 10, 56320 | c & 1023);
+			else if (eb & 1) r += String.fromCharCode((c & 31) << 6 | d[i++] & 63);
+			else r += String.fromCharCode((c & 15) << 12 | (d[i++] & 63) << 6 | d[i++] & 63);
+		}
+	};
+	/**
+	* Converts a string into a Uint8Array for use with compression/decompression methods
+	* @param str The string to encode
+	* @param latin1 Whether or not to interpret the data as Latin-1. This should
+	*               not need to be true unless decoding a binary string.
+	* @returns The string encoded in UTF-8/Latin-1 binary
+	*/
+	function strToU8(str, latin1) {
+		if (latin1) {
+			var ar_1 = new u8(str.length);
+			for (var i = 0; i < str.length; ++i) ar_1[i] = str.charCodeAt(i);
+			return ar_1;
+		}
+		if (te) return te.encode(str);
+		var l = str.length;
+		var ar = new u8(str.length + (str.length >> 1));
+		var ai = 0;
+		var w = function(v) {
+			ar[ai++] = v;
+		};
+		for (var i = 0; i < l; ++i) {
+			if (ai + 5 > ar.length) {
+				var n = new u8(ai + 8 + (l - i << 1));
+				n.set(ar);
+				ar = n;
+			}
+			var c = str.charCodeAt(i);
+			if (c < 128 || latin1) w(c);
+			else if (c < 2048) w(192 | c >> 6), w(128 | c & 63);
+			else if (c > 55295 && c < 57344) c = 65536 + (c & 1047552) | str.charCodeAt(++i) & 1023, w(240 | c >> 18), w(128 | c >> 12 & 63), w(128 | c >> 6 & 63), w(128 | c & 63);
+			else w(224 | c >> 12), w(128 | c >> 6 & 63), w(128 | c & 63);
+		}
+		return slc(ar, 0, ai);
+	}
+	/**
+	* Converts a Uint8Array to a string
+	* @param dat The data to decode to string
+	* @param latin1 Whether or not to interpret the data as Latin-1. This should
+	*               not need to be true unless encoding to binary string.
+	* @returns The original UTF-8/Latin-1 string
+	*/
+	function strFromU8(dat, latin1) {
+		if (latin1) {
+			var r = "";
+			for (var i = 0; i < dat.length; i += 16384) r += String.fromCharCode.apply(null, dat.subarray(i, i + 16384));
+			return r;
+		} else if (td) return td.decode(dat);
+		else {
+			var _a = dutf8(dat), s = _a.s, r = _a.r;
+			if (r.length) err(8);
+			return s;
+		}
+	}
+	var slzh = function(d, b) {
+		return b + 30 + b2(d, b + 26) + b2(d, b + 28);
+	};
+	var zh = function(d, b, z) {
+		var fnl = b2(d, b + 28), efl = b2(d, b + 30), fn = strFromU8(d.subarray(b + 46, b + 46 + fnl), !(b2(d, b + 8) & 2048)), es = b + 46 + fnl;
+		var _a = z64hs(d, es, efl, z, b4(d, b + 20), b4(d, b + 24), b4(d, b + 42)), sc = _a[0], su = _a[1], off = _a[2];
+		return [
+			b2(d, b + 10),
+			sc,
+			su,
+			fn,
+			es + efl + b2(d, b + 32),
+			off
+		];
+	};
+	var z64hs = function(d, b, l, z, sc, su, off) {
+		var nsc = sc == 4294967295, nsu = su == 4294967295, noff = off == 4294967295, e = b + l;
+		var nf = nsc + nsu + noff;
+		if (z && nf) {
+			for (; b + 4 < e; b += 4 + b2(d, b + 2)) if (b2(d, b) == 1) return [
+				nsc ? b8(d, b + 4 + 8 * nsu) : sc,
+				nsu ? b8(d, b + 4) : su,
+				noff ? b8(d, b + 4 + 8 * (nsu + nsc)) : off,
+				1
+			];
+			if (z < 2) err(13);
+		}
+		return [
+			sc,
+			su,
+			off,
+			0
+		];
+	};
+	var exfl = function(ex) {
+		var le = 0;
+		if (ex) for (var k in ex) {
+			var l = ex[k].length;
+			if (l > 65535) err(9);
+			le += l + 4;
+		}
+		return le;
+	};
+	var wzh = function(d, b, f, fn, u, c, ce, co) {
+		var fl = fn.length, ex = f.extra, col = co && co.length;
+		var exl = exfl(ex);
+		wbytes(d, b, ce != null ? 33639248 : 67324752), b += 4;
+		if (ce != null) d[b++] = 20, d[b++] = f.os;
+		d[b] = 20, b += 2;
+		d[b++] = f.flag << 1 | (c < 0 && 8), d[b++] = u && 8;
+		d[b++] = f.compression & 255, d[b++] = f.compression >> 8;
+		var dt = new Date(f.mtime == null ? Date.now() : f.mtime), y = dt.getFullYear() - 1980;
+		if (y < 0 || y > 119) err(10);
+		wbytes(d, b, y << 25 | dt.getMonth() + 1 << 21 | dt.getDate() << 16 | dt.getHours() << 11 | dt.getMinutes() << 5 | dt.getSeconds() >> 1), b += 4;
+		if (c != -1) {
+			wbytes(d, b, f.crc);
+			wbytes(d, b + 4, c < 0 ? -c - 2 : c);
+			wbytes(d, b + 8, f.size);
+		}
+		wbytes(d, b + 12, fl);
+		wbytes(d, b + 14, exl), b += 16;
+		if (ce != null) {
+			wbytes(d, b, col);
+			wbytes(d, b + 6, f.attrs);
+			wbytes(d, b + 10, ce), b += 14;
+		}
+		d.set(fn, b);
+		b += fl;
+		if (exl) for (var k in ex) {
+			var exf = ex[k], l = exf.length;
+			wbytes(d, b, +k);
+			wbytes(d, b + 2, l);
+			d.set(exf, b + 4), b += 4 + l;
+		}
+		if (col) d.set(co, b), b += col;
+		return b;
+	};
+	var wzf = function(o, b, c, d, e) {
+		wbytes(o, b, 101010256);
+		wbytes(o, b + 8, c);
+		wbytes(o, b + 10, c);
+		wbytes(o, b + 12, d);
+		wbytes(o, b + 16, e);
+	};
+	/**
+	* Synchronously creates a ZIP file. Prefer using `zip` for better performance
+	* with more than one file.
+	* @param data The directory structure for the ZIP archive
+	* @param opts The main options, merged with per-file options
+	* @returns The generated ZIP archive
+	*/
+	function zipSync(data, opts) {
+		if (!opts) opts = {};
+		var r = {};
+		var files = [];
+		fltn(data, "", r, opts);
+		var o = 0;
+		var tot = 0;
+		for (var fn in r) {
+			var _a = r[fn], file = _a[0], p = _a[1];
+			var compression = p.level == 0 ? 0 : 8;
+			var f = strToU8(fn), s = f.length;
+			var com = p.comment, m = com && strToU8(com), ms = m && m.length;
+			var exl = exfl(p.extra);
+			if (s > 65535) err(11);
+			var d = compression ? deflateSync(file, p) : file, l = d.length;
+			var c = crc();
+			c.p(file);
+			files.push(mrg(p, {
+				size: file.length,
+				crc: c.d(),
+				c: d,
+				f,
+				m,
+				u: s != fn.length || m && com.length != ms,
+				o,
+				compression
+			}));
+			o += 30 + s + exl + l;
+			tot += 76 + 2 * (s + exl) + (ms || 0) + l;
+		}
+		var out = new u8(tot + 22), oe = o, cdl = tot - o;
+		for (var i = 0; i < files.length; ++i) {
+			var f = files[i];
+			wzh(out, f.o, f, f.f, f.u, f.c.length);
+			var badd = 30 + f.f.length + exfl(f.extra);
+			out.set(f.c, f.o + badd);
+			wzh(out, o, f, f.f, f.u, f.c.length, f.o, f.m), o += 16 + badd + (f.m ? f.m.length : 0);
+		}
+		wzf(out, o, files.length, cdl, oe);
+		return out;
+	}
+	/**
+	* Synchronously decompresses a ZIP archive. Prefer using `unzip` for better
+	* performance with more than one file.
+	* @param data The raw compressed ZIP file
+	* @param opts The ZIP extraction options
+	* @returns The decompressed files
+	*/
+	function unzipSync(data, opts) {
+		var files = {};
+		var e = data.length - 22;
+		for (; b4(data, e) != 101010256; --e) if (!e || data.length - e > 65558) err(13);
+		var c = b2(data, e + 8);
+		if (!c) return {};
+		var o = b4(data, e + 16);
+		var z = b4(data, e - 20) == 117853008;
+		if (z) {
+			var ze = b4(data, e - 12);
+			z = b4(data, ze) == 101075792;
+			if (z) {
+				c = b4(data, ze + 32);
+				o = b4(data, ze + 48);
+			}
+		}
+		var fltr = opts && opts.filter;
+		for (var i = 0; i < c; ++i) {
+			var _a = zh(data, o, z), c_2 = _a[0], sc = _a[1], su = _a[2], fn = _a[3], no = _a[4], off = _a[5], b = slzh(data, off);
+			o = no;
+			if (!fltr || fltr({
+				name: fn,
+				size: sc,
+				originalSize: su,
+				compression: c_2
+			})) {
+				if (!c_2) files[fn] = slc(data, b, b + sc);
+				else if (c_2 == 8) files[fn] = inflateSync(data.subarray(b, b + sc), { out: new u8(su) });
+				else err(14, "unknown compression type " + c_2);
+			}
+		}
+		return files;
+	}
+	//#endregion
+	//#region src/util/zip.ts
+	/**
+	* Zips and unzips packages, such as .docx files, and gives a zip file in the output types of `Packer` and
+	* `patchDocument`.
+	*
+	* @module
+	*/
+	/**
+	* The bytes of a file in a package. Bytes from another realm, such as a vm context's Buffer, are read through this
+	* realm's `Uint8Array`, as fflate tells a file's bytes from a folder of files by `instanceof Uint8Array`.
+	*/
+	var bytesOf$2 = (data) => typeof data === "string" ? encodeUtf8(data) : ArrayBuffer.isView(data) ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength) : new Uint8Array(data);
+	/**
+	* Zips a package's files, each compressed with DEFLATE, in the order they are given. A path given twice keeps its first
+	* place and its last data, so a file can be replaced.
+	*/
+	var zipFiles = (files) => zipSync(Object.fromEntries([...files].map(([path, data]) => [path, bytesOf$2(data)])));
+	var MAX_DEFLATE_RATIO = 1032;
+	var wrongSize = (path) => /* @__PURE__ */ new Error(`Corrupted zip: ${path} isn't the size the zip file gives it`);
+	/**
+	* The files in a zip file by their paths, in the zip file's order. Its folders, which hold nothing, are left out, and so
+	* are the files `include` leaves out, which aren't inflated.
+	*
+	* A file must be as large as the zip file says, as JSZip, which docx used to unzip with, checked. fflate takes room for
+	* that size before inflating a file, so sizes that can't be are refused before it does: compressed data that together
+	* is larger than the zip file it's in, or a size more than DEFLATE can inflate a file's compressed data to. That keeps
+	* the room taken to what DEFLATE can give for the zip file. fflate cuts a file short at a size smaller than its data,
+	* which only parsing the zip file again would show.
+	*/
+	var unzipFiles = (data, include = () => true) => {
+		const sizes = /* @__PURE__ */ new Map();
+		let compressed = 0;
+		const files = unzipSync(data, { filter: ({ name, size, originalSize }) => {
+			if (name.endsWith("/") || !include(name)) return false;
+			compressed += size;
+			if (compressed > data.length || originalSize > size * MAX_DEFLATE_RATIO) throw wrongSize(name);
+			sizes.set(name, originalSize);
+			return true;
+		} });
+		const wrong = Object.entries(files).find(([path, file]) => file.length !== sizes.get(path));
+		if (wrong !== void 0) throw wrongSize(wrong[0]);
+		return new Map(Object.entries(files));
+	};
+	/** A zip file as a string with a character for each byte, as JSZip, which docx used to zip with, gave it */
+	var binaryStringOf = (data) => {
+		let text = "";
+		for (let start = 0; start < data.length; start += 32768) text += String.fromCharCode(...data.subarray(start, start + 32768));
+		return text;
+	};
+	var unsupported = (type) => /* @__PURE__ */ new Error(`${type} is not supported by this platform`);
+	var OUTPUTS = {
+		uint8array: (data) => data,
+		arraybuffer: (data) => data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength),
+		array: (data) => Array.from(data),
+		string: binaryStringOf,
+		binarystring: binaryStringOf,
+		base64: (data) => btoa(binaryStringOf(data)),
+		blob: (data, mimeType) => {
+			if (typeof Blob === "undefined") throw unsupported("blob");
+			return new Blob([data], { type: mimeType });
+		},
+		nodebuffer: (data) => {
+			if (typeof Buffer === "undefined") throw unsupported("nodebuffer");
+			return Buffer.from(data.buffer, data.byteOffset, data.byteLength);
+		},
+		text: () => {
+			throw unsupported("text");
+		}
+	};
+	/**
+	* A zip file in one of the output types of `Packer` and `patchDocument`. The type's case doesn't matter, as it didn't
+	* to JSZip.
+	*
+	* @param mimeType - The type a Blob is given
+	*/
+	var zipOutput = (data, type, mimeType) => {
+		const output = Object.prototype.hasOwnProperty.call(OUTPUTS, type.toLowerCase()) ? OUTPUTS[type.toLowerCase()] : void 0;
+		if (output === void 0) throw unsupported(type);
+		return output(data, mimeType);
+	};
+	//#endregion
+	//#region src/file/theme/read-theme.ts
+	/**
+	* Reads themes: the theme of a Word document or template, of another Office file, or of a theme file, as the options of
+	* a document's `theme`, so a document `docx` writes can have it, and the colors of a document's theme for the patcher.
+	*
+	* @module
+	*/
+	var COLOR_NAMES = /* @__PURE__ */ new Map([
+		["dk1", "dark1"],
+		["lt1", "light1"],
+		["dk2", "dark2"],
+		["lt2", "light2"],
+		["accent1", "accent1"],
+		["accent2", "accent2"],
+		["accent3", "accent3"],
+		["accent4", "accent4"],
+		["accent5", "accent5"],
+		["accent6", "accent6"],
+		["hlink", "hyperlink"],
+		["folHlink", "followedHyperlink"]
+	]);
+	var DEFAULT_SYSTEM_COLORS = /* @__PURE__ */ new Map([["dark1", "windowText"], ["light1", "window"]]);
+	var MAIN_PART_TYPES = /* @__PURE__ */ new Set(["http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument", "http://purl.oclc.org/ooxml/officeDocument/relationships/officeDocument"]);
+	var THEME_TYPES = /* @__PURE__ */ new Set(["http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme", "http://purl.oclc.org/ooxml/officeDocument/relationships/theme"]);
+	var localName$1 = (element) => {
+		var _element$name$slice, _element$name;
+		return (_element$name$slice = element === null || element === void 0 || (_element$name = element.name) === null || _element$name === void 0 ? void 0 : _element$name.slice(element.name.indexOf(":") + 1)) !== null && _element$name$slice !== void 0 ? _element$name$slice : "";
+	};
+	var childElements = (element) => {
+		var _element$elements$fil, _element$elements;
+		return (_element$elements$fil = element === null || element === void 0 || (_element$elements = element.elements) === null || _element$elements === void 0 ? void 0 : _element$elements.filter((item) => item.type === "element")) !== null && _element$elements$fil !== void 0 ? _element$elements$fil : [];
+	};
+	var child = (element, name) => childElements(element).find((item) => localName$1(item) === name);
+	var attribute = (element, name) => {
+		var _element$attributes;
+		const value = element === null || element === void 0 || (_element$attributes = element.attributes) === null || _element$attributes === void 0 ? void 0 : _element$attributes[name];
+		return value === void 0 ? void 0 : String(value);
+	};
+	var isZip = (bytes) => bytes[0] === 80 && bytes[1] === 75 && bytes[2] === 3 && bytes[3] === 4;
+	var decode$1 = (bytes) => new TextDecoder(bytes[0] === 255 && bytes[1] === 254 ? "utf-16le" : bytes[0] === 254 && bytes[1] === 255 ? "utf-16be" : "utf-8").decode(bytes);
+	var defined = (object) => Object.fromEntries(Object.entries(object).filter(([, value]) => value !== void 0));
+	/**
+	* The part that a part's relationship of one of `types` refers to, such as the package's main part, which the package
+	* itself (`""`) refers to.
+	*/
+	var relatedPart = (files, from, types) => {
+		const relationships = files.get(relationshipsPathOf(from));
+		const target = attribute(relationships && childElements(child(parseXml(decode$1(relationships)), "Relationships")).find((item) => {
+			var _attribute;
+			return types.has((_attribute = attribute(item, "Type")) !== null && _attribute !== void 0 ? _attribute : "");
+		}), "Target");
+		return target === void 0 ? void 0 : resolveTarget(from, target);
+	};
+	/**
+	* The path of the theme a part of a package refers to, such as word/theme/theme1.xml for a Word document's
+	* word/document.xml.
+	*/
+	var themePathOf = (files, part) => relatedPart(files, part, THEME_TYPES);
+	/**
+	* The XML of a package's theme: the theme its main part refers to, such as word/theme/theme1.xml in a Word document.
+	*
+	* @throws If the package has no main part, or its main part has no theme
+	*/
+	var packageThemeXml = (bytes) => {
+		const relationships = unzipFiles(bytes, (path) => path.endsWith(".rels"));
+		const mainPart = relatedPart(relationships, "", MAIN_PART_TYPES);
+		if (mainPart === void 0) throw new Error("Invalid file: a zip file that isn't a Word, PowerPoint or Excel file or an Office theme (.thmx)");
+		const themePath = themePathOf(relationships, mainPart);
+		const theme = themePath === void 0 ? void 0 : [...unzipFiles(bytes, (path) => isSamePart(path, themePath)).values()][0];
+		if (theme === void 0) throw new Error(`The file has no theme: its main part, ${mainPart}, refers to none`);
+		return decode$1(theme);
+	};
+	/**
+	* A theme color's 6-digit hex color: an RGB color's value, or a system color's last value. Unless `withSystemColors`,
+	* the first dark and light colors are left out when they are the system's window text and window colors, as `docx`
+	* writes them then.
+	*/
+	var colorValue = (name, color, withSystemColors) => {
+		const [value] = childElements(color);
+		const hex = localName$1(value) === "srgbClr" ? attribute(value, "val") : localName$1(value) === "sysClr" && (withSystemColors || attribute(value, "val") !== DEFAULT_SYSTEM_COLORS.get(name)) ? attribute(value, "lastClr") : void 0;
+		return hex !== void 0 && /^[0-9A-Fa-f]{6}$/.test(hex) ? hex.toUpperCase() : void 0;
+	};
+	var readColors = (scheme, withSystemColors = false) => Object.fromEntries(childElements(scheme).flatMap((color) => {
+		const name = COLOR_NAMES.get(localName$1(color));
+		const value = name && colorValue(name, color, withSystemColors);
+		return name && value ? [[name, value]] : [];
+	}));
+	/**
+	* The colors of a theme's XML, each a 6-digit hex color, with the first dark and light colors as their last values when
+	* they are system colors. The patcher writes theme colors in patches with the hex colors they come to in them.
+	*/
+	var readThemeColorValues = (xml) => {
+		const [root] = childElements(parseXml(xml));
+		const scheme = localName$1(root) === "theme" ? child(child(root, "themeElements"), "clrScheme") : void 0;
+		return scheme ? readColors(scheme, true) : {};
+	};
+	var typefaceOf = (font) => attribute(font, "typeface") || void 0;
+	var readFont = (collection) => {
+		const scripts = childElements(collection).filter((font) => localName$1(font) === "font").flatMap((font) => {
+			const script = attribute(font, "script");
+			const typeface = attribute(font, "typeface");
+			return script && typeface !== void 0 ? [[script, typeface]] : [];
+		});
+		return defined({
+			latin: typefaceOf(child(collection, "latin")),
+			eastAsia: typefaceOf(child(collection, "ea")),
+			complexScript: typefaceOf(child(collection, "cs")),
+			scripts: scripts.length > 0 ? Object.fromEntries(scripts) : void 0
+		});
+	};
+	var readFonts = (scheme) => ({
+		headings: readFont(child(scheme, "majorFont")),
+		body: readFont(child(scheme, "minorFont"))
+	});
+	/**
+	* The XML of the theme the data is or has: the XML itself, as text or bytes, or the theme of a package.
+	*/
+	var xmlOf = (data) => {
+		if (typeof data === "string") return data;
+		const bytes = ArrayBuffer.isView(data) ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength) : new Uint8Array(data);
+		return isZip(bytes) ? packageThemeXml(bytes) : decode$1(bytes);
+	};
+	/**
+	* Reads a theme, such as the theme of a Word document or template, as the options of a document's `theme`. The new
+	* document then has the theme's colors and fonts, so the styles, tables and text that use them look as they do in the
+	* file the theme came from:
+	*
+	* - its name;
+	* - its colors, each an RGB color or a system color's last value;
+	* - its fonts for headings and body text, with their fonts for East Asian text, complex scripts and each other script.
+	*
+	* The fills, lines and effects of shapes styled by the theme are Office's in the new document, as `docx` writes them.
+	*
+	* It reads the colors or fonts Word saves on their own too, from Design > Colors > Customize Colors or Design > Fonts >
+	* Customize Fonts, as the theme's `colors` or `fonts`.
+	*
+	* @param data - A Word document or template (.docx, .docm, .dotx or .dotm), a PowerPoint presentation (.pptx), an Excel
+	* workbook (.xlsx), an Office theme (.thmx), or the XML of a theme, such as a document's word/theme/theme1.xml, or of a
+	* theme's colors or fonts, as text or bytes
+	* @returns The theme's options, to give `Document`'s `theme`, or to change before giving it
+	* @throws If the data isn't one of those, or the file has no theme
+	*
+	* @example
+	* ```typescript
+	* import * as fs from "fs";
+	* import { Document, readTheme } from "docx";
+	*
+	* // The template's styles, and its theme, whose colors and fonts its styles use
+	* const doc = new Document({
+	*   theme: readTheme(fs.readFileSync("template.dotx")),
+	*   externalStyles: fs.readFileSync("styles.xml", "utf-8"),
+	*   sections: [],
+	* });
+	* ```
+	*/
+	var readTheme = (data) => {
+		const [root] = childElements(parseXml(xmlOf(data)));
+		if (localName$1(root) === "clrScheme") return { colors: readColors(root) };
+		if (localName$1(root) === "fontScheme") return { fonts: readFonts(root) };
+		if (localName$1(root) !== "theme") {
+			var _root$name;
+			throw new Error(`Invalid theme: expected the XML of a theme, such as a document's word/theme/theme1.xml, but its root element is ${(_root$name = root === null || root === void 0 ? void 0 : root.name) !== null && _root$name !== void 0 ? _root$name : "missing"}`);
+		}
+		const elements = child(root, "themeElements");
+		const colorScheme = child(elements, "clrScheme");
+		const fontScheme = child(elements, "fontScheme");
+		return defined({
+			name: attribute(root, "name") || void 0,
+			colors: colorScheme && readColors(colorScheme),
+			fonts: fontScheme && readFonts(fontScheme)
+		});
 	};
 	//#endregion
 	//#region src/file/file.ts
@@ -30480,7 +31732,7 @@ MAX: 9026 };
 		module.exports = pipeline;
 	}));
 	//#endregion
-	//#region node_modules/fflate/esm/browser.js
+	//#region src/file/fonts/obfuscate-ttf-to-odttf.ts
 	var import_stream_browserify = (/* @__PURE__ */ __commonJSMin(((exports, module) => {
 		module.exports = Stream;
 		var EE = require_events().EventEmitter;
@@ -30547,1020 +31799,6 @@ MAX: 9026 };
 			return dest;
 		};
 	})))();
-	var u8 = Uint8Array;
-	var u16 = Uint16Array;
-	var i32 = Int32Array;
-	var fleb = new u8([
-		0,
-		0,
-		0,
-		0,
-		0,
-		0,
-		0,
-		0,
-		1,
-		1,
-		1,
-		1,
-		2,
-		2,
-		2,
-		2,
-		3,
-		3,
-		3,
-		3,
-		4,
-		4,
-		4,
-		4,
-		5,
-		5,
-		5,
-		5,
-		0,
-		0,
-		0,
-		0
-	]);
-	var fdeb = new u8([
-		0,
-		0,
-		0,
-		0,
-		1,
-		1,
-		2,
-		2,
-		3,
-		3,
-		4,
-		4,
-		5,
-		5,
-		6,
-		6,
-		7,
-		7,
-		8,
-		8,
-		9,
-		9,
-		10,
-		10,
-		11,
-		11,
-		12,
-		12,
-		13,
-		13,
-		0,
-		0
-	]);
-	var clim = new u8([
-		16,
-		17,
-		18,
-		0,
-		8,
-		7,
-		9,
-		6,
-		10,
-		5,
-		11,
-		4,
-		12,
-		3,
-		13,
-		2,
-		14,
-		1,
-		15
-	]);
-	var freb = function(eb, start) {
-		var b = new u16(31);
-		for (var i = 0; i < 31; ++i) b[i] = start += 1 << eb[i - 1];
-		var r = new i32(b[30]);
-		for (var i = 1; i < 30; ++i) for (var j = b[i]; j < b[i + 1]; ++j) r[j] = j - b[i] << 5 | i;
-		return {
-			b,
-			r
-		};
-	};
-	var _a = freb(fleb, 2);
-	var fl = _a.b;
-	var revfl = _a.r;
-	fl[28] = 258, revfl[258] = 28;
-	var _b = freb(fdeb, 0);
-	var fd = _b.b;
-	var revfd = _b.r;
-	var rev = new u16(32768);
-	for (var i = 0; i < 32768; ++i) {
-		var x = (i & 43690) >> 1 | (i & 21845) << 1;
-		x = (x & 52428) >> 2 | (x & 13107) << 2;
-		x = (x & 61680) >> 4 | (x & 3855) << 4;
-		rev[i] = ((x & 65280) >> 8 | (x & 255) << 8) >> 1;
-	}
-	var hMap = (function(cd, mb, r) {
-		var s = cd.length;
-		var i = 0;
-		var l = new u16(mb);
-		for (; i < s; ++i) if (cd[i]) ++l[cd[i] - 1];
-		var le = new u16(mb);
-		for (i = 1; i < mb; ++i) le[i] = le[i - 1] + l[i - 1] << 1;
-		var co;
-		if (r) {
-			co = new u16(1 << mb);
-			var rvb = 15 - mb;
-			for (i = 0; i < s; ++i) if (cd[i]) {
-				var sv = i << 4 | cd[i];
-				var r_1 = mb - cd[i];
-				var v = le[cd[i] - 1]++ << r_1;
-				for (var m = v | (1 << r_1) - 1; v <= m; ++v) co[rev[v] >> rvb] = sv;
-			}
-		} else {
-			co = new u16(s);
-			for (i = 0; i < s; ++i) if (cd[i]) co[i] = rev[le[cd[i] - 1]++] >> 15 - cd[i];
-		}
-		return co;
-	});
-	var flt = new u8(288);
-	for (var i = 0; i < 144; ++i) flt[i] = 8;
-	for (var i = 144; i < 256; ++i) flt[i] = 9;
-	for (var i = 256; i < 280; ++i) flt[i] = 7;
-	for (var i = 280; i < 288; ++i) flt[i] = 8;
-	var fdt = new u8(32);
-	for (var i = 0; i < 32; ++i) fdt[i] = 5;
-	var flm = /*#__PURE__*/ hMap(flt, 9, 0);
-	var flrm = /*#__PURE__*/ hMap(flt, 9, 1);
-	var fdm = /*#__PURE__*/ hMap(fdt, 5, 0);
-	var fdrm = /*#__PURE__*/ hMap(fdt, 5, 1);
-	var max = function(a) {
-		var m = a[0];
-		for (var i = 1; i < a.length; ++i) if (a[i] > m) m = a[i];
-		return m;
-	};
-	var bits = function(d, p, m) {
-		var o = p / 8 | 0;
-		return (d[o] | d[o + 1] << 8) >> (p & 7) & m;
-	};
-	var bits16 = function(d, p) {
-		var o = p / 8 | 0;
-		return (d[o] | d[o + 1] << 8 | d[o + 2] << 16) >> (p & 7);
-	};
-	var shft = function(p) {
-		return (p + 7) / 8 | 0;
-	};
-	var slc = function(v, s, e) {
-		if (s == null || s < 0) s = 0;
-		if (e == null || e > v.length) e = v.length;
-		return new u8(v.subarray(s, e));
-	};
-	var ec = [
-		"unexpected EOF",
-		"invalid block type",
-		"invalid length/literal",
-		"invalid distance",
-		"stream finished",
-		"no stream handler",
-		,
-		"no callback",
-		"invalid UTF-8 data",
-		"extra field too long",
-		"date not in range 1980-2099",
-		"filename too long",
-		"stream finishing",
-		"invalid zip data"
-	];
-	var err = function(ind, msg, nt) {
-		var e = new Error(msg || ec[ind]);
-		e.code = ind;
-		if (Error.captureStackTrace) Error.captureStackTrace(e, err);
-		if (!nt) throw e;
-		return e;
-	};
-	var inflt = function(dat, st, buf, dict) {
-		var sl = dat.length, dl = dict ? dict.length : 0;
-		if (!sl || st.f && !st.l) return buf || new u8(0);
-		var noBuf = !buf;
-		var resize = noBuf || st.i != 2;
-		var noSt = st.i;
-		if (noBuf) buf = new u8(sl * 3);
-		var cbuf = function(l) {
-			var bl = buf.length;
-			if (l > bl) {
-				var nbuf = new u8(Math.max(bl * 2, l));
-				nbuf.set(buf);
-				buf = nbuf;
-			}
-		};
-		var final = st.f || 0, pos = st.p || 0, bt = st.b || 0, lm = st.l, dm = st.d, lbt = st.m, dbt = st.n;
-		var tbts = sl * 8;
-		do {
-			if (!lm) {
-				final = bits(dat, pos, 1);
-				var type = bits(dat, pos + 1, 3);
-				pos += 3;
-				if (!type) {
-					var s = shft(pos) + 4, l = dat[s - 4] | dat[s - 3] << 8, t = s + l;
-					if (t > sl) {
-						if (noSt) err(0);
-						break;
-					}
-					if (resize) cbuf(bt + l);
-					buf.set(dat.subarray(s, t), bt);
-					st.b = bt += l, st.p = pos = t * 8, st.f = final;
-					continue;
-				} else if (type == 1) lm = flrm, dm = fdrm, lbt = 9, dbt = 5;
-				else if (type == 2) {
-					var hLit = bits(dat, pos, 31) + 257, hcLen = bits(dat, pos + 10, 15) + 4;
-					var tl = hLit + bits(dat, pos + 5, 31) + 1;
-					pos += 14;
-					var ldt = new u8(tl);
-					var clt = new u8(19);
-					for (var i = 0; i < hcLen; ++i) clt[clim[i]] = bits(dat, pos + i * 3, 7);
-					pos += hcLen * 3;
-					var clb = max(clt), clbmsk = (1 << clb) - 1;
-					var clm = hMap(clt, clb, 1);
-					for (var i = 0; i < tl;) {
-						var r = clm[bits(dat, pos, clbmsk)];
-						pos += r & 15;
-						var s = r >> 4;
-						if (s < 16) ldt[i++] = s;
-						else {
-							var c = 0, n = 0;
-							if (s == 16) n = 3 + bits(dat, pos, 3), pos += 2, c = ldt[i - 1];
-							else if (s == 17) n = 3 + bits(dat, pos, 7), pos += 3;
-							else if (s == 18) n = 11 + bits(dat, pos, 127), pos += 7;
-							while (n--) ldt[i++] = c;
-						}
-					}
-					var lt = ldt.subarray(0, hLit), dt = ldt.subarray(hLit);
-					lbt = max(lt);
-					dbt = max(dt);
-					lm = hMap(lt, lbt, 1);
-					dm = hMap(dt, dbt, 1);
-				} else err(1);
-				if (pos > tbts) {
-					if (noSt) err(0);
-					break;
-				}
-			}
-			if (resize) cbuf(bt + 131072);
-			var lms = (1 << lbt) - 1, dms = (1 << dbt) - 1;
-			var lpos = pos;
-			for (;; lpos = pos) {
-				var c = lm[bits16(dat, pos) & lms], sym = c >> 4;
-				pos += c & 15;
-				if (pos > tbts) {
-					if (noSt) err(0);
-					break;
-				}
-				if (!c) err(2);
-				if (sym < 256) buf[bt++] = sym;
-				else if (sym == 256) {
-					lpos = pos, lm = null;
-					break;
-				} else {
-					var add = sym - 254;
-					if (sym > 264) {
-						var i = sym - 257, b = fleb[i];
-						add = bits(dat, pos, (1 << b) - 1) + fl[i];
-						pos += b;
-					}
-					var d = dm[bits16(dat, pos) & dms], dsym = d >> 4;
-					if (!d) err(3);
-					pos += d & 15;
-					var dt = fd[dsym];
-					if (dsym > 3) {
-						var b = fdeb[dsym];
-						dt += bits16(dat, pos) & (1 << b) - 1, pos += b;
-					}
-					if (pos > tbts) {
-						if (noSt) err(0);
-						break;
-					}
-					if (resize) cbuf(bt + 131072);
-					var end = bt + add;
-					if (bt < dt) {
-						var shift = dl - dt, dend = Math.min(dt, end);
-						if (shift + bt < 0) err(3);
-						for (; bt < dend; ++bt) buf[bt] = dict[shift + bt];
-					}
-					for (; bt < end; ++bt) buf[bt] = buf[bt - dt];
-				}
-			}
-			st.l = lm, st.p = lpos, st.b = bt, st.f = final;
-			if (lm) final = 1, st.m = lbt, st.d = dm, st.n = dbt;
-		} while (!final);
-		return bt != buf.length && noBuf ? slc(buf, 0, bt) : buf.subarray(0, bt);
-	};
-	var wbits = function(d, p, v) {
-		v <<= p & 7;
-		var o = p / 8 | 0;
-		d[o] |= v;
-		d[o + 1] |= v >> 8;
-	};
-	var wbits16 = function(d, p, v) {
-		v <<= p & 7;
-		var o = p / 8 | 0;
-		d[o] |= v;
-		d[o + 1] |= v >> 8;
-		d[o + 2] |= v >> 16;
-	};
-	var hTree = function(d, mb) {
-		var t = [];
-		for (var i = 0; i < d.length; ++i) if (d[i]) t.push({
-			s: i,
-			f: d[i]
-		});
-		var s = t.length;
-		var t2 = t.slice();
-		if (!s) return {
-			t: et,
-			l: 0
-		};
-		if (s == 1) {
-			var v = new u8(t[0].s + 1);
-			v[t[0].s] = 1;
-			return {
-				t: v,
-				l: 1
-			};
-		}
-		t.sort(function(a, b) {
-			return a.f - b.f;
-		});
-		t.push({
-			s: -1,
-			f: 25001
-		});
-		var l = t[0], r = t[1], i0 = 0, i1 = 1, i2 = 2;
-		t[0] = {
-			s: -1,
-			f: l.f + r.f,
-			l,
-			r
-		};
-		while (i1 != s - 1) {
-			l = t[t[i0].f < t[i2].f ? i0++ : i2++];
-			r = t[i0 != i1 && t[i0].f < t[i2].f ? i0++ : i2++];
-			t[i1++] = {
-				s: -1,
-				f: l.f + r.f,
-				l,
-				r
-			};
-		}
-		var maxSym = t2[0].s;
-		for (var i = 1; i < s; ++i) if (t2[i].s > maxSym) maxSym = t2[i].s;
-		var tr = new u16(maxSym + 1);
-		var mbt = ln(t[i1 - 1], tr, 0);
-		if (mbt > mb) {
-			var i = 0, dt = 0;
-			var lft = mbt - mb, cst = 1 << lft;
-			t2.sort(function(a, b) {
-				return tr[b.s] - tr[a.s] || a.f - b.f;
-			});
-			for (; i < s; ++i) {
-				var i2_1 = t2[i].s;
-				if (tr[i2_1] > mb) {
-					dt += cst - (1 << mbt - tr[i2_1]);
-					tr[i2_1] = mb;
-				} else break;
-			}
-			dt >>= lft;
-			while (dt > 0) {
-				var i2_2 = t2[i].s;
-				if (tr[i2_2] < mb) dt -= 1 << mb - tr[i2_2]++ - 1;
-				else ++i;
-			}
-			for (; i >= 0 && dt; --i) {
-				var i2_3 = t2[i].s;
-				if (tr[i2_3] == mb) {
-					--tr[i2_3];
-					++dt;
-				}
-			}
-			mbt = mb;
-		}
-		return {
-			t: new u8(tr),
-			l: mbt
-		};
-	};
-	var ln = function(n, l, d) {
-		return n.s == -1 ? Math.max(ln(n.l, l, d + 1), ln(n.r, l, d + 1)) : l[n.s] = d;
-	};
-	var lc = function(c) {
-		var s = c.length;
-		while (s && !c[--s]);
-		var cl = new u16(++s);
-		var cli = 0, cln = c[0], cls = 1;
-		var w = function(v) {
-			cl[cli++] = v;
-		};
-		for (var i = 1; i <= s; ++i) if (c[i] == cln && i != s) ++cls;
-		else {
-			if (!cln && cls > 2) {
-				for (; cls > 138; cls -= 138) w(32754);
-				if (cls > 2) {
-					w(cls > 10 ? cls - 11 << 5 | 28690 : cls - 3 << 5 | 12305);
-					cls = 0;
-				}
-			} else if (cls > 3) {
-				w(cln), --cls;
-				for (; cls > 6; cls -= 6) w(8304);
-				if (cls > 2) w(cls - 3 << 5 | 8208), cls = 0;
-			}
-			while (cls--) w(cln);
-			cls = 1;
-			cln = c[i];
-		}
-		return {
-			c: cl.subarray(0, cli),
-			n: s
-		};
-	};
-	var clen = function(cf, cl) {
-		var l = 0;
-		for (var i = 0; i < cl.length; ++i) l += cf[i] * cl[i];
-		return l;
-	};
-	var wfblk = function(out, pos, dat) {
-		var s = dat.length;
-		var o = shft(pos + 2);
-		out[o] = s & 255;
-		out[o + 1] = s >> 8;
-		out[o + 2] = out[o] ^ 255;
-		out[o + 3] = out[o + 1] ^ 255;
-		for (var i = 0; i < s; ++i) out[o + i + 4] = dat[i];
-		return (o + 4 + s) * 8;
-	};
-	var wblk = function(dat, out, final, syms, lf, df, eb, li, bs, bl, p) {
-		wbits(out, p++, final);
-		++lf[256];
-		var _a = hTree(lf, 15), dlt = _a.t, mlb = _a.l;
-		var _b = hTree(df, 15), ddt = _b.t, mdb = _b.l;
-		var _c = lc(dlt), lclt = _c.c, nlc = _c.n;
-		var _d = lc(ddt), lcdt = _d.c, ndc = _d.n;
-		var lcfreq = new u16(19);
-		for (var i = 0; i < lclt.length; ++i) ++lcfreq[lclt[i] & 31];
-		for (var i = 0; i < lcdt.length; ++i) ++lcfreq[lcdt[i] & 31];
-		var _e = hTree(lcfreq, 7), lct = _e.t, mlcb = _e.l;
-		var nlcc = 19;
-		for (; nlcc > 4 && !lct[clim[nlcc - 1]]; --nlcc);
-		var flen = bl + 5 << 3;
-		var ftlen = clen(lf, flt) + clen(df, fdt) + eb;
-		var dtlen = clen(lf, dlt) + clen(df, ddt) + eb + 14 + 3 * nlcc + clen(lcfreq, lct) + 2 * lcfreq[16] + 3 * lcfreq[17] + 7 * lcfreq[18];
-		if (bs >= 0 && flen <= ftlen && flen <= dtlen) return wfblk(out, p, dat.subarray(bs, bs + bl));
-		var lm, ll, dm, dl;
-		wbits(out, p, 1 + (dtlen < ftlen)), p += 2;
-		if (dtlen < ftlen) {
-			lm = hMap(dlt, mlb, 0), ll = dlt, dm = hMap(ddt, mdb, 0), dl = ddt;
-			var llm = hMap(lct, mlcb, 0);
-			wbits(out, p, nlc - 257);
-			wbits(out, p + 5, ndc - 1);
-			wbits(out, p + 10, nlcc - 4);
-			p += 14;
-			for (var i = 0; i < nlcc; ++i) wbits(out, p + 3 * i, lct[clim[i]]);
-			p += 3 * nlcc;
-			var lcts = [lclt, lcdt];
-			for (var it = 0; it < 2; ++it) {
-				var clct = lcts[it];
-				for (var i = 0; i < clct.length; ++i) {
-					var len = clct[i] & 31;
-					wbits(out, p, llm[len]), p += lct[len];
-					if (len > 15) wbits(out, p, clct[i] >> 5 & 127), p += clct[i] >> 12;
-				}
-			}
-		} else lm = flm, ll = flt, dm = fdm, dl = fdt;
-		for (var i = 0; i < li; ++i) {
-			var sym = syms[i];
-			if (sym > 255) {
-				var len = sym >> 18 & 31;
-				wbits16(out, p, lm[len + 257]), p += ll[len + 257];
-				if (len > 7) wbits(out, p, sym >> 23 & 31), p += fleb[len];
-				var dst = sym & 31;
-				wbits16(out, p, dm[dst]), p += dl[dst];
-				if (dst > 3) wbits16(out, p, sym >> 5 & 8191), p += fdeb[dst];
-			} else wbits16(out, p, lm[sym]), p += ll[sym];
-		}
-		wbits16(out, p, lm[256]);
-		return p + ll[256];
-	};
-	var deo = /*#__PURE__*/ new i32([
-		65540,
-		131080,
-		131088,
-		131104,
-		262176,
-		1048704,
-		1048832,
-		2114560,
-		2117632
-	]);
-	var et = /*#__PURE__*/ new u8(0);
-	var dflt = function(dat, lvl, plvl, pre, post, st) {
-		var s = st.z || dat.length;
-		var o = new u8(pre + s + 5 * (1 + Math.ceil(s / 7e3)) + post);
-		var w = o.subarray(pre, o.length - post);
-		var lst = st.l;
-		var pos = (st.r || 0) & 7;
-		if (lvl) {
-			if (pos) w[0] = st.r >> 3;
-			var opt = deo[lvl - 1];
-			var n = opt >> 13, c = opt & 8191;
-			var msk_1 = (1 << plvl) - 1;
-			var prev = st.p || new u16(32768), head = st.h || new u16(msk_1 + 1);
-			var bs1_1 = Math.ceil(plvl / 3), bs2_1 = 2 * bs1_1;
-			var hsh = function(i) {
-				return (dat[i] ^ dat[i + 1] << bs1_1 ^ dat[i + 2] << bs2_1) & msk_1;
-			};
-			var syms = new i32(25e3);
-			var lf = new u16(288), df = new u16(32);
-			var lc_1 = 0, eb = 0, i = st.i || 0, li = 0, wi = st.w || 0, bs = 0;
-			for (; i + 2 < s; ++i) {
-				var hv = hsh(i);
-				var imod = i & 32767, pimod = head[hv];
-				prev[imod] = pimod;
-				head[hv] = imod;
-				if (wi <= i) {
-					var rem = s - i;
-					if ((lc_1 > 7e3 || li > 24576) && (rem > 423 || !lst)) {
-						pos = wblk(dat, w, 0, syms, lf, df, eb, li, bs, i - bs, pos);
-						li = lc_1 = eb = 0, bs = i;
-						for (var j = 0; j < 286; ++j) lf[j] = 0;
-						for (var j = 0; j < 30; ++j) df[j] = 0;
-					}
-					var l = 2, d = 0, ch_1 = c, dif = imod - pimod & 32767;
-					if (rem > 2 && hv == hsh(i - dif)) {
-						var maxn = Math.min(n, rem) - 1;
-						var maxd = Math.min(32767, i);
-						var ml = Math.min(258, rem);
-						while (dif <= maxd && --ch_1 && imod != pimod) {
-							if (dat[i + l] == dat[i + l - dif]) {
-								var nl = 0;
-								for (; nl < ml && dat[i + nl] == dat[i + nl - dif]; ++nl);
-								if (nl > l) {
-									l = nl, d = dif;
-									if (nl > maxn) break;
-									var mmd = Math.min(dif, nl - 2);
-									var md = 0;
-									for (var j = 0; j < mmd; ++j) {
-										var ti = i - dif + j & 32767;
-										var cd = ti - prev[ti] & 32767;
-										if (cd > md) md = cd, pimod = ti;
-									}
-								}
-							}
-							imod = pimod, pimod = prev[imod];
-							dif += imod - pimod & 32767;
-						}
-					}
-					if (d) {
-						syms[li++] = 268435456 | revfl[l] << 18 | revfd[d];
-						var lin = revfl[l] & 31, din = revfd[d] & 31;
-						eb += fleb[lin] + fdeb[din];
-						++lf[257 + lin];
-						++df[din];
-						wi = i + l;
-						++lc_1;
-					} else {
-						syms[li++] = dat[i];
-						++lf[dat[i]];
-					}
-				}
-			}
-			for (i = Math.max(i, wi); i < s; ++i) {
-				syms[li++] = dat[i];
-				++lf[dat[i]];
-			}
-			pos = wblk(dat, w, lst, syms, lf, df, eb, li, bs, i - bs, pos);
-			if (!lst) {
-				st.r = pos & 7 | w[pos / 8 | 0] << 3;
-				pos -= 7;
-				st.h = head, st.p = prev, st.i = i, st.w = wi;
-			}
-		} else {
-			for (var i = st.w || 0; i < s + lst; i += 65535) {
-				var e = i + 65535;
-				if (e >= s) {
-					w[pos / 8 | 0] = lst;
-					e = s;
-				}
-				pos = wfblk(w, pos + 1, dat.subarray(i, e));
-			}
-			st.i = s;
-		}
-		return slc(o, 0, pre + shft(pos) + post);
-	};
-	var crct = /*#__PURE__*/ (function() {
-		var t = /* @__PURE__ */ new Int32Array(256);
-		for (var i = 0; i < 256; ++i) {
-			var c = i, k = 9;
-			while (--k) c = (c & 1 && -306674912) ^ c >>> 1;
-			t[i] = c;
-		}
-		return t;
-	})();
-	var crc = function() {
-		var c = -1;
-		return {
-			p: function(d) {
-				var cr = c;
-				for (var i = 0; i < d.length; ++i) cr = crct[cr & 255 ^ d[i]] ^ cr >>> 8;
-				c = cr;
-			},
-			d: function() {
-				return ~c;
-			}
-		};
-	};
-	var dopt = function(dat, opt, pre, post, st) {
-		if (!st) {
-			st = { l: 1 };
-			if (opt.dictionary) {
-				var dict = opt.dictionary.subarray(-32768);
-				var newDat = new u8(dict.length + dat.length);
-				newDat.set(dict);
-				newDat.set(dat, dict.length);
-				dat = newDat;
-				st.w = dict.length;
-			}
-		}
-		return dflt(dat, opt.level == null ? 6 : opt.level, opt.mem == null ? st.l ? Math.ceil(Math.max(8, Math.min(13, Math.log(dat.length))) * 1.5) : 20 : 12 + opt.mem, pre, post, st);
-	};
-	var mrg = function(a, b) {
-		var o = {};
-		for (var k in a) o[k] = a[k];
-		for (var k in b) o[k] = b[k];
-		return o;
-	};
-	var b2 = function(d, b) {
-		return d[b] | d[b + 1] << 8;
-	};
-	var b4 = function(d, b) {
-		return (d[b] | d[b + 1] << 8 | d[b + 2] << 16 | d[b + 3] << 24) >>> 0;
-	};
-	var b8 = function(d, b) {
-		return b4(d, b) + b4(d, b + 4) * 4294967296;
-	};
-	var wbytes = function(d, b, v) {
-		for (; v; ++b) d[b] = v, v >>>= 8;
-	};
-	/**
-	* Compresses data with DEFLATE without any wrapper
-	* @param data The data to compress
-	* @param opts The compression options
-	* @returns The deflated version of the data
-	*/
-	function deflateSync(data, opts) {
-		return dopt(data, opts || {}, 0, 0);
-	}
-	function inflateSync(data, opts) {
-		return inflt(data, { i: 2 }, opts && opts.out, opts && opts.dictionary);
-	}
-	var fltn = function(d, p, t, o) {
-		for (var k in d) {
-			var val = d[k], n = p + k, op = o;
-			if (Array.isArray(val)) op = mrg(o, val[1]), val = val[0];
-			if (ArrayBuffer.isView(val)) t[n] = [val, op];
-			else {
-				t[n += "/"] = [new u8(0), op];
-				fltn(val, n, t, o);
-			}
-		}
-	};
-	var te = typeof TextEncoder != "undefined" && /*#__PURE__*/ new TextEncoder();
-	var td = typeof TextDecoder != "undefined" && /*#__PURE__*/ new TextDecoder();
-	try {
-		td.decode(et, { stream: true });
-	} catch (e) {}
-	var dutf8 = function(d) {
-		for (var r = "", i = 0;;) {
-			var c = d[i++];
-			var eb = (c > 127) + (c > 223) + (c > 239);
-			if (i + eb > d.length) return {
-				s: r,
-				r: slc(d, i - 1)
-			};
-			if (!eb) r += String.fromCharCode(c);
-			else if (eb == 3) c = ((c & 15) << 18 | (d[i++] & 63) << 12 | (d[i++] & 63) << 6 | d[i++] & 63) - 65536, r += String.fromCharCode(55296 | c >> 10, 56320 | c & 1023);
-			else if (eb & 1) r += String.fromCharCode((c & 31) << 6 | d[i++] & 63);
-			else r += String.fromCharCode((c & 15) << 12 | (d[i++] & 63) << 6 | d[i++] & 63);
-		}
-	};
-	/**
-	* Converts a string into a Uint8Array for use with compression/decompression methods
-	* @param str The string to encode
-	* @param latin1 Whether or not to interpret the data as Latin-1. This should
-	*               not need to be true unless decoding a binary string.
-	* @returns The string encoded in UTF-8/Latin-1 binary
-	*/
-	function strToU8(str, latin1) {
-		if (latin1) {
-			var ar_1 = new u8(str.length);
-			for (var i = 0; i < str.length; ++i) ar_1[i] = str.charCodeAt(i);
-			return ar_1;
-		}
-		if (te) return te.encode(str);
-		var l = str.length;
-		var ar = new u8(str.length + (str.length >> 1));
-		var ai = 0;
-		var w = function(v) {
-			ar[ai++] = v;
-		};
-		for (var i = 0; i < l; ++i) {
-			if (ai + 5 > ar.length) {
-				var n = new u8(ai + 8 + (l - i << 1));
-				n.set(ar);
-				ar = n;
-			}
-			var c = str.charCodeAt(i);
-			if (c < 128 || latin1) w(c);
-			else if (c < 2048) w(192 | c >> 6), w(128 | c & 63);
-			else if (c > 55295 && c < 57344) c = 65536 + (c & 1047552) | str.charCodeAt(++i) & 1023, w(240 | c >> 18), w(128 | c >> 12 & 63), w(128 | c >> 6 & 63), w(128 | c & 63);
-			else w(224 | c >> 12), w(128 | c >> 6 & 63), w(128 | c & 63);
-		}
-		return slc(ar, 0, ai);
-	}
-	/**
-	* Converts a Uint8Array to a string
-	* @param dat The data to decode to string
-	* @param latin1 Whether or not to interpret the data as Latin-1. This should
-	*               not need to be true unless encoding to binary string.
-	* @returns The original UTF-8/Latin-1 string
-	*/
-	function strFromU8(dat, latin1) {
-		if (latin1) {
-			var r = "";
-			for (var i = 0; i < dat.length; i += 16384) r += String.fromCharCode.apply(null, dat.subarray(i, i + 16384));
-			return r;
-		} else if (td) return td.decode(dat);
-		else {
-			var _a = dutf8(dat), s = _a.s, r = _a.r;
-			if (r.length) err(8);
-			return s;
-		}
-	}
-	var slzh = function(d, b) {
-		return b + 30 + b2(d, b + 26) + b2(d, b + 28);
-	};
-	var zh = function(d, b, z) {
-		var fnl = b2(d, b + 28), efl = b2(d, b + 30), fn = strFromU8(d.subarray(b + 46, b + 46 + fnl), !(b2(d, b + 8) & 2048)), es = b + 46 + fnl;
-		var _a = z64hs(d, es, efl, z, b4(d, b + 20), b4(d, b + 24), b4(d, b + 42)), sc = _a[0], su = _a[1], off = _a[2];
-		return [
-			b2(d, b + 10),
-			sc,
-			su,
-			fn,
-			es + efl + b2(d, b + 32),
-			off
-		];
-	};
-	var z64hs = function(d, b, l, z, sc, su, off) {
-		var nsc = sc == 4294967295, nsu = su == 4294967295, noff = off == 4294967295, e = b + l;
-		var nf = nsc + nsu + noff;
-		if (z && nf) {
-			for (; b + 4 < e; b += 4 + b2(d, b + 2)) if (b2(d, b) == 1) return [
-				nsc ? b8(d, b + 4 + 8 * nsu) : sc,
-				nsu ? b8(d, b + 4) : su,
-				noff ? b8(d, b + 4 + 8 * (nsu + nsc)) : off,
-				1
-			];
-			if (z < 2) err(13);
-		}
-		return [
-			sc,
-			su,
-			off,
-			0
-		];
-	};
-	var exfl = function(ex) {
-		var le = 0;
-		if (ex) for (var k in ex) {
-			var l = ex[k].length;
-			if (l > 65535) err(9);
-			le += l + 4;
-		}
-		return le;
-	};
-	var wzh = function(d, b, f, fn, u, c, ce, co) {
-		var fl = fn.length, ex = f.extra, col = co && co.length;
-		var exl = exfl(ex);
-		wbytes(d, b, ce != null ? 33639248 : 67324752), b += 4;
-		if (ce != null) d[b++] = 20, d[b++] = f.os;
-		d[b] = 20, b += 2;
-		d[b++] = f.flag << 1 | (c < 0 && 8), d[b++] = u && 8;
-		d[b++] = f.compression & 255, d[b++] = f.compression >> 8;
-		var dt = new Date(f.mtime == null ? Date.now() : f.mtime), y = dt.getFullYear() - 1980;
-		if (y < 0 || y > 119) err(10);
-		wbytes(d, b, y << 25 | dt.getMonth() + 1 << 21 | dt.getDate() << 16 | dt.getHours() << 11 | dt.getMinutes() << 5 | dt.getSeconds() >> 1), b += 4;
-		if (c != -1) {
-			wbytes(d, b, f.crc);
-			wbytes(d, b + 4, c < 0 ? -c - 2 : c);
-			wbytes(d, b + 8, f.size);
-		}
-		wbytes(d, b + 12, fl);
-		wbytes(d, b + 14, exl), b += 16;
-		if (ce != null) {
-			wbytes(d, b, col);
-			wbytes(d, b + 6, f.attrs);
-			wbytes(d, b + 10, ce), b += 14;
-		}
-		d.set(fn, b);
-		b += fl;
-		if (exl) for (var k in ex) {
-			var exf = ex[k], l = exf.length;
-			wbytes(d, b, +k);
-			wbytes(d, b + 2, l);
-			d.set(exf, b + 4), b += 4 + l;
-		}
-		if (col) d.set(co, b), b += col;
-		return b;
-	};
-	var wzf = function(o, b, c, d, e) {
-		wbytes(o, b, 101010256);
-		wbytes(o, b + 8, c);
-		wbytes(o, b + 10, c);
-		wbytes(o, b + 12, d);
-		wbytes(o, b + 16, e);
-	};
-	/**
-	* Synchronously creates a ZIP file. Prefer using `zip` for better performance
-	* with more than one file.
-	* @param data The directory structure for the ZIP archive
-	* @param opts The main options, merged with per-file options
-	* @returns The generated ZIP archive
-	*/
-	function zipSync(data, opts) {
-		if (!opts) opts = {};
-		var r = {};
-		var files = [];
-		fltn(data, "", r, opts);
-		var o = 0;
-		var tot = 0;
-		for (var fn in r) {
-			var _a = r[fn], file = _a[0], p = _a[1];
-			var compression = p.level == 0 ? 0 : 8;
-			var f = strToU8(fn), s = f.length;
-			var com = p.comment, m = com && strToU8(com), ms = m && m.length;
-			var exl = exfl(p.extra);
-			if (s > 65535) err(11);
-			var d = compression ? deflateSync(file, p) : file, l = d.length;
-			var c = crc();
-			c.p(file);
-			files.push(mrg(p, {
-				size: file.length,
-				crc: c.d(),
-				c: d,
-				f,
-				m,
-				u: s != fn.length || m && com.length != ms,
-				o,
-				compression
-			}));
-			o += 30 + s + exl + l;
-			tot += 76 + 2 * (s + exl) + (ms || 0) + l;
-		}
-		var out = new u8(tot + 22), oe = o, cdl = tot - o;
-		for (var i = 0; i < files.length; ++i) {
-			var f = files[i];
-			wzh(out, f.o, f, f.f, f.u, f.c.length);
-			var badd = 30 + f.f.length + exfl(f.extra);
-			out.set(f.c, f.o + badd);
-			wzh(out, o, f, f.f, f.u, f.c.length, f.o, f.m), o += 16 + badd + (f.m ? f.m.length : 0);
-		}
-		wzf(out, o, files.length, cdl, oe);
-		return out;
-	}
-	/**
-	* Synchronously decompresses a ZIP archive. Prefer using `unzip` for better
-	* performance with more than one file.
-	* @param data The raw compressed ZIP file
-	* @param opts The ZIP extraction options
-	* @returns The decompressed files
-	*/
-	function unzipSync(data, opts) {
-		var files = {};
-		var e = data.length - 22;
-		for (; b4(data, e) != 101010256; --e) if (!e || data.length - e > 65558) err(13);
-		var c = b2(data, e + 8);
-		if (!c) return {};
-		var o = b4(data, e + 16);
-		var z = b4(data, e - 20) == 117853008;
-		if (z) {
-			var ze = b4(data, e - 12);
-			z = b4(data, ze) == 101075792;
-			if (z) {
-				c = b4(data, ze + 32);
-				o = b4(data, ze + 48);
-			}
-		}
-		var fltr = opts && opts.filter;
-		for (var i = 0; i < c; ++i) {
-			var _a = zh(data, o, z), c_2 = _a[0], sc = _a[1], su = _a[2], fn = _a[3], no = _a[4], off = _a[5], b = slzh(data, off);
-			o = no;
-			if (!fltr || fltr({
-				name: fn,
-				size: sc,
-				originalSize: su,
-				compression: c_2
-			})) {
-				if (!c_2) files[fn] = slc(data, b, b + sc);
-				else if (c_2 == 8) files[fn] = inflateSync(data.subarray(b, b + sc), { out: new u8(su) });
-				else err(14, "unknown compression type " + c_2);
-			}
-		}
-		return files;
-	}
-	//#endregion
-	//#region src/util/zip.ts
-	/**
-	* Zips and unzips packages, such as .docx files, and gives a zip file in the output types of `Packer` and
-	* `patchDocument`.
-	*
-	* @module
-	*/
-	/**
-	* The bytes of a file in a package. Bytes from another realm, such as a vm context's Buffer, are read through this
-	* realm's `Uint8Array`, as fflate tells a file's bytes from a folder of files by `instanceof Uint8Array`.
-	*/
-	var bytesOf$2 = (data) => typeof data === "string" ? encodeUtf8(data) : ArrayBuffer.isView(data) ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength) : new Uint8Array(data);
-	/**
-	* Zips a package's files, each compressed with DEFLATE, in the order they are given. A path given twice keeps its first
-	* place and its last data, so a file can be replaced.
-	*/
-	var zipFiles = (files) => zipSync(Object.fromEntries([...files].map(([path, data]) => [path, bytesOf$2(data)])));
-	var MAX_DEFLATE_RATIO = 1032;
-	var wrongSize = (path) => /* @__PURE__ */ new Error(`Corrupted zip: ${path} isn't the size the zip file gives it`);
-	/**
-	* The files in a zip file by their paths, in the zip file's order. Its folders, which hold nothing, are left out, and so
-	* are the files `include` leaves out, which aren't inflated.
-	*
-	* A file must be as large as the zip file says, as JSZip, which docx used to unzip with, checked. fflate takes room for
-	* that size before inflating a file, so sizes that can't be are refused before it does: compressed data that together
-	* is larger than the zip file it's in, or a size more than DEFLATE can inflate a file's compressed data to. That keeps
-	* the room taken to what DEFLATE can give for the zip file. fflate cuts a file short at a size smaller than its data,
-	* which only parsing the zip file again would show.
-	*/
-	var unzipFiles = (data, include = () => true) => {
-		const sizes = /* @__PURE__ */ new Map();
-		let compressed = 0;
-		const files = unzipSync(data, { filter: ({ name, size, originalSize }) => {
-			if (name.endsWith("/") || !include(name)) return false;
-			compressed += size;
-			if (compressed > data.length || originalSize > size * MAX_DEFLATE_RATIO) throw wrongSize(name);
-			sizes.set(name, originalSize);
-			return true;
-		} });
-		const wrong = Object.entries(files).find(([path, file]) => file.length !== sizes.get(path));
-		if (wrong !== void 0) throw wrongSize(wrong[0]);
-		return new Map(Object.entries(files));
-	};
-	/** A zip file as a string with a character for each byte, as JSZip, which docx used to zip with, gave it */
-	var binaryStringOf = (data) => {
-		let text = "";
-		for (let start = 0; start < data.length; start += 32768) text += String.fromCharCode(...data.subarray(start, start + 32768));
-		return text;
-	};
-	var unsupported = (type) => /* @__PURE__ */ new Error(`${type} is not supported by this platform`);
-	var OUTPUTS = {
-		uint8array: (data) => data,
-		arraybuffer: (data) => data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength),
-		array: (data) => Array.from(data),
-		string: binaryStringOf,
-		binarystring: binaryStringOf,
-		base64: (data) => btoa(binaryStringOf(data)),
-		blob: (data, mimeType) => {
-			if (typeof Blob === "undefined") throw unsupported("blob");
-			return new Blob([data], { type: mimeType });
-		},
-		nodebuffer: (data) => {
-			if (typeof Buffer === "undefined") throw unsupported("nodebuffer");
-			return Buffer.from(data.buffer, data.byteOffset, data.byteLength);
-		},
-		text: () => {
-			throw unsupported("text");
-		}
-	};
-	/**
-	* A zip file in one of the output types of `Packer` and `patchDocument`. The type's case doesn't matter, as it didn't
-	* to JSZip.
-	*
-	* @param mimeType - The type a Blob is given
-	*/
-	var zipOutput = (data, type, mimeType) => {
-		const output = Object.prototype.hasOwnProperty.call(OUTPUTS, type.toLowerCase()) ? OUTPUTS[type.toLowerCase()] : void 0;
-		if (output === void 0) throw unsupported(type);
-		return output(data, mimeType);
-	};
-	//#endregion
-	//#region src/file/fonts/obfuscate-ttf-to-odttf.ts
 	/**
 	* Font obfuscation module for embedding fonts in WordprocessingML documents.
 	*
@@ -32724,36 +32962,6 @@ MAX: 9026 };
 		});
 	};
 	//#endregion
-	//#region src/patcher/patch-type.ts
-	/**
-	* The types of patch `patchDocument` applies.
-	*
-	* @module
-	*/
-	/**
-	* Patch type enumeration.
-	*
-	* Determines how the replacement content should be inserted into the document.
-	*
-	* @publicApi
-	*/
-	var PatchType = {
-		/** Replace entire file-level elements (e.g., whole paragraphs) */
-		DOCUMENT: "file",
-		/** Replace content within paragraphs (inline replacement) */
-		PARAGRAPH: "paragraph",
-		/**
-		* Repeat the rows of a table that hold the placeholder's fields, such as `{{items.name}}`, once for each row of
-		* data. See {@link TableRowsPatch}
-		*/
-		TABLE_ROWS: "tableRows",
-		/**
-		* Change a drawing whose alt text holds the placeholder, and the parts it refers to, such as the data of a chart made
-		* in Word. See {@link DrawingPatch}
-		*/
-		DRAWING: "drawing"
-	};
-	//#endregion
 	//#region src/patcher/relationship-manager.ts
 	/**
 	* Extracts the numeric ID from a relationship ID string.
@@ -32840,6 +33048,254 @@ MAX: 9026 };
 		}]
 	});
 	//#endregion
+	//#region src/patcher/core-properties.ts
+	var CORE_PROPERTIES_RELATIONSHIP_TYPE = "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties";
+	var CORE_PROPERTIES_CONTENT_TYPE = "application/vnd.openxmlformats-package.core-properties+xml";
+	var PACKAGE_RELATIONSHIPS_PATH = "_rels/.rels";
+	var CORE_PROPERTIES_PATH = "docProps/core.xml";
+	var NAMESPACES = {
+		cp: "http://schemas.openxmlformats.org/package/2006/metadata/core-properties",
+		dc: "http://purl.org/dc/elements/1.1/"
+	};
+	var ELEMENTS = {
+		title: {
+			namespace: "dc",
+			name: "title"
+		},
+		subject: {
+			namespace: "dc",
+			name: "subject"
+		},
+		creator: {
+			namespace: "dc",
+			name: "creator"
+		},
+		keywords: {
+			namespace: "cp",
+			name: "keywords"
+		},
+		description: {
+			namespace: "dc",
+			name: "description"
+		},
+		lastModifiedBy: {
+			namespace: "cp",
+			name: "lastModifiedBy"
+		},
+		revision: {
+			namespace: "cp",
+			name: "revision"
+		}
+	};
+	var textOf = (value) => value === "" ? [] : [{
+		type: "text",
+		text: String(value)
+	}];
+	var localName = (element) => {
+		var _element$name;
+		return (_element$name = element.name) === null || _element$name === void 0 ? void 0 : _element$name.slice(element.name.indexOf(":") + 1);
+	};
+	/**
+	* The prefix, with its colon, that the root gives a namespace, or none if it's the default one. A root without the
+	* namespace is given it with its usual prefix.
+	*/
+	var prefixOf = (root, namespace) => {
+		var _Object$entries$find;
+		const declaration = (_Object$entries$find = Object.entries(_objectSpread2({}, root.attributes)).find(([name, value]) => (name === "xmlns" || name.startsWith("xmlns:")) && value === NAMESPACES[namespace])) === null || _Object$entries$find === void 0 ? void 0 : _Object$entries$find[0];
+		if (declaration === void 0) {
+			root.attributes = _objectSpread2(_objectSpread2({}, root.attributes), {}, { [`xmlns:${namespace}`]: NAMESPACES[namespace] });
+			return `${namespace}:`;
+		}
+		return declaration === "xmlns" ? "" : `${declaration.slice(6)}:`;
+	};
+	/**
+	* The text of a part, in UTF-16, from its byte order mark, or else in UTF-8.
+	*/
+	var decode = (bytes) => {
+		const encoding = bytes[0] === 255 && bytes[1] === 254 ? "utf-16le" : bytes[0] === 254 && bytes[1] === 255 ? "utf-16be" : "utf-8";
+		return new TextDecoder(encoding).decode(bytes);
+	};
+	/**
+	* The package's part at a path, if it has one. The patcher keeps a part in UTF-16, or one whose name doesn't end in
+	* .xml, with its other parts, as it found it, so that is read and moved to its XML parts, to be written in UTF-8 with
+	* them, rather than written over them as it was.
+	*/
+	var readPart = (parts, binaryParts, path) => {
+		var _part$declaration;
+		const bytes = binaryParts.get(path);
+		if (bytes === void 0) return parts.get(path);
+		const part = toJson(decode(bytes));
+		if ((_part$declaration = part.declaration) === null || _part$declaration === void 0 ? void 0 : _part$declaration.attributes) part.declaration.attributes.encoding = "UTF-8";
+		binaryParts.delete(path);
+		parts.set(path, part);
+		return part;
+	};
+	/**
+	* The path of the package's core properties part, found from its relationships. A package without one is given a
+	* relationship to docProps/core.xml.
+	*/
+	var corePropertiesPathOf = (parts) => {
+		var _parts$get, _getFirstLevelElement;
+		const relationships = (_parts$get = parts.get(PACKAGE_RELATIONSHIPS_PATH)) !== null && _parts$get !== void 0 ? _parts$get : createRelationshipFile();
+		const target = (_getFirstLevelElement = getFirstLevelElements(relationships, "Relationships").find((relationship) => {
+			var _relationship$attribu;
+			return ((_relationship$attribu = relationship.attributes) === null || _relationship$attribu === void 0 ? void 0 : _relationship$attribu.Type) === CORE_PROPERTIES_RELATIONSHIP_TYPE;
+		})) === null || _getFirstLevelElement === void 0 || (_getFirstLevelElement = _getFirstLevelElement.attributes) === null || _getFirstLevelElement === void 0 ? void 0 : _getFirstLevelElement.Target;
+		if (typeof target === "string") return resolveTarget("", target);
+		appendRelationship(relationships, getNextRelationshipIndex(relationships), CORE_PROPERTIES_RELATIONSHIP_TYPE, CORE_PROPERTIES_PATH);
+		parts.set(PACKAGE_RELATIONSHIPS_PATH, relationships);
+		return CORE_PROPERTIES_PATH;
+	};
+	/**
+	* Sets the given properties of a document in its core properties part, replacing the template's, and leaves the
+	* others as they are. A template without the part is given one.
+	*
+	* @param parts - The package's XML parts, by their paths, which the part is set in
+	* @param binaryParts - The package's other parts, by their paths, which the part is taken from if it's one of them
+	* @param addContentTypeOverride - Adds the content type of the part, if it's new
+	*/
+	var patchCoreProperties = (parts, binaryParts, properties, { addContentTypeOverride }) => {
+		var _part$elements, _root$elements;
+		const path = corePropertiesPathOf(parts);
+		const existing = readPart(parts, binaryParts, path);
+		const part = existing !== null && existing !== void 0 ? existing : {
+			declaration: { attributes: {
+				version: "1.0",
+				encoding: "UTF-8",
+				standalone: "yes"
+			} },
+			elements: [{
+				type: "element",
+				name: "cp:coreProperties",
+				attributes: { "xmlns:cp": NAMESPACES.cp },
+				elements: []
+			}]
+		};
+		if (existing === void 0) {
+			parts.set(path, part);
+			addContentTypeOverride(CORE_PROPERTIES_CONTENT_TYPE, `/${path}`);
+		}
+		const root = (_part$elements = part.elements) === null || _part$elements === void 0 ? void 0 : _part$elements.find((element) => localName(element) === "coreProperties");
+		if (root === void 0) throw new Error(`Could not find the core properties in ${path}`);
+		(_root$elements = root.elements) !== null && _root$elements !== void 0 || (root.elements = []);
+		for (const [key, { namespace, name }] of Object.entries(ELEMENTS)) {
+			const value = properties[key];
+			if (value === void 0) continue;
+			const element = root.elements.find((item) => localName(item) === name);
+			if (element) element.elements = textOf(value);
+			else root.elements.push({
+				type: "element",
+				name: `${prefixOf(root, namespace)}${name}`,
+				elements: textOf(value)
+			});
+		}
+	};
+	//#endregion
+	//#region src/patcher/drawing-ids.ts
+	var DRAWINGS = /* @__PURE__ */ new Set(["wp:inline", "wp:anchor"]);
+	var ID_ELEMENTS = /* @__PURE__ */ new Set([
+		"wp:docPr",
+		"wps:cNvPr",
+		"wpg:cNvPr"
+	]);
+	var REFERENCE_ELEMENTS = /* @__PURE__ */ new Set(["a:stCxn", "a:endCxn"]);
+	var idOf$1 = (element, names) => {
+		var _element$name, _element$attributes;
+		if (!names.has((_element$name = element.name) !== null && _element$name !== void 0 ? _element$name : "")) return;
+		const id = Number((_element$attributes = element.attributes) === null || _element$attributes === void 0 ? void 0 : _element$attributes.id);
+		return Number.isInteger(id) ? id : void 0;
+	};
+	/**
+	* Finds the id of every drawing in an element, at any depth, and of the shapes in them, such as in a group.
+	*
+	* @param element - The element to search, such as a part's root
+	* @returns The ids, once for each element that has one
+	*/
+	var findDrawingIds = (element) => {
+		var _element$elements;
+		const id = idOf$1(element, ID_ELEMENTS);
+		return [...id === void 0 ? [] : [id], ...((_element$elements = element.elements) !== null && _element$elements !== void 0 ? _element$elements : []).flatMap(findDrawingIds)];
+	};
+	var ownIdsOf = (drawing) => {
+		const idsIn = (element) => {
+			var _element$elements2;
+			const id = idOf$1(element, ID_ELEMENTS);
+			return [...id === void 0 ? [] : [id], ...((_element$elements2 = element.elements) !== null && _element$elements2 !== void 0 ? _element$elements2 : []).flatMap((child) => {
+				var _child$name;
+				return DRAWINGS.has((_child$name = child.name) !== null && _child$name !== void 0 ? _child$name : "") ? [] : idsIn(child);
+			})];
+		};
+		return idsIn(drawing);
+	};
+	/**
+	* Creates a function that renumbers the drawings in content being inserted, so none has an id another drawing in the
+	* document has. Word finds a document whose drawings share an id unreadable, even when they are in different parts,
+	* such as a header and the body. A drawing's id is chosen when it is created, without knowing which ids the template
+	* has, and content inserted more than once would have the same ids each time.
+	*
+	* A drawing keeps its ids if nothing in the document has them yet, and otherwise gets the next unused ones. The
+	* connectors in a drawing then still join the shapes they did.
+	*
+	* @param idsInDocument - The ids of the drawings already in the document, and of the shapes in them
+	* @returns A function that returns the elements with their drawings renumbered
+	*/
+	var renumberDrawingsAvoiding = (idsInDocument) => {
+		const usedIds = new Set(idsInDocument);
+		let highestId = idsInDocument.reduce((highest, id) => Math.max(highest, id), 0);
+		const newIdFor = (id) => {
+			const newId = usedIds.has(id) ? highestId + 1 : id;
+			highestId = Math.max(highestId, newId);
+			usedIds.add(newId);
+			return newId;
+		};
+		const renumberDrawing = (drawing) => {
+			const newIds = new Map([...new Set(ownIdsOf(drawing))].map((id) => [id, newIdFor(id)]));
+			const renumberIn = (element) => {
+				var _element$name2, _idOf;
+				if (element !== drawing && DRAWINGS.has((_element$name2 = element.name) !== null && _element$name2 !== void 0 ? _element$name2 : "")) return renumberDrawing(element);
+				const id = (_idOf = idOf$1(element, ID_ELEMENTS)) !== null && _idOf !== void 0 ? _idOf : idOf$1(element, REFERENCE_ELEMENTS);
+				const newId = id === void 0 ? void 0 : newIds.get(id);
+				return _objectSpread2(_objectSpread2(_objectSpread2({}, element), newId === void 0 ? {} : { attributes: _objectSpread2(_objectSpread2({}, element.attributes), {}, { id: String(newId) }) }), element.elements === void 0 ? {} : { elements: element.elements.map(renumberIn) });
+			};
+			return renumberIn(drawing);
+		};
+		const renumber = (element) => {
+			var _element$name3;
+			return DRAWINGS.has((_element$name3 = element.name) !== null && _element$name3 !== void 0 ? _element$name3 : "") ? renumberDrawing(element) : _objectSpread2(_objectSpread2({}, element), element.elements === void 0 ? {} : { elements: element.elements.map(renumber) });
+		};
+		return (elements) => elements.map(renumber);
+	};
+	//#endregion
+	//#region src/patcher/patch-type.ts
+	/**
+	* The types of patch `patchDocument` applies.
+	*
+	* @module
+	*/
+	/**
+	* Patch type enumeration.
+	*
+	* Determines how the replacement content should be inserted into the document.
+	*
+	* @publicApi
+	*/
+	var PatchType = {
+		/** Replace entire file-level elements (e.g., whole paragraphs) */
+		DOCUMENT: "file",
+		/** Replace content within paragraphs (inline replacement) */
+		PARAGRAPH: "paragraph",
+		/**
+		* Repeat the rows of a table that hold the placeholder's fields, such as `{{items.name}}`, once for each row of
+		* data. See {@link TableRowsPatch}
+		*/
+		TABLE_ROWS: "tableRows",
+		/**
+		* Change a drawing whose alt text holds the placeholder, and the parts it refers to, such as the data of a chart made
+		* in Word. See {@link DrawingPatch}
+		*/
+		DRAWING: "drawing"
+	};
+	//#endregion
 	//#region src/patcher/drawing-patch.ts
 	/**
 	* Patches for drawings in a template whose alt text holds a placeholder, such as a chart made in Word whose data a patch
@@ -32891,45 +33347,6 @@ MAX: 9026 };
 	var altTextOf = (properties) => {
 		var _properties$attribute, _properties$attribute2;
 		return [(_properties$attribute = properties.attributes) === null || _properties$attribute === void 0 ? void 0 : _properties$attribute.descr, (_properties$attribute2 = properties.attributes) === null || _properties$attribute2 === void 0 ? void 0 : _properties$attribute2.title].flatMap((text) => text === void 0 ? [] : [String(text)]);
-	};
-	/**
-	* The path of a part's relationships part, such as word/_rels/document.xml.rels for word/document.xml.
-	*/
-	var relationshipsPathOf = (path) => {
-		const slash = path.lastIndexOf("/");
-		return `${path.slice(0, slash + 1)}_rels/${path.slice(slash + 1)}.rels`;
-	};
-	/**
-	* The part a relationships part belongs to, or "" for the package's own (_rels/.rels), whose targets are from its root.
-	*/
-	var sourceOfRelationships = (path) => path.replace(/(^|\/)_rels\/([^/]*)\.rels$/, "$1$2");
-	var folderOf = (path) => path.slice(0, path.lastIndexOf("/") + 1);
-	/**
-	* The path of the part a relationship's target refers to: relative to the folder of the part the relationship belongs
-	* to, or from the package's root if it starts with "/". Backslashes, which some applications write, are read as slashes.
-	*
-	* @param from - The path of the part the relationship belongs to
-	*/
-	var resolveTarget = (from, target) => {
-		const normalized = target.replace(/\\/g, "/");
-		return (normalized.startsWith("/") ? normalized : `${folderOf(from)}${normalized}`).split("/").reduce((segments, segment) => {
-			if (segment === "" || segment === ".") return segments;
-			return segment === ".." ? segments.slice(0, -1) : [...segments, segment];
-		}, []).join("/");
-	};
-	/**
-	* A relationship's target for a part, relative to the folder of the part the relationship belongs to, such as
-	* "../embeddings/Microsoft_Excel_Worksheet1.xlsx" from word/charts/chart1.xml.
-	*
-	* @param from - The path of the part the relationship belongs to
-	* @param to - The path of the part it refers to
-	*/
-	var relativeTarget = (from, to) => {
-		const folders = folderOf(from).split("/").filter(Boolean);
-		const segments = to.split("/");
-		const common = folders.findIndex((folder, index) => index >= segments.length - 1 || segments[index] !== folder);
-		const shared = common === -1 ? folders.length : common;
-		return [...folders.slice(shared).map(() => ".."), ...segments.slice(shared)].join("/");
 	};
 	var CONTENT_TYPES$1 = "[Content_Types].xml";
 	/**
@@ -33114,224 +33531,6 @@ MAX: 9026 };
 			const used = relationshipIdsIn(drawing.part.xml, relationshipPrefixesIn(drawing.part.xml));
 			contents.removeRelationships(drawing.part.path, new Set([...referenced].filter((id) => !used.has(id))));
 		}
-	};
-	//#endregion
-	//#region src/patcher/core-properties.ts
-	var CORE_PROPERTIES_RELATIONSHIP_TYPE = "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties";
-	var CORE_PROPERTIES_CONTENT_TYPE = "application/vnd.openxmlformats-package.core-properties+xml";
-	var PACKAGE_RELATIONSHIPS_PATH = "_rels/.rels";
-	var CORE_PROPERTIES_PATH = "docProps/core.xml";
-	var NAMESPACES = {
-		cp: "http://schemas.openxmlformats.org/package/2006/metadata/core-properties",
-		dc: "http://purl.org/dc/elements/1.1/"
-	};
-	var ELEMENTS = {
-		title: {
-			namespace: "dc",
-			name: "title"
-		},
-		subject: {
-			namespace: "dc",
-			name: "subject"
-		},
-		creator: {
-			namespace: "dc",
-			name: "creator"
-		},
-		keywords: {
-			namespace: "cp",
-			name: "keywords"
-		},
-		description: {
-			namespace: "dc",
-			name: "description"
-		},
-		lastModifiedBy: {
-			namespace: "cp",
-			name: "lastModifiedBy"
-		},
-		revision: {
-			namespace: "cp",
-			name: "revision"
-		}
-	};
-	var textOf = (value) => value === "" ? [] : [{
-		type: "text",
-		text: String(value)
-	}];
-	var localName$1 = (element) => {
-		var _element$name;
-		return (_element$name = element.name) === null || _element$name === void 0 ? void 0 : _element$name.slice(element.name.indexOf(":") + 1);
-	};
-	/**
-	* The prefix, with its colon, that the root gives a namespace, or none if it's the default one. A root without the
-	* namespace is given it with its usual prefix.
-	*/
-	var prefixOf = (root, namespace) => {
-		var _Object$entries$find;
-		const declaration = (_Object$entries$find = Object.entries(_objectSpread2({}, root.attributes)).find(([name, value]) => (name === "xmlns" || name.startsWith("xmlns:")) && value === NAMESPACES[namespace])) === null || _Object$entries$find === void 0 ? void 0 : _Object$entries$find[0];
-		if (declaration === void 0) {
-			root.attributes = _objectSpread2(_objectSpread2({}, root.attributes), {}, { [`xmlns:${namespace}`]: NAMESPACES[namespace] });
-			return `${namespace}:`;
-		}
-		return declaration === "xmlns" ? "" : `${declaration.slice(6)}:`;
-	};
-	/**
-	* The text of a part, in UTF-16, from its byte order mark, or else in UTF-8.
-	*/
-	var decode = (bytes) => {
-		const encoding = bytes[0] === 255 && bytes[1] === 254 ? "utf-16le" : bytes[0] === 254 && bytes[1] === 255 ? "utf-16be" : "utf-8";
-		return new TextDecoder(encoding).decode(bytes);
-	};
-	/**
-	* The package's part at a path, if it has one. The patcher keeps a part in UTF-16, or one whose name doesn't end in
-	* .xml, with its other parts, as it found it, so that is read and moved to its XML parts, to be written in UTF-8 with
-	* them, rather than written over them as it was.
-	*/
-	var readPart$1 = (parts, binaryParts, path) => {
-		var _part$declaration;
-		const bytes = binaryParts.get(path);
-		if (bytes === void 0) return parts.get(path);
-		const part = toJson(decode(bytes));
-		if ((_part$declaration = part.declaration) === null || _part$declaration === void 0 ? void 0 : _part$declaration.attributes) part.declaration.attributes.encoding = "UTF-8";
-		binaryParts.delete(path);
-		parts.set(path, part);
-		return part;
-	};
-	/**
-	* The path of the package's core properties part, found from its relationships. A package without one is given a
-	* relationship to docProps/core.xml.
-	*/
-	var corePropertiesPathOf = (parts) => {
-		var _parts$get, _getFirstLevelElement;
-		const relationships = (_parts$get = parts.get(PACKAGE_RELATIONSHIPS_PATH)) !== null && _parts$get !== void 0 ? _parts$get : createRelationshipFile();
-		const target = (_getFirstLevelElement = getFirstLevelElements(relationships, "Relationships").find((relationship) => {
-			var _relationship$attribu;
-			return ((_relationship$attribu = relationship.attributes) === null || _relationship$attribu === void 0 ? void 0 : _relationship$attribu.Type) === CORE_PROPERTIES_RELATIONSHIP_TYPE;
-		})) === null || _getFirstLevelElement === void 0 || (_getFirstLevelElement = _getFirstLevelElement.attributes) === null || _getFirstLevelElement === void 0 ? void 0 : _getFirstLevelElement.Target;
-		if (typeof target === "string") return resolveTarget("", target);
-		appendRelationship(relationships, getNextRelationshipIndex(relationships), CORE_PROPERTIES_RELATIONSHIP_TYPE, CORE_PROPERTIES_PATH);
-		parts.set(PACKAGE_RELATIONSHIPS_PATH, relationships);
-		return CORE_PROPERTIES_PATH;
-	};
-	/**
-	* Sets the given properties of a document in its core properties part, replacing the template's, and leaves the
-	* others as they are. A template without the part is given one.
-	*
-	* @param parts - The package's XML parts, by their paths, which the part is set in
-	* @param binaryParts - The package's other parts, by their paths, which the part is taken from if it's one of them
-	* @param addContentTypeOverride - Adds the content type of the part, if it's new
-	*/
-	var patchCoreProperties = (parts, binaryParts, properties, { addContentTypeOverride }) => {
-		var _part$elements, _root$elements;
-		const path = corePropertiesPathOf(parts);
-		const existing = readPart$1(parts, binaryParts, path);
-		const part = existing !== null && existing !== void 0 ? existing : {
-			declaration: { attributes: {
-				version: "1.0",
-				encoding: "UTF-8",
-				standalone: "yes"
-			} },
-			elements: [{
-				type: "element",
-				name: "cp:coreProperties",
-				attributes: { "xmlns:cp": NAMESPACES.cp },
-				elements: []
-			}]
-		};
-		if (existing === void 0) {
-			parts.set(path, part);
-			addContentTypeOverride(CORE_PROPERTIES_CONTENT_TYPE, `/${path}`);
-		}
-		const root = (_part$elements = part.elements) === null || _part$elements === void 0 ? void 0 : _part$elements.find((element) => localName$1(element) === "coreProperties");
-		if (root === void 0) throw new Error(`Could not find the core properties in ${path}`);
-		(_root$elements = root.elements) !== null && _root$elements !== void 0 || (root.elements = []);
-		for (const [key, { namespace, name }] of Object.entries(ELEMENTS)) {
-			const value = properties[key];
-			if (value === void 0) continue;
-			const element = root.elements.find((item) => localName$1(item) === name);
-			if (element) element.elements = textOf(value);
-			else root.elements.push({
-				type: "element",
-				name: `${prefixOf(root, namespace)}${name}`,
-				elements: textOf(value)
-			});
-		}
-	};
-	//#endregion
-	//#region src/patcher/drawing-ids.ts
-	var DRAWINGS = /* @__PURE__ */ new Set(["wp:inline", "wp:anchor"]);
-	var ID_ELEMENTS = /* @__PURE__ */ new Set([
-		"wp:docPr",
-		"wps:cNvPr",
-		"wpg:cNvPr"
-	]);
-	var REFERENCE_ELEMENTS = /* @__PURE__ */ new Set(["a:stCxn", "a:endCxn"]);
-	var idOf$1 = (element, names) => {
-		var _element$name, _element$attributes;
-		if (!names.has((_element$name = element.name) !== null && _element$name !== void 0 ? _element$name : "")) return;
-		const id = Number((_element$attributes = element.attributes) === null || _element$attributes === void 0 ? void 0 : _element$attributes.id);
-		return Number.isInteger(id) ? id : void 0;
-	};
-	/**
-	* Finds the id of every drawing in an element, at any depth, and of the shapes in them, such as in a group.
-	*
-	* @param element - The element to search, such as a part's root
-	* @returns The ids, once for each element that has one
-	*/
-	var findDrawingIds = (element) => {
-		var _element$elements;
-		const id = idOf$1(element, ID_ELEMENTS);
-		return [...id === void 0 ? [] : [id], ...((_element$elements = element.elements) !== null && _element$elements !== void 0 ? _element$elements : []).flatMap(findDrawingIds)];
-	};
-	var ownIdsOf = (drawing) => {
-		const idsIn = (element) => {
-			var _element$elements2;
-			const id = idOf$1(element, ID_ELEMENTS);
-			return [...id === void 0 ? [] : [id], ...((_element$elements2 = element.elements) !== null && _element$elements2 !== void 0 ? _element$elements2 : []).flatMap((child) => {
-				var _child$name;
-				return DRAWINGS.has((_child$name = child.name) !== null && _child$name !== void 0 ? _child$name : "") ? [] : idsIn(child);
-			})];
-		};
-		return idsIn(drawing);
-	};
-	/**
-	* Creates a function that renumbers the drawings in content being inserted, so none has an id another drawing in the
-	* document has. Word finds a document whose drawings share an id unreadable, even when they are in different parts,
-	* such as a header and the body. A drawing's id is chosen when it is created, without knowing which ids the template
-	* has, and content inserted more than once would have the same ids each time.
-	*
-	* A drawing keeps its ids if nothing in the document has them yet, and otherwise gets the next unused ones. The
-	* connectors in a drawing then still join the shapes they did.
-	*
-	* @param idsInDocument - The ids of the drawings already in the document, and of the shapes in them
-	* @returns A function that returns the elements with their drawings renumbered
-	*/
-	var renumberDrawingsAvoiding = (idsInDocument) => {
-		const usedIds = new Set(idsInDocument);
-		let highestId = idsInDocument.reduce((highest, id) => Math.max(highest, id), 0);
-		const newIdFor = (id) => {
-			const newId = usedIds.has(id) ? highestId + 1 : id;
-			highestId = Math.max(highestId, newId);
-			usedIds.add(newId);
-			return newId;
-		};
-		const renumberDrawing = (drawing) => {
-			const newIds = new Map([...new Set(ownIdsOf(drawing))].map((id) => [id, newIdFor(id)]));
-			const renumberIn = (element) => {
-				var _element$name2, _idOf;
-				if (element !== drawing && DRAWINGS.has((_element$name2 = element.name) !== null && _element$name2 !== void 0 ? _element$name2 : "")) return renumberDrawing(element);
-				const id = (_idOf = idOf$1(element, ID_ELEMENTS)) !== null && _idOf !== void 0 ? _idOf : idOf$1(element, REFERENCE_ELEMENTS);
-				const newId = id === void 0 ? void 0 : newIds.get(id);
-				return _objectSpread2(_objectSpread2(_objectSpread2({}, element), newId === void 0 ? {} : { attributes: _objectSpread2(_objectSpread2({}, element.attributes), {}, { id: String(newId) }) }), element.elements === void 0 ? {} : { elements: element.elements.map(renumberIn) });
-			};
-			return renumberIn(drawing);
-		};
-		const renumber = (element) => {
-			var _element$name3;
-			return DRAWINGS.has((_element$name3 = element.name) !== null && _element$name3 !== void 0 ? _element$name3 : "") ? renumberDrawing(element) : _objectSpread2(_objectSpread2({}, element), element.elements === void 0 ? {} : { elements: element.elements.map(renumber) });
-		};
-		return (elements) => elements.map(renumber);
 	};
 	//#endregion
 	//#region src/patcher/load-zip.ts
@@ -34515,75 +34714,17 @@ MAX: 9026 };
 	*
 	* @module
 	*/
-	var THEME_RELATIONSHIP_TYPE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme";
-	var COLOR_NAMES = /* @__PURE__ */ new Map([
-		["dk1", "dark1"],
-		["lt1", "light1"],
-		["dk2", "dark2"],
-		["lt2", "light2"],
-		["accent1", "accent1"],
-		["accent2", "accent2"],
-		["accent3", "accent3"],
-		["accent4", "accent4"],
-		["accent5", "accent5"],
-		["accent6", "accent6"],
-		["hlink", "hyperlink"],
-		["folHlink", "followedHyperlink"]
-	]);
-	var localName = (element) => {
-		var _element$name;
-		return (_element$name = element.name) === null || _element$name === void 0 ? void 0 : _element$name.slice(element.name.indexOf(":") + 1);
-	};
-	var child = (element, name) => {
-		var _element$elements;
-		return element === null || element === void 0 || (_element$elements = element.elements) === null || _element$elements === void 0 ? void 0 : _element$elements.find((item) => localName(item) === name);
-	};
-	/**
-	* The hex value of a theme's color: an RGB color's value, or the last value of a system color, as Word writes them.
-	* Other kinds of color aren't read.
-	*/
-	var hexValue = (color) => {
-		var _color$elements;
-		const value = (_color$elements = color.elements) === null || _color$elements === void 0 ? void 0 : _color$elements.map((item) => {
-			var _item$attributes, _item$attributes2;
-			return localName(item) === "srgbClr" ? (_item$attributes = item.attributes) === null || _item$attributes === void 0 ? void 0 : _item$attributes.val : localName(item) === "sysClr" ? (_item$attributes2 = item.attributes) === null || _item$attributes2 === void 0 ? void 0 : _item$attributes2.lastClr : void 0;
-		}).find((item) => item !== void 0);
-		return typeof value === "string" && /^[0-9A-Fa-f]{6}$/.test(value) ? value.toUpperCase() : void 0;
-	};
 	var isUtf16 = (bytes) => bytes[0] === 255 && bytes[1] === 254 || bytes[0] === 254 && bytes[1] === 255;
-	var readPart = (files, path) => {
-		const part = files.get(path);
-		return part === void 0 || isUtf16(part) ? void 0 : toJson(decodeUtf8(part));
-	};
-	/**
-	* The document's theme part, found from the document's relationships.
-	*/
-	var readTheme = (files) => {
-		var _child, _theme$attributes;
-		const theme = (_child = child(readPart(files, "word/_rels/document.xml.rels"), "Relationships")) === null || _child === void 0 || (_child = _child.elements) === null || _child === void 0 ? void 0 : _child.find((item) => {
-			var _item$attributes3;
-			return ((_item$attributes3 = item.attributes) === null || _item$attributes3 === void 0 ? void 0 : _item$attributes3.Type) === THEME_RELATIONSHIP_TYPE;
-		});
-		const target = theme === null || theme === void 0 || (_theme$attributes = theme.attributes) === null || _theme$attributes === void 0 ? void 0 : _theme$attributes.Target;
-		return typeof target === "string" ? readPart(files, resolveTarget("word/document.xml", target)) : void 0;
-	};
 	/**
 	* Reads the colors of the document's theme. Colors it doesn't give, or gives in a way that isn't read, are Office's.
 	*
 	* @returns The theme's colors, or `undefined` if the document has no theme that can be read
 	*/
 	var readThemeColors = (files) => {
-		var _scheme$elements;
-		const theme = readTheme(files);
-		if (theme === void 0) return;
-		const scheme = child(child(child(theme, "theme"), "themeElements"), "clrScheme");
-		const colors = ((_scheme$elements = scheme === null || scheme === void 0 ? void 0 : scheme.elements) !== null && _scheme$elements !== void 0 ? _scheme$elements : []).flatMap((color) => {
-			var _localName;
-			const name = COLOR_NAMES.get((_localName = localName(color)) !== null && _localName !== void 0 ? _localName : "");
-			const value = hexValue(color);
-			return name && value ? [[name, value]] : [];
-		});
-		return themeColorValues(Object.fromEntries(colors));
+		var _find;
+		const path = themePathOf(files, "word/document.xml");
+		const theme = path === void 0 ? void 0 : (_find = [...files].find(([name]) => isSamePart(name, path))) === null || _find === void 0 ? void 0 : _find[1];
+		return theme === void 0 || isUtf16(theme) ? void 0 : themeColorValues(readThemeColorValues(decodeUtf8(theme)));
 	};
 	//#endregion
 	//#region src/patcher/trim-placeholders.ts
@@ -35590,6 +35731,7 @@ MAX: 9026 };
 	exports.percentageValue = percentageValue;
 	exports.pointMeasureValue = pointMeasureValue;
 	exports.positiveUniversalMeasureValue = positiveUniversalMeasureValue;
+	exports.readTheme = readTheme;
 	exports.sectionMarginDefaults = sectionMarginDefaults;
 	exports.sectionPageSizeDefaults = sectionPageSizeDefaults;
 	exports.shortHexNumber = shortHexNumber;

@@ -17,9 +17,9 @@
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-publicApi">
 <h4 class="tsd-anchor-link" id="public-api">Public Api<a href="#public-api" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4></div></div></section>
-<div class="tsd-signature"><span class="tsd-signature-keyword">type</span> <span class="tsd-kind-type-alias">IThemeFontOptions</span> <span class="tsd-signature-symbol">=</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#complexscript">complexScript</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#eastasia">eastAsia</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#latin">latin</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
+<div class="tsd-signature"><span class="tsd-signature-keyword">type</span> <span class="tsd-kind-type-alias">IThemeFontOptions</span> <span class="tsd-signature-symbol">=</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#complexscript">complexScript</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#eastasia">eastAsia</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#latin">latin</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#scripts">scripts</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">Readonly</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/82b1dc132e6fafbc2f7293782686894035634d80/src/file/theme/font-scheme.ts#L18">file/theme/font-scheme.ts:18</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/66eaf1c12e6548b03d95dddf20904afd15225408/src/file/theme/font-scheme.ts#L19">file/theme/font-scheme.ts:19</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -30,6 +30,7 @@
 <div class="tsd-index-list"><a href="#complexscript" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>complex<wbr/>Script?</span></a>
 <a href="#eastasia" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>east<wbr/>Asia?</span></a>
 <a href="#latin" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>latin?</span></a>
+<a href="#scripts" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>scripts?</span></a>
 </div></section></div></details></section></section>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="properties-1">Properties<a href="#properties-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
@@ -40,21 +41,30 @@
 <div class="tsd-comment tsd-typography"><p>The font for complex scripts, such as Arabic and Hebrew. By default Word picks a font for each script</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/82b1dc132e6fafbc2f7293782686894035634d80/src/file/theme/font-scheme.ts#L24">file/theme/font-scheme.ts:24</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/66eaf1c12e6548b03d95dddf20904afd15225408/src/file/theme/font-scheme.ts#L25">file/theme/font-scheme.ts:25</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="eastasia"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>east<wbr/>Asia</span><a href="#eastasia" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">eastAsia</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>The font for East Asian text. By default Word picks a font for each East Asian language</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/82b1dc132e6fafbc2f7293782686894035634d80/src/file/theme/font-scheme.ts#L22">file/theme/font-scheme.ts:22</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/66eaf1c12e6548b03d95dddf20904afd15225408/src/file/theme/font-scheme.ts#L23">file/theme/font-scheme.ts:23</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="latin"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>latin</span><a href="#latin" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">latin</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>The font for Latin text, such as English</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/82b1dc132e6fafbc2f7293782686894035634d80/src/file/theme/font-scheme.ts#L20">file/theme/font-scheme.ts:20</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/66eaf1c12e6548b03d95dddf20904afd15225408/src/file/theme/font-scheme.ts#L21">file/theme/font-scheme.ts:21</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="scripts"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>scripts</span><a href="#scripts" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">scripts</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">Readonly</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></div>
+<div class="tsd-comment tsd-typography"><p>The fonts for text in particular scripts, by the script's ISO 15924 code, such as <code>{ Jpan: &quot;Meiryo&quot;, Arab: &quot;Arial&quot; }</code>
+for Japanese and Arabic text. They take the place of Office's fonts for those scripts, and Office's fonts are kept
+for the others</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/66eaf1c12e6548b03d95dddf20904afd15225408/src/file/theme/font-scheme.ts#L31">file/theme/font-scheme.ts:31</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
@@ -70,7 +80,7 @@
 <h3>On This Page</h3></summary>
 <div class="tsd-accordion-details">
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Properties</summary>
-<div><a href="#complexscript"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>complex<wbr/>Script</span></a><a href="#eastasia"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>east<wbr/>Asia</span></a><a href="#latin"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>latin</span></a></div></details></div></details></div>
+<div><a href="#complexscript"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>complex<wbr/>Script</span></a><a href="#eastasia"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>east<wbr/>Asia</span></a><a href="#latin"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>latin</span></a><a href="#scripts"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>scripts</span></a></div></details></div></details></div>
 <div class="site-menu">
 <nav class="tsd-navigation"><a href="../modules.html">docx</a>
 <ul class="tsd-small-nested-navigation" id="tsd-nav-container">
