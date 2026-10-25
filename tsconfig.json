@@ -35,7 +35,9 @@
             "@shared": ["./src/shared/index.ts"],
             "tests/*": ["./src/tests/*"],
             "docx": ["./src/index.ts"],
-            "docx/math": ["./src/math/index.ts"]
+            "docx/browser": ["./src/index.browser.ts"],
+            "docx/node": ["./src/index.ts"],
+            "docx/*": ["./src/*/index.ts"]
         }
     },
     "include": ["src"]
