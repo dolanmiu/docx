@@ -16681,6 +16681,10 @@ MAX: 9026 };
 		INSIDE: "inside",
 		BOTTOM: "bottom",
 		OUTSIDE: "outside",
+		/**
+		* In line with the text, with no text beside it. Word places a floating table lined up inline at the top of the
+		* paragraph after it, with text beside it, so the table is written in line with the text instead.
+		*/
 		INLINE: "inline",
 		TOP: "top"
 	};
@@ -17032,6 +17036,11 @@ MAX: 9026 };
 			value: overlap
 		} }
 	});
+	var INLINE_ALIGNMENTS = {
+		[RelativeHorizontalPosition.LEFT]: AlignmentType.LEFT,
+		[RelativeHorizontalPosition.CENTER]: AlignmentType.CENTER,
+		[RelativeHorizontalPosition.RIGHT]: AlignmentType.RIGHT
+	};
 	/**
 	* Represents table properties (tblPr) in a WordprocessingML document.
 	*
@@ -17042,14 +17051,17 @@ MAX: 9026 };
 	*/
 	var TableProperties = class extends IgnoreIfEmptyXmlComponent {
 		constructor(options) {
-			var _options$float;
+			var _options$float, _options$alignment, _options$float2;
 			super("w:tblPr", options.includeIfEmpty);
 			if (options.style) this.root.push(new StringValueElement("w:tblStyle", options.style));
-			if (options.float) this.root.push(createTableFloatProperties(options.float));
-			if ((_options$float = options.float) === null || _options$float === void 0 ? void 0 : _options$float.overlap) this.root.push(createTableOverlap(options.float.overlap));
+			const inline = ((_options$float = options.float) === null || _options$float === void 0 ? void 0 : _options$float.relativeVerticalPosition) === RelativeVerticalPosition.INLINE;
+			const float = inline ? void 0 : options.float;
+			if (float) this.root.push(createTableFloatProperties(float));
+			if (float === null || float === void 0 ? void 0 : float.overlap) this.root.push(createTableOverlap(float.overlap));
 			if (options.visuallyRightToLeft !== void 0) this.root.push(createOnOffOnlyElement("w:bidiVisual", options.visuallyRightToLeft));
 			if (options.width) this.root.push(createTableWidthElement("w:tblW", options.width));
-			if (options.alignment) this.root.push(createAlignment(options.alignment));
+			const alignment = (_options$alignment = options.alignment) !== null && _options$alignment !== void 0 ? _options$alignment : inline && ((_options$float2 = options.float) === null || _options$float2 === void 0 ? void 0 : _options$float2.relativeHorizontalPosition) ? INLINE_ALIGNMENTS[options.float.relativeHorizontalPosition] : void 0;
+			if (alignment) this.root.push(createAlignment(alignment));
 			if (options.cellSpacing) this.root.push(createTableCellSpacing(options.cellSpacing));
 			if (options.indent) this.root.push(createTableWidthElement("w:tblInd", options.indent));
 			if (options.borders) this.root.push(new TableBorders(options.borders, { fillMissingSides: !options.style }));
