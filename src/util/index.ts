@@ -10,3 +10,6 @@ export * from "./convenience-functions";
 export * from "./values";
 export type * from "./output-type";
 export type * from "./xml/types";
+// For docx's optional entries, such as docx/theme, which read the files they're given as docx reads templates
+export * from "./xml/parse";
+export { unzipFiles } from "./zip";

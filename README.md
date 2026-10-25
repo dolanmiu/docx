@@ -192,6 +192,31 @@ const doc = new Document({
 
 In a page without a bundler, load `dist/bibliography.umd.cjs` after `dist/index.umd.cjs`. It adds the `docxBibliography` global. See the [citations and bibliography](https://docx.js.org/#/usage/bibliography) documentation.
 
+# Themes
+
+Word's themes, colors and fonts, as its Design tab offers them, and the theme of a Word document or template, read so styles made in Word keep their fonts and colors, with `docx/theme`:
+
+```ts
+import * as fs from "fs";
+import { Document } from "docx";
+import { ColorSchemes, FontSchemes, Themes, readTheme } from "docx/theme";
+
+// Word's Facet theme, with its Blue Green colors and Georgia
+const doc = new Document({
+    theme: { ...Themes.FACET, colors: ColorSchemes.BLUE_GREEN, fonts: FontSchemes.GEORGIA },
+    sections: [],
+});
+
+// The theme of a Word template, whose styles use its fonts and colors
+const fromTemplate = new Document({
+    theme: readTheme(fs.readFileSync("template.dotx")),
+    externalStyles: fs.readFileSync("styles.xml", "utf-8"),
+    sections: [],
+});
+```
+
+In a page without a bundler, load `dist/theme.umd.cjs` after `dist/index.umd.cjs`. It adds the `docxTheme` global. See the [themes](https://docx.js.org/#/usage/themes) documentation.
+
 # Playground
 
 Experience `docx` in action through [Docx.js Editor][docxjs-editor-url], an interactive playground where you can code and preview the results in real-time.

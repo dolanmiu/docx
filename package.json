@@ -106,6 +106,16 @@
                 "types": "./dist/bibliography.d.cts",
                 "default": "./dist/bibliography.cjs"
             }
+        },
+        "./theme": {
+            "import": {
+                "types": "./dist/theme.d.ts",
+                "default": "./dist/theme.mjs"
+            },
+            "require": {
+                "types": "./dist/theme.d.cts",
+                "default": "./dist/theme.cjs"
+            }
         }
     },
     "typesVersions": {
@@ -136,6 +146,9 @@
             ],
             "bibliography": [
                 "./dist/bibliography.d.ts"
+            ],
+            "theme": [
+                "./dist/theme.d.ts"
             ]
         }
     },
@@ -143,14 +156,14 @@
         "dist"
     ],
     "scripts": {
-        "build": "tsc && vite build && vite build --config vite.entries.config.ts --mode shapes && vite build --config vite.entries.config.ts --mode watermarks && vite build --config vite.entries.config.ts --mode charts && vite build --config vite.entries.config.ts --mode math && vite build --config vite.entries.config.ts --mode layout && vite build --config vite.entries.config.ts --mode html && vite build --config vite.entries.config.ts --mode macros && vite build --config vite.entries.config.ts --mode embedded-files && vite build --config vite.entries.config.ts --mode bibliography",
+        "build": "tsc && vite build && vite build --config vite.entries.config.ts --mode shapes && vite build --config vite.entries.config.ts --mode watermarks && vite build --config vite.entries.config.ts --mode charts && vite build --config vite.entries.config.ts --mode math && vite build --config vite.entries.config.ts --mode layout && vite build --config vite.entries.config.ts --mode html && vite build --config vite.entries.config.ts --mode macros && vite build --config vite.entries.config.ts --mode embedded-files && vite build --config vite.entries.config.ts --mode bibliography && vite build --config vite.entries.config.ts --mode theme",
         "test": "vitest --ui --coverage",
         "test:ci": "vitest run --coverage",
         "prepublishOnly": "npm run build --omit=dev",
         "lint": "eslint --config eslint.config.ts",
         "predemo": "npm run build",
         "demo": "tsx ./demo/index.ts",
-        "typedoc": "typedoc src/index.ts src/shapes/index.ts src/watermarks/index.ts src/charts/index.ts src/math/index.ts src/layout/index.ts src/html/index.ts src/macros/index.ts src/embedded-files/index.ts src/bibliography/index.ts --tsconfig tsconfig.typedoc.json",
+        "typedoc": "typedoc src/index.ts src/shapes/index.ts src/watermarks/index.ts src/charts/index.ts src/math/index.ts src/layout/index.ts src/html/index.ts src/macros/index.ts src/embedded-files/index.ts src/bibliography/index.ts src/theme/index.ts --tsconfig tsconfig.typedoc.json",
         "prettier": "prettier -l \"{src,scripts,demo,docs}/**/*.{ts,html,md}\"",
         "prettier:fix": "npm run prettier -- --write",
         "cspell": "cspell \"{src,demo,docs,scripts}/**/*.{ts,scss,html,md}\" && cspell \"./*.*\"",

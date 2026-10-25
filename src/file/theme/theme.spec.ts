@@ -116,6 +116,21 @@ describe("Theme", () => {
         ]);
     });
 
+    it("should write the fonts given for scripts in place of Office's, and add the scripts Office has no font for", () => {
+        const { fonts } = elements(
+            new Theme({ fonts: { headings: { latin: "Georgia", scripts: { Jpan: "Meiryo", Arab: "Tahoma", Latn: "Georgia" } } } }),
+        );
+        const headings = fontCollection(fonts, "a:majorFont");
+        expect(headings[3]).to.deep.equal({ "a:font": { _attr: { script: "Jpan", typeface: "Meiryo" } } });
+        // Office's font for Korean text, as no other is given
+        expect(headings[4]).to.deep.equal({ "a:font": { _attr: { script: "Hang", typeface: "맑은 고딕" } } });
+        expect(headings[7]).to.deep.equal({ "a:font": { _attr: { script: "Arab", typeface: "Tahoma" } } });
+        expect(headings).to.have.length(51);
+        expect(headings[50]).to.deep.equal({ "a:font": { _attr: { script: "Latn", typeface: "Georgia" } } });
+        // The fonts for body text are still Office's
+        expect(fontCollection(fonts, "a:minorFont")[3]).to.deep.equal({ "a:font": { _attr: { script: "Jpan", typeface: "游明朝" } } });
+    });
+
     it("should give the hex color of each of its colors, with Office's in place of those not given", () => {
         expect(new Theme().Colors).to.deep.equal({
             dark1: "000000",

@@ -400,7 +400,9 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
     // docx/html (src/html) imports docx/math by name too, for the math in HTML. docx/macros (src/macros) writes VBA
     // projects for docx's macros, and docx/embedded-files (src/embedded-files) embeds files as OLE objects.
     // src/compound-file writes the compound files both keep them in, and each bundles a copy. docx/bibliography
-    // (src/bibliography) writes citations and bibliographies. Spec helpers (src/tests) may import the entries, as specs do
+    // (src/bibliography) writes citations and bibliographies, and docx/theme (src/theme) has Word's themes and reads
+    // those of other files. docx keeps a document's theme in src/file/theme, so only "docx/theme" is refused by name for
+    // it, as for docx/math. Spec helpers (src/tests) may import the entries, as specs do
     {
         files: ["src/**/*.ts"],
         ignores: [
@@ -415,6 +417,7 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
             "src/compound-file/**",
             "src/text-layout/**",
             "src/bibliography/**",
+            "src/theme/**",
             "src/tests/**",
             "**/*.spec.ts",
         ],
@@ -447,6 +450,7 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
             "src/compound-file/*.ts",
             "src/text-layout/*.ts",
             "src/bibliography/*.ts",
+            "src/theme/*.ts",
         ],
         ignores: ["**/*.spec.ts"],
         rules: {
