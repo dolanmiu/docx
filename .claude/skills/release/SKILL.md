@@ -7,7 +7,7 @@ argument-hint: "[version]"
 
 # Release
 
-Release a new version of docx. The version is `$ARGUMENTS` if given, otherwise work it out in step 1.
+Release a new version of docx. The version is `$ARGUMENTS` if given, otherwise work it out in step 1. It's written `$VERSION` below. Shell variables don't last from one command to the next, so put the version itself into each command, or set `VERSION` at the start of each.
 
 Creating the GitHub Release runs `.github/workflows/npm-publish.yml`, which publishes to npm. That can't be taken back, so the release is only created once the version bump has merged and everything below checks out. If a check fails, stop and tell the user what you found.
 
