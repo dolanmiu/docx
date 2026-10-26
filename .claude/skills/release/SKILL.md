@@ -65,12 +65,12 @@ The notes are a paragraph that sums up the release, followed by GitHub's generat
 - It names each issue a change closes, such as `(#878)`. Dependency bumps and chores are left out.
 
 ```bash
-gh api repos/dolanmiu/docx/releases/generate-notes -f tag_name="$VERSION" -f previous_tag_name="$PREVIOUS" --jq .body > generated.md
+gh api repos/dolanmiu/docx/releases/generate-notes -f tag_name="$VERSION" --jq .body > generated.md
 # Write notes.md: the paragraph, a blank line, then generated.md
 gh release create "$VERSION" --verify-tag --title "$VERSION" --notes-file notes.md
 ```
 
-Write the notes files in the scratchpad. Don't create the release as a draft: the workflow runs on the release's `created` event, which GitHub doesn't send for drafts.
+GitHub works out the previous release itself, so the "Full Changelog" link runs from it to `$VERSION`. Write the notes files in the scratchpad. Don't create the release as a draft: the workflow runs on the release's `created` event, which GitHub doesn't send for drafts.
 
 ## 6. Watch the publish
 
