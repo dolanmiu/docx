@@ -36,6 +36,12 @@ describe("stringifyXmlable", () => {
         );
     });
 
+    it("should leave out the characters that XML 1.0 does not allow", () => {
+        expect(stringifyXmlable({ "w:t": "a\x01b\x0Bc\x1Fd" })).to.equal("<w:t>abcd</w:t>");
+        expect(stringifyXmlable({ a: { _attr: { b: "x\x00y\x08z" } } })).to.equal('<a b="xyz"/>');
+        expect(stringifyXmlable({ "w:t": "tab\tline\nreturn\r" })).to.equal("<w:t>tab\tline\nreturn\r</w:t>");
+    });
+
     it("should write CDATA, splitting it at each ]]>", () => {
         expect(stringifyXmlable({ a: { _cdata: "x]]>y" } })).to.equal("<a><![CDATA[x]]]]><![CDATA[>y]]></a>");
     });
@@ -122,6 +128,16 @@ describe("stringifyElement", () => {
                 ],
             }),
         ).to.equal(`<a b="&amp;amp; &amp;&quot;&apos;&lt;&gt;">&amp;amp; &amp;"'&lt;&gt;</a>`);
+    });
+
+    it("should leave out the characters that XML 1.0 does not allow", () => {
+        const element: XmlElement = {
+            type: "element",
+            name: "w:t",
+            attributes: { b: "x\x1Fy" },
+            elements: [{ type: "text", text: "a\x01b\x0Cc" }],
+        };
+        expect(stringifyElement({ elements: [element] })).to.equal('<w:t b="xy">abc</w:t>');
     });
 
     it("should leave out attributes without a value", () => {
