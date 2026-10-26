@@ -642,8 +642,14 @@ var docx = (function(exports) {
 		["<", "&lt;"],
 		[">", "&gt;"]
 	]);
-	var escapeAll = (value) => value.replace(/[&"'<>]/g, (char) => ESCAPES.get(char));
-	var escapeText = (value) => value.replace(/[&<>]/g, (char) => ESCAPES.get(char));
+	var escapeAll = (value) => value.replace(/[&"'<>\x00-\x08\x0B\x0C\x0E-\x1F]/g, (char) => {
+		var _ESCAPES$get;
+		return (_ESCAPES$get = ESCAPES.get(char)) !== null && _ESCAPES$get !== void 0 ? _ESCAPES$get : "";
+	});
+	var escapeText = (value) => value.replace(/[&<>\x00-\x08\x0B\x0C\x0E-\x1F]/g, (char) => {
+		var _ESCAPES$get2;
+		return (_ESCAPES$get2 = ESCAPES.get(char)) !== null && _ESCAPES$get2 !== void 0 ? _ESCAPES$get2 : "";
+	});
 	/**
 	* Escapes a value the way the xml package did, leaving values that aren't strings, such as numbers, as they are.
 	*/
