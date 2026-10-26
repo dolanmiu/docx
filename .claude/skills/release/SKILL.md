@@ -48,14 +48,15 @@ The user merges the PR. Don't merge it yourself unless they ask you to. Stop her
 ## 4. Tag the merge commit
 
 ```bash
-git checkout master && git pull --ff-only
-git log --oneline -1                          # must be "chore: Version bump to $VERSION (#<PR>)"
-node -p "require('./package.json').version"   # must be $VERSION
-git tag -a "$VERSION" -m ""
+git fetch origin
+SHA=$(gh pr view <PR> --json mergeCommit --jq .mergeCommit.oid)
+git log --oneline -1 "$SHA"                   # must be "chore: Version bump to $VERSION (#<PR>)"
+git show "$SHA:package.json" | grep '"version"'   # must be $VERSION
+git tag -a "$VERSION" "$SHA" -m ""
 git push origin "$VERSION"
 ```
 
-Past tags are annotated with an empty message.
+Tag the version bump's own commit, not the latest on `master`, as other PRs, such as dependabot's, may have merged since. Past tags are annotated with an empty message.
 
 ## 5. Create the release
 
