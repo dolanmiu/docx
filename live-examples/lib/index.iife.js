@@ -27231,6 +27231,9 @@ MAX: 9026 };
 		/**
 		* Exports a document to a Node.js Stream.
 		*
+		* The stream gives the document as one Node.js Buffer, then ends. Where there's no Buffer, as in a browser, it
+		* emits an `error` event instead, so use `toBlob` there.
+		*
 		* @param file - The document to export
 		* @param prettify - Whether to prettify the XML output
 		* @param overrides - Optional array of file overrides
@@ -27239,10 +27242,10 @@ MAX: 9026 };
 		static toStream(file, prettify, overrides = []) {
 			const stream = new Stream();
 			const files = this.compiler.compile(file, convertPrettifyType(prettify), overrides);
-			new Promise((resolve) => setTimeout(resolve)).then(() => {
-				stream.emit("data", zipOutput(zipFiles(files), "nodebuffer", mimeTypeOf(file)));
+			new Promise((resolve) => setTimeout(resolve)).then(() => zipOutput(zipFiles(files), "nodebuffer", mimeTypeOf(file))).then((data) => {
+				stream.emit("data", data);
 				stream.emit("end");
-			});
+			}, (error) => stream.emit("error", error));
 			return stream;
 		}
 	};

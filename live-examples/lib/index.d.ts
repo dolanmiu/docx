@@ -10936,6 +10936,9 @@ export declare class Packer {
     /**
      * Exports a document to a Node.js Stream.
      *
+     * The stream gives the document as one Node.js Buffer, then ends. Where there's no Buffer, as in a browser, it
+     * emits an `error` event instead, so use `toBlob` there.
+     *
      * @param file - The document to export
      * @param prettify - Whether to prettify the XML output
      * @param overrides - Optional array of file overrides
