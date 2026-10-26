@@ -84,6 +84,8 @@ Packer.toArrayBuffer(doc).then((arrayBuffer) => {
 
 ### Export as a Stream
 
+This gives a Node.js stream, which emits the document as one `Buffer` and then ends. A browser has no `Buffer`, so there the stream emits an `error` event instead. Use [`toBlob`](#export-as-blob) in a browser.
+
 ```ts live
 import { Document, Packer, Paragraph } from "docx";
 

@@ -243,8 +243,25 @@ describe("Packer", () => {
             expect(() => Packer.toStream(file)).toThrow("The document can't be written");
         });
 
+        it("should emit an error where there's no Buffer, as in a browser, rather than reject where nothing can catch it", async () => {
+            vi.stubGlobal("Buffer", undefined);
+            const stream = Packer.toStream(file);
+            const data = vi.fn();
+            const end = vi.fn();
+            stream.on("data", data);
+            stream.on("end", end);
+
+            const error = await new Promise<Error>((resolve) => {
+                stream.on("error", resolve);
+            });
+            expect(error.message).toBe("nodebuffer is not supported by this platform");
+            expect(data).not.toHaveBeenCalled();
+            expect(end).not.toHaveBeenCalled();
+        });
+
         afterEach(() => {
             vi.resetAllMocks();
+            vi.unstubAllGlobals();
         });
     });
 });
