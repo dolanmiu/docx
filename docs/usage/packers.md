@@ -6,7 +6,7 @@ Packers works in both a node and browser environment (Angular etc). Now, the pac
 
 ### Export as Buffer
 
-This will return a NodeJS `Buffer`. If this is used in the browser, it will return a `UInt8Array` instead.
+This gives a Node.js `Buffer`. A browser has no `Buffer`, so there it rejects with "nodebuffer is not supported by this platform". Use [`toBlob`](#export-as-blob) or [`toArrayBuffer`](#export-as-arraybuffer) in a browser.
 
 ```ts live
 import * as fs from "fs";
