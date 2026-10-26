@@ -1,6 +1,6 @@
 var docxLayout = (function(exports) {
 	Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
-	//#region src/text-layout/arabic-widths.ts
+	// src/text-layout/arabic-widths.ts
 	/**
 	* How wide Word draws Arabic's letters in each of the forms it joins them in, the lam-alef ligatures and the tatweel, in
 	* the fonts of the width tables whose Arabic Word lays out with its glyphs' own widths, plain and bold, and the font it
@@ -41,8 +41,7 @@ var docxLayout = (function(exports) {
 			bold: "1tN!*021tN1tN!!1tN1tN!!1tN1tN!!1tN1tN!!1tN*021tO1tN1tN!!1tN*021tO1tN1tN!!1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN1tN!!1tN1tN!!1tN1tN!!1tN1tN!!1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN1tN!!1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN1tN!!1tN*021tO1tN*021tO1tN*021tO1tN*08"
 		}
 	];
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/typeof.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/typeof.js
 	function _typeof(o) {
 		"@babel/helpers - typeof";
 		return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o) {
@@ -51,8 +50,7 @@ var docxLayout = (function(exports) {
 			return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o;
 		}, _typeof(o);
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/toPrimitive.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/toPrimitive.js
 	function toPrimitive(t, r) {
 		if ("object" != _typeof(t) || !t) return t;
 		var e = t[Symbol.toPrimitive];
@@ -63,14 +61,12 @@ var docxLayout = (function(exports) {
 		}
 		return ("string" === r ? String : Number)(t);
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/toPropertyKey.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/toPropertyKey.js
 	function toPropertyKey(t) {
 		var i = toPrimitive(t, "string");
 		return "symbol" == _typeof(i) ? i : i + "";
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/defineProperty.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/defineProperty.js
 	function _defineProperty(e, r, t) {
 		return (r = toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
 			value: t,
@@ -79,8 +75,7 @@ var docxLayout = (function(exports) {
 			writable: !0
 		}) : e[r] = t, e;
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/objectSpread2.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/objectSpread2.js
 	function ownKeys(e, r) {
 		var t = Object.keys(e);
 		if (Object.getOwnPropertySymbols) {
@@ -102,8 +97,7 @@ var docxLayout = (function(exports) {
 		}
 		return e;
 	}
-	//#endregion
-	//#region src/text-layout/arabic-shaping.ts
+	// src/text-layout/arabic-shaping.ts
 	/**
 	* Arabic's letters in the forms Word joins them in: each letter isolated, final, initial or medial as the letters beside it
 	* join it, and lam with the alef after it as one ligature, with the widths of {@link ARABIC_WIDTHS}.
@@ -223,8 +217,7 @@ var docxLayout = (function(exports) {
 			"C"
 		].includes(joiningOf(first)) && (isJoinedLetter(last) || isJoinedLetter(first));
 	};
-	//#endregion
-	//#region src/text-layout/font-widths.ts
+	// src/text-layout/font-widths.ts
 	/**
 	* The characters the widths are for, as ranges of code points: printable ASCII; Latin-1, Latin Extended-A and B, IPA and
 	* the spacing modifier letters; Greek and Cyrillic; Latin Extended Additional, for Vietnamese; and general punctuation,
@@ -519,8 +512,7 @@ var docxLayout = (function(exports) {
 			bold: "2M4y66a68Tb99k3d5d5d4J8F2Y4W3d6w8I6h8a8C888J8O6s8H8O3u3u8F*028xcr8g8Y8+8Z6Q6y8X8/4Q5v8J6gbx8O8S8a8S8L8p7x8T8vd27S7J6x4K6w4K7T8Y5x8c8s838s8j4R8r8w4C4I7O4Ccn8v8j8r8q5W7H558u79aN767k5P664z668x2M4y8p8H8U7J4z7U5xcA5p678F4WcA8Y5L8F5i5q5x7H9k5x5x495u67a4apb78x=8g*04bt==6Q*02=4Q*0293==8S*038F8S=8T*02=8a8W=8c*04c5==8j*02=4C*028j==8j*038F8j=8u*02=8r=*0faE938s=*056P=*0c8/8w=*084Ca68Z=*038p=*0374716+6+6j4O=*05az8Z8v=*05b4ch=*0g7x7x54=*0m4Q~a*0h7f~a*1C=*05~a*0n=*03~a*0P~1*1R5x5x~15x~1*0d5x*05~1*0x~a*07!!~a*03=~a!*035x5x8g3M8JaV6K!ak!akaz548g8Y6g8g6Q6x8/8S4Q8J8wbx8O7x8S8/8a!6u7x7JcN7ScB95==8w8o8v548u8w8y888i8o6k8v8j548u7W8z796i8j8Q8p6n8s638uck85bUcz=*04~a*0N6QaF6M8+8p4Q4Q5vdsd0aF8I~a7k8/8g8Y8Y6Maw6QbU8C8N8N8I9sbx8/8S8/8a8+7x7kcN7S9e9ddbdsa1di8Y8Cd28K8c8u8m5Ja38jb/8d93938j95a/8F8j8E8r83727kcl768Z8ncRda9BcA8u88cq8j~a=8H=887H4C4C4IdccA8H=~a=8t~a*0y00*06~a*05726E~a*3J=*05~a*1H==~a*0b7QfE8IfE5d3W2D8I4m381j00*04!4W~188fYfY~18Y2Y*035J*02~18P8P5M!*028Z!*0200*0438gl!3d6o~1!*033q3q!8Q~19u!*042h!*0o~13u00*04!00*09!*035m!*095x!*0v~1*026y8H~1~1ko~1*038D~1*0d~b~b!~b~b!*0f00*0w!*0jb9!*0c9u!!dV!*0acz!*02ck!*069I!*0HaLbQbTab~a!*0LfY88fY88fY88!*0h88!*1o7+!*029X!*07db!bo8F!!2h!*023M8V!*02btfY!*08bz!4C!*0r8x!*0m=8F!!8F8F!*2p"
 		}
 	];
-	//#endregion
-	//#region src/text-layout/font-kerning.ts
+	// src/text-layout/font-kerning.ts
 	var FONT_KERNING = [
 		{
 			name: "Calibri",
@@ -5956,8 +5948,7 @@ var docxLayout = (function(exports) {
 			}
 		}
 	];
-	//#endregion
-	//#region src/text-layout/kerning.ts
+	// src/text-layout/kerning.ts
 	/**
 	* Kerning and ligatures in the fonts of the width tables, as Word draws them: which letters a font's ligatures join into
 	* one glyph, how wide that glyph is, and how much nearer, or further apart, kerning draws each pair of glyphs, from
@@ -6141,8 +6132,7 @@ var docxLayout = (function(exports) {
 		const { second } = classesOf$1(shaping, after);
 		return first === void 0 || second === void 0 ? NaN : (_shaping$pairs$get = shaping.pairs.get(first * 4096 + second)) !== null && _shaping$pairs$get !== void 0 ? _shaping$pairs$get : 0;
 	};
-	//#endregion
-	//#region src/text-layout/more-widths.ts
+	// src/text-layout/more-widths.ts
 	/**
 	* How wide Word draws the characters of Hebrew, the Arabic-Indic and Devanagari digits, Thai, box drawing, blocks,
 	* geometric shapes, symbols and dingbats in the fonts of the width tables, plain and bold, and in Calibri's, Cambria's,
@@ -6512,8 +6502,7 @@ var docxLayout = (function(exports) {
 			}
 		}
 	];
-	//#endregion
-	//#region src/text-layout/text-width.ts
+	// src/text-layout/text-width.ts
 	/**
 	* Estimates how much space text takes up, from the widths of the characters in common fonts.
 	*
@@ -7188,8 +7177,7 @@ var docxLayout = (function(exports) {
 		var _eastAsianFontOf3, _font$font6;
 		return ((_eastAsianFontOf3 = eastAsianFontOf((_font$font6 = font.font) !== null && _font$font6 !== void 0 ? _font$font6 : "Times New Roman")) !== null && _eastAsianFontOf3 !== void 0 ? _eastAsianFontOf3 : widthsOf(font.font)).descent * lineSizeOf$1(font) / 1e3;
 	};
-	//#endregion
-	//#region src/text-layout/line-break-rules.ts
+	// src/text-layout/line-break-rules.ts
 	var WORD_LISTS = {
 		japanese: {
 			noLineStart: "!%),.:;?]}¢°’”‰′″℃、。々〉》」』】〕゛゜ゝゞ・ヽヾ！％），．：；？］｝｡｣､･ﾞﾟ￠",
@@ -7300,8 +7288,7 @@ var docxLayout = (function(exports) {
 		}
 		return breaks;
 	};
-	//#endregion
-	//#region src/text-layout/text-styles.ts
+	// src/text-layout/text-styles.ts
 	var OFFICE_THEME_FONTS = {
 		headings: "Calibri Light",
 		body: "Calibri"
@@ -7979,8 +7966,7 @@ var docxLayout = (function(exports) {
 	* Word breaks them.
 	*/
 	var isEastAsianRun = ({ eastAsiaFont, eastAsianLanguage }) => isEastAsianFont(eastAsiaFont) || kinsokuLanguageOf(eastAsianLanguage) !== void 0;
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/objectWithoutPropertiesLoose.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/objectWithoutPropertiesLoose.js
 	function _objectWithoutPropertiesLoose(r, e) {
 		if (null == r) return {};
 		var t = {};
@@ -7990,8 +7976,7 @@ var docxLayout = (function(exports) {
 		}
 		return t;
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/objectWithoutProperties.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/objectWithoutProperties.js
 	function _objectWithoutProperties(e, t) {
 		if (null == e) return {};
 		var o, r, i = _objectWithoutPropertiesLoose(e, t);
@@ -8001,8 +7986,7 @@ var docxLayout = (function(exports) {
 		}
 		return i;
 	}
-	//#endregion
-	//#region src/text-layout/line-breaking.ts
+	// src/text-layout/line-breaking.ts
 	/**
 	* Breaks a paragraph into lines as Word breaks it, for laying out pages: where each line wraps, how tall it is, and
 	* which bookmarks start on it.
@@ -9609,8 +9593,7 @@ var docxLayout = (function(exports) {
 		}
 		return lines;
 	};
-	//#endregion
-	//#region src/text-layout/office-cloud-fonts.ts
+	// src/text-layout/office-cloud-fonts.ts
 	/**
 	* The names of the fonts Office offers as cloud fonts, which Word for Mac draws text in from Office's copy of them,
 	* even where a document embeds a file of its own of the font.
@@ -10954,8 +10937,7 @@ var docxLayout = (function(exports) {
 		"ＭＳ Ｐゴシック",
 		"ＭＳ Ｐ明朝"
 	];
-	//#endregion
-	//#region src/text-layout/font-file.ts
+	// src/text-layout/font-file.ts
 	/**
 	* Reads the widths, kerning and line height of a font's characters from a TrueType or OpenType font file, so text can
 	* be measured in fonts that aren't in the width tables. Works on the file's bytes, in Node and in browsers.
@@ -11522,8 +11504,7 @@ var docxLayout = (function(exports) {
 			}
 		};
 	};
-	//#endregion
-	//#region src/layout/column-widths.ts
+	// src/layout/column-widths.ts
 	/**
 	* Sizes the columns of a table whose cells don't all have widths, as Word sizes them to their text, and widens a column
 	* of a table whose cells all have widths for a word longer than they give it, or evens out its rows where they give a
@@ -11945,8 +11926,7 @@ var docxLayout = (function(exports) {
 			max: width + borders
 		};
 	};
-	//#endregion
-	//#region src/layout/floating-drawings.ts
+	// src/layout/floating-drawings.ts
 	/** What a drawing is placed against across the page */
 	var acrossBase = (from, { section, oddPage, column, character }) => {
 		const { pageWidth, marginLeft, marginRight } = section;
@@ -12160,8 +12140,7 @@ var docxLayout = (function(exports) {
 			end: keepOut.right
 		};
 	};
-	//#endregion
-	//#region src/layout/number-format.ts
+	// src/layout/number-format.ts
 	/**
 	* Writes numbers as Word writes list and page numbers in each of its formats (`ST_NumberFormat`). What Word writes was
 	* read from PDFs Word saved of the probes in `scripts/layout-probes/word-page-number-formats*.ts`.
@@ -12696,8 +12675,7 @@ var docxLayout = (function(exports) {
 			default: return text;
 		}
 	};
-	//#endregion
-	//#region src/layout/bound-controls.ts
+	// src/layout/bound-controls.ts
 	/**
 	* Content controls bound to custom XML (`w:dataBinding`), which Word fills in from the XML when it opens a document.
 	*
@@ -12789,8 +12767,7 @@ var docxLayout = (function(exports) {
 		};
 		return visit(xml);
 	};
-	//#endregion
-	//#region src/layout/cambria-math.ts
+	// src/layout/cambria-math.ts
 	/**
 	* What of Cambria Math, the font Word lays out equations in, Word's maths layout needs, in the font's units, 2048 to the
 	* em: each glyph's width and the bottom, top, left and right of its ink, the glyph of each character, and of the font's
@@ -39469,8 +39446,7 @@ var docxLayout = (function(exports) {
 			]
 		]]
 	]);
-	//#endregion
-	//#region src/layout/equations.ts
+	// src/layout/equations.ts
 	/**
 	* Lays out equations (`m:oMath`) as Word does, in Cambria Math, by the rules of the font's OpenType MATH table, which
 	* Word's maths layout follows: letters in italic, digits and operators upright, each as wide as Cambria Math draws it,
@@ -40694,8 +40670,7 @@ var docxLayout = (function(exports) {
 			throw error;
 		}
 	};
-	//#endregion
-	//#region src/layout/table-formats.ts
+	// src/layout/table-formats.ts
 	/**
 	* Reads the formatting of a table that changes how its rows and cells are laid out, beyond their widths: its borders and
 	* its cells', the space between its cells, and which parts of its table style apply to each cell.
@@ -41192,8 +41167,7 @@ var docxLayout = (function(exports) {
 			}) });
 		});
 	};
-	//#endregion
-	//#region src/layout/text-frames.ts
+	// src/layout/text-frames.ts
 	/**
 	* Reads text frames (`w:framePr`): paragraphs Word takes out of the text and puts in a box of their own, placed on the
 	* page as a drawing is, which the text after them flows around, such as docx's `frame` and drop caps.
@@ -41279,8 +41253,7 @@ var docxLayout = (function(exports) {
 			down: (_twips4 = twips$1(vSpace)) !== null && _twips4 !== void 0 ? _twips4 : 0
 		});
 	};
-	//#endregion
-	//#region src/layout/vml-drawings.ts
+	// src/layout/vml-drawings.ts
 	/**
 	* Reads VML drawings (`w:pict`), which docx writes for its text boxes and documents made by older versions of Word have
 	* for their shapes and pictures: the box one in the line takes, and where one that text flows around is, as the floating
@@ -41554,8 +41527,7 @@ var docxLayout = (function(exports) {
 			keptOnPage: true
 		});
 	};
-	//#endregion
-	//#region src/layout/read-document.ts
+	// src/layout/read-document.ts
 	var _excluded = ["text"];
 	var _excluded2 = [
 		"borders",
@@ -45633,8 +45605,7 @@ var docxLayout = (function(exports) {
 		}, parts.fonts !== void 0 && parts.fonts.length > 0 ? { fonts: parts.fonts } : {}), documentSettings);
 		return _objectSpread2(_objectSpread2({}, documentContent), withoutUndefined({ unsupported: (_ref31 = (_ref32 = (_ref33 = (_ref34 = (_documentContent$unsu = documentContent.unsupported) !== null && _documentContent$unsu !== void 0 ? _documentContent$unsu : footnotes.size > 0 ? notesUnsupported("footnote") : void 0) !== null && _ref34 !== void 0 ? _ref34 : endnotes.length > 0 ? notesUnsupported("endnote") : void 0) !== null && _ref33 !== void 0 ? _ref33 : endnoteEndsUnsupported) !== null && _ref32 !== void 0 ? _ref32 : unwrittenNumber ? "notes numbered in a format not yet written" : void 0) !== null && _ref31 !== void 0 ? _ref31 : unseenNumbering }));
 	};
-	//#endregion
-	//#region src/layout/paginate.ts
+	// src/layout/paginate.ts
 	/**
 	* Lays out a document's pages as Word does, to find the page each bookmark starts on.
 	*
@@ -49801,8 +49772,7 @@ var docxLayout = (function(exports) {
 		lastPages.set(sectionIndex, pageCount);
 		return paginationOf();
 	};
-	//#endregion
-	//#region src/layout/layout-passes.ts
+	// src/layout/layout-passes.ts
 	/**
 	* Lays out a document's pages as many times as the page numbers it works out change how its lines wrap, such as those of
 	* a table of contents.
@@ -49869,8 +49839,7 @@ var docxLayout = (function(exports) {
 		};
 		return layOut(void 0, 1, void 0, /* @__PURE__ */ new Map());
 	};
-	//#endregion
-	//#region src/layout/list-numbers.ts
+	// src/layout/list-numbers.ts
 	/**
 	* The font Word measures a list number in for the tab stop after it in a table of contents' entry: its Normal template's,
 	* Aptos 12 pt, whatever the document's font and size (`scripts/layout-probes/word-toc-numbers.ts` TN1, TN4)
@@ -49892,8 +49861,7 @@ var docxLayout = (function(exports) {
 	* lists number them. Only those written as Word writes them are given.
 	*/
 	var listNumbersOf = (body, context) => new Map(context.file ? numbersIn(readDocument(body, context).blocks.map(({ block }) => block)) : []);
-	//#endregion
-	//#region src/layout/measure-width.ts
+	// src/layout/measure-width.ts
 	/**
 	* Measuring text with other widths than those of the width tables, such as with the fonts a browser has, through
 	* Pretext.
@@ -49955,8 +49923,7 @@ var docxLayout = (function(exports) {
 		measureLineHeight,
 		measureDescent
 	});
-	//#endregion
-	//#region src/layout/image-sizes.ts
+	// src/layout/image-sizes.ts
 	var PNG_SIGNATURE = [
 		137,
 		80,
@@ -50052,8 +50019,7 @@ var docxLayout = (function(exports) {
 	* undefined for a file in another format, or one too short to say.
 	*/
 	var imageSizeOf = (data) => startsWith(data, PNG_SIGNATURE) ? readPng(data) : startsWith(data, JPEG_SIGNATURE) ? readJpeg(data) : data.length >= 6 && ["GIF87a", "GIF89a"].includes(ascii(data, 0, 6)) ? readGif(data) : startsWith(data, BMP_SIGNATURE) ? readBmp(data) : void 0;
-	//#endregion
-	//#region src/layout/imported-documents.ts
+	// src/layout/imported-documents.ts
 	var nameOf = (element) => Object.keys(element)[0];
 	var contentOf$2 = (element) => {
 		const [content] = Object.values(element);
@@ -50488,8 +50454,7 @@ var docxLayout = (function(exports) {
 			endnotes: notesOf("endnote", ownEndnotes, parts.endnotes)
 		}));
 	};
-	//#endregion
-	//#region src/layout/read-docx.ts
+	// src/layout/read-docx.ts
 	var DEFAULT_DOCUMENT = "word/document.xml";
 	/**
 	* An element as `parseXml` reads it, formatted as docx formats elements: `{ "w:p": [{ _attr: {...} }, ...content] }`, with
@@ -50726,8 +50691,7 @@ var docxLayout = (function(exports) {
 		};
 		return readContent({ "w:body": read.body.content }, documentParts, options);
 	};
-	//#endregion
-	//#region src/layout/estimate-page-numbers.ts
+	// src/layout/estimate-page-numbers.ts
 	/**
 	* What a document is read into: a template patchDocument patched, with the .docx files it imports, or the body of a
 	* document being written. Read to be laid out with a guess (`guess`), past what can't be laid out as Word does
@@ -50817,8 +50781,7 @@ var docxLayout = (function(exports) {
 		const measurer = faces.length === 0 ? others : createFontFileMeasurer(faces, others);
 		return Object.assign((document, context) => estimateWith(contentOf(document, context, guess), measurer, guess), { listNumbers: listNumbersOf });
 	};
-	//#endregion
-	//#region src/layout/layout-document.ts
+	// src/layout/layout-document.ts
 	var PIXELS_PER_POINT = 96 / 72;
 	var pixels = (points) => points * PIXELS_PER_POINT;
 	var inPixels = (block) => block.type === "paragraph" ? _objectSpread2(_objectSpread2({}, block), {}, { lines: block.lines.map((line) => _objectSpread2(_objectSpread2({}, line), {}, {
@@ -50875,7 +50838,6 @@ var docxLayout = (function(exports) {
 			endnotes: notesInPixels(page.endnotes, page)
 		})) }, stoppedAt === void 0 ? {} : { stoppedAt });
 	};
-	//#endregion
 	exports.estimatePageNumbers = estimatePageNumbers;
 	exports.estimatePageNumbersWith = estimatePageNumbersWith;
 	exports.layoutDocument = layoutDocument;

@@ -1,6 +1,6 @@
 var docxShapes = (function(exports, docx) {
 	Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
-	//#region src/shapes/drawing/drawing-parts.ts
+	// src/shapes/drawing/drawing-parts.ts
 	/**
 	* Small DrawingML elements that shapes and pictures in groups are made of. docx writes the same elements for images and
 	* text boxes, but doesn't export them, so shapes write their own.
@@ -218,8 +218,7 @@ var docxShapes = (function(exports, docx) {
 			children: [...children]
 		})]
 	});
-	//#endregion
-	//#region src/shapes/preset-shape/preset-shape-type.ts
+	// src/shapes/preset-shape/preset-shape-type.ts
 	/**
 	* Preset shape types for DrawingML shapes.
 	*
@@ -454,8 +453,7 @@ var docxShapes = (function(exports, docx) {
 	* (connector properties) instead of `wps:cNvSpPr`.
 	*/
 	var isConnectorShapeType = (type) => CONNECTOR_SHAPE_TYPES.has(type);
-	//#endregion
-	//#region src/shapes/preset-shape/shape-adjustments.ts
+	// src/shapes/preset-shape/shape-adjustments.ts
 	var percent = (guide, scale = 1) => ({
 		guide,
 		factor: 1e3 * scale
@@ -929,8 +927,7 @@ var docxShapes = (function(exports, docx) {
 			return value === void 0 ? [] : [[guide, offset + value * factor]];
 		}));
 	};
-	//#endregion
-	//#region src/shapes/preset-shape/shape-units.ts
+	// src/shapes/preset-shape/shape-units.ts
 	/**
 	* Converts the human units shape options are given in (points, degrees and percentages from 0 to 100)
 	* to the units DrawingML stores (EMUs, 60,000ths of a degree and thousandths of a percent).
@@ -963,8 +960,7 @@ var docxShapes = (function(exports, docx) {
 	* Negative angles and angles of a full turn or more are brought into that range.
 	*/
 	var positiveFixedAngle = (degrees) => Math.round((degrees % 360 + 360) % 360 * ANGLE_UNITS_PER_DEGREE$1) % (360 * ANGLE_UNITS_PER_DEGREE$1);
-	//#endregion
-	//#region src/shapes/preset-shape/shape-color.ts
+	// src/shapes/preset-shape/shape-color.ts
 	/**
 	* Colours for shape fills and lines.
 	*
@@ -1088,8 +1084,7 @@ var docxShapes = (function(exports, docx) {
 	* Whether a fill or line given as an object is a colour of the document's theme.
 	*/
 	var isThemeColor = (value) => "theme" in value;
-	//#endregion
-	//#region src/shapes/preset-shape/shape-effects.ts
+	// src/shapes/preset-shape/shape-effects.ts
 	/**
 	* Effects for preset shapes: shadows, glow, soft edges and reflection.
 	*
@@ -1314,8 +1309,7 @@ var docxShapes = (function(exports, docx) {
 			left: all
 		};
 	};
-	//#endregion
-	//#region src/shapes/picture/image-data.ts
+	// src/shapes/picture/image-data.ts
 	/**
 	* Turns the pictures given to shapes, as picture fills or pictures in groups, into the media data stored in the document.
 	*
@@ -1346,8 +1340,7 @@ var docxShapes = (function(exports, docx) {
 			transformation
 		};
 	};
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/typeof.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/typeof.js
 	function _typeof(o) {
 		"@babel/helpers - typeof";
 		return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o) {
@@ -1356,8 +1349,7 @@ var docxShapes = (function(exports, docx) {
 			return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o;
 		}, _typeof(o);
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/toPrimitive.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/toPrimitive.js
 	function toPrimitive(t, r) {
 		if ("object" != _typeof(t) || !t) return t;
 		var e = t[Symbol.toPrimitive];
@@ -1368,14 +1360,12 @@ var docxShapes = (function(exports, docx) {
 		}
 		return ("string" === r ? String : Number)(t);
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/toPropertyKey.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/toPropertyKey.js
 	function toPropertyKey(t) {
 		var i = toPrimitive(t, "string");
 		return "symbol" == _typeof(i) ? i : i + "";
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/defineProperty.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/defineProperty.js
 	function _defineProperty(e, r, t) {
 		return (r = toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
 			value: t,
@@ -1384,8 +1374,7 @@ var docxShapes = (function(exports, docx) {
 			writable: !0
 		}) : e[r] = t, e;
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/objectSpread2.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/objectSpread2.js
 	function ownKeys(e, r) {
 		var t = Object.keys(e);
 		if (Object.getOwnPropertySymbols) {
@@ -1407,8 +1396,7 @@ var docxShapes = (function(exports, docx) {
 		}
 		return e;
 	}
-	//#endregion
-	//#region src/shapes/preset-shape/shape-fill.ts
+	// src/shapes/preset-shape/shape-fill.ts
 	/**
 	* Fills for preset shapes: none, solid, gradient, pattern or picture.
 	*
@@ -1716,8 +1704,7 @@ var docxShapes = (function(exports, docx) {
 			children: [createShapeColor(fill.color, fill.transparency)]
 		});
 	};
-	//#endregion
-	//#region src/shapes/preset-shape/shape-line.ts
+	// src/shapes/preset-shape/shape-line.ts
 	/**
 	* Lines (outlines) for preset shapes, including dashes and arrowheads.
 	*
@@ -1899,8 +1886,7 @@ var docxShapes = (function(exports, docx) {
 		const factor = Math.max(arrowheadFactor(options.startArrow), arrowheadFactor(options.endArrow));
 		return Math.ceil(lineWidthEmus(options) * factor / 2);
 	};
-	//#endregion
-	//#region src/shapes/custom-geometry/svg-path.ts
+	// src/shapes/custom-geometry/svg-path.ts
 	var ARGUMENT_COUNTS = {
 		m: 2,
 		l: 2,
@@ -2222,8 +2208,7 @@ var docxShapes = (function(exports, docx) {
 			bottom: Math.max(...points.map(({ y }) => y))
 		};
 	};
-	//#endregion
-	//#region src/shapes/custom-geometry/path-holes.ts
+	// src/shapes/custom-geometry/path-holes.ts
 	/**
 	* Holes in custom shapes: a closed part of a path inside another part is a hole in it, and a part inside a hole is
 	* filled again.
@@ -2368,8 +2353,7 @@ var docxShapes = (function(exports, docx) {
 			to: part.start
 		}, ...part.segments]);
 	};
-	//#endregion
-	//#region src/shapes/custom-geometry/custom-geometry.ts
+	// src/shapes/custom-geometry/custom-geometry.ts
 	/**
 	* Custom shapes (`a:custGeom`): polygons and freeform paths drawn from SVG path data.
 	*
@@ -2837,8 +2821,7 @@ var docxShapes = (function(exports, docx) {
 			})
 		]
 	});
-	//#endregion
-	//#region src/shapes/preset-shape/preset-shape-properties.ts
+	// src/shapes/preset-shape/preset-shape-properties.ts
 	/**
 	* Shape properties (`wps:spPr`) for preset shapes.
 	*
@@ -2871,8 +2854,7 @@ var docxShapes = (function(exports, docx) {
 			...effects ? [createShapeEffects(effects)] : []
 		]
 	});
-	//#endregion
-	//#region src/shapes/preset-shape/shape-text.ts
+	// src/shapes/preset-shape/shape-text.ts
 	/**
 	* Text layout inside preset shapes (`wps:bodyPr`): alignment, margins, wrapping, autofit, direction, columns and warps.
 	*
@@ -3033,8 +3015,7 @@ var docxShapes = (function(exports, docx) {
 			children: [...options.warp ? [createWarp(options.warp)] : [], ...createAutofit(options)]
 		});
 	};
-	//#endregion
-	//#region src/shapes/drawing/text-flow.ts
+	// src/shapes/drawing/text-flow.ts
 	/**
 	* Text that flows from one shape to the next (`wps:txbx` with an `id`, and `wps:linkedTxbx`), as in a newsletter whose
 	* article continues in another text box.
@@ -3100,8 +3081,7 @@ var docxShapes = (function(exports, docx) {
 	* @param children - The flow's paragraphs, which the first shape of the flow writes, or an empty paragraph if there are none
 	*/
 	var createTextFlowBox = (flow, children) => new TextFlowBox(flow, children);
-	//#endregion
-	//#region src/shapes/preset-shape/preset-shape.ts
+	// src/shapes/preset-shape/preset-shape.ts
 	/**
 	* Preset shapes (`wps:wsp`): rectangles, ellipses, lines, arrows and the other DrawingML presets.
 	*
@@ -3175,8 +3155,7 @@ var docxShapes = (function(exports, docx) {
 			createShapeTextProperties(textFlow === void 0 && (children === null || children === void 0 ? void 0 : children.length) ? _objectSpread2({ verticalAlignment: "center" }, textOptions) : textOptions)
 		]
 	});
-	//#endregion
-	//#region src/shapes/drawing/shape-group.ts
+	// src/shapes/drawing/shape-group.ts
 	/**
 	* Groups of shapes (`wpg:wgp` and `wpg:grpSp`): shapes, pictures and groups that are moved and resized together.
 	*
@@ -3229,8 +3208,7 @@ var docxShapes = (function(exports, docx) {
 			]
 		});
 	};
-	//#endregion
-	//#region src/shapes/picture/shape-picture.ts
+	// src/shapes/picture/shape-picture.ts
 	/**
 	* Pictures in groups and on drawing canvases (`pic:pic`).
 	*
@@ -3281,8 +3259,7 @@ var docxShapes = (function(exports, docx) {
 			})
 		]
 	});
-	//#endregion
-	//#region src/shapes/drawing/shape-drawing-child.ts
+	// src/shapes/drawing/shape-drawing-child.ts
 	/** The `a:graphicData` URI of a shape (`wps:wsp`) */
 	var SHAPE_URI = "http://schemas.microsoft.com/office/word/2010/wordprocessingShape";
 	/** The `a:graphicData` URI of a group (`wpg:wgp`) */
@@ -3308,8 +3285,7 @@ var docxShapes = (function(exports, docx) {
 			});
 		}
 	};
-	//#endregion
-	//#region src/text-layout/arabic-widths.ts
+	// src/text-layout/arabic-widths.ts
 	/**
 	* How wide Word draws Arabic's letters in each of the forms it joins them in, the lam-alef ligatures and the tatweel, in
 	* the fonts of the width tables whose Arabic Word lays out with its glyphs' own widths, plain and bold, and the font it
@@ -3350,8 +3326,7 @@ var docxShapes = (function(exports, docx) {
 			bold: "1tN!*021tN1tN!!1tN1tN!!1tN1tN!!1tN1tN!!1tN*021tO1tN1tN!!1tN*021tO1tN1tN!!1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN1tN!!1tN1tN!!1tN1tN!!1tN1tN!!1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN1tN!!1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN1tN!!1tN*021tO1tN*021tO1tN*021tO1tN*08"
 		}
 	];
-	//#endregion
-	//#region src/text-layout/arabic-shaping.ts
+	// src/text-layout/arabic-shaping.ts
 	/**
 	* Arabic's letters in the forms Word joins them in: each letter isolated, final, initial or medial as the letters beside it
 	* join it, and lam with the alef after it as one ligature, with the widths of {@link ARABIC_WIDTHS}.
@@ -3458,8 +3433,7 @@ var docxShapes = (function(exports, docx) {
 		}
 		return widths;
 	};
-	//#endregion
-	//#region src/text-layout/font-widths.ts
+	// src/text-layout/font-widths.ts
 	/**
 	* The characters the widths are for, as ranges of code points: printable ASCII; Latin-1, Latin Extended-A and B, IPA and
 	* the spacing modifier letters; Greek and Cyrillic; Latin Extended Additional, for Vietnamese; and general punctuation,
@@ -3789,8 +3763,7 @@ var docxShapes = (function(exports, docx) {
 			376
 		]
 	].sort((one, other) => one - other).map((code) => String.fromCodePoint(code)).join("");
-	//#endregion
-	//#region src/text-layout/more-widths.ts
+	// src/text-layout/more-widths.ts
 	/**
 	* How wide Word draws the characters of Hebrew, the Arabic-Indic and Devanagari digits, Thai, box drawing, blocks,
 	* geometric shapes, symbols and dingbats in the fonts of the width tables, plain and bold, and in Calibri's, Cambria's,
@@ -4088,8 +4061,7 @@ var docxShapes = (function(exports, docx) {
 			}
 		}
 	];
-	//#endregion
-	//#region src/text-layout/text-width.ts
+	// src/text-layout/text-width.ts
 	/**
 	* Estimates how much space text takes up, from the widths of the characters in common fonts.
 	*
@@ -4670,8 +4642,7 @@ var docxShapes = (function(exports, docx) {
 			height: measured.reduce((total, { height }) => total + height, 0)
 		};
 	};
-	//#endregion
-	//#region src/text-layout/line-break-rules.ts
+	// src/text-layout/line-break-rules.ts
 	var WORD_LISTS = {
 		japanese: {
 			noLineStart: "!%),.:;?]}¢°’”‰′″℃、。々〉》」』】〕゛゜ゝゞ・ヽヾ！％），．：；？］｝｡｣､･ﾞﾟ￠",
@@ -4695,8 +4666,7 @@ var docxShapes = (function(exports, docx) {
 	new RegExp("\\p{Script=Hangul}", "u");
 	/** Whether a character is Chinese, Japanese or Korean, or East Asian punctuation, which Word draws in a run's East Asian font */
 	var isEastAsian = (character) => EAST_ASIAN.test(character);
-	//#endregion
-	//#region src/text-layout/text-styles.ts
+	// src/text-layout/text-styles.ts
 	var OFFICE_THEME_FONTS = {
 		headings: "Calibri Light",
 		body: "Calibri"
@@ -5320,8 +5290,7 @@ var docxShapes = (function(exports, docx) {
 		const { spaceBefore = 0, spaceAfter = 0 } = combine([styles.paragraph, ...styleChain(styles, styles.defaultParagraphStyle, "paragraph").map(({ paragraph }) => paragraph)]);
 		return spaceBefore !== 0 || spaceAfter !== 0;
 	};
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/objectWithoutPropertiesLoose.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/objectWithoutPropertiesLoose.js
 	function _objectWithoutPropertiesLoose(r, e) {
 		if (null == r) return {};
 		var t = {};
@@ -5331,8 +5300,7 @@ var docxShapes = (function(exports, docx) {
 		}
 		return t;
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/objectWithoutProperties.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/objectWithoutProperties.js
 	function _objectWithoutProperties(e, t) {
 		if (null == e) return {};
 		var o, r, i = _objectWithoutPropertiesLoose(e, t);
@@ -5343,8 +5311,7 @@ var docxShapes = (function(exports, docx) {
 		return i;
 	}
 	new RegExp("[\\p{Script=Hebrew}\\p{Script=Arabic}\\p{Script=Syriac}\\p{Script=Thaana}\\p{Script=Nko}]", "u");
-	//#endregion
-	//#region src/shapes/shape-floating.ts
+	// src/shapes/shape-floating.ts
 	/**
 	* Floating shapes whose size or position is a percentage of the page, its margins or the space between them
 	* (`wp14:sizeRelH`, `wp14:sizeRelV`, `wp14:pctPosHOffset` and `wp14:pctPosVOffset`), which Word keeps as percentages
@@ -5514,8 +5481,7 @@ var docxShapes = (function(exports, docx) {
 		};
 		return Object.values(placement).every((value) => value === void 0) ? drawing : new RelativeDrawing(drawing, placement);
 	};
-	//#endregion
-	//#region src/shapes/shape-text-styles.ts
+	// src/shapes/shape-text-styles.ts
 	/**
 	* Reads the text and formatting of a shape's paragraphs, as the document's styles format them. Not part of the public
 	* API.
@@ -5585,8 +5551,7 @@ var docxShapes = (function(exports, docx) {
 	* Reads the text and formatting of a shape's paragraphs, as the document's styles format them.
 	*/
 	var readTextParagraphs = (paragraphs, styles) => paragraphs.map((paragraph) => readParagraph(paragraph, styles));
-	//#endregion
-	//#region src/shapes/connector/shape-guides.ts
+	// src/shapes/connector/shape-guides.ts
 	var ANGLE_UNITS_PER_RADIAN = 108e5 / Math.PI;
 	var FULL_CIRCLE = 216e5;
 	var OPERATORS = new Map(Object.entries({
@@ -5663,8 +5628,7 @@ var docxShapes = (function(exports, docx) {
 		}
 		return value;
 	};
-	//#endregion
-	//#region src/shapes/preset-shape/preset-shape-geometry.ts
+	// src/shapes/preset-shape/preset-shape-geometry.ts
 	var PRESET_SHAPE_GEOMETRY = {
 		line: { sites: "cd4 l t; 3cd4 r b" },
 		inverseLine: { sites: "cd4 l b; 3cd4 r t" },
@@ -6901,8 +6865,7 @@ var docxShapes = (function(exports, docx) {
 			text: "dx dx x1 y1"
 		}
 	};
-	//#endregion
-	//#region src/shapes/text-metrics/text-rectangle.ts
+	// src/shapes/text-metrics/text-rectangle.ts
 	/**
 	* The box a preset shape's text is written in, such as the middle of an ellipse or a diamond.
 	*
@@ -6933,8 +6896,7 @@ var docxShapes = (function(exports, docx) {
 			bottom
 		};
 	};
-	//#endregion
-	//#region src/shapes/shape-text-size.ts
+	// src/shapes/shape-text-size.ts
 	/**
 	* Sizes shapes to fit their text: reads the text and fonts of a shape's paragraphs, and finds the width or height
 	* at which the text fits inside the shape's text box. Not part of the public API.
@@ -7056,8 +7018,7 @@ var docxShapes = (function(exports, docx) {
 			height: turned ? acrossLength : alongLength
 		});
 	};
-	//#endregion
-	//#region src/shapes/drawing/styled-drawing.ts
+	// src/shapes/drawing/styled-drawing.ts
 	/**
 	* Drawings whose layout depends on the document's styles, such as a shape sized to fit its text.
 	*
@@ -7106,8 +7067,7 @@ var docxShapes = (function(exports, docx) {
 	* drawing's layout doesn't depend on the document's styles
 	*/
 	var createStyledDrawing = (create, paragraphs) => paragraphs ? new StyledDrawing(create, paragraphs) : create(WORD_DEFAULT_STYLES);
-	//#endregion
-	//#region src/shapes/connector/connection-sites.ts
+	// src/shapes/connector/connection-sites.ts
 	/**
 	* Connection sites: the points on a preset shape where connectors attach.
 	*
@@ -7134,8 +7094,7 @@ var docxShapes = (function(exports, docx) {
 			};
 		});
 	};
-	//#endregion
-	//#region src/shapes/connector/orthogonal-route.ts
+	// src/shapes/connector/orthogonal-route.ts
 	var unitOf = (angle) => {
 		return [
 			{
@@ -7285,8 +7244,7 @@ var docxShapes = (function(exports, docx) {
 			return !before || !after || !(before.x === point.x && point.x === after.x || before.y === point.y && point.y === after.y);
 		});
 	};
-	//#endregion
-	//#region src/shapes/connector/connector-route.ts
+	// src/shapes/connector/connector-route.ts
 	/**
 	* Routes a connector between two points on two shapes, as Word does: it picks the connector preset,
 	* the box the connector is drawn in, the rotation and flips that point it the right way, and where it bends.
@@ -7903,8 +7861,7 @@ var docxShapes = (function(exports, docx) {
 		const frame = findElbowFrame(start, end, margin);
 		return toGeometry("elbow", start, (_toBoxPath2 = toBoxPath(frame, points.map(toBox(start, frame)))) !== null && _toBoxPath2 !== void 0 ? _toBoxPath2 : points);
 	};
-	//#endregion
-	//#region src/shapes/connector/connector-channels.ts
+	// src/shapes/connector/connector-channels.ts
 	var SAME_LINE = 9525;
 	var segmentsOf = (route, routeIndex) => route.movable ? route.points.slice(1, -2).map((from, offset) => {
 		const index = offset + 1;
@@ -7961,8 +7918,7 @@ var docxShapes = (function(exports, docx) {
 		});
 		return routes.map((route, routeIndex) => shifts.filter(({ segment }) => segment.route === routeIndex).reduce((points, { segment, by }) => points.map((point, index) => index === segment.index || index === segment.index + 1 ? segment.axis === "x" ? _objectSpread2(_objectSpread2({}, point), {}, { y: point.y + by }) : _objectSpread2(_objectSpread2({}, point), {}, { x: point.x + by }) : point), route.points));
 	};
-	//#endregion
-	//#region src/shapes/shape-layout-coordinates.ts
+	// src/shapes/shape-layout-coordinates.ts
 	var pairKey = (a, b) => a < b ? `${a},${b}` : `${b},${a}`;
 	var positionsOf = (levels) => new Map(levels.flatMap((level) => level.map((node, index) => [node, index])));
 	/**
@@ -8095,8 +8051,7 @@ var docxShapes = (function(exports, docx) {
 			return [node, (values[1] + values[2]) / 2];
 		}));
 	};
-	//#endregion
-	//#region src/shapes/shape-layout.ts
+	// src/shapes/shape-layout.ts
 	var EMUS_PER_PIXEL$4 = 9525;
 	var LABEL_CLEARANCE = 8 * EMUS_PER_PIXEL$4;
 	var ORDERING_PASSES = 24;
@@ -8509,8 +8464,7 @@ var docxShapes = (function(exports, docx) {
 			default: return layoutGrid(layout, items);
 		}
 	};
-	//#endregion
-	//#region src/shapes/shape-run-data.ts
+	// src/shapes/shape-run-data.ts
 	/**
 	* Helpers shared by ShapeRun and ShapeGroupRun. Not part of the public API.
 	*
@@ -8600,8 +8554,7 @@ var docxShapes = (function(exports, docx) {
 			left: overhang.left + growX
 		};
 	};
-	//#endregion
-	//#region src/shapes/shape-drawing.ts
+	// src/shapes/shape-drawing.ts
 	/**
 	* Lays out the children of a ShapeGroupRun or ShapeCanvasRun: positions the shapes, pictures and groups inside it,
 	* gives each one a drawing id and a name, and routes the connectors between them. Not part of the public API.
@@ -9904,8 +9857,7 @@ var docxShapes = (function(exports, docx) {
 			left: Math.max(0, Math.ceil(-drawn.left))
 		};
 	};
-	//#endregion
-	//#region src/shapes/shape-run.ts
+	// src/shapes/shape-run.ts
 	/**
 	* Shape run module for WordprocessingML documents.
 	*
@@ -9969,8 +9921,7 @@ var docxShapes = (function(exports, docx) {
 			}, shapeStyledParagraphs(options)));
 		}
 	};
-	//#endregion
-	//#region src/shapes/shape-description.ts
+	// src/shapes/shape-description.ts
 	var textOf = (paragraphs) => readTextParagraphs(paragraphs, WORD_DEFAULT_STYLES).map(({ spans }) => spans.map(({ text }) => text).join("")).join(" ").replace(/\s+/g, " ").trim();
 	var endId = (end) => typeof end === "string" ? end : end.id;
 	/**
@@ -10110,8 +10061,7 @@ var docxShapes = (function(exports, docx) {
 			title: ""
 		};
 	};
-	//#endregion
-	//#region src/shapes/shape-group-run.ts
+	// src/shapes/shape-group-run.ts
 	/**
 	* Shape group run module for WordprocessingML documents.
 	*
@@ -10199,8 +10149,7 @@ var docxShapes = (function(exports, docx) {
 			this.root.push(createStyledDrawing(create, drawingStyledParagraphs(options.children, options.layout)));
 		}
 	};
-	//#endregion
-	//#region src/shapes/drawing/alternate-content.ts
+	// src/shapes/drawing/alternate-content.ts
 	/**
 	* Markup compatibility: content for applications that understand a namespace, with a fallback for those that don't.
 	*
@@ -10234,8 +10183,7 @@ var docxShapes = (function(exports, docx) {
 			children: [fallback]
 		})]
 	});
-	//#endregion
-	//#region src/shapes/drawing/wpc-canvas.ts
+	// src/shapes/drawing/wpc-canvas.ts
 	/**
 	* Drawing canvases (`wpc:wpc`): an area of a document that holds shapes and pictures,
 	* where connectors stay attached to the shapes they join.
@@ -10282,8 +10230,7 @@ var docxShapes = (function(exports, docx) {
 			...children
 		]
 	});
-	//#endregion
-	//#region src/shapes/shape-canvas-run.ts
+	// src/shapes/shape-canvas-run.ts
 	/**
 	* Shape canvas run module for WordprocessingML documents.
 	*
@@ -10429,7 +10376,6 @@ var docxShapes = (function(exports, docx) {
 			this.root.push(createStyledDrawing(create, drawingStyledParagraphs(options.children, options.layout)));
 		}
 	};
-	//#endregion
 	exports.ShapeCanvasRun = ShapeCanvasRun;
 	exports.ShapeGroupRun = ShapeGroupRun;
 	exports.ShapeRun = ShapeRun;

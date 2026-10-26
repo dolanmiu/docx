@@ -1,6 +1,6 @@
 var docxBibliography = (function(exports, docx) {
 	Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/typeof.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/typeof.js
 	function _typeof(o) {
 		"@babel/helpers - typeof";
 		return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o) {
@@ -9,8 +9,7 @@ var docxBibliography = (function(exports, docx) {
 			return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o;
 		}, _typeof(o);
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/toPrimitive.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/toPrimitive.js
 	function toPrimitive(t, r) {
 		if ("object" != _typeof(t) || !t) return t;
 		var e = t[Symbol.toPrimitive];
@@ -21,14 +20,12 @@ var docxBibliography = (function(exports, docx) {
 		}
 		return ("string" === r ? String : Number)(t);
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/toPropertyKey.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/toPropertyKey.js
 	function toPropertyKey(t) {
 		var i = toPrimitive(t, "string");
 		return "symbol" == _typeof(i) ? i : i + "";
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/defineProperty.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/defineProperty.js
 	function _defineProperty(e, r, t) {
 		return (r = toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
 			value: t,
@@ -37,8 +34,7 @@ var docxBibliography = (function(exports, docx) {
 			writable: !0
 		}) : e[r] = t, e;
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/objectSpread2.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/objectSpread2.js
 	function ownKeys(e, r) {
 		var t = Object.keys(e);
 		if (Object.getOwnPropertySymbols) {
@@ -60,8 +56,7 @@ var docxBibliography = (function(exports, docx) {
 		}
 		return e;
 	}
-	//#endregion
-	//#region src/bibliography/styles/formatted-text.ts
+	// src/bibliography/styles/formatted-text.ts
 	/** Text with formatting, from plain text or text with formatting */
 	var formatted = (text) => typeof text === "string" ? text ? [{ text }] : [] : text;
 	/** The parts, one after another */
@@ -109,8 +104,7 @@ var docxBibliography = (function(exports, docx) {
 		const last = runs[runs.length - 1];
 		return last && sameFormat(last, run) ? [...runs.slice(0, -1), _objectSpread2(_objectSpread2({}, last), {}, { text: last.text + run.text })] : [...runs, run];
 	}, []);
-	//#endregion
-	//#region src/bibliography/word-source.ts
+	// src/bibliography/word-source.ts
 	/**
 	* Sources as Word keeps them: each field and role of people by its name in the bibliography's XML, which is what Word's
 	* styles of citation read. The styles of `docx/bibliography` are written from Word's, so they read sources this way too.
@@ -331,8 +325,7 @@ var docxBibliography = (function(exports, docx) {
 			]
 		});
 	};
-	//#endregion
-	//#region src/bibliography/format.ts
+	// src/bibliography/format.ts
 	/**
 	* Writes citations and bibliographies with a style of citation, as Word does when it updates a document's fields: it
 	* works out what each source cited needs to be told apart from the others, and gives the style each source of a
@@ -455,8 +448,7 @@ var docxBibliography = (function(exports, docx) {
 			hangingIndent: bibliography.hangingIndent
 		};
 	};
-	//#endregion
-	//#region src/bibliography/document-sources.ts
+	// src/bibliography/document-sources.ts
 	/**
 	* A document's sources: the part Word keeps them in, and the sources as its citations and bibliographies write them,
 	* numbered in the order the document cites them.
@@ -579,8 +571,7 @@ var docxBibliography = (function(exports, docx) {
 		if (!(sources instanceof BibliographySources)) throw new Error("A citation or a bibliography needs the document's sources. Give the Document `bibliography: createBibliography({ sources })` from docx/bibliography");
 		return sources.sourcesOf(context.file);
 	};
-	//#endregion
-	//#region src/bibliography/field.ts
+	// src/bibliography/field.ts
 	/**
 	* The fields of citations and bibliographies, written with the result `docx` works out for them, as Word writes them.
 	*
@@ -629,8 +620,7 @@ var docxBibliography = (function(exports, docx) {
 		...result,
 		fieldChar("end")
 	];
-	//#endregion
-	//#region src/bibliography/bibliography.ts
+	// src/bibliography/bibliography.ts
 	/**
 	* Bibliographies: the list of a document's sources, in the style of its citations, as Word's References > Bibliography
 	* inserts it.
@@ -888,8 +878,7 @@ var docxBibliography = (function(exports, docx) {
 			}).prepForXml(context);
 		}
 	};
-	//#endregion
-	//#region src/bibliography/citation.ts
+	// src/bibliography/citation.ts
 	/**
 	* Citations: references in the text to one or more of a document's sources, such as "(Baker, 2010)", as Word's
 	* References > Insert Citation inserts them.
@@ -992,8 +981,7 @@ var docxBibliography = (function(exports, docx) {
 			return [new CitationContentControl(this.cited)];
 		}
 	};
-	//#endregion
-	//#region src/bibliography/styles/locals.ts
+	// src/bibliography/styles/locals.ts
 	/** The wording, by its path in Word's input to a style, such as `LOCALS.Strings.EditorShortCap` for `b:Strings/b:EditorShortCap` */
 	var LOCALS = {
 		Properties: { Direction: "ltr" },
@@ -1408,8 +1396,7 @@ var docxBibliography = (function(exports, docx) {
 			WriterShortUnCap: "writ."
 		}
 	};
-	//#endregion
-	//#region src/bibliography/styles/xsl.ts
+	// src/bibliography/styles/xsl.ts
 	/**
 	* The templates Word's styles of citation share, written in TypeScript: names and their initials, dates, formats such
 	* as "Retrieved %1, from %2", lists of fields and their separators, and the order of a bibliography.
@@ -1576,8 +1563,7 @@ var docxBibliography = (function(exports, docx) {
 		index,
 		key: keyOf(item)
 	})).sort((a, b) => compareStrings(primaryKeyOf(a.key), primaryKeyOf(b.key)) || compareStrings(a.key.toLowerCase(), b.key.toLowerCase()) || a.index - b.index).map(({ item }) => item);
-	//#endregion
-	//#region src/bibliography/styles/apa.ts
+	// src/bibliography/styles/apa.ts
 	/**
 	* APA, sixth edition: Word's `APASixthEditionOfficeOnline.xsl`, written in TypeScript.
 	*
@@ -2121,8 +2107,7 @@ var docxBibliography = (function(exports, docx) {
 			hangingIndent: true
 		})
 	};
-	//#endregion
-	//#region src/bibliography/styles/chicago-family.ts
+	// src/bibliography/styles/chicago-family.ts
 	/**
 	* The templates Word's two styles from the Chicago Manual of Style share, Chicago (CHICAGO.XSL) and Turabian
 	* (TURABIAN.XSL): they write the same citations, find the people a source is named by and sort their bibliographies in
@@ -2320,8 +2305,7 @@ var docxBibliography = (function(exports, docx) {
 			paragraphs: sorted.map((source, index) => bibliographyEntry(source, index > 0 && mains[index] === mains[index - 1] && mains[index].length > 0 ? Chicago$2.SameAuthor : mains[index]))
 		};
 	};
-	//#endregion
-	//#region src/bibliography/styles/chicago.ts
+	// src/bibliography/styles/chicago.ts
 	/**
 	* Chicago, the author-date style of the Chicago Manual of Style (16th edition), written from Word's own (CHICAGO.XSL).
 	*
@@ -2631,8 +2615,7 @@ var docxBibliography = (function(exports, docx) {
 		citation: citation$3,
 		bibliography: (sources) => bibliographyOf(sources, formatPersonsAuthor$2, bibliographyEntry$1)
 	};
-	//#endregion
-	//#region src/bibliography/styles/iso-690-family.ts
+	// src/bibliography/styles/iso-690-family.ts
 	/**
 	* The templates of Word's ISO 690 styles and of GB7714, written in TypeScript. GB.XSL and ISO690.XSL differ in only a few
 	* of their templates, and ISO690Nmerical.XSL, ISO 690's numerical style, shares most of theirs: how each type of source
@@ -3212,8 +3195,7 @@ var docxBibliography = (function(exports, docx) {
 			hangingIndent: false
 		};
 	};
-	//#endregion
-	//#region src/bibliography/styles/gb7714.ts
+	// src/bibliography/styles/gb7714.ts
 	/**
 	* The GB7714 style of citation, written from Word's (GB.XSL). It is Word's ISO 690 by first element and date but for a
 	* few of its templates: it cites a source by its tag when the source has no author or year, and writes a space after a
@@ -3229,8 +3211,7 @@ var docxBibliography = (function(exports, docx) {
 		citation: firstElementCitation("GB7714"),
 		bibliography: firstElementBibliography("GB7714")
 	};
-	//#endregion
-	//#region src/bibliography/styles/gost-family.ts
+	// src/bibliography/styles/gost-family.ts
 	/**
 	* The templates of Word's two GOST styles, GOST - Name Sort (GostName.XSL) and GOST - Title Sort (GostTitle.XSL), which
 	* write citations and bibliographies as the Russian standard GOST 7.1 has them, such as "Dickens Charles John How to
@@ -3533,8 +3514,7 @@ var docxBibliography = (function(exports, docx) {
 		const pagesCited = formatPages$1(pages);
 		return join(first ? General$5.OpenBracket : "", prefix !== null && prefix !== void 0 ? prefix : "", author, year ? (author ? General$5.ListSeparator : "") + year : "", author0 === "" && year0 === "" ? source.tag : "", volume || pages ? (author || year ? General$5.Space : "") + (volume && pages ? volume + General$5.Enum + pages : volumeCited || pagesCited) : "", suffix !== null && suffix !== void 0 ? suffix : "", last ? General$5.CloseBracket : General$5.GroupSeparator);
 	};
-	//#endregion
-	//#region src/bibliography/styles/gost-name-sort.ts
+	// src/bibliography/styles/gost-name-sort.ts
 	/**
 	* Word's GOST - Name Sort style (GostName.XSL): citations such as "(Baker, 2010 p. 50)", and a bibliography of entries
 	* such as "**Dickens Charles John** How to Write Bibliographies [Book]. - Chicago : Adventure Works Press, 2006.", each
@@ -3564,8 +3544,7 @@ var docxBibliography = (function(exports, docx) {
 			paragraphs: sortByKey(sources, sortingStringOf$3).map((source) => formatEntry$1(source, "name"))
 		})
 	};
-	//#endregion
-	//#region src/bibliography/styles/gost-title-sort.ts
+	// src/bibliography/styles/gost-title-sort.ts
 	/**
 	* Word's GOST - Title Sort style (GostTitle.XSL): citations such as "(Baker, 2010 p. 50)", and a bibliography of entries
 	* such as "**How to Write Bibliographies** [Book] / auth. Dickens Charles John. - Chicago : Adventure Works Press,
@@ -3609,8 +3588,7 @@ var docxBibliography = (function(exports, docx) {
 			paragraphs: sorted(sources).map((source) => formatEntry$1(source, "title"))
 		})
 	};
-	//#endregion
-	//#region src/bibliography/styles/harvard-anglia.ts
+	// src/bibliography/styles/harvard-anglia.ts
 	/**
 	* Harvard - Anglia: Word's `HarvardAnglia2008OfficeOnline.xsl`, written in TypeScript.
 	*
@@ -3974,8 +3952,7 @@ var docxBibliography = (function(exports, docx) {
 			hangingIndent: false
 		})
 	};
-	//#endregion
-	//#region src/bibliography/styles/ieee.ts
+	// src/bibliography/styles/ieee.ts
 	/**
 	* IEEE: citations such as "[1]" or "[1, p. 50]", and a bibliography that is a table of each source's number and its
 	* entry, such as "[1] A. Baker, The Art of Pizza, Naples: Pizza Press, 2010.", in the order the sources are cited.
@@ -4361,8 +4338,7 @@ var docxBibliography = (function(exports, docx) {
 		citation: ({ source, first, last, pages: cited }) => join(first ? OPEN : "", String(source.order), cited ? LIST$1 + pageOrPages(cited) : "", last ? CLOSE : LIST$1 + SPACE$1),
 		bibliography: (sources) => ({ rows: [...sources].sort((a, b) => a.order - b.order).map((source) => [join(OPEN, String(source.order), CLOSE, SPACE$1), join(ENTRIES$1[source.type](source))]) })
 	};
-	//#endregion
-	//#region src/bibliography/styles/iso-690-first-element-and-date.ts
+	// src/bibliography/styles/iso-690-first-element-and-date.ts
 	/**
 	* The ISO 690 style of citation by first element and date, written from Word's (ISO690.XSL): citations such as
 	* "(Baker, 2010)", and a bibliography sorted by its sources' authors, with the year after them.
@@ -4377,8 +4353,7 @@ var docxBibliography = (function(exports, docx) {
 		citation: firstElementCitation("ISO 690"),
 		bibliography: firstElementBibliography("ISO 690")
 	};
-	//#endregion
-	//#region src/bibliography/styles/iso-690-numerical-reference.ts
+	// src/bibliography/styles/iso-690-numerical-reference.ts
 	var { General: General$3, ISO690: ISO690$1 } = LOCALS;
 	var { appendDot: appendDot$1, needDot: needDot$1 } = xslTemplates(General$3);
 	/** A source of a citation: its number, then the volume or pages cited, such as "(1 p. 50)" or "(1 2: 50)" (the template's `b:Citation`) */
@@ -4422,8 +4397,7 @@ var docxBibliography = (function(exports, docx) {
 		citation: citation$1,
 		bibliography: bibliography$1
 	};
-	//#endregion
-	//#region src/bibliography/styles/mla.ts
+	// src/bibliography/styles/mla.ts
 	/**
 	* MLA, seventh edition: citations such as "(Baker 50)", and a bibliography of the sources sorted by their authors, such
 	* as "Baker, Anna. The Art of Pizza. Naples: Pizza Press, 2010.", each indented after its first line, with "—" in place
@@ -4853,8 +4827,7 @@ var docxBibliography = (function(exports, docx) {
 		citation,
 		bibliography
 	};
-	//#endregion
-	//#region src/bibliography/styles/sist02.ts
+	// src/bibliography/styles/sist02.ts
 	/**
 	* Word's SIST02 style (SIST02.XSL), which writes citations and bibliographies as the Japanese standard SIST 02 has them,
 	* with full-width punctuation: citations such as "（Baker，2010p.50）", and a bibliography of entries such as
@@ -5335,8 +5308,7 @@ var docxBibliography = (function(exports, docx) {
 		citation: formatCitation,
 		bibliography: formatBibliography
 	};
-	//#endregion
-	//#region src/bibliography/styles/turabian.ts
+	// src/bibliography/styles/turabian.ts
 	/**
 	* Turabian, the style of Kate Turabian's manual for writers of papers (6th edition), written from Word's own
 	* (TURABIAN.XSL).
@@ -5655,8 +5627,7 @@ var docxBibliography = (function(exports, docx) {
 		citation: citation$3,
 		bibliography: (sources) => bibliographyOf(sources, formatPersonsAuthor, bibliographyEntry)
 	};
-	//#endregion
-	//#region src/bibliography/citation-style.ts
+	// src/bibliography/citation-style.ts
 	/**
 	* The styles of citation Word has, such as APA and MLA, which a document's citations and bibliographies are written in.
 	*
@@ -5709,8 +5680,7 @@ var docxBibliography = (function(exports, docx) {
 		sist02,
 		turabian
 	};
-	//#endregion
-	//#region src/bibliography/create-bibliography.ts
+	// src/bibliography/create-bibliography.ts
 	/**
 	* A document's bibliography, for the document's `bibliography`: the sources its citations and bibliographies refer to,
 	* and the style they're written in, as Word's References > Manage Sources and Style keep them.
@@ -5748,8 +5718,7 @@ var docxBibliography = (function(exports, docx) {
 		if (!Object.keys(STYLE_DEFINITIONS).includes(style)) throw new Error(`"${style}" isn't a style of citation. Give one of CitationStyle's, such as CitationStyle.APA`);
 		return { sources: new BibliographySources(STYLE_DEFINITIONS[style], sources) };
 	};
-	//#endregion
-	//#region src/bibliography/source.ts
+	// src/bibliography/source.ts
 	/**
 	* The sources that a document's citations and bibliographies refer to, as Word's Create Source dialog describes them.
 	*
@@ -5799,7 +5768,6 @@ var docxBibliography = (function(exports, docx) {
 		/** Any other source (`Misc`) */
 		MISCELLANEOUS: "miscellaneous"
 	};
-	//#endregion
 	exports.Bibliography = Bibliography;
 	exports.Citation = Citation;
 	exports.CitationStyle = CitationStyle;

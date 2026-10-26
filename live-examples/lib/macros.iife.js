@@ -1,6 +1,6 @@
 var docxMacros = (function(exports) {
 	Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
-	//#region src/macros/code-page.ts
+	// src/macros/code-page.ts
 	/**
 	* The code page the VBA project's text is written in: its code, and the names of the project and its modules.
 	*
@@ -27,8 +27,7 @@ var docxMacros = (function(exports) {
 		}
 		return byte;
 	});
-	//#endregion
-	//#region src/macros/compression.ts
+	// src/macros/compression.ts
 	/**
 	* The compression VBA uses for a project's module information and for each module's code, a run length encoding.
 	*
@@ -123,8 +122,7 @@ var docxMacros = (function(exports) {
 		for (let chunkStart = 0; chunkStart < data.length; chunkStart += CHUNK_SIZE) output.push(...compressChunk(data, chunkStart, Math.min(chunkStart + CHUNK_SIZE, data.length)));
 		return Uint8Array.from(output);
 	};
-	//#endregion
-	//#region src/compound-file/compound-file.ts
+	// src/compound-file/compound-file.ts
 	var SECTOR_SIZE = 512;
 	var MINI_SECTOR_SIZE = 64;
 	var MINI_STREAM_CUTOFF = 4096;
@@ -330,8 +328,7 @@ var docxMacros = (function(exports) {
 		}
 		return file;
 	};
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/typeof.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/typeof.js
 	function _typeof(o) {
 		"@babel/helpers - typeof";
 		return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o) {
@@ -340,8 +337,7 @@ var docxMacros = (function(exports) {
 			return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o;
 		}, _typeof(o);
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/toPrimitive.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/toPrimitive.js
 	function toPrimitive(t, r) {
 		if ("object" != _typeof(t) || !t) return t;
 		var e = t[Symbol.toPrimitive];
@@ -352,14 +348,12 @@ var docxMacros = (function(exports) {
 		}
 		return ("string" === r ? String : Number)(t);
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/toPropertyKey.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/toPropertyKey.js
 	function toPropertyKey(t) {
 		var i = toPrimitive(t, "string");
 		return "symbol" == _typeof(i) ? i : i + "";
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/defineProperty.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/defineProperty.js
 	function _defineProperty(e, r, t) {
 		return (r = toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
 			value: t,
@@ -368,8 +362,7 @@ var docxMacros = (function(exports) {
 			writable: !0
 		}) : e[r] = t, e;
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/objectSpread2.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/objectSpread2.js
 	function ownKeys(e, r) {
 		var t = Object.keys(e);
 		if (Object.getOwnPropertySymbols) {
@@ -391,8 +384,7 @@ var docxMacros = (function(exports) {
 		}
 		return e;
 	}
-	//#endregion
-	//#region src/macros/create-macros.ts
+	// src/macros/create-macros.ts
 	var PROJECT_NAME = "Project";
 	var PROJECT_ID = "{6D8A8E5B-1C9F-4E2B-9A4D-3B5F7C2E1D60}";
 	var REFERENCES = [
@@ -709,7 +701,6 @@ var docxMacros = (function(exports) {
 			events: findEvents(thisDocument)
 		};
 	};
-	//#endregion
 	exports.createMacros = createMacros;
 	return exports;
 })({});

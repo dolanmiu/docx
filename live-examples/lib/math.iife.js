@@ -1,6 +1,6 @@
 var docxMath = (function(exports, docx) {
 	Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
-	//#region src/math/math-elements.ts
+	// src/math/math-elements.ts
 	/**
 	* What docx/math's components share: the checks on their arguments, and the elements they are made of. Nothing here is
 	* exported from docx/math.
@@ -72,8 +72,7 @@ var docxMath = (function(exports, docx) {
 			]
 		}), ...args]
 	});
-	//#endregion
-	//#region src/math/math-accent.ts
+	// src/math/math-accent.ts
 	/**
 	* Accents over math, such as a hat, a tilde, dots or a vector's arrow.
 	*
@@ -121,8 +120,7 @@ var docxMath = (function(exports, docx) {
 			});
 		}
 	};
-	//#endregion
-	//#region src/math/math-bar.ts
+	// src/math/math-bar.ts
 	/**
 	* Lines over or under math, such as LaTeX's `\overline` and `\underline`.
 	*
@@ -151,8 +149,7 @@ var docxMath = (function(exports, docx) {
 			});
 		}
 	};
-	//#endregion
-	//#region src/math/math-box.ts
+	// src/math/math-box.ts
 	/**
 	* Boxes around math, and lines struck through it, such as LaTeX's `\boxed` and `\cancel`.
 	*
@@ -200,8 +197,7 @@ var docxMath = (function(exports, docx) {
 			});
 		}
 	};
-	//#endregion
-	//#region src/math/math-brace.ts
+	// src/math/math-brace.ts
 	/**
 	* Braces over or under math, with a label, such as LaTeX's `\overbrace` and `\underbrace`.
 	*
@@ -259,8 +255,7 @@ var docxMath = (function(exports, docx) {
 			});
 		}
 	};
-	//#endregion
-	//#region src/math/math-brackets.ts
+	// src/math/math-brackets.ts
 	/**
 	* Brackets of any characters around math, such as |x|, ‖v‖, ⟨a|b⟩ or a brace on one side.
 	*
@@ -297,8 +292,7 @@ var docxMath = (function(exports, docx) {
 			}, items.map(createArgument)));
 		}
 	};
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/objectWithoutPropertiesLoose.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/objectWithoutPropertiesLoose.js
 	function _objectWithoutPropertiesLoose(r, e) {
 		if (null == r) return {};
 		var t = {};
@@ -308,8 +302,7 @@ var docxMath = (function(exports, docx) {
 		}
 		return t;
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/objectWithoutProperties.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/objectWithoutProperties.js
 	function _objectWithoutProperties(e, t) {
 		if (null == e) return {};
 		var o, r, i = _objectWithoutPropertiesLoose(e, t);
@@ -319,8 +312,7 @@ var docxMath = (function(exports, docx) {
 		}
 		return i;
 	}
-	//#endregion
-	//#region src/math/math-matrix.ts
+	// src/math/math-matrix.ts
 	/**
 	* Matrices, such as LaTeX's `pmatrix`, `bmatrix`, `vmatrix` and `Vmatrix`.
 	*
@@ -422,8 +414,7 @@ var docxMath = (function(exports, docx) {
 			}, [(0, docx.createMathBase)({ children: [new docx.BuilderElement(matrix)] })]));
 		}
 	};
-	//#endregion
-	//#region src/math/math-cases.ts
+	// src/math/math-cases.ts
 	/**
 	* Cases, such as LaTeX's `cases`: values, each with its condition, in a brace.
 	*
@@ -462,8 +453,7 @@ var docxMath = (function(exports, docx) {
 			}, [(0, docx.createMathBase)({ children: [new docx.BuilderElement(matrix)] })]));
 		}
 	};
-	//#endregion
-	//#region src/math/math-equation-array.ts
+	// src/math/math-equation-array.ts
 	/**
 	* Equation arrays: rows of math lined up at points, such as LaTeX's `align` and `aligned`, with equation numbers.
 	*
@@ -505,8 +495,7 @@ var docxMath = (function(exports, docx) {
 			});
 		}
 	};
-	//#endregion
-	//#region src/math/math-large-operator.ts
+	// src/math/math-large-operator.ts
 	/**
 	* Large operators with limits, such as products, unions and contour integrals, as well as sums and integrals.
 	*
@@ -572,8 +561,7 @@ var docxMath = (function(exports, docx) {
 			});
 		}
 	};
-	//#endregion
-	//#region src/math/math-phantom.ts
+	// src/math/math-phantom.ts
 	/**
 	* Phantoms: math that takes up room without being seen, or is seen without taking up room, such as LaTeX's
 	* `\phantom` and `\smash`.
@@ -610,8 +598,7 @@ var docxMath = (function(exports, docx) {
 			});
 		}
 	};
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/typeof.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/typeof.js
 	function _typeof(o) {
 		"@babel/helpers - typeof";
 		return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o) {
@@ -620,8 +607,7 @@ var docxMath = (function(exports, docx) {
 			return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o;
 		}, _typeof(o);
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/toPrimitive.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/toPrimitive.js
 	function toPrimitive(t, r) {
 		if ("object" != _typeof(t) || !t) return t;
 		var e = t[Symbol.toPrimitive];
@@ -632,14 +618,12 @@ var docxMath = (function(exports, docx) {
 		}
 		return ("string" === r ? String : Number)(t);
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/toPropertyKey.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/toPropertyKey.js
 	function toPropertyKey(t) {
 		var i = toPrimitive(t, "string");
 		return "symbol" == _typeof(i) ? i : i + "";
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/defineProperty.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/defineProperty.js
 	function _defineProperty(e, r, t) {
 		return (r = toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
 			value: t,
@@ -648,8 +632,7 @@ var docxMath = (function(exports, docx) {
 			writable: !0
 		}) : e[r] = t, e;
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/objectSpread2.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/objectSpread2.js
 	function ownKeys(e, r) {
 		var t = Object.keys(e);
 		if (Object.getOwnPropertySymbols) {
@@ -671,8 +654,7 @@ var docxMath = (function(exports, docx) {
 		}
 		return e;
 	}
-	//#endregion
-	//#region src/math/latex/latex-atoms.ts
+	// src/math/latex/latex-atoms.ts
 	/**
 	* What the LaTeX parser reads an equation into, and how that becomes docx's math: runs of text that share a font are
 	* joined, scripts go on their bases, and large operators and functions take the math after them as their argument.
@@ -810,8 +792,7 @@ var docxMath = (function(exports, docx) {
 		const last = joined[joined.length - 1];
 		return piece.kind === "text" && (last === null || last === void 0 ? void 0 : last.kind) === "text" && sameFont(last.font, piece.font) ? [...joined.slice(0, -1), _objectSpread2(_objectSpread2({}, last), {}, { text: last.text + piece.text })] : [...joined, piece];
 	}, []).map((piece) => piece.kind === "text" ? createRun(piece.text, piece.font) : piece.component);
-	//#endregion
-	//#region src/math/latex/latex-symbols.ts
+	// src/math/latex/latex-symbols.ts
 	/**
 	* Whether a table has an entry of its own for a key. Unlike `in`, it isn't fooled by the names every object has, such as
 	* `\constructor`.
@@ -1483,8 +1464,7 @@ var docxMath = (function(exports, docx) {
 		xrightharpoonup: "⇀",
 		xrightleftharpoons: "⇌"
 	};
-	//#endregion
-	//#region src/math/latex/latex-parser.ts
+	// src/math/latex/latex-parser.ts
 	/**
 	* Reads LaTeX math into atoms: rows of cells, as a matrix or aligned equations have them, or one row of one cell.
 	*
@@ -2495,8 +2475,7 @@ var docxMath = (function(exports, docx) {
 		};
 		return parseRows({}, void 0, from);
 	};
-	//#endregion
-	//#region src/math/latex-to-math.ts
+	// src/math/latex-to-math.ts
 	var DELIMITERS = [
 		["$$", "$$"],
 		["\\[", "\\]"],
@@ -2533,7 +2512,6 @@ var docxMath = (function(exports, docx) {
 		const rows = parseLatex(latex, start + open.length, end - close.length);
 		return rows.length === 1 && rows[0].cells.length === 1 && rows[0].tag === void 0 ? atomsToMath(rows[0].cells[0]) : [equationArrayOf(rows)];
 	};
-	//#endregion
 	Object.defineProperty(exports, "Math", {
 		enumerable: true,
 		get: function() {

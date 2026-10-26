@@ -1,6 +1,6 @@
 var docxWatermarks = (function(exports, docx) {
 	Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
-	//#region src/watermarks/vml/pict.ts
+	// src/watermarks/vml/pict.ts
 	/**
 	* The picture element (`w:pict`) that holds a watermark's VML shape type and shape.
 	*
@@ -17,8 +17,7 @@ var docxWatermarks = (function(exports, docx) {
 		name: "w:pict",
 		children
 	});
-	//#endregion
-	//#region src/watermarks/vml/vml-values.ts
+	// src/watermarks/vml/vml-values.ts
 	/**
 	* Converts a boolean into the VML `t`/`f` representation.
 	*
@@ -70,8 +69,7 @@ var docxWatermarks = (function(exports, docx) {
 	* ```
 	*/
 	var vmlFixedPoint = (value) => `${Math.round(value * 65536)}f`;
-	//#endregion
-	//#region src/watermarks/vml/vml-fill.ts
+	// src/watermarks/vml/vml-fill.ts
 	/**
 	* VML fill module for WordprocessingML documents.
 	*
@@ -142,8 +140,7 @@ var docxWatermarks = (function(exports, docx) {
 			}
 		}
 	});
-	//#endregion
-	//#region src/watermarks/vml/vml-text-path.ts
+	// src/watermarks/vml/vml-text-path.ts
 	/**
 	* VML text path module for WordprocessingML documents.
 	*
@@ -240,8 +237,7 @@ var docxWatermarks = (function(exports, docx) {
 			}
 		}
 	});
-	//#endregion
-	//#region src/watermarks/vml/vml-formulas.ts
+	// src/watermarks/vml/vml-formulas.ts
 	/**
 	* VML formulas module for WordprocessingML documents.
 	*
@@ -297,8 +293,7 @@ var docxWatermarks = (function(exports, docx) {
 		name: "v:formulas",
 		children: equations.map(createVmlFormula)
 	});
-	//#endregion
-	//#region src/watermarks/vml/vml-handles.ts
+	// src/watermarks/vml/vml-handles.ts
 	/**
 	* VML handles module for WordprocessingML documents.
 	*
@@ -372,8 +367,7 @@ var docxWatermarks = (function(exports, docx) {
 		name: "v:handles",
 		children: handles.map(createVmlHandle)
 	});
-	//#endregion
-	//#region src/watermarks/vml/vml-lock.ts
+	// src/watermarks/vml/vml-lock.ts
 	/**
 	* VML lock module for WordprocessingML documents.
 	*
@@ -467,8 +461,7 @@ var docxWatermarks = (function(exports, docx) {
 			}
 		}
 	});
-	//#endregion
-	//#region src/watermarks/vml/vml-path.ts
+	// src/watermarks/vml/vml-path.ts
 	/**
 	* VML path module for WordprocessingML documents.
 	*
@@ -561,8 +554,7 @@ var docxWatermarks = (function(exports, docx) {
 			}
 		}
 	});
-	//#endregion
-	//#region src/watermarks/vml/vml-shape-type.ts
+	// src/watermarks/vml/vml-shape-type.ts
 	/**
 	* VML shape type module for WordprocessingML documents.
 	*
@@ -648,8 +640,7 @@ var docxWatermarks = (function(exports, docx) {
 		},
 		children
 	});
-	//#endregion
-	//#region src/watermarks/vml/word-art-shape-type.ts
+	// src/watermarks/vml/word-art-shape-type.ts
 	/** Identifier of the WordArt (plain text) shape type. Shapes reference it as `#_x0000_t136`. */
 	var WORD_ART_SHAPE_TYPE_ID = "_x0000_t136";
 	/** Office preset shape number for plain WordArt text. */
@@ -719,8 +710,7 @@ var docxWatermarks = (function(exports, docx) {
 			})
 		]
 	});
-	//#endregion
-	//#region src/watermarks/watermark-shape-style.ts
+	// src/watermarks/watermark-shape-style.ts
 	/**
 	* Z-order used by Word for watermarks. Negative values place the shape behind the text.
 	*/
@@ -752,8 +742,7 @@ var docxWatermarks = (function(exports, docx) {
 		positionVertical: "center",
 		positionVerticalRelative: "margin"
 	});
-	//#endregion
-	//#region src/watermarks/text-watermark.ts
+	// src/watermarks/text-watermark.ts
 	/**
 	* Text watermark module for WordprocessingML documents.
 	*
@@ -878,8 +867,7 @@ var docxWatermarks = (function(exports, docx) {
 			})] }));
 		}
 	};
-	//#endregion
-	//#region src/watermarks/vml/vml-stroke.ts
+	// src/watermarks/vml/vml-stroke.ts
 	/**
 	* VML stroke module for WordprocessingML documents.
 	*
@@ -952,8 +940,7 @@ var docxWatermarks = (function(exports, docx) {
 			}
 		}
 	});
-	//#endregion
-	//#region src/watermarks/vml/picture-frame-shape-type.ts
+	// src/watermarks/vml/picture-frame-shape-type.ts
 	/** Identifier of the picture frame shape type. Shapes reference it as `#_x0000_t75`. */
 	var PICTURE_FRAME_SHAPE_TYPE_ID = "_x0000_t75";
 	/** Office preset shape number for a picture frame. */
@@ -1012,8 +999,7 @@ var docxWatermarks = (function(exports, docx) {
 			createVmlLock({ aspectRatio: true })
 		]
 	});
-	//#endregion
-	//#region src/watermarks/vml/vml-image-data.ts
+	// src/watermarks/vml/vml-image-data.ts
 	/**
 	* VML image data module for WordprocessingML documents.
 	*
@@ -1102,8 +1088,7 @@ var docxWatermarks = (function(exports, docx) {
 			}
 		}
 	});
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/typeof.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/typeof.js
 	function _typeof(o) {
 		"@babel/helpers - typeof";
 		return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o) {
@@ -1112,8 +1097,7 @@ var docxWatermarks = (function(exports, docx) {
 			return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o;
 		}, _typeof(o);
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/toPrimitive.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/toPrimitive.js
 	function toPrimitive(t, r) {
 		if ("object" != _typeof(t) || !t) return t;
 		var e = t[Symbol.toPrimitive];
@@ -1124,14 +1108,12 @@ var docxWatermarks = (function(exports, docx) {
 		}
 		return ("string" === r ? String : Number)(t);
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/toPropertyKey.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/toPropertyKey.js
 	function toPropertyKey(t) {
 		var i = toPrimitive(t, "string");
 		return "symbol" == _typeof(i) ? i : i + "";
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/defineProperty.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/defineProperty.js
 	function _defineProperty(e, r, t) {
 		return (r = toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
 			value: t,
@@ -1140,8 +1122,7 @@ var docxWatermarks = (function(exports, docx) {
 			writable: !0
 		}) : e[r] = t, e;
 	}
-	//#endregion
-	//#region src/watermarks/image-watermark.ts
+	// src/watermarks/image-watermark.ts
 	/**
 	* Image watermark module for WordprocessingML documents.
 	*
@@ -1263,7 +1244,6 @@ var docxWatermarks = (function(exports, docx) {
 			return super.prepForXml(context);
 		}
 	};
-	//#endregion
 	exports.ImageWatermark = ImageWatermark;
 	exports.TextWatermark = TextWatermark;
 	return exports;

@@ -1,6 +1,6 @@
 var docxEmbeddedFiles = (function(exports, docx) {
 	Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
-	//#region src/embedded-files/embedded-file-type.ts
+	// src/embedded-files/embedded-file-type.ts
 	var PACKAGE_RELATIONSHIP = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/package";
 	/**
 	* Office's own files, by extension, which are embedded as themselves, as Word embeds them, so Word opens each in its
@@ -70,8 +70,7 @@ var docxEmbeddedFiles = (function(exports, docx) {
 		const extension = (_exec = /\.([^.]+)$/.exec(fileName)) === null || _exec === void 0 ? void 0 : _exec[1].toLowerCase();
 		return extension !== void 0 && Object.hasOwn(OFFICE_FILE_TYPES, extension) ? OFFICE_FILE_TYPES[extension] : PACKAGE_FILE_TYPE;
 	};
-	//#endregion
-	//#region src/compound-file/compound-file.ts
+	// src/compound-file/compound-file.ts
 	var SECTOR_SIZE = 512;
 	var MINI_SECTOR_SIZE = 64;
 	var MINI_STREAM_CUTOFF = 4096;
@@ -277,8 +276,7 @@ var docxEmbeddedFiles = (function(exports, docx) {
 		}
 		return file;
 	};
-	//#endregion
-	//#region src/embedded-files/ole-package.ts
+	// src/embedded-files/ole-package.ts
 	/**
 	* Writes an OLE package, the OLE object Windows' Object Packager keeps a file in, so Word can embed a file no
 	* application embeds itself, such as a sound, a video or a PDF.
@@ -416,8 +414,7 @@ var docxEmbeddedFiles = (function(exports, docx) {
 			data: OBJECT_INFO
 		}
 	], { classId: PACKAGE_CLASS_ID });
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/typeof.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/typeof.js
 	function _typeof(o) {
 		"@babel/helpers - typeof";
 		return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o) {
@@ -426,8 +423,7 @@ var docxEmbeddedFiles = (function(exports, docx) {
 			return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o;
 		}, _typeof(o);
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/toPrimitive.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/toPrimitive.js
 	function toPrimitive(t, r) {
 		if ("object" != _typeof(t) || !t) return t;
 		var e = t[Symbol.toPrimitive];
@@ -438,14 +434,12 @@ var docxEmbeddedFiles = (function(exports, docx) {
 		}
 		return ("string" === r ? String : Number)(t);
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/toPropertyKey.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/toPropertyKey.js
 	function toPropertyKey(t) {
 		var i = toPrimitive(t, "string");
 		return "symbol" == _typeof(i) ? i : i + "";
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/defineProperty.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/defineProperty.js
 	function _defineProperty(e, r, t) {
 		return (r = toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
 			value: t,
@@ -454,8 +448,7 @@ var docxEmbeddedFiles = (function(exports, docx) {
 			writable: !0
 		}) : e[r] = t, e;
 	}
-	//#endregion
-	//#region src/embedded-files/picture-frame-shape-type.ts
+	// src/embedded-files/picture-frame-shape-type.ts
 	/**
 	* The picture frame shape type, which Word draws an embedded object's picture in.
 	*
@@ -589,8 +582,7 @@ var docxEmbeddedFiles = (function(exports, docx) {
 			return this.shapeType.prepForXml(context);
 		}
 	};
-	//#endregion
-	//#region src/embedded-files/embedded-file-run.ts
+	// src/embedded-files/embedded-file-run.ts
 	/**
 	* Embedded file run module: a file embedded in a document as an OLE object, such as a workbook, a presentation, a sound
 	* or a video, which opens from the document.
@@ -806,7 +798,6 @@ var docxEmbeddedFiles = (function(exports, docx) {
 			return super.prepForXml(context);
 		}
 	};
-	//#endregion
 	exports.EmbeddedFileRun = EmbeddedFileRun;
 	return exports;
 })({}, docx);

@@ -1,9 +1,8 @@
 var docx = (function(exports) {
 	Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
-	//#region \0rolldown/runtime.js
-	var __commonJSMin = (cb, mod) => () => (mod || (cb((mod = { exports: {} }).exports, mod), cb = null), mod.exports);
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/typeof.js
+	// \0rolldown/runtime.js
+	var __commonJSMin = (cb, mod) => () => (mod || (cb((mod = { exports: {} }).exports, mod, mod.exports), cb = null), mod.exports);
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/typeof.js
 	function _typeof(o) {
 		"@babel/helpers - typeof";
 		return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o) {
@@ -12,8 +11,7 @@ var docx = (function(exports) {
 			return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o;
 		}, _typeof(o);
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/toPrimitive.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/toPrimitive.js
 	function toPrimitive(t, r) {
 		if ("object" != _typeof(t) || !t) return t;
 		var e = t[Symbol.toPrimitive];
@@ -24,14 +22,12 @@ var docx = (function(exports) {
 		}
 		return ("string" === r ? String : Number)(t);
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/toPropertyKey.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/toPropertyKey.js
 	function toPropertyKey(t) {
 		var i = toPrimitive(t, "string");
 		return "symbol" == _typeof(i) ? i : i + "";
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/defineProperty.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/defineProperty.js
 	function _defineProperty(e, r, t) {
 		return (r = toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
 			value: t,
@@ -40,8 +36,7 @@ var docx = (function(exports) {
 			writable: !0
 		}) : e[r] = t, e;
 	}
-	//#endregion
-	//#region src/file/xml-components/base.ts
+	// src/file/xml-components/base.ts
 	/**
 	* Abstract base class for all XML components in the library.
 	*
@@ -116,8 +111,7 @@ var docx = (function(exports) {
 	* @internal
 	*/
 	var elementOf = (value) => isXmlComponent(value) ? value.rootKey : void 0;
-	//#endregion
-	//#region src/file/xml-components/xml-component.ts
+	// src/file/xml-components/xml-component.ts
 	/**
 	* XML Component module for the docx library.
 	*
@@ -271,8 +265,7 @@ var docx = (function(exports) {
 			return result && (typeof result[this.rootKey] !== "object" || Object.keys(result[this.rootKey]).length) ? result : void 0;
 		}
 	};
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/objectSpread2.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/objectSpread2.js
 	function ownKeys(e, r) {
 		var t = Object.keys(e);
 		if (Object.getOwnPropertySymbols) {
@@ -294,8 +287,7 @@ var docx = (function(exports) {
 		}
 		return e;
 	}
-	//#endregion
-	//#region src/file/xml-components/default-attributes.ts
+	// src/file/xml-components/default-attributes.ts
 	/**
 	* XML attribute components for the docx library.
 	*
@@ -398,8 +390,7 @@ var docx = (function(exports) {
 			return { _attr: Object.values(this.root).filter(({ value }) => value !== void 0).reduce((acc, { key, value }) => _objectSpread2(_objectSpread2({}, acc), {}, { [key]: value }), {}) };
 		}
 	};
-	//#endregion
-	//#region src/file/xml-components/attributes.ts
+	// src/file/xml-components/attributes.ts
 	/**
 	* Common XML attributes module for WordprocessingML elements.
 	*
@@ -453,8 +444,7 @@ var docx = (function(exports) {
 			});
 		}
 	};
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/objectWithoutPropertiesLoose.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/objectWithoutPropertiesLoose.js
 	function _objectWithoutPropertiesLoose(r, e) {
 		if (null == r) return {};
 		var t = {};
@@ -464,8 +454,7 @@ var docx = (function(exports) {
 		}
 		return t;
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/objectWithoutProperties.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/objectWithoutProperties.js
 	function _objectWithoutProperties(e, t) {
 		if (null == e) return {};
 		var o, r, i = _objectWithoutPropertiesLoose(e, t);
@@ -475,8 +464,7 @@ var docx = (function(exports) {
 		}
 		return i;
 	}
-	//#endregion
-	//#region src/util/xml/parse.ts
+	// src/util/xml/parse.ts
 	var _excluded$4 = ["elements"];
 	var PREDEFINED_ENTITIES = /* @__PURE__ */ new Map([
 		["amp", "&"],
@@ -646,8 +634,7 @@ var docx = (function(exports) {
 			position = valueEnd + 1;
 		}
 	};
-	//#endregion
-	//#region src/util/xml/stringify.ts
+	// src/util/xml/stringify.ts
 	var ESCAPES = /* @__PURE__ */ new Map([
 		["&", "&amp;"],
 		["\"", "&quot;"],
@@ -749,8 +736,7 @@ var docx = (function(exports) {
 		var _document$elements;
 		return (document.declaration ? `<?xml${stringifyAttributes(document.declaration.attributes)}?>` : "") + ((_document$elements = document.elements) !== null && _document$elements !== void 0 ? _document$elements : []).map(stringifyNode).join("");
 	};
-	//#endregion
-	//#region src/file/xml-components/imported-xml-component.ts
+	// src/file/xml-components/imported-xml-component.ts
 	/**
 	* Imported XML Component module for handling external XML content.
 	*
@@ -891,8 +877,7 @@ var docx = (function(exports) {
 			return { _attr: this._attr };
 		}
 	};
-	//#endregion
-	//#region src/file/xml-components/initializable-xml-component.ts
+	// src/file/xml-components/initializable-xml-component.ts
 	/**
 	* Initializable XML Component module.
 	*
@@ -937,8 +922,7 @@ var docx = (function(exports) {
 			if (initComponent) this.root = initComponent.root;
 		}
 	};
-	//#endregion
-	//#region src/util/values.ts
+	// src/util/values.ts
 	/**
 	* Validates and converts a number to an integer (decimal number).
 	*
@@ -1300,8 +1284,7 @@ var docx = (function(exports) {
 	* ```
 	*/
 	var dateTimeValue = (val) => val.toISOString();
-	//#endregion
-	//#region src/file/xml-components/simple-elements.ts
+	// src/file/xml-components/simple-elements.ts
 	/**
 	* Simple XML element types for common WordprocessingML patterns.
 	*
@@ -1575,8 +1558,7 @@ var docx = (function(exports) {
 			if (children) this.root.push(...children);
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/formatting/alignment.ts
+	// src/file/paragraph/formatting/alignment.ts
 	/**
 	* Paragraph and table alignment module for WordprocessingML documents.
 	*
@@ -1675,8 +1657,7 @@ var docx = (function(exports) {
 			value: type
 		} }
 	});
-	//#endregion
-	//#region src/file/theme/color-scheme.ts
+	// src/file/theme/color-scheme.ts
 	/**
 	* Color scheme module for DrawingML themes.
 	*
@@ -1800,8 +1781,7 @@ var docx = (function(exports) {
 		} },
 		children: Object.keys(COLOR_OOXML_NAMES).map((color) => createColor(color, colors))
 	});
-	//#endregion
-	//#region src/file/theme/theme-color.ts
+	// src/file/theme/theme-color.ts
 	/**
 	* Theme color module for WordprocessingML documents.
 	*
@@ -2006,8 +1986,7 @@ var docx = (function(exports) {
 		tint: "w:themeTint",
 		shade: "w:themeShade"
 	};
-	//#endregion
-	//#region src/file/border/border.ts
+	// src/file/border/border.ts
 	/**
 	* Border module for WordprocessingML documents.
 	*
@@ -2174,8 +2153,7 @@ var docx = (function(exports) {
 		/** a wavy line */
 		WAVE: "wave"
 	};
-	//#endregion
-	//#region src/file/paragraph/formatting/border.ts
+	// src/file/paragraph/formatting/border.ts
 	/**
 	* Paragraph border module for WordprocessingML documents.
 	*
@@ -2263,8 +2241,7 @@ var docx = (function(exports) {
 			this.root.push(bottom);
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/formatting/indent.ts
+	// src/file/paragraph/formatting/indent.ts
 	/**
 	* Paragraph indentation module for WordprocessingML documents.
 	*
@@ -2333,8 +2310,7 @@ var docx = (function(exports) {
 			}
 		}
 	});
-	//#endregion
-	//#region src/file/paragraph/run/break.ts
+	// src/file/paragraph/run/break.ts
 	/**
 	* Break module for WordprocessingML documents.
 	*
@@ -2394,8 +2370,7 @@ var docx = (function(exports) {
 	* ```
 	*/
 	var createBreak = () => new BuilderElement({ name: "w:br" });
-	//#endregion
-	//#region src/file/paragraph/run/field.ts
+	// src/file/paragraph/run/field.ts
 	/**
 	* Field module for WordprocessingML documents.
 	*
@@ -2508,8 +2483,7 @@ var docx = (function(exports) {
 	* element must be terminated with an End element.
 	*/
 	var createEnd = (dirty) => createFieldChar(FieldCharacterType.END, dirty);
-	//#endregion
-	//#region src/file/shared/alignment.ts
+	// src/file/shared/alignment.ts
 	/**
 	* Alignment constants for DrawingML positioning.
 	*
@@ -2556,8 +2530,7 @@ var docx = (function(exports) {
 		/** Align to top */
 		TOP: "top"
 	};
-	//#endregion
-	//#region src/file/shared/number-format.ts
+	// src/file/shared/number-format.ts
 	/**
 	* Number format module for WordprocessingML documents.
 	*
@@ -2667,8 +2640,7 @@ var docx = (function(exports) {
 		DOLLAR_TEXT: "dollarText",
 		CUSTOM: "custom"
 	};
-	//#endregion
-	//#region src/file/shared/space-type.ts
+	// src/file/shared/space-type.ts
 	/**
 	* Space type module for WordprocessingML documents.
 	*
@@ -2697,8 +2669,7 @@ var docx = (function(exports) {
 		DEFAULT: "default",
 		PRESERVE: "preserve"
 	};
-	//#endregion
-	//#region src/file/paragraph/run/text-attributes.ts
+	// src/file/paragraph/run/text-attributes.ts
 	/**
 	* Represents text element attributes.
 	*
@@ -2718,8 +2689,7 @@ var docx = (function(exports) {
 			_defineProperty(this, "xmlKeys", { space: "xml:space" });
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/run/page-number.ts
+	// src/file/paragraph/run/page-number.ts
 	/**
 	* Page number field instruction module for WordprocessingML documents.
 	*
@@ -2791,8 +2761,7 @@ var docx = (function(exports) {
 			this.root.push("SECTION");
 		}
 	};
-	//#endregion
-	//#region src/file/shading/shading.ts
+	// src/file/shading/shading.ts
 	/**
 	* Shading module for WordprocessingML documents.
 	*
@@ -2914,8 +2883,7 @@ var docx = (function(exports) {
 		THIN_VERTICAL_STRIPE: "thinVertStripe",
 		VERTICAL_STRIPE: "vertStripe"
 	};
-	//#endregion
-	//#region src/file/track-revision/track-revision.ts
+	// src/file/track-revision/track-revision.ts
 	/**
 	* Track Revision module for WordprocessingML documents.
 	*
@@ -2963,8 +2931,7 @@ var docx = (function(exports) {
 			});
 		}
 	};
-	//#endregion
-	//#region src/file/track-revision/track-revision-components/deletion-track-change.ts
+	// src/file/track-revision/track-revision-components/deletion-track-change.ts
 	var DeletionTrackChange = class extends XmlComponent {
 		constructor(options) {
 			super("w:del");
@@ -2975,8 +2942,7 @@ var docx = (function(exports) {
 			}));
 		}
 	};
-	//#endregion
-	//#region src/file/track-revision/track-revision-components/insertion-track-change.ts
+	// src/file/track-revision/track-revision-components/insertion-track-change.ts
 	var InsertionTrackChange = class extends XmlComponent {
 		constructor(options) {
 			super("w:ins");
@@ -2987,8 +2953,7 @@ var docx = (function(exports) {
 			}));
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/run/east-asian-layout.ts
+	// src/file/paragraph/run/east-asian-layout.ts
 	/**
 	* East Asian layout module for WordprocessingML run properties.
 	*
@@ -3073,8 +3038,7 @@ var docx = (function(exports) {
 			}
 		}
 	});
-	//#endregion
-	//#region src/file/paragraph/run/emphasis-mark.ts
+	// src/file/paragraph/run/emphasis-mark.ts
 	/**
 	* Emphasis mark module for WordprocessingML run properties.
 	*
@@ -3146,11 +3110,9 @@ DOT: "dot" };
 	* Convenience function for applying a dot emphasis mark to text.
 	*/
 	var createDotEmphasisMark = () => createEmphasisMark(EmphasisMarkType.DOT);
-	//#endregion
-	//#region node_modules/nanoid/url-alphabet/index.js
+	// node_modules/nanoid/url-alphabet/index.js
 	var urlAlphabet = "57X6y3wQZNzYjJB2L_10pxbackgroundhimselfUTF-8DEMOGRAPHICSVqvt4KW9";
-	//#endregion
-	//#region node_modules/nanoid/non-secure/index.js
+	// node_modules/nanoid/non-secure/index.js
 	var customAlphabet = (alphabet, defaultSize = 21) => {
 		return (size = defaultSize) => {
 			let id = "";
@@ -3165,8 +3127,7 @@ DOT: "dot" };
 		while (i-- > 0) id += urlAlphabet[Math.random() * 64 | 0];
 		return id;
 	};
-	//#endregion
-	//#region src/util/sha.ts
+	// src/util/sha.ts
 	/**
 	* SHA-1 and SHA-256, for the names of media files and the hashes of passwords that protect a document. They are worked
 	* out here because documents are written synchronously, and browsers only hash asynchronously.
@@ -3310,8 +3271,7 @@ DOT: "dot" };
 			h7
 		]);
 	};
-	//#endregion
-	//#region src/util/convenience-functions.ts
+	// src/util/convenience-functions.ts
 	/**
 	* Convenience utility functions for unit conversion and unique ID generation.
 	*
@@ -3532,8 +3492,7 @@ DOT: "dot" };
 	* realm's Uint8Array that fails `instanceof Uint8Array` checks.
 	*/
 	var encodeUtf8 = (str) => new Uint8Array(new TextEncoder().encode(str));
-	//#endregion
-	//#region src/file/paragraph/run/fit-text.ts
+	// src/file/paragraph/run/fit-text.ts
 	/**
 	* Fit text module for WordprocessingML run properties.
 	*
@@ -3578,8 +3537,7 @@ DOT: "dot" };
 			}
 		}
 	});
-	//#endregion
-	//#region src/file/paragraph/run/formatting.ts
+	// src/file/paragraph/run/formatting.ts
 	/**
 	* Run formatting module for WordprocessingML documents.
 	*
@@ -3689,8 +3647,7 @@ DOT: "dot" };
 			this.root.push(new Attributes({ val: color }));
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/run/language.ts
+	// src/file/paragraph/run/language.ts
 	/**
 	* Language module for WordprocessingML run properties.
 	*
@@ -3742,8 +3699,7 @@ DOT: "dot" };
 			}
 		}
 	});
-	//#endregion
-	//#region src/file/paragraph/run/run-fonts.ts
+	// src/file/paragraph/run/run-fonts.ts
 	/**
 	* Run fonts module for WordprocessingML documents.
 	*
@@ -3876,8 +3832,7 @@ DOT: "dot" };
 			}
 		});
 	};
-	//#endregion
-	//#region src/file/paragraph/run/script.ts
+	// src/file/paragraph/run/script.ts
 	/**
 	* Subscript and superscript module for WordprocessingML documents.
 	*
@@ -3927,8 +3882,7 @@ DOT: "dot" };
 	* formulas and footnote references.
 	*/
 	var createSubScript = () => createVerticalAlignRun("subscript");
-	//#endregion
-	//#region src/file/paragraph/run/underline.ts
+	// src/file/paragraph/run/underline.ts
 	/**
 	* Underline module for WordprocessingML documents.
 	*
@@ -4052,8 +4006,7 @@ DOT: "dot" };
 		keys: COLOR_ATTRIBUTES,
 		color
 	}]);
-	//#endregion
-	//#region src/file/paragraph/run/properties.ts
+	// src/file/paragraph/run/properties.ts
 	/**
 	* Run properties module for WordprocessingML documents.
 	*
@@ -4277,8 +4230,7 @@ DOT: "dot" };
 			this.addChildElement(new RunProperties(options));
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/run/run-components/text.ts
+	// src/file/paragraph/run/run-components/text.ts
 	/**
 	* Text module for WordprocessingML run content.
 	*
@@ -4316,8 +4268,7 @@ DOT: "dot" };
 			}
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/run/run.ts
+	// src/file/paragraph/run/run.ts
 	/**
 	* Constants for page number field types.
 	*
@@ -4445,8 +4396,7 @@ DOT: "dot" };
 			})] : void 0;
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/run/text-run.ts
+	// src/file/paragraph/run/text-run.ts
 	/**
 	* Represents a text run in a WordprocessingML document.
 	*
@@ -4472,8 +4422,7 @@ DOT: "dot" };
 			super(typeof options === "string" ? { text: options } : options);
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/run/run-components/symbol.ts
+	// src/file/paragraph/run/run-components/symbol.ts
 	/**
 	* Symbol module for WordprocessingML run content.
 	*
@@ -4518,8 +4467,7 @@ DOT: "dot" };
 			}));
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/run/symbol-run.ts
+	// src/file/paragraph/run/symbol-run.ts
 	/**
 	* SymbolRun module for WordprocessingML documents.
 	*
@@ -4548,8 +4496,7 @@ DOT: "dot" };
 			this.root.push(typeof options === "string" ? new Symbol$1(options) : new Symbol$1(options.char, options.symbolfont));
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/run/image-data.ts
+	// src/file/paragraph/run/image-data.ts
 	var convertDataURIToBinary = (dataURI) => {
 		const base64Index = dataURI.indexOf(";base64,");
 		const base64IndexWithOffset = base64Index === -1 ? 0 : base64Index + 8;
@@ -4602,8 +4549,7 @@ DOT: "dot" };
 		if (signature === void 0) throw new Error(`${name}: type isn't given, and data isn't a PNG, JPEG, GIF or BMP file to read it from. Give its type`);
 		return signature[0];
 	};
-	//#endregion
-	//#region src/file/drawing/floating/floating-position.ts
+	// src/file/drawing/floating/floating-position.ts
 	/**
 	* Horizontal Relative Positioning.
 	*
@@ -4754,8 +4700,7 @@ DOT: "dot" };
 		*/
 		TOP_MARGIN: "topMargin"
 	};
-	//#endregion
-	//#region src/file/drawing/floating/simple-pos.ts
+	// src/file/drawing/floating/simple-pos.ts
 	/**
 	* # Simple Positioning Coordinates
 	*
@@ -4787,8 +4732,7 @@ DOT: "dot" };
 			}
 		}
 	});
-	//#endregion
-	//#region src/file/drawing/floating/align.ts
+	// src/file/drawing/floating/align.ts
 	/**
 	* # Relative Horizontal/Vertical Alignment
 	*
@@ -4803,8 +4747,7 @@ DOT: "dot" };
 		name: "wp:align",
 		children: [value]
 	});
-	//#endregion
-	//#region src/file/drawing/floating/position-offset.ts
+	// src/file/drawing/floating/position-offset.ts
 	/**
 	* # Absolute Position Offset
 	*
@@ -4818,8 +4761,7 @@ DOT: "dot" };
 		name: "wp:posOffset",
 		children: [offsetValue.toString()]
 	});
-	//#endregion
-	//#region src/file/drawing/floating/horizontal-position.ts
+	// src/file/drawing/floating/horizontal-position.ts
 	/**
 	* Horizontal position module for floating drawings in WordprocessingML documents.
 	*
@@ -4879,8 +4821,7 @@ DOT: "dot" };
 			else throw new Error("There is no configuration provided for floating position (Align or offset)");
 		})()]
 	});
-	//#endregion
-	//#region src/file/drawing/floating/vertical-position.ts
+	// src/file/drawing/floating/vertical-position.ts
 	/**
 	* Vertical position module for floating drawings in WordprocessingML documents.
 	*
@@ -4940,8 +4881,7 @@ DOT: "dot" };
 			else throw new Error("There is no configuration provided for floating position (Align or offset)");
 		})()]
 	});
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/wps/body-properties.ts
+	// src/file/drawing/inline/graphic/graphic-data/wps/body-properties.ts
 	/**
 	* @publicApi
 	*/
@@ -4980,8 +4920,7 @@ DOT: "dot" };
 			children: [...options.noAutoFit ? [new OnOffElement("a:noAutofit", options.noAutoFit)] : []]
 		});
 	};
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/wps/non-visual-shape-properties.ts
+	// src/file/drawing/inline/graphic/graphic-data/wps/non-visual-shape-properties.ts
 	var createNonVisualShapeProperties = (options = { txBox: "1" }) => new BuilderElement({
 		name: "wps:cNvSpPr",
 		attributes: { txBox: {
@@ -4989,20 +4928,17 @@ DOT: "dot" };
 			value: options.txBox
 		} }
 	});
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/wps/text-box-content.ts
+	// src/file/drawing/inline/graphic/graphic-data/wps/text-box-content.ts
 	var createTextBoxContent = (children) => new BuilderElement({
 		name: "w:txbxContent",
 		children: [...children]
 	});
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/wps/wps-text-box.ts
+	// src/file/drawing/inline/graphic/graphic-data/wps/wps-text-box.ts
 	var createWpsTextBox = (children) => new BuilderElement({
 		name: "wps:txbx",
 		children: [createTextBoxContent(children)]
 	});
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/form/extents/extents-attributes.ts
+	// src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/form/extents/extents-attributes.ts
 	/**
 	* Extents attributes for DrawingML shapes.
 	*
@@ -5032,8 +4968,7 @@ DOT: "dot" };
 			});
 		}
 	};
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/form/extents/extents.ts
+	// src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/form/extents/extents.ts
 	/**
 	* Extents (size) element for DrawingML shapes.
 	*
@@ -5076,8 +5011,7 @@ DOT: "dot" };
 			this.root.push(this.attributes);
 		}
 	};
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/form/offset/off-attributes.ts
+	// src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/form/offset/off-attributes.ts
 	/**
 	* Offset attributes for DrawingML shapes.
 	*
@@ -5107,8 +5041,7 @@ DOT: "dot" };
 			});
 		}
 	};
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/form/offset/off.ts
+	// src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/form/offset/off.ts
 	/**
 	* Offset (position) element for DrawingML shapes.
 	*
@@ -5148,8 +5081,7 @@ DOT: "dot" };
 			}));
 		}
 	};
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/form/form.ts
+	// src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/form/form.ts
 	/**
 	* Attributes for 2D transformation.
 	*
@@ -5212,8 +5144,7 @@ DOT: "dot" };
 			this.root.push(this.extents);
 		}
 	};
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/no-fill.ts
+	// src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/no-fill.ts
 	/**
 	* No fill element for DrawingML shapes.
 	*
@@ -5237,8 +5168,7 @@ DOT: "dot" };
 	* ```
 	*/
 	var createNoFill = () => new BuilderElement({ name: "a:noFill" });
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/rgb-color.ts
+	// src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/rgb-color.ts
 	/**
 	* RGB color element for DrawingML shapes.
 	*
@@ -5274,8 +5204,7 @@ DOT: "dot" };
 			value: options.value
 		} }
 	});
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/scheme-color.ts
+	// src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/scheme-color.ts
 	/**
 	* Scheme color element for DrawingML shapes.
 	*
@@ -5353,8 +5282,7 @@ DOT: "dot" };
 			value: options.value
 		} }
 	});
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill.ts
+	// src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/solid-fill.ts
 	/**
 	* Solid fill element for DrawingML shapes.
 	*
@@ -5397,8 +5325,7 @@ DOT: "dot" };
 		name: "a:solidFill",
 		children: [options.type === "rgb" ? createSolidRgbColor(options) : createSchemeColor(options)]
 	});
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline.ts
+	// src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/outline/outline.ts
 	/**
 	* Outline (line) properties for DrawingML shapes.
 	*
@@ -5513,8 +5440,7 @@ DOT: "dot" };
 			value: options.value
 		})]
 	});
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/preset-geometry/adjustment-values/adjustment-values.ts
+	// src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/preset-geometry/adjustment-values/adjustment-values.ts
 	/**
 	* Adjustment values module for preset geometries.
 	*
@@ -5552,8 +5478,7 @@ DOT: "dot" };
 			super("a:avLst");
 		}
 	};
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/preset-geometry/preset-geometry-attributes.ts
+	// src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/preset-geometry/preset-geometry-attributes.ts
 	/**
 	* Preset geometry attributes for DrawingML shapes.
 	*
@@ -5579,8 +5504,7 @@ DOT: "dot" };
 			_defineProperty(this, "xmlKeys", { prst: "prst" });
 		}
 	};
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/preset-geometry/preset-geometry.ts
+	// src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/preset-geometry/preset-geometry.ts
 	/**
 	* Preset geometry module for DrawingML shapes.
 	*
@@ -5622,8 +5546,7 @@ DOT: "dot" };
 			this.root.push(new AdjustmentValues());
 		}
 	};
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/shape-properties-attributes.ts
+	// src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/shape-properties-attributes.ts
 	/**
 	* Shape properties attributes for DrawingML.
 	*
@@ -5649,8 +5572,7 @@ DOT: "dot" };
 			_defineProperty(this, "xmlKeys", { bwMode: "bwMode" });
 		}
 	};
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/shape-properties.ts
+	// src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/shape-properties.ts
 	/**
 	* Represents shape properties for a DrawingML picture.
 	*
@@ -5707,8 +5629,7 @@ DOT: "dot" };
 			if (outline) this.root.push(createOutline(outline));
 		}
 	};
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/wps/wps-shape.ts
+	// src/file/drawing/inline/graphic/graphic-data/wps/wps-shape.ts
 	var createWpsShape = (options) => new BuilderElement({
 		name: "wps:wsp",
 		children: [
@@ -5723,8 +5644,7 @@ DOT: "dot" };
 			createBodyProperties(options.bodyProperties)
 		]
 	});
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/graphic-data-attribute.ts
+	// src/file/drawing/inline/graphic/graphic-data/graphic-data-attribute.ts
 	/**
 	* Graphic data attributes module.
 	*
@@ -5748,8 +5668,7 @@ DOT: "dot" };
 			_defineProperty(this, "xmlKeys", { uri: "uri" });
 		}
 	};
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/pic/blip/blip-extentions.ts
+	// src/file/drawing/inline/graphic/graphic-data/pic/blip/blip-extentions.ts
 	/**
 	* Creates an SVG blip element for embedding SVG images.
 	*
@@ -5813,8 +5732,7 @@ DOT: "dot" };
 		name: "a:extLst",
 		children: [createExtention(mediaData)]
 	});
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/pic/blip/blip.ts
+	// src/file/drawing/inline/graphic/graphic-data/pic/blip/blip.ts
 	/**
 	* Creates a blip element for an image.
 	*
@@ -5872,8 +5790,7 @@ DOT: "dot" };
 		},
 		children: mediaData.type === "svg" ? [createExtentionList(mediaData)] : []
 	});
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/pic/blip/source-rectangle.ts
+	// src/file/drawing/inline/graphic/graphic-data/pic/blip/source-rectangle.ts
 	/**
 	* Source rectangle module for blip fills.
 	*
@@ -5946,8 +5863,7 @@ DOT: "dot" };
 			}));
 		}
 	};
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/pic/blip/stretch.ts
+	// src/file/drawing/inline/graphic/graphic-data/pic/blip/stretch.ts
 	/**
 	* Stretch fill module for blip fills.
 	*
@@ -6009,8 +5925,7 @@ DOT: "dot" };
 			this.root.push(new FillRectangle());
 		}
 	};
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/pic/blip/blip-fill.ts
+	// src/file/drawing/inline/graphic/graphic-data/pic/blip/blip-fill.ts
 	/**
 	* Represents a blip fill for pictures in DrawingML.
 	*
@@ -6045,8 +5960,7 @@ DOT: "dot" };
 			this.root.push(new Stretch());
 		}
 	};
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/pic/non-visual-pic-properties/child-non-visual-pic-properties/pic-locks/pic-locks-attributes.ts
+	// src/file/drawing/inline/graphic/graphic-data/pic/non-visual-pic-properties/child-non-visual-pic-properties/pic-locks/pic-locks-attributes.ts
 	/**
 	* Picture locks attributes module.
 	*
@@ -6072,8 +5986,7 @@ DOT: "dot" };
 			});
 		}
 	};
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/pic/non-visual-pic-properties/child-non-visual-pic-properties/pic-locks/pic-locks.ts
+	// src/file/drawing/inline/graphic/graphic-data/pic/non-visual-pic-properties/child-non-visual-pic-properties/pic-locks/pic-locks.ts
 	/**
 	* Picture locks module.
 	*
@@ -6127,8 +6040,7 @@ DOT: "dot" };
 			}));
 		}
 	};
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/pic/non-visual-pic-properties/child-non-visual-pic-properties/child-non-visual-pic-properties.ts
+	// src/file/drawing/inline/graphic/graphic-data/pic/non-visual-pic-properties/child-non-visual-pic-properties/child-non-visual-pic-properties.ts
 	/**
 	* Child non-visual picture properties module.
 	*
@@ -6170,8 +6082,7 @@ DOT: "dot" };
 			this.root.push(new PicLocks());
 		}
 	};
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/pic/non-visual-pic-properties/non-visual-properties/non-visual-properties-attributes.ts
+	// src/file/drawing/inline/graphic/graphic-data/pic/non-visual-pic-properties/non-visual-properties/non-visual-properties-attributes.ts
 	/**
 	* Non-visual properties attributes module.
 	*
@@ -6197,8 +6108,7 @@ DOT: "dot" };
 			});
 		}
 	};
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/pic/non-visual-pic-properties/non-visual-properties/non-visual-properties.ts
+	// src/file/drawing/inline/graphic/graphic-data/pic/non-visual-pic-properties/non-visual-properties/non-visual-properties.ts
 	/**
 	* Non-visual drawing properties module.
 	*
@@ -6259,8 +6169,7 @@ DOT: "dot" };
 			return result;
 		}
 	};
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/pic/non-visual-pic-properties/non-visual-pic-properties.ts
+	// src/file/drawing/inline/graphic/graphic-data/pic/non-visual-pic-properties/non-visual-pic-properties.ts
 	/**
 	* Non-visual picture properties module.
 	*
@@ -6302,8 +6211,7 @@ DOT: "dot" };
 			this.root.push(new ChildNonVisualProperties());
 		}
 	};
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/pic/pic-attributes.ts
+	// src/file/drawing/inline/graphic/graphic-data/pic/pic-attributes.ts
 	/**
 	* Picture attributes module.
 	*
@@ -6324,8 +6232,7 @@ DOT: "dot" };
 			_defineProperty(this, "xmlKeys", { xmlns: "xmlns:pic" });
 		}
 	};
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/pic/pic.ts
+	// src/file/drawing/inline/graphic/graphic-data/pic/pic.ts
 	/**
 	* Represents a picture element in DrawingML.
 	*
@@ -6368,8 +6275,7 @@ DOT: "dot" };
 			}));
 		}
 	};
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/wpg/wpg-group.ts
+	// src/file/drawing/inline/graphic/graphic-data/wpg/wpg-group.ts
 	var createGroupTransform = (transformation) => {
 		var _transformation$flip, _transformation$flip2, _transformation$offse, _transformation$offse2;
 		return new BuilderElement({
@@ -6432,8 +6338,7 @@ DOT: "dot" };
 			...options.children
 		]
 	});
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic-data/graphic-data.ts
+	// src/file/drawing/inline/graphic/graphic-data/graphic-data.ts
 	/**
 	* Represents graphical data within a DrawingML graphic element.
 	*
@@ -6508,8 +6413,7 @@ DOT: "dot" };
 			}
 		}
 	};
-	//#endregion
-	//#region src/file/drawing/inline/graphic/graphic.ts
+	// src/file/drawing/inline/graphic/graphic.ts
 	/**
 	* Attributes for the graphic element.
 	* @internal
@@ -6561,8 +6465,7 @@ DOT: "dot" };
 			this.root.push(this.data);
 		}
 	};
-	//#endregion
-	//#region src/file/drawing/text-wrap/text-wrapping.ts
+	// src/file/drawing/text-wrap/text-wrapping.ts
 	/**
 	* Enumeration of text wrapping types for floating drawings.
 	*
@@ -6601,8 +6504,7 @@ DOT: "dot" };
 		/** Text wraps on the side with more space */
 		LARGEST: "largest"
 	};
-	//#endregion
-	//#region src/file/drawing/text-wrap/wrap-none.ts
+	// src/file/drawing/text-wrap/wrap-none.ts
 	/**
 	* Wrap None module for DrawingML text wrapping.
 	*
@@ -6622,8 +6524,7 @@ DOT: "dot" };
 	* Reference: http://officeopenxml.com/drwPicFloating-textWrap.php
 	*/
 	var createWrapNone = () => new BuilderElement({ name: "wp:wrapNone" });
-	//#endregion
-	//#region src/file/drawing/text-wrap/wrap-square.ts
+	// src/file/drawing/text-wrap/wrap-square.ts
 	/**
 	* Wrap Square module for DrawingML text wrapping.
 	*
@@ -6686,8 +6587,7 @@ DOT: "dot" };
 			}
 		}
 	});
-	//#endregion
-	//#region src/file/drawing/text-wrap/wrap-tight.ts
+	// src/file/drawing/text-wrap/wrap-tight.ts
 	/**
 	* Wrap Tight and Wrap Through modules for DrawingML text wrapping.
 	*
@@ -6827,8 +6727,7 @@ DOT: "dot" };
 	* @param textWrapping - Which sides the text wraps on. Defaults to both
 	*/
 	var createWrapThrough = (margins, textWrapping) => createPolygonWrap("wp:wrapThrough", margins, textWrapping);
-	//#endregion
-	//#region src/file/drawing/text-wrap/wrap-top-and-bottom.ts
+	// src/file/drawing/text-wrap/wrap-top-and-bottom.ts
 	/**
 	* Wrap Top and Bottom module for DrawingML text wrapping.
 	*
@@ -6874,8 +6773,7 @@ DOT: "dot" };
 			}
 		}
 	});
-	//#endregion
-	//#region src/file/relationships/relationship/relationship.ts
+	// src/file/relationships/relationship/relationship.ts
 	/**
 	* Target mode types for relationships.
 	*
@@ -6920,8 +6818,7 @@ EXTERNAL: "External" };
 			}
 		}
 	});
-	//#endregion
-	//#region src/file/drawing/doc-properties/doc-properties-children.ts
+	// src/file/drawing/doc-properties/doc-properties-children.ts
 	/**
 	* Child elements for document properties.
 	*
@@ -6962,8 +6859,7 @@ EXTERNAL: "External" };
 			value: `rId${linkId}`
 		} })
 	});
-	//#endregion
-	//#region src/file/drawing/doc-properties/non-visual-drawing-properties.ts
+	// src/file/drawing/doc-properties/non-visual-drawing-properties.ts
 	/**
 	* Non-visual drawing properties (`CT_NonVisualDrawingProps`) of the shapes, pictures and groups inside a drawing:
 	* their id, name and alternative text, a link followed when they are clicked, and whether they are decorative.
@@ -7084,8 +6980,7 @@ EXTERNAL: "External" };
 			return super.prepForXml(context);
 		}
 	};
-	//#endregion
-	//#region src/file/drawing/doc-properties/doc-properties.ts
+	// src/file/drawing/doc-properties/doc-properties.ts
 	/**
 	* Document Properties module for DrawingML elements.
 	*
@@ -7162,8 +7057,7 @@ EXTERNAL: "External" };
 			return result;
 		}
 	};
-	//#endregion
-	//#region src/file/drawing/effect-extent/effect-extent.ts
+	// src/file/drawing/effect-extent/effect-extent.ts
 	/**
 	* Effect extent for DrawingML objects.
 	*
@@ -7228,8 +7122,7 @@ EXTERNAL: "External" };
 			}
 		}
 	});
-	//#endregion
-	//#region src/file/drawing/extent/extent.ts
+	// src/file/drawing/extent/extent.ts
 	/**
 	* Extent (size) for DrawingML objects.
 	*
@@ -7292,8 +7185,7 @@ EXTERNAL: "External" };
 			}
 		}
 	});
-	//#endregion
-	//#region src/file/drawing/graphic-frame/graphic-frame-locks/graphic-frame-lock-attributes.ts
+	// src/file/drawing/graphic-frame/graphic-frame-locks/graphic-frame-lock-attributes.ts
 	/**
 	* Attributes for graphic frame locking properties.
 	*
@@ -7309,8 +7201,7 @@ EXTERNAL: "External" };
 			});
 		}
 	};
-	//#endregion
-	//#region src/file/drawing/graphic-frame/graphic-frame-locks/graphic-frame-locks.ts
+	// src/file/drawing/graphic-frame/graphic-frame-locks/graphic-frame-locks.ts
 	/**
 	* Represents graphic frame locking properties in DrawingML.
 	*
@@ -7349,8 +7240,7 @@ EXTERNAL: "External" };
 			}));
 		}
 	};
-	//#endregion
-	//#region src/file/drawing/graphic-frame/graphic-frame-properties.ts
+	// src/file/drawing/graphic-frame/graphic-frame-properties.ts
 	/**
 	* # Common DrawingML Non-Visual Properties
 	*
@@ -7376,8 +7266,7 @@ EXTERNAL: "External" };
 		name: "wp:cNvGraphicFramePr",
 		children: lockAspectRatio ? [new GraphicFrameLocks()] : []
 	});
-	//#endregion
-	//#region src/file/drawing/anchor/anchor-attributes.ts
+	// src/file/drawing/anchor/anchor-attributes.ts
 	/**
 	* Anchor attributes module for DrawingML floating elements.
 	*
@@ -7410,8 +7299,7 @@ EXTERNAL: "External" };
 			});
 		}
 	};
-	//#endregion
-	//#region src/file/drawing/anchor/anchor.ts
+	// src/file/drawing/anchor/anchor.ts
 	/**
 	* Represents an anchored/floating drawing in a WordprocessingML document.
 	*
@@ -7516,8 +7404,7 @@ EXTERNAL: "External" };
 			}));
 		}
 	};
-	//#endregion
-	//#region src/file/drawing/inline/inline.ts
+	// src/file/drawing/inline/inline.ts
 	var createInline = ({ mediaData, transform, docProperties, outline, solidFill, crop, effectExtent, link, decorative }) => {
 		var _outline$width, _outline$width2, _outline$width3, _outline$width4;
 		return new BuilderElement({
@@ -7571,8 +7458,7 @@ EXTERNAL: "External" };
 			]
 		});
 	};
-	//#endregion
-	//#region src/file/drawing/drawing.ts
+	// src/file/drawing/drawing.ts
 	/**
 	* Represents a drawing element in a WordprocessingML document.
 	*
@@ -7612,8 +7498,7 @@ EXTERNAL: "External" };
 			}));
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/run/image-run.ts
+	// src/file/paragraph/run/image-run.ts
 	var createImageData = (options, key) => ({
 		data: standardizeData(options.data),
 		fileName: key,
@@ -7717,8 +7602,7 @@ EXTERNAL: "External" };
 			return super.prepForXml(context);
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/run/wps-shape-run.ts
+	// src/file/paragraph/run/wps-shape-run.ts
 	var createTransformation = (options) => {
 		var _options$offset$left, _options$offset, _options$offset$top, _options$offset2, _options$offset$left2, _options$offset3, _options$offset$top2, _options$offset4;
 		return {
@@ -7769,8 +7653,7 @@ EXTERNAL: "External" };
 			this.root.push(drawing);
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/run/wpg-group-run.ts
+	// src/file/paragraph/run/wpg-group-run.ts
 	/**
 	* A group of text boxes and pictures.
 	*
@@ -7803,8 +7686,7 @@ EXTERNAL: "External" };
 			return super.prepForXml(context);
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/run/sequential-identifier-instruction.ts
+	// src/file/paragraph/run/sequential-identifier-instruction.ts
 	/**
 	* Sequential identifier instruction module for WordprocessingML documents.
 	*
@@ -7839,8 +7721,7 @@ EXTERNAL: "External" };
 			this.root.push(`SEQ ${identifier}`);
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/run/sequential-identifier.ts
+	// src/file/paragraph/run/sequential-identifier.ts
 	/**
 	* Sequential identifier module for WordprocessingML documents.
 	*
@@ -7896,8 +7777,7 @@ EXTERNAL: "External" };
 			this.root.push(createEnd());
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/run/simple-field.ts
+	// src/file/paragraph/run/simple-field.ts
 	/**
 	* Simple field module for WordprocessingML documents.
 	*
@@ -8016,8 +7896,7 @@ EXTERNAL: "External" };
 			super(` MERGEFIELD ${fieldName} `, `«${fieldName}»`);
 		}
 	};
-	//#endregion
-	//#region src/file/document/body/field-number-formats.ts
+	// src/file/document/body/field-number-formats.ts
 	var LARGEST_ROMAN = 32767;
 	var LARGEST_LETTERS = 780;
 	var ROMAN = [
@@ -8113,8 +7992,7 @@ EXTERNAL: "External" };
 			default: return text;
 		}
 	};
-	//#endregion
-	//#region src/file/document/body/page-number-fields.ts
+	// src/file/document/body/page-number-fields.ts
 	/**
 	* Writes estimated page numbers into the fields of a tree of elements that show them: those docx formats to write a
 	* document, and those `patchDocument` parses from a template. Not part of the public API.
@@ -8345,8 +8223,7 @@ EXTERNAL: "External" };
 		beforeParagraph,
 		afterParagraph: () => void 0
 	});
-	//#endregion
-	//#region src/file/table-of-contents/field-instruction.ts
+	// src/file/table-of-contents/field-instruction.ts
 	/**
 	* Field Instruction module for Table of Contents.
 	*
@@ -8413,8 +8290,7 @@ EXTERNAL: "External" };
 			this.root.push(instruction);
 		}
 	};
-	//#endregion
-	//#region src/file/table-of-contents/sdt-content.ts
+	// src/file/table-of-contents/sdt-content.ts
 	/**
 	* Structured Document Tag Content module.
 	*
@@ -8452,8 +8328,7 @@ EXTERNAL: "External" };
 			super("w:sdtContent");
 		}
 	};
-	//#endregion
-	//#region src/file/table-of-contents/heading-entries.ts
+	// src/file/table-of-contents/heading-entries.ts
 	/**
 	* The beginning of a table of contents' field: dirty or clean, as the caller set it, or else dirty unless the document
 	* is given page numbers
@@ -8793,8 +8668,7 @@ EXTERNAL: "External" };
 			table["w:sdt"] = childrenOf$1(table).map((child) => nameOf$4(child) === "w:sdtContent" ? contentOf(options, entries, styles, context) : child);
 		});
 	};
-	//#endregion
-	//#region src/file/document/body/sequence-numbers.ts
+	// src/file/document/body/sequence-numbers.ts
 	/**
 	* Caption numbers written into the SEQ fields of a document, such as the 2 of "Figure 2", when the document is given page
 	* numbers.
@@ -8949,8 +8823,7 @@ EXTERNAL: "External" };
 			}
 		};
 	};
-	//#endregion
-	//#region src/file/document/body/page-numbers.ts
+	// src/file/document/body/page-numbers.ts
 	/**
 	* Page numbers written into the fields of a document that show them, when it is written, from an estimate of its pages.
 	*
@@ -9050,8 +8923,7 @@ EXTERNAL: "External" };
 			notes
 		});
 	};
-	//#endregion
-	//#region src/file/relationships/attributes.ts
+	// src/file/relationships/attributes.ts
 	/**
 	* Attributes for the Relationships element.
 	*
@@ -9070,8 +8942,7 @@ EXTERNAL: "External" };
 			_defineProperty(this, "xmlKeys", { xmlns: "xmlns" });
 		}
 	};
-	//#endregion
-	//#region src/file/relationships/relationships.ts
+	// src/file/relationships/relationships.ts
 	/**
 	* Relationships module for Open Packaging Conventions.
 	*
@@ -9138,8 +9009,7 @@ EXTERNAL: "External" };
 			return this.root.length - 1;
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/run/comment-run.ts
+	// src/file/paragraph/run/comment-run.ts
 	/**
 	* Comment module for WordprocessingML documents.
 	*
@@ -9501,8 +9371,7 @@ EXTERNAL: "External" };
 			return xml;
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/run/editable-range.ts
+	// src/file/paragraph/run/editable-range.ts
 	/**
 	* Editable range module for WordprocessingML documents.
 	*
@@ -9601,8 +9470,7 @@ EXTERNAL: "External" };
 			this.root.push(new EditableRangeEndAttributes({ id }));
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/run/comments-extended.ts
+	// src/file/paragraph/run/comments-extended.ts
 	/**
 	* CommentsExtended module for WordprocessingML documents.
 	*
@@ -9743,8 +9611,7 @@ EXTERNAL: "External" };
 			for (const data of commentIdsData) this.root.push(new CommentId(data));
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/run/empty-children.ts
+	// src/file/paragraph/run/empty-children.ts
 	/**
 	* Empty children module for WordprocessingML run elements.
 	*
@@ -9929,8 +9796,7 @@ EXTERNAL: "External" };
 			super("w:lastRenderedPageBreak");
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/run/positional-tab.ts
+	// src/file/paragraph/run/positional-tab.ts
 	/**
 	* Positional tab module for WordprocessingML documents.
 	*
@@ -10072,8 +9938,7 @@ EXTERNAL: "External" };
 			}));
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/formatting/break.ts
+	// src/file/paragraph/formatting/break.ts
 	/**
 	* Break elements module for WordprocessingML documents.
 	*
@@ -10190,8 +10055,7 @@ EXTERNAL: "External" };
 			super("w:pageBreakBefore");
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/formatting/spacing.ts
+	// src/file/paragraph/formatting/spacing.ts
 	/**
 	* Paragraph spacing module for WordprocessingML documents.
 	*
@@ -10282,8 +10146,7 @@ EXTERNAL: "External" };
 			}
 		}
 	});
-	//#endregion
-	//#region src/file/paragraph/formatting/style.ts
+	// src/file/paragraph/formatting/style.ts
 	/**
 	* Paragraph style module for WordprocessingML documents.
 	*
@@ -10350,8 +10213,7 @@ EXTERNAL: "External" };
 			value: styleId
 		} }
 	});
-	//#endregion
-	//#region src/file/paragraph/formatting/tab-stop.ts
+	// src/file/paragraph/formatting/tab-stop.ts
 	/**
 	* Tab stop module for WordprocessingML documents.
 	*
@@ -10478,8 +10340,7 @@ MAX: 9026 };
 		name: "w:tabs",
 		children: tabDefinitions.map((tabDefinition) => createTabStopItem(tabDefinition))
 	});
-	//#endregion
-	//#region src/file/paragraph/formatting/unordered-list.ts
+	// src/file/paragraph/formatting/unordered-list.ts
 	/**
 	* Numbering properties module for WordprocessingML documents.
 	*
@@ -10562,8 +10423,7 @@ MAX: 9026 };
 			this.root.push(new Attributes({ val: typeof id === "string" ? `{${id}}` : id }));
 		}
 	};
-	//#endregion
-	//#region src/file/file-child.ts
+	// src/file/file-child.ts
 	/**
 	* FileChild module for WordprocessingML documents.
 	*
@@ -10589,8 +10449,7 @@ MAX: 9026 };
 			);
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/links/hyperlink-attributes.ts
+	// src/file/paragraph/links/hyperlink-attributes.ts
 	/**
 	* Hyperlink attributes module for WordprocessingML documents.
 	*
@@ -10626,8 +10485,7 @@ MAX: 9026 };
 			});
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/links/hyperlink.ts
+	// src/file/paragraph/links/hyperlink.ts
 	/**
 	* Hyperlink module for WordprocessingML documents.
 	*
@@ -10797,8 +10655,7 @@ MAX: 9026 };
 			this.options = options;
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/links/bookmark-attributes.ts
+	// src/file/paragraph/links/bookmark-attributes.ts
 	/**
 	* Bookmark attributes module for WordprocessingML documents.
 	*
@@ -10876,8 +10733,7 @@ MAX: 9026 };
 			_defineProperty(this, "xmlKeys", { id: "w:id" });
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/links/bookmark.ts
+	// src/file/paragraph/links/bookmark.ts
 	/**
 	* Bookmark module for WordprocessingML documents.
 	*
@@ -11031,8 +10887,7 @@ MAX: 9026 };
 			this.root.push(attributes);
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/links/numbered-item-ref.ts
+	// src/file/paragraph/links/numbered-item-ref.ts
 	/**
 	* Numbered item reference module for WordprocessingML documents.
 	*
@@ -11092,8 +10947,7 @@ MAX: 9026 };
 			super(instruction, cachedValue);
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/links/outline-level.ts
+	// src/file/paragraph/links/outline-level.ts
 	/**
 	* Outline level module for WordprocessingML documents.
 	*
@@ -11134,8 +10988,7 @@ MAX: 9026 };
 			value: level
 		} }
 	});
-	//#endregion
-	//#region src/file/paragraph/links/pageref-field-instruction.ts
+	// src/file/paragraph/links/pageref-field-instruction.ts
 	/**
 	* Page reference field instruction module for WordprocessingML documents.
 	*
@@ -11177,8 +11030,7 @@ MAX: 9026 };
 			this.root.push(instruction);
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/links/pageref.ts
+	// src/file/paragraph/links/pageref.ts
 	/**
 	* Page reference module for WordprocessingML documents.
 	*
@@ -11226,8 +11078,7 @@ MAX: 9026 };
 			] });
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/links/external-hyperlink-target.ts
+	// src/file/paragraph/links/external-hyperlink-target.ts
 	/**
 	* External hyperlink targets and fragments for WordprocessingML.
 	*
@@ -11249,8 +11100,7 @@ MAX: 9026 };
 			anchor: link.slice(index + 1)
 		} : { target: link };
 	};
-	//#endregion
-	//#region src/file/numbering/list-key.ts
+	// src/file/numbering/list-key.ts
 	/**
 	* The key a list's numbering id is found by while a document is written, which paragraphs write as a placeholder for it.
 	*
@@ -11268,8 +11118,7 @@ MAX: 9026 };
 	* @returns The list's key
 	*/
 	var listKey = (reference, instance, restartedListId) => restartedListId === void 0 ? `${reference}-${instance}` : `${reference}-restart ${restartedListId}`;
-	//#endregion
-	//#region src/file/fonts/font.ts
+	// src/file/fonts/font.ts
 	/**
 	* Font module for WordprocessingML documents.
 	*
@@ -11406,8 +11255,7 @@ MAX: 9026 };
 			...embedBoldItalic ? [createFontRelationship(embedBoldItalic, "w:embedBoldItalic")] : []
 		]
 	});
-	//#endregion
-	//#region src/file/fonts/create-embedded-font.ts
+	// src/file/fonts/create-embedded-font.ts
 	/**
 	* Creates an embedded font with default settings.
 	*
@@ -11444,8 +11292,7 @@ MAX: 9026 };
 		embedItalic,
 		embedBoldItalic
 	});
-	//#endregion
-	//#region src/file/fonts/font-table.ts
+	// src/file/fonts/font-table.ts
 	/**
 	* Font Table module for WordprocessingML documents.
 	*
@@ -11522,8 +11369,7 @@ MAX: 9026 };
 		},
 		children: fonts.map(createEmbeddedFont)
 	});
-	//#endregion
-	//#region src/file/fonts/font-wrapper.ts
+	// src/file/fonts/font-wrapper.ts
 	var FACES = [
 		{
 			option: "data",
@@ -11614,8 +11460,7 @@ MAX: 9026 };
 			return this.relationships;
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/formatting/word-wrap.ts
+	// src/file/paragraph/formatting/word-wrap.ts
 	/**
 	* Word wrap module for WordprocessingML documents.
 	*
@@ -11640,8 +11485,7 @@ MAX: 9026 };
 			value: 0
 		} }
 	});
-	//#endregion
-	//#region src/file/paragraph/frame/frame-properties.ts
+	// src/file/paragraph/frame/frame-properties.ts
 	/**
 	* Drop cap types for paragraph frames.
 	*
@@ -11822,8 +11666,7 @@ MAX: 9026 };
 			}
 		});
 	};
-	//#endregion
-	//#region src/file/paragraph/properties.ts
+	// src/file/paragraph/properties.ts
 	/**
 	* The restarted list that paragraphs leaving out `instance` are in, by list reference, for each part being written, as
 	* the id of the restart. A paragraph that restarts a list moves the paragraphs after it in the part onto its own list,
@@ -12099,8 +11942,7 @@ MAX: 9026 };
 			this.root.push(new ParagraphProperties(_objectSpread2(_objectSpread2({}, options), {}, { includeIfEmpty: true }), { inListOrder: false }));
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/paragraph.ts
+	// src/file/paragraph/paragraph.ts
 	/**
 	* Represents a paragraph in a WordprocessingML document.
 	*
@@ -12234,8 +12076,7 @@ MAX: 9026 };
 			return this;
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/math/math.ts
+	// src/file/paragraph/math/math.ts
 	/**
 	* Office Math module for WordprocessingML documents.
 	*
@@ -12283,8 +12124,7 @@ MAX: 9026 };
 			for (const child of options.children) this.root.push(child);
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/math/math-text.ts
+	// src/file/paragraph/math/math-text.ts
 	/**
 	* Math Text module for Office MathML.
 	*
@@ -12320,8 +12160,7 @@ MAX: 9026 };
 			this.root.push(text);
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/math/math-run.ts
+	// src/file/paragraph/math/math-run.ts
 	/**
 	* Math Run module for Office MathML.
 	*
@@ -12412,8 +12251,7 @@ MAX: 9026 };
 			this.root.push(new MathText(text));
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/math/fraction/math-denominator.ts
+	// src/file/paragraph/math/fraction/math-denominator.ts
 	/**
 	* Math Denominator module for Office MathML fractions.
 	*
@@ -12432,8 +12270,7 @@ MAX: 9026 };
 			for (const child of children) this.root.push(child);
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/math/fraction/math-numerator.ts
+	// src/file/paragraph/math/fraction/math-numerator.ts
 	/**
 	* Math Numerator module for Office MathML fractions.
 	*
@@ -12452,8 +12289,7 @@ MAX: 9026 };
 			for (const child of children) this.root.push(child);
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/math/fraction/math-fraction.ts
+	// src/file/paragraph/math/fraction/math-fraction.ts
 	/**
 	* Math Fraction module for Office MathML.
 	*
@@ -12522,8 +12358,7 @@ MAX: 9026 };
 			this.root.push(new MathDenominator(options.denominator));
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/math/n-ary/math-accent-character.ts
+	// src/file/paragraph/math/n-ary/math-accent-character.ts
 	/**
 	* Math Accent Character module for Office MathML.
 	*
@@ -12555,8 +12390,7 @@ MAX: 9026 };
 			value: accent
 		} }
 	});
-	//#endregion
-	//#region src/file/paragraph/math/n-ary/math-base.ts
+	// src/file/paragraph/math/n-ary/math-base.ts
 	/**
 	* Math Base module for Office MathML.
 	*
@@ -12590,8 +12424,7 @@ MAX: 9026 };
 		name: "m:e",
 		children
 	});
-	//#endregion
-	//#region src/file/paragraph/math/n-ary/math-limit-location.ts
+	// src/file/paragraph/math/n-ary/math-limit-location.ts
 	/**
 	* Math Limit Location module for Office MathML.
 	*
@@ -12624,8 +12457,7 @@ MAX: 9026 };
 			value: value || "undOvr"
 		} }
 	});
-	//#endregion
-	//#region src/file/paragraph/math/n-ary/math-sub-script-hide.ts
+	// src/file/paragraph/math/n-ary/math-sub-script-hide.ts
 	/**
 	* Math SubScript Hide module for Office MathML.
 	*
@@ -12657,8 +12489,7 @@ MAX: 9026 };
 			value: 1
 		} }
 	});
-	//#endregion
-	//#region src/file/paragraph/math/n-ary/math-super-script-hide.ts
+	// src/file/paragraph/math/n-ary/math-super-script-hide.ts
 	/**
 	* Math SuperScript Hide module for Office MathML.
 	*
@@ -12690,8 +12521,7 @@ MAX: 9026 };
 			value: 1
 		} }
 	});
-	//#endregion
-	//#region src/file/paragraph/math/n-ary/math-n-ary-properties.ts
+	// src/file/paragraph/math/n-ary/math-n-ary-properties.ts
 	/**
 	* Math N-Ary Properties module for Office MathML.
 	*
@@ -12732,8 +12562,7 @@ MAX: 9026 };
 			...!hasSuperScript ? [createMathSuperScriptHide()] : []
 		]
 	});
-	//#endregion
-	//#region src/file/paragraph/math/n-ary/math-sub-script.ts
+	// src/file/paragraph/math/n-ary/math-sub-script.ts
 	/**
 	* Math SubScript Element module for Office MathML.
 	*
@@ -12766,8 +12595,7 @@ MAX: 9026 };
 		name: "m:sub",
 		children
 	});
-	//#endregion
-	//#region src/file/paragraph/math/n-ary/limit-location-value.ts
+	// src/file/paragraph/math/n-ary/limit-location-value.ts
 	var LOCATIONS = {
 		aboveBelow: "undOvr",
 		side: "subSup"
@@ -12782,8 +12610,7 @@ MAX: 9026 };
 		if (!Object.keys(LOCATIONS).includes(limits)) throw new Error(`${owner}: limits is "${limits}", which isn't one of ${Object.keys(LOCATIONS).join(", ")}`);
 		return LOCATIONS[limits];
 	};
-	//#endregion
-	//#region src/file/paragraph/math/n-ary/math-super-script.ts
+	// src/file/paragraph/math/n-ary/math-super-script.ts
 	/**
 	* Math SuperScript Element module for Office MathML.
 	*
@@ -12816,8 +12643,7 @@ MAX: 9026 };
 		name: "m:sup",
 		children
 	});
-	//#endregion
-	//#region src/file/paragraph/math/n-ary/math-sum.ts
+	// src/file/paragraph/math/n-ary/math-sum.ts
 	/**
 	* Math Sum module for Office MathML.
 	*
@@ -12873,8 +12699,7 @@ MAX: 9026 };
 			this.root.push(createMathBase({ children: options.children }));
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/math/n-ary/math-integral.ts
+	// src/file/paragraph/math/n-ary/math-integral.ts
 	/**
 	* Math Integral module for Office MathML.
 	*
@@ -12930,8 +12755,7 @@ MAX: 9026 };
 			this.root.push(createMathBase({ children: options.children }));
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/math/n-ary/math-limit.ts
+	// src/file/paragraph/math/n-ary/math-limit.ts
 	/**
 	* Math Limit module for Office MathML.
 	*
@@ -12968,8 +12792,7 @@ MAX: 9026 };
 			for (const child of children) this.root.push(child);
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/math/n-ary/math-limit-upper.ts
+	// src/file/paragraph/math/n-ary/math-limit-upper.ts
 	/**
 	* Math Upper Limit module for Office MathML.
 	*
@@ -13016,8 +12839,7 @@ MAX: 9026 };
 			this.root.push(new MathLimit(options.limit));
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/math/n-ary/math-limit-lower.ts
+	// src/file/paragraph/math/n-ary/math-limit-lower.ts
 	/**
 	* Math Lower Limit module for Office MathML.
 	*
@@ -13064,8 +12886,7 @@ MAX: 9026 };
 			this.root.push(new MathLimit(options.limit));
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/math/script/super-script/math-super-script-function-properties.ts
+	// src/file/paragraph/math/script/super-script/math-super-script-function-properties.ts
 	/**
 	* Math SuperScript Properties module for Office MathML.
 	*
@@ -13092,8 +12913,7 @@ MAX: 9026 };
 	* ```
 	*/
 	var createMathSuperScriptProperties = () => new BuilderElement({ name: "m:sSupPr" });
-	//#endregion
-	//#region src/file/paragraph/math/script/super-script/math-super-script-function.ts
+	// src/file/paragraph/math/script/super-script/math-super-script-function.ts
 	/**
 	* Math SuperScript module for Office MathML.
 	*
@@ -13140,8 +12960,7 @@ MAX: 9026 };
 			this.root.push(createMathSuperScriptElement({ children: options.superScript }));
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/math/script/sub-script/math-sub-script-function-properties.ts
+	// src/file/paragraph/math/script/sub-script/math-sub-script-function-properties.ts
 	/**
 	* Math SubScript Properties module for Office MathML.
 	*
@@ -13168,8 +12987,7 @@ MAX: 9026 };
 	* ```
 	*/
 	var createMathSubScriptProperties = () => new BuilderElement({ name: "m:sSubPr" });
-	//#endregion
-	//#region src/file/paragraph/math/script/sub-script/math-sub-script-function.ts
+	// src/file/paragraph/math/script/sub-script/math-sub-script-function.ts
 	/**
 	* Math SubScript module for Office MathML.
 	*
@@ -13216,8 +13034,7 @@ MAX: 9026 };
 			this.root.push(createMathSubScriptElement({ children: options.subScript }));
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/math/script/sub-super-script/math-sub-super-script-function-properties.ts
+	// src/file/paragraph/math/script/sub-super-script/math-sub-super-script-function-properties.ts
 	/**
 	* Math Sub-Super-Script Properties module for Office MathML.
 	*
@@ -13245,8 +13062,7 @@ MAX: 9026 };
 	* ```
 	*/
 	var createMathSubSuperScriptProperties = () => new BuilderElement({ name: "m:sSubSupPr" });
-	//#endregion
-	//#region src/file/paragraph/math/script/sub-super-script/math-sub-super-script-function.ts
+	// src/file/paragraph/math/script/sub-super-script/math-sub-super-script-function.ts
 	/**
 	* Math SubSuperScript module for Office MathML.
 	*
@@ -13297,8 +13113,7 @@ MAX: 9026 };
 			this.root.push(createMathSuperScriptElement({ children: options.superScript }));
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/math/script/pre-sub-super-script/math-pre-sub-super-script-function-properties.ts
+	// src/file/paragraph/math/script/pre-sub-super-script/math-pre-sub-super-script-function-properties.ts
 	/**
 	* Math Pre-Sub-Super-Script Properties module for Office MathML.
 	*
@@ -13325,8 +13140,7 @@ MAX: 9026 };
 	* ```
 	*/
 	var createMathPreSubSuperScriptProperties = () => new BuilderElement({ name: "m:sPrePr" });
-	//#endregion
-	//#region src/file/paragraph/math/script/pre-sub-super-script/math-pre-sub-super-script-function.ts
+	// src/file/paragraph/math/script/pre-sub-super-script/math-pre-sub-super-script-function.ts
 	/**
 	* Math Pre-Sub-Super-Script module for Office MathML.
 	*
@@ -13382,8 +13196,7 @@ MAX: 9026 };
 			});
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/math/radical/math-degree.ts
+	// src/file/paragraph/math/radical/math-degree.ts
 	/**
 	* Math Degree module for Office MathML.
 	*
@@ -13420,8 +13233,7 @@ MAX: 9026 };
 			if (!!children) for (const child of children) this.root.push(child);
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/math/radical/math-degree-hide.ts
+	// src/file/paragraph/math/radical/math-degree-hide.ts
 	/**
 	* Math Degree Hide module for Office MathML.
 	*
@@ -13463,8 +13275,7 @@ MAX: 9026 };
 			this.root.push(new MathDegreeHideAttributes({ hide: 1 }));
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/math/radical/math-radical-properties.ts
+	// src/file/paragraph/math/radical/math-radical-properties.ts
 	/**
 	* Math Radical Properties module for Office MathML.
 	*
@@ -13500,8 +13311,7 @@ MAX: 9026 };
 			if (!hasDegree) this.root.push(new MathDegreeHide());
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/math/radical/math-radical.ts
+	// src/file/paragraph/math/radical/math-radical.ts
 	/**
 	* Math Radical module for Office MathML.
 	*
@@ -13552,8 +13362,7 @@ MAX: 9026 };
 			this.root.push(createMathBase({ children: options.children }));
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/math/function/math-function-name.ts
+	// src/file/paragraph/math/function/math-function-name.ts
 	/**
 	* Math Function Name module for Office MathML.
 	*
@@ -13590,8 +13399,7 @@ MAX: 9026 };
 			for (const child of children) this.root.push(child);
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/math/function/math-function-properties.ts
+	// src/file/paragraph/math/function/math-function-properties.ts
 	/**
 	* Math Function Properties module for Office MathML.
 	*
@@ -13625,8 +13433,7 @@ MAX: 9026 };
 			super("m:funcPr");
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/math/function/math-function.ts
+	// src/file/paragraph/math/function/math-function.ts
 	/**
 	* Math Function module for Office MathML.
 	*
@@ -13674,8 +13481,7 @@ MAX: 9026 };
 			this.root.push(createMathBase({ children: options.children }));
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/math/brackets/math-beginning-character.ts
+	// src/file/paragraph/math/brackets/math-beginning-character.ts
 	/**
 	* Math Beginning Character module for Office MathML.
 	*
@@ -13707,8 +13513,7 @@ MAX: 9026 };
 			value: character
 		} }
 	});
-	//#endregion
-	//#region src/file/paragraph/math/brackets/math-ending-char.ts
+	// src/file/paragraph/math/brackets/math-ending-char.ts
 	/**
 	* Math Ending Character module for Office MathML.
 	*
@@ -13740,8 +13545,7 @@ MAX: 9026 };
 			value: character
 		} }
 	});
-	//#endregion
-	//#region src/file/paragraph/math/brackets/math-bracket-properties.ts
+	// src/file/paragraph/math/brackets/math-bracket-properties.ts
 	/**
 	* Math Bracket Properties module for Office MathML.
 	*
@@ -13777,8 +13581,7 @@ MAX: 9026 };
 		name: "m:dPr",
 		children: !!characters ? [createMathBeginningCharacter({ character: characters.beginningCharacter }), createMathEndingCharacter({ character: characters.endingCharacter })] : []
 	});
-	//#endregion
-	//#region src/file/paragraph/math/brackets/math-round-brackets.ts
+	// src/file/paragraph/math/brackets/math-round-brackets.ts
 	/**
 	* Math Round Brackets module for Office MathML.
 	*
@@ -13819,8 +13622,7 @@ MAX: 9026 };
 			this.root.push(createMathBase({ children: options.children }));
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/math/brackets/math-square-brackets.ts
+	// src/file/paragraph/math/brackets/math-square-brackets.ts
 	/**
 	* Math Square Brackets module for Office MathML.
 	*
@@ -13854,8 +13656,7 @@ MAX: 9026 };
 			this.root.push(createMathBase({ children: options.children }));
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/math/brackets/math-curly-brackets.ts
+	// src/file/paragraph/math/brackets/math-curly-brackets.ts
 	/**
 	* Math Curly Brackets module for Office MathML.
 	*
@@ -13889,8 +13690,7 @@ MAX: 9026 };
 			this.root.push(createMathBase({ children: options.children }));
 		}
 	};
-	//#endregion
-	//#region src/file/paragraph/math/brackets/math-angled-brackets.ts
+	// src/file/paragraph/math/brackets/math-angled-brackets.ts
 	/**
 	* Math Angled Brackets module for Office MathML.
 	*
@@ -13924,8 +13724,7 @@ MAX: 9026 };
 			this.root.push(createMathBase({ children: options.children }));
 		}
 	};
-	//#endregion
-	//#region src/file/vertical-align/vertical-align.ts
+	// src/file/vertical-align/vertical-align.ts
 	/**
 	* Vertical alignment module for WordprocessingML documents.
 	*
@@ -13992,8 +13791,7 @@ MAX: 9026 };
 			value
 		} }
 	});
-	//#endregion
-	//#region src/file/document/body/section-properties/properties/columns.ts
+	// src/file/document/body/section-properties/properties/columns.ts
 	/**
 	* Columns module for WordprocessingML section properties.
 	*
@@ -14066,8 +13864,7 @@ MAX: 9026 };
 		},
 		children: !equalWidth && children ? children : void 0
 	});
-	//#endregion
-	//#region src/file/document/body/section-properties/properties/doc-grid.ts
+	// src/file/document/body/section-properties/properties/doc-grid.ts
 	/**
 	* Specifies the type of the current document grid, which defines the grid behavior.
 	*
@@ -14139,8 +13936,7 @@ MAX: 9026 };
 			}
 		}
 	});
-	//#endregion
-	//#region src/file/document/body/section-properties/properties/header-footer-reference.ts
+	// src/file/document/body/section-properties/properties/header-footer-reference.ts
 	/**
 	* This simple type specifies the possible types of headers and footers which may be specified for a given header or footer reference in a document. This value determines the page(s) on which the current header or footer shall be displayed.
 	*
@@ -14182,8 +13978,7 @@ MAX: 9026 };
 			}
 		}
 	});
-	//#endregion
-	//#region src/file/document/body/section-properties/properties/line-number.ts
+	// src/file/document/body/section-properties/properties/line-number.ts
 	/**
 	* This simple type specifies when the line numbering in the parent section shall be reset to its restart value. The line numbering increments for each line (even if the line number itself is not displayed) until it reaches the restart point specified by this element.
 	*
@@ -14262,8 +14057,7 @@ MAX: 9026 };
 			}
 		}
 	});
-	//#endregion
-	//#region src/file/document/body/section-properties/properties/note-properties.ts
+	// src/file/document/body/section-properties/properties/note-properties.ts
 	/**
 	* Where the footnotes of a section are placed.
 	*
@@ -14424,8 +14218,7 @@ MAX: 9026 };
 	* ```
 	*/
 	var createEndnoteProperties = (options) => createNoteProperties(_objectSpread2({ name: "w:endnotePr" }, options));
-	//#endregion
-	//#region src/file/document/body/section-properties/properties/page-borders.ts
+	// src/file/document/body/section-properties/properties/page-borders.ts
 	/**
 	* Page borders module for WordprocessingML section properties.
 	*
@@ -14564,8 +14357,7 @@ MAX: 9026 };
 			if (options.pageBorderRight) this.root.push(createBorderElement("w:right", options.pageBorderRight));
 		}
 	};
-	//#endregion
-	//#region src/file/document/body/section-properties/properties/page-margin.ts
+	// src/file/document/body/section-properties/properties/page-margin.ts
 	/**
 	* Page margin module for WordprocessingML section properties.
 	*
@@ -14635,8 +14427,7 @@ MAX: 9026 };
 			}
 		}
 	});
-	//#endregion
-	//#region src/file/document/body/section-properties/properties/page-number.ts
+	// src/file/document/body/section-properties/properties/page-number.ts
 	/**
 	* Specifies the separator character between chapter number and page number.
 	*
@@ -14715,8 +14506,7 @@ MAX: 9026 };
 			}
 		}
 	});
-	//#endregion
-	//#region src/file/document/body/section-properties/properties/page-size.ts
+	// src/file/document/body/section-properties/properties/page-size.ts
 	/**
 	* This simple type specifies the orientation of all pages in the parent section. This information is used to determine the actual paper size to use when printing the file.
 	*
@@ -14790,8 +14580,7 @@ MAX: 9026 };
 			}
 		});
 	};
-	//#endregion
-	//#region src/file/document/body/section-properties/properties/page-text-direction.ts
+	// src/file/document/body/section-properties/properties/page-text-direction.ts
 	/**
 	* Page text direction module for WordprocessingML section properties.
 	*
@@ -14842,8 +14631,7 @@ MAX: 9026 };
 			this.root.push(new PageTextDirectionAttributes({ val: value }));
 		}
 	};
-	//#endregion
-	//#region src/file/document/body/section-properties/properties/section-type.ts
+	// src/file/document/body/section-properties/properties/section-type.ts
 	/**
 	* Section type module for WordprocessingML section properties.
 	*
@@ -14916,8 +14704,7 @@ MAX: 9026 };
 			value
 		} }
 	});
-	//#endregion
-	//#region src/file/document/body/section-properties/section-properties.ts
+	// src/file/document/body/section-properties/section-properties.ts
 	/**
 	* Default margin values for sections (in twips).
 	*
@@ -15112,8 +14899,7 @@ MAX: 9026 };
 			this.root.push(new SectionProperties(options));
 		}
 	};
-	//#endregion
-	//#region src/file/document/body/body.ts
+	// src/file/document/body/body.ts
 	/**
 	* Document body module for WordprocessingML documents.
 	*
@@ -15301,8 +15087,7 @@ MAX: 9026 };
 			return new Paragraph({});
 		}
 	};
-	//#endregion
-	//#region src/file/table/table-width.ts
+	// src/file/table/table-width.ts
 	/**
 	* Table width module for WordprocessingML documents.
 	*
@@ -15369,8 +15154,7 @@ MAX: 9026 };
 			}
 		});
 	};
-	//#endregion
-	//#region src/file/table/column-widths.ts
+	// src/file/table/column-widths.ts
 	/**
 	* Column width resolution for tables.
 	*
@@ -15498,8 +15282,7 @@ MAX: 9026 };
 		}
 		return widths.map((columnWidth) => Math.round(columnWidth));
 	};
-	//#endregion
-	//#region src/file/table/grid.ts
+	// src/file/table/grid.ts
 	/**
 	* Table grid module for WordprocessingML documents.
 	*
@@ -15569,8 +15352,7 @@ MAX: 9026 };
 			this.root.push(new TableGrid(options.columnWidths));
 		}
 	};
-	//#endregion
-	//#region src/file/track-revision/track-revision-components/inserted-text-run.ts
+	// src/file/track-revision/track-revision-components/inserted-text-run.ts
 	/**
 	* Inserted text run module for track changes.
 	*
@@ -15628,8 +15410,7 @@ MAX: 9026 };
 			this.addChildElement(new TextRun(options));
 		}
 	};
-	//#endregion
-	//#region src/file/track-revision/track-revision-components/deleted-page-number.ts
+	// src/file/track-revision/track-revision-components/deleted-page-number.ts
 	/**
 	* Deleted instruction text elements for field codes in track changes.
 	*
@@ -15744,8 +15525,7 @@ MAX: 9026 };
 			this.root.push("SECTIONPAGES");
 		}
 	};
-	//#endregion
-	//#region src/file/track-revision/track-revision-components/deleted-text.ts
+	// src/file/track-revision/track-revision-components/deleted-text.ts
 	/**
 	* Deleted text element module for track changes.
 	*
@@ -15788,8 +15568,7 @@ MAX: 9026 };
 			this.root.push(text);
 		}
 	};
-	//#endregion
-	//#region src/file/track-revision/track-revision-components/deleted-text-run.ts
+	// src/file/track-revision/track-revision-components/deleted-text-run.ts
 	/**
 	* Deleted text run module for track changes.
 	*
@@ -15934,8 +15713,7 @@ MAX: 9026 };
 			})] : void 0;
 		}
 	};
-	//#endregion
-	//#region src/file/track-revision/track-revision-components/inserted-table-row.ts
+	// src/file/track-revision/track-revision-components/inserted-table-row.ts
 	var InsertedTableRow = class extends XmlComponent {
 		constructor(options) {
 			super("w:ins");
@@ -15946,8 +15724,7 @@ MAX: 9026 };
 			}));
 		}
 	};
-	//#endregion
-	//#region src/file/track-revision/track-revision-components/deleted-table-row.ts
+	// src/file/track-revision/track-revision-components/deleted-table-row.ts
 	var DeletedTableRow = class extends XmlComponent {
 		constructor(options) {
 			super("w:del");
@@ -15958,8 +15735,7 @@ MAX: 9026 };
 			}));
 		}
 	};
-	//#endregion
-	//#region src/file/track-revision/track-revision-components/inserted-table-cell.ts
+	// src/file/track-revision/track-revision-components/inserted-table-cell.ts
 	var InsertedTableCell = class extends XmlComponent {
 		constructor(options) {
 			super("w:cellIns");
@@ -15970,8 +15746,7 @@ MAX: 9026 };
 			}));
 		}
 	};
-	//#endregion
-	//#region src/file/track-revision/track-revision-components/deleted-table-cell.ts
+	// src/file/track-revision/track-revision-components/deleted-table-cell.ts
 	var DeletedTableCell = class extends XmlComponent {
 		constructor(options) {
 			super("w:cellDel");
@@ -15982,8 +15757,7 @@ MAX: 9026 };
 			}));
 		}
 	};
-	//#endregion
-	//#region src/file/track-revision/track-revision-components/cell-merge.ts
+	// src/file/track-revision/track-revision-components/cell-merge.ts
 	/**
 	* Vertical merge revision types.
 	*/
@@ -16015,8 +15789,7 @@ MAX: 9026 };
 			this.root.push(new CellMergeAttributes(options));
 		}
 	};
-	//#endregion
-	//#region src/file/table/table-properties/table-cell-margin.ts
+	// src/file/table/table-properties/table-cell-margin.ts
 	/**
 	* Table cell margin module for WordprocessingML documents.
 	*
@@ -16134,8 +15907,7 @@ MAX: 9026 };
 			children
 		});
 	};
-	//#endregion
-	//#region src/file/table/table-cell/table-cell-components.ts
+	// src/file/table/table-cell/table-cell-components.ts
 	/**
 	* Table cell components module for WordprocessingML documents.
 	*
@@ -16336,8 +16108,7 @@ MAX: 9026 };
 			this.root.push(new TDirectionAttributes({ val: value }));
 		}
 	};
-	//#endregion
-	//#region src/file/table/table-cell/table-cell-properties.ts
+	// src/file/table/table-cell/table-cell-properties.ts
 	/**
 	* Table cell properties module for WordprocessingML documents.
 	*
@@ -16475,8 +16246,7 @@ MAX: 9026 };
 			this.root.push(new TableCellProperties(_objectSpread2(_objectSpread2({}, options), {}, { includeIfEmpty: true })));
 		}
 	};
-	//#endregion
-	//#region src/file/table/table-cell/table-cell.ts
+	// src/file/table/table-cell/table-cell.ts
 	/**
 	* Represents a table cell in a WordprocessingML document.
 	*
@@ -16540,8 +16310,7 @@ MAX: 9026 };
 			return super.prepForXml(context);
 		}
 	};
-	//#endregion
-	//#region src/file/table/on-off-only-element.ts
+	// src/file/table/on-off-only-element.ts
 	/**
 	* On/off elements of tables that Office only takes "on" and "off" for.
 	*
@@ -16566,8 +16335,7 @@ MAX: 9026 };
 	* @internal
 	*/
 	var createOnOffOnlyElement = (name, value) => value ? new OnOffElement(name) : new StringValueElement(name, "off");
-	//#endregion
-	//#region src/file/table/table-properties/table-borders.ts
+	// src/file/table/table-properties/table-borders.ts
 	/**
 	* Table borders module for WordprocessingML documents.
 	*
@@ -16633,8 +16401,7 @@ MAX: 9026 };
 		insideHorizontal: NONE_BORDER,
 		insideVertical: NONE_BORDER
 	});
-	//#endregion
-	//#region src/file/table/table-properties/table-float-properties.ts
+	// src/file/table/table-properties/table-float-properties.ts
 	/**
 	* Table float properties module for WordprocessingML documents.
 	*
@@ -16777,8 +16544,7 @@ MAX: 9026 };
 			}
 		}
 	});
-	//#endregion
-	//#region src/file/table/table-properties/table-layout.ts
+	// src/file/table/table-properties/table-layout.ts
 	/**
 	* Table layout module for WordprocessingML documents.
 	*
@@ -16833,8 +16599,7 @@ MAX: 9026 };
 			value: type
 		} }
 	});
-	//#endregion
-	//#region src/file/table/table-cell-spacing.ts
+	// src/file/table/table-cell-spacing.ts
 	/**
 	* Table cell spacing module for WordprocessingML documents.
 	*
@@ -16897,8 +16662,7 @@ MAX: 9026 };
 			}
 		}
 	});
-	//#endregion
-	//#region src/file/table/table-properties/table-look.ts
+	// src/file/table/table-properties/table-look.ts
 	/**
 	* Table look module for WordprocessingML documents.
 	*
@@ -16974,8 +16738,7 @@ MAX: 9026 };
 			}
 		}
 	});
-	//#endregion
-	//#region src/file/table/table-properties/table-properties.ts
+	// src/file/table/table-properties/table-properties.ts
 	/**
 	* Table properties module for WordprocessingML documents.
 	*
@@ -17078,8 +16841,7 @@ MAX: 9026 };
 			this.root.push(new TableProperties(_objectSpread2(_objectSpread2({}, options), {}, { includeIfEmpty: true })));
 		}
 	};
-	//#endregion
-	//#region src/file/table/table-row/table-row-height.ts
+	// src/file/table/table-row/table-row-height.ts
 	/**
 	* Table row height module for WordprocessingML documents.
 	*
@@ -17149,8 +16911,7 @@ MAX: 9026 };
 			}
 		}
 	});
-	//#endregion
-	//#region src/file/table/table-row/table-row-properties.ts
+	// src/file/table/table-row/table-row-properties.ts
 	/**
 	* Table row properties module for WordprocessingML documents.
 	*
@@ -17243,8 +17004,7 @@ MAX: 9026 };
 			this.root.push(new TableRowProperties(_objectSpread2(_objectSpread2({}, options), {}, { includeIfEmpty: true })));
 		}
 	};
-	//#endregion
-	//#region src/file/table/table-row/table-row.ts
+	// src/file/table/table-row/table-row.ts
 	/**
 	* Table row module for WordprocessingML documents.
 	*
@@ -17364,8 +17124,7 @@ MAX: 9026 };
 			return rootIdx - 1;
 		}
 	};
-	//#endregion
-	//#region src/file/table/table.ts
+	// src/file/table/table.ts
 	/**
 	* Table module for WordprocessingML documents.
 	*
@@ -17567,8 +17326,7 @@ MAX: 9026 };
 			return (_section$AvailableTex = section === null || section === void 0 ? void 0 : section.AvailableTextWidth) !== null && _section$AvailableTex !== void 0 ? _section$AvailableTex : DEFAULT_AVAILABLE_WIDTH;
 		}
 	};
-	//#endregion
-	//#region src/file/app-properties/app-properties-attributes.ts
+	// src/file/app-properties/app-properties-attributes.ts
 	/**
 	* App Properties Attributes module for WordprocessingML documents.
 	*
@@ -17593,8 +17351,7 @@ MAX: 9026 };
 			});
 		}
 	};
-	//#endregion
-	//#region src/file/app-properties/app-properties.ts
+	// src/file/app-properties/app-properties.ts
 	/**
 	* App Properties module for WordprocessingML documents.
 	*
@@ -17646,8 +17403,7 @@ MAX: 9026 };
 			}));
 		}
 	};
-	//#endregion
-	//#region src/file/content-types/content-types-attributes.ts
+	// src/file/content-types/content-types-attributes.ts
 	/**
 	* Attributes for the Types (Content Types) element.
 	*
@@ -17666,8 +17422,7 @@ MAX: 9026 };
 			_defineProperty(this, "xmlKeys", { xmlns: "xmlns" });
 		}
 	};
-	//#endregion
-	//#region src/file/content-types/default/default.ts
+	// src/file/content-types/default/default.ts
 	/**
 	* Creates a default content type mapping by file extension.
 	*
@@ -17697,8 +17452,7 @@ MAX: 9026 };
 			}
 		}
 	});
-	//#endregion
-	//#region src/file/content-types/override/override.ts
+	// src/file/content-types/override/override.ts
 	/**
 	* Creates a content type override for a specific part.
 	*
@@ -17734,8 +17488,7 @@ MAX: 9026 };
 			}
 		}
 	});
-	//#endregion
-	//#region src/file/content-types/content-types.ts
+	// src/file/content-types/content-types.ts
 	/**
 	* Content Types module for Open Packaging Conventions.
 	*
@@ -17835,8 +17588,7 @@ MAX: 9026 };
 			this.root.push(createOverride("application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml", `/word/header${index}.xml`));
 		}
 	};
-	//#endregion
-	//#region src/file/document/document-attributes.ts
+	// src/file/document/document-attributes.ts
 	/**
 	* Document attributes module for WordprocessingML documents.
 	*
@@ -17912,8 +17664,7 @@ MAX: 9026 };
 			_defineProperty(this, "xmlKeys", _objectSpread2({ Ignorable: "mc:Ignorable" }, Object.fromEntries(Object.keys(DocumentAttributeNamespaces).map((key) => [key, `xmlns:${key}`]))));
 		}
 	};
-	//#endregion
-	//#region src/file/core-properties/properties.ts
+	// src/file/core-properties/properties.ts
 	/**
 	* Represents the core properties of a WordprocessingML document.
 	*
@@ -18000,8 +17751,7 @@ MAX: 9026 };
 			this.root.push(dateTimeValue(/* @__PURE__ */ new Date()));
 		}
 	};
-	//#endregion
-	//#region src/file/custom-properties/custom-properties-attributes.ts
+	// src/file/custom-properties/custom-properties-attributes.ts
 	/**
 	* Custom Properties Attributes module for WordprocessingML documents.
 	*
@@ -18026,8 +17776,7 @@ MAX: 9026 };
 			});
 		}
 	};
-	//#endregion
-	//#region src/file/custom-properties/custom-property-attributes.ts
+	// src/file/custom-properties/custom-property-attributes.ts
 	/**
 	* Custom Property Attributes module for WordprocessingML documents.
 	*
@@ -18054,8 +17803,7 @@ MAX: 9026 };
 			});
 		}
 	};
-	//#endregion
-	//#region src/file/custom-properties/custom-property.ts
+	// src/file/custom-properties/custom-property.ts
 	/**
 	* Custom Property module for WordprocessingML documents.
 	*
@@ -18114,8 +17862,7 @@ MAX: 9026 };
 			this.root.push(value);
 		}
 	};
-	//#endregion
-	//#region src/file/custom-properties/custom-properties.ts
+	// src/file/custom-properties/custom-properties.ts
 	/**
 	* Custom Properties module for WordprocessingML documents.
 	*
@@ -18170,8 +17917,7 @@ MAX: 9026 };
 			this.properties.push(new CustomProperty(this.nextId++, property));
 		}
 	};
-	//#endregion
-	//#region src/file/document/body/section-properties/properties/column.ts
+	// src/file/document/body/section-properties/properties/column.ts
 	/**
 	* Column module for WordprocessingML section properties.
 	*
@@ -18226,8 +17972,7 @@ MAX: 9026 };
 			}));
 		}
 	};
-	//#endregion
-	//#region src/file/document-bibliography/document-bibliography.ts
+	// src/file/document-bibliography/document-bibliography.ts
 	/**
 	* Document bibliography module: the sources that a document's citations and bibliographies refer to.
 	*
@@ -18278,8 +18023,7 @@ MAX: 9026 };
 			})]
 		})]
 	});
-	//#endregion
-	//#region src/file/document-macros/document-macros.ts
+	// src/file/document-macros/document-macros.ts
 	/**
 	* Document macros module: a document's VBA macros, which make it a macro-enabled document (.docm).
 	*
@@ -18330,8 +18074,7 @@ MAX: 9026 };
 			children: Object.entries(EVENT_ELEMENTS).filter(([event]) => events.includes(event)).map(([, name]) => new BuilderElement({ name }))
 		})]
 	});
-	//#endregion
-	//#region src/file/document/document-background/document-background.ts
+	// src/file/document/document-background/document-background.ts
 	/**
 	* Document background module for WordprocessingML documents.
 	*
@@ -18441,8 +18184,7 @@ MAX: 9026 };
 			]));
 		}
 	};
-	//#endregion
-	//#region src/file/document/document.ts
+	// src/file/document/document.ts
 	/**
 	* Represents the main document element in a WordprocessingML document.
 	*
@@ -18552,8 +18294,7 @@ MAX: 9026 };
 			return this.body;
 		}
 	};
-	//#endregion
-	//#region src/file/document-wrapper.ts
+	// src/file/document-wrapper.ts
 	/**
 	* Document wrapper module for WordprocessingML documents.
 	*
@@ -18593,8 +18334,7 @@ MAX: 9026 };
 			return this.relationships;
 		}
 	};
-	//#endregion
-	//#region src/file/endnotes/endnotes-attributes.ts
+	// src/file/endnotes/endnotes-attributes.ts
 	var EndnotesAttributes = class extends XmlAttributeComponent {
 		constructor(..._args) {
 			super(..._args);
@@ -18619,8 +18359,7 @@ MAX: 9026 };
 			});
 		}
 	};
-	//#endregion
-	//#region src/file/footnotes/footnote/note-paragraph.ts
+	// src/file/footnotes/footnote/note-paragraph.ts
 	/**
 	* The first paragraph of a footnote or endnote, written with the run that shows the note's number before its content.
 	*
@@ -18648,8 +18387,7 @@ MAX: 9026 };
 			] };
 		}
 	};
-	//#endregion
-	//#region src/file/endnotes/endnote/endnote-attributes.ts
+	// src/file/endnotes/endnote/endnote-attributes.ts
 	var EndnoteAttributes = class extends XmlAttributeComponent {
 		constructor(..._args) {
 			super(..._args);
@@ -18659,16 +18397,14 @@ MAX: 9026 };
 			});
 		}
 	};
-	//#endregion
-	//#region src/file/endnotes/endnote/run/endnote-ref-run.ts
+	// src/file/endnotes/endnote/run/endnote-ref-run.ts
 	var EndnoteRefRun = class extends Run {
 		constructor() {
 			super({ style: "EndnoteReference" });
 			this.root.push(new EndnoteReference());
 		}
 	};
-	//#endregion
-	//#region src/file/endnotes/endnote/endnote.ts
+	// src/file/endnotes/endnote/endnote.ts
 	var EndnoteType = {
 		SEPARATOR: "separator",
 		CONTINUATION_SEPARATOR: "continuationSeparator"
@@ -18683,8 +18419,7 @@ MAX: 9026 };
 			for (const [index, child] of options.children.entries()) this.root.push(index === 0 ? new FirstNoteParagraph(child, new EndnoteRefRun()) : child);
 		}
 	};
-	//#endregion
-	//#region src/file/footnotes/footnote/run/continuation-seperator.ts
+	// src/file/footnotes/footnote/run/continuation-seperator.ts
 	/**
 	* Footnote continuation separator module for WordprocessingML documents.
 	*
@@ -18713,8 +18448,7 @@ MAX: 9026 };
 			super("w:continuationSeparator");
 		}
 	};
-	//#endregion
-	//#region src/file/footnotes/footnote/run/continuation-seperator-run.ts
+	// src/file/footnotes/footnote/run/continuation-seperator-run.ts
 	/**
 	* Footnote continuation separator run module for WordprocessingML documents.
 	*
@@ -18739,8 +18473,7 @@ MAX: 9026 };
 			this.root.push(new ContinuationSeperator());
 		}
 	};
-	//#endregion
-	//#region src/file/footnotes/footnote/run/seperator.ts
+	// src/file/footnotes/footnote/run/seperator.ts
 	/**
 	* Footnote separator module for WordprocessingML documents.
 	*
@@ -18769,8 +18502,7 @@ MAX: 9026 };
 			super("w:separator");
 		}
 	};
-	//#endregion
-	//#region src/file/footnotes/footnote/run/seperator-run.ts
+	// src/file/footnotes/footnote/run/seperator-run.ts
 	/**
 	* Footnote separator run module for WordprocessingML documents.
 	*
@@ -18794,8 +18526,7 @@ MAX: 9026 };
 			this.root.push(new Seperator());
 		}
 	};
-	//#endregion
-	//#region src/file/endnotes/endnotes.ts
+	// src/file/endnotes/endnotes.ts
 	var Endnotes = class extends XmlComponent {
 		constructor() {
 			super("w:endnotes");
@@ -18885,8 +18616,7 @@ MAX: 9026 };
 			return xml;
 		}
 	};
-	//#endregion
-	//#region src/file/endnotes-wrapper.ts
+	// src/file/endnotes-wrapper.ts
 	var EndnotesWrapper = class {
 		constructor() {
 			_defineProperty(this, "endnotes", void 0);
@@ -18901,8 +18631,7 @@ MAX: 9026 };
 			return this.relationships;
 		}
 	};
-	//#endregion
-	//#region src/file/footer/footer-attributes.ts
+	// src/file/footer/footer-attributes.ts
 	/**
 	* Component for managing XML namespace attributes on footer elements.
 	*
@@ -18946,8 +18675,7 @@ MAX: 9026 };
 			});
 		}
 	};
-	//#endregion
-	//#region src/file/footer/footer.ts
+	// src/file/footer/footer.ts
 	/**
 	* Footer module for WordprocessingML documents.
 	*
@@ -19035,8 +18763,7 @@ MAX: 9026 };
 			return xml;
 		}
 	};
-	//#endregion
-	//#region src/file/footer-wrapper.ts
+	// src/file/footer-wrapper.ts
 	/**
 	* Wrapper for document footers.
 	*
@@ -19080,8 +18807,7 @@ MAX: 9026 };
 			return this.media;
 		}
 	};
-	//#endregion
-	//#region src/file/footnotes/footnote/footnote-attributes.ts
+	// src/file/footnotes/footnote/footnote-attributes.ts
 	/**
 	* Footnote attributes module for WordprocessingML documents.
 	*
@@ -19107,8 +18833,7 @@ MAX: 9026 };
 			});
 		}
 	};
-	//#endregion
-	//#region src/file/footnotes/footnote/run/footnote-ref.ts
+	// src/file/footnotes/footnote/run/footnote-ref.ts
 	/**
 	* Footnote reference marker module for WordprocessingML documents.
 	*
@@ -19138,8 +18863,7 @@ MAX: 9026 };
 			super("w:footnoteRef");
 		}
 	};
-	//#endregion
-	//#region src/file/footnotes/footnote/run/footnote-ref-run.ts
+	// src/file/footnotes/footnote/run/footnote-ref-run.ts
 	/**
 	* Footnote Reference Run module for WordprocessingML documents.
 	*
@@ -19162,8 +18886,7 @@ MAX: 9026 };
 			this.root.push(new FootnoteRef());
 		}
 	};
-	//#endregion
-	//#region src/file/footnotes/footnote/footnote.ts
+	// src/file/footnotes/footnote/footnote.ts
 	/**
 	* Enumeration of footnote types.
 	*
@@ -19221,8 +18944,7 @@ MAX: 9026 };
 			for (const [index, child] of options.children.entries()) this.root.push(index === 0 ? new FirstNoteParagraph(child, new FootnoteRefRun()) : child);
 		}
 	};
-	//#endregion
-	//#region src/file/footnotes/footnotes-attributes.ts
+	// src/file/footnotes/footnotes-attributes.ts
 	/**
 	* Footnotes attributes module for WordprocessingML documents.
 	*
@@ -19264,8 +18986,7 @@ MAX: 9026 };
 			});
 		}
 	};
-	//#endregion
-	//#region src/file/footnotes/footnotes.ts
+	// src/file/footnotes/footnotes.ts
 	/**
 	* Footnotes module for WordprocessingML documents.
 	*
@@ -19413,8 +19134,7 @@ MAX: 9026 };
 			return xml;
 		}
 	};
-	//#endregion
-	//#region src/file/footnotes-wrapper.ts
+	// src/file/footnotes-wrapper.ts
 	/**
 	* Wrapper class for managing footnotes in a document.
 	*
@@ -19442,8 +19162,7 @@ MAX: 9026 };
 			return this.relationships;
 		}
 	};
-	//#endregion
-	//#region src/file/header/header-attributes.ts
+	// src/file/header/header-attributes.ts
 	/**
 	* Component for managing XML namespace attributes on header elements.
 	*
@@ -19498,8 +19217,7 @@ MAX: 9026 };
 			});
 		}
 	};
-	//#endregion
-	//#region src/file/header/header.ts
+	// src/file/header/header.ts
 	/**
 	* Header module for WordprocessingML documents.
 	*
@@ -19595,8 +19313,7 @@ MAX: 9026 };
 			return xml;
 		}
 	};
-	//#endregion
-	//#region src/file/header-wrapper.ts
+	// src/file/header-wrapper.ts
 	/**
 	* Wrapper for document headers.
 	*
@@ -19641,8 +19358,7 @@ MAX: 9026 };
 			return this.media;
 		}
 	};
-	//#endregion
-	//#region src/file/media/media.ts
+	// src/file/media/media.ts
 	/**
 	* Manages embedded media (images) in a document.
 	*
@@ -19688,8 +19404,7 @@ MAX: 9026 };
 			return Array.from(this.map.values());
 		}
 	};
-	//#endregion
-	//#region src/file/numbering/level.ts
+	// src/file/numbering/level.ts
 	/**
 	* Numbering level definitions module for WordprocessingML documents.
 	*
@@ -20061,8 +19776,7 @@ MAX: 9026 };
 	* concrete numbering instance.
 	*/
 	var LevelForOverride = class extends LevelBase {};
-	//#endregion
-	//#region src/file/numbering/multi-level-type.ts
+	// src/file/numbering/multi-level-type.ts
 	/**
 	* Multi-level type definitions for WordprocessingML documents.
 	*
@@ -20115,8 +19829,7 @@ MAX: 9026 };
 			this.root.push(new Attributes({ val: value }));
 		}
 	};
-	//#endregion
-	//#region src/file/numbering/abstract-numbering.ts
+	// src/file/numbering/abstract-numbering.ts
 	/**
 	* Abstract numbering definitions module for WordprocessingML documents.
 	*
@@ -20210,8 +19923,7 @@ MAX: 9026 };
 			for (const option of levelOptions) this.root.push(new Level(option));
 		}
 	};
-	//#endregion
-	//#region src/file/numbering/num.ts
+	// src/file/numbering/num.ts
 	/**
 	* Concrete numbering instances module for WordprocessingML documents.
 	*
@@ -20383,8 +20095,7 @@ MAX: 9026 };
 			this.root.push(new StartOverrideAttributes({ val: start }));
 		}
 	};
-	//#endregion
-	//#region src/file/numbering/numbering.ts
+	// src/file/numbering/numbering.ts
 	/**
 	* Numbering module for WordprocessingML documents.
 	*
@@ -20667,8 +20378,7 @@ MAX: 9026 };
 			return Array.from(this.referenceConfigMap.values());
 		}
 	};
-	//#endregion
-	//#region src/file/package-part/package-part.ts
+	// src/file/package-part/package-part.ts
 	var PATH_PART = /^[\w-]+$/;
 	var RESERVED_FOLDERS = /* @__PURE__ */ new Set([
 		"_rels",
@@ -20806,8 +20516,7 @@ MAX: 9026 };
 			return path.startsWith(`${from}/`) ? path.slice(from.length + 1) : `../${path}`;
 		}
 	};
-	//#endregion
-	//#region src/file/settings/compatibility-setting/compatibility-setting.ts
+	// src/file/settings/compatibility-setting/compatibility-setting.ts
 	/**
 	* Compatibility setting module for WordprocessingML documents.
 	*
@@ -20867,8 +20576,7 @@ MAX: 9026 };
 			}
 		}
 	});
-	//#endregion
-	//#region src/file/settings/compatibility.ts
+	// src/file/settings/compatibility.ts
 	/**
 	* Compatibility module for WordprocessingML documents.
 	*
@@ -20989,8 +20697,7 @@ MAX: 9026 };
 			if (options.version) this.root.push(createCompatibilitySetting(options.version));
 		}
 	};
-	//#endregion
-	//#region src/file/settings/protection-password.ts
+	// src/file/settings/protection-password.ts
 	/**
 	* Hashes the password that stops a document's protection, as Word does.
 	*
@@ -21220,8 +20927,7 @@ MAX: 9026 };
 		}
 		return [...bytes].map(() => Math.floor(Math.random() * 256));
 	};
-	//#endregion
-	//#region src/file/settings/document-protection.ts
+	// src/file/settings/document-protection.ts
 	/**
 	* Document protection module for WordprocessingML documents.
 	*
@@ -21347,8 +21053,7 @@ MAX: 9026 };
 			}));
 		}
 	};
-	//#endregion
-	//#region src/file/settings/settings.ts
+	// src/file/settings/settings.ts
 	/**
 	* Settings module for WordprocessingML documents.
 	*
@@ -21477,8 +21182,7 @@ MAX: 9026 };
 			this.root.push(new Compatibility(_objectSpread2(_objectSpread2({}, (_options$compatibilit = options.compatibility) !== null && _options$compatibilit !== void 0 ? _options$compatibilit : {}), {}, { version: (_ref = (_options$compatibilit2 = (_options$compatibilit3 = options.compatibility) === null || _options$compatibilit3 === void 0 ? void 0 : _options$compatibilit3.version) !== null && _options$compatibilit2 !== void 0 ? _options$compatibilit2 : options.compatibilityModeVersion) !== null && _ref !== void 0 ? _ref : 15 })));
 		}
 	};
-	//#endregion
-	//#region src/file/styles/style/components.ts
+	// src/file/styles/style/components.ts
 	/**
 	* Style components module for WordprocessingML documents.
 	*
@@ -21538,8 +21242,7 @@ MAX: 9026 };
 			this.root.push(new ComponentAttributes({ val: decimalNumber(value) }));
 		}
 	};
-	//#endregion
-	//#region src/file/styles/style/style.ts
+	// src/file/styles/style/style.ts
 	/**
 	* Style definition module for WordprocessingML documents.
 	*
@@ -21627,8 +21330,7 @@ MAX: 9026 };
 			if (options.quickFormat !== void 0) this.root.push(new OnOffElement("w:qFormat", options.quickFormat));
 		}
 	};
-	//#endregion
-	//#region src/file/styles/style/paragraph-style.ts
+	// src/file/styles/style/paragraph-style.ts
 	/**
 	* Paragraph style module for WordprocessingML documents.
 	*
@@ -21696,8 +21398,7 @@ MAX: 9026 };
 			this.root.push(this.runProperties);
 		}
 	};
-	//#endregion
-	//#region src/file/styles/style/character-style.ts
+	// src/file/styles/style/character-style.ts
 	/**
 	* Character style module for WordprocessingML documents.
 	*
@@ -21755,8 +21456,7 @@ MAX: 9026 };
 			this.root.push(this.runProperties);
 		}
 	};
-	//#endregion
-	//#region src/file/styles/style/default-styles.ts
+	// src/file/styles/style/default-styles.ts
 	/**
 	* Default styles module for WordprocessingML documents.
 	*
@@ -22188,8 +21888,7 @@ MAX: 9026 };
 			}));
 		}
 	};
-	//#endregion
-	//#region src/file/styles/styles.ts
+	// src/file/styles/styles.ts
 	/** The name of a formatted element, such as `w:style`, or `_attr` for its parent's attributes */
 	var nameOf$1 = (child) => typeof child === "object" ? Object.keys(child)[0] : void 0;
 	/** The attributes of a formatted `w:style` */
@@ -22300,8 +21999,7 @@ MAX: 9026 };
 			] };
 		}
 	};
-	//#endregion
-	//#region src/file/styles/defaults/paragraph-properties.ts
+	// src/file/styles/defaults/paragraph-properties.ts
 	/**
 	* Represents default paragraph properties in a WordprocessingML document.
 	*
@@ -22336,8 +22034,7 @@ MAX: 9026 };
 			}));
 		}
 	};
-	//#endregion
-	//#region src/file/styles/defaults/run-properties.ts
+	// src/file/styles/defaults/run-properties.ts
 	/**
 	* Represents default run properties in a WordprocessingML document.
 	*
@@ -22370,8 +22067,7 @@ MAX: 9026 };
 			this.root.push(new RunProperties(options));
 		}
 	};
-	//#endregion
-	//#region src/file/styles/defaults/document-defaults.ts
+	// src/file/styles/defaults/document-defaults.ts
 	/**
 	* Represents document-wide default formatting in a WordprocessingML document.
 	*
@@ -22415,8 +22111,7 @@ MAX: 9026 };
 			this.root.push(this.paragraphPropertiesDefaults);
 		}
 	};
-	//#endregion
-	//#region src/file/styles/external-styles-factory.ts
+	// src/file/styles/external-styles-factory.ts
 	/**
 	* External styles factory module for WordprocessingML documents.
 	*
@@ -22478,8 +22173,7 @@ MAX: 9026 };
 			};
 		}
 	};
-	//#endregion
-	//#region src/file/styles/factory.ts
+	// src/file/styles/factory.ts
 	/**
 	* How much more Word indents each level of a table of contents than the level above, in twips: the size of the Normal
 	* style's font. docx's Normal has no formatting, so that is the document's default size, or 10 points without one.
@@ -22586,8 +22280,7 @@ MAX: 9026 };
 			};
 		}
 	};
-	//#endregion
-	//#region src/file/theme/font-scheme.ts
+	// src/file/theme/font-scheme.ts
 	/**
 	* Font scheme module for DrawingML themes.
 	*
@@ -22778,8 +22471,7 @@ MAX: 9026 };
 		} },
 		children: [createFontCollection("headings", fonts), createFontCollection("body", fonts)]
 	});
-	//#endregion
-	//#region src/file/theme/format-scheme.ts
+	// src/file/theme/format-scheme.ts
 	/**
 	* Format scheme module for DrawingML themes.
 	*
@@ -23034,8 +22726,7 @@ MAX: 9026 };
 			})
 		]
 	});
-	//#endregion
-	//#region src/file/theme/theme.ts
+	// src/file/theme/theme.ts
 	/**
 	* Theme module for WordprocessingML documents.
 	*
@@ -23121,8 +22812,7 @@ MAX: 9026 };
 			return this.colors;
 		}
 	};
-	//#endregion
-	//#region src/util/package-paths.ts
+	// src/util/package-paths.ts
 	/**
 	* The paths of a package's parts, such as word/document.xml in a .docx file, and the targets of the relationships
 	* between them.
@@ -23174,8 +22864,7 @@ MAX: 9026 };
 	* word/theme/theme1.xml.
 	*/
 	var isSamePart = (path, other) => path.toLowerCase() === other.toLowerCase();
-	//#endregion
-	//#region node_modules/fflate/esm/browser.js
+	// node_modules/fflate/esm/browser.js
 	var u8 = Uint8Array;
 	var u16 = Uint16Array;
 	var i32 = Int32Array;
@@ -24107,8 +23796,7 @@ MAX: 9026 };
 		}
 		return files;
 	}
-	//#endregion
-	//#region src/util/zip.ts
+	// src/util/zip.ts
 	/**
 	* Zips and unzips packages, such as .docx files, and gives a zip file in the output types of `Packer` and
 	* `patchDocument`.
@@ -24188,8 +23876,7 @@ MAX: 9026 };
 		if (output === void 0) throw unsupported(type);
 		return output(data, mimeType);
 	};
-	//#endregion
-	//#region src/file/theme/read-theme.ts
+	// src/file/theme/read-theme.ts
 	/**
 	* Reads themes: the theme of a Word document or template, of another Office file, or of a theme file, as the options of
 	* a document's `theme`, so a document `docx` writes can have it, and the colors of a document's theme for the patcher.
@@ -24361,8 +24048,7 @@ MAX: 9026 };
 			fonts: fontScheme && readFonts(fontScheme)
 		});
 	};
-	//#endregion
-	//#region src/file/file.ts
+	// src/file/file.ts
 	/**
 	* File module for WordprocessingML documents.
 	*
@@ -24728,8 +24414,7 @@ MAX: 9026 };
 			return this.bibliography;
 		}
 	};
-	//#endregion
-	//#region src/file/table-of-contents/sdt-properties.ts
+	// src/file/table-of-contents/sdt-properties.ts
 	/**
 	* Structured Document Tag Properties module.
 	*
@@ -24812,8 +24497,7 @@ MAX: 9026 };
 		name: "w:docPartObj",
 		children: [new StringValueElement("w:docPartGallery", gallery), new BuilderElement({ name: "w:docPartUnique" })]
 	});
-	//#endregion
-	//#region src/file/table-of-contents/table-of-contents.ts
+	// src/file/table-of-contents/table-of-contents.ts
 	/**
 	* Table of Contents module for WordprocessingML documents.
 	*
@@ -24962,8 +24646,7 @@ MAX: 9026 };
 			return run;
 		}
 	};
-	//#endregion
-	//#region src/file/table-of-contents/table-of-contents-properties.ts
+	// src/file/table-of-contents/table-of-contents-properties.ts
 	/**
 	* Table of Contents Properties module.
 	*
@@ -25000,8 +24683,7 @@ MAX: 9026 };
 			this.level = level;
 		}
 	};
-	//#endregion
-	//#region src/file/header.ts
+	// src/file/header.ts
 	/**
 	* Represents a document header.
 	*
@@ -25048,8 +24730,7 @@ MAX: 9026 };
 			this.options = options;
 		}
 	};
-	//#endregion
-	//#region src/file/footnotes/footnote/run/reference-run.ts
+	// src/file/footnotes/footnote/run/reference-run.ts
 	/**
 	* Represents the attributes for a footnote reference element.
 	*
@@ -25147,8 +24828,7 @@ MAX: 9026 };
 			}
 		}
 	};
-	//#endregion
-	//#region src/file/endnotes/endnote/run/reference-run.ts
+	// src/file/endnotes/endnote/run/reference-run.ts
 	var EndnoteReferenceRunAttributes = class extends XmlAttributeComponent {
 		constructor(..._args) {
 			super(..._args);
@@ -25204,8 +24884,7 @@ MAX: 9026 };
 			}
 		}
 	};
-	//#endregion
-	//#region src/file/checkbox/checkbox-symbol.ts
+	// src/file/checkbox/checkbox-symbol.ts
 	/**
 	* CheckBox symbol module for WordprocessingML documents.
 	*
@@ -25266,8 +24945,7 @@ MAX: 9026 };
 			else this.root.push(new CheckboxSymbolAttributes({ val }));
 		}
 	};
-	//#endregion
-	//#region src/file/checkbox/checkbox-util.ts
+	// src/file/checkbox/checkbox-util.ts
 	/**
 	* CheckBox utility module for WordprocessingML documents.
 	*
@@ -25328,8 +25006,7 @@ MAX: 9026 };
 			this.root.push(new CheckBoxSymbolElement("w14:uncheckedState", symbol, font));
 		}
 	};
-	//#endregion
-	//#region src/file/checkbox/checkbox.ts
+	// src/file/checkbox/checkbox.ts
 	/**
 	* CheckBox module for WordprocessingML documents.
 	*
@@ -25411,8 +25088,7 @@ MAX: 9026 };
 			this.root.push(content);
 		}
 	};
-	//#endregion
-	//#region src/file/vml/vml-values.ts
+	// src/file/vml/vml-values.ts
 	/**
 	* Converts a boolean into the VML `t`/`f` representation.
 	*
@@ -25430,8 +25106,7 @@ MAX: 9026 };
 	* ```
 	*/
 	var vmlTrueFalse = (value) => value === void 0 ? void 0 : value ? "t" : "f";
-	//#endregion
-	//#region src/file/vml/pict/pict.ts
+	// src/file/vml/pict/pict.ts
 	/**
 	* Picture element module for WordprocessingML documents.
 	*
@@ -25477,8 +25152,7 @@ MAX: 9026 };
 		name: "w:pict",
 		children
 	});
-	//#endregion
-	//#region src/file/vml/shape/vml-shape-style.ts
+	// src/file/vml/shape/vml-shape-style.ts
 	/**
 	* Maps VmlShapeStyle property names to their corresponding CSS-style property names.
 	* Used internally for converting TypeScript-friendly property names to VML style attributes.
@@ -25524,8 +25198,7 @@ MAX: 9026 };
 	* ```
 	*/
 	var formatVmlShapeStyle = (style) => style ? Object.entries(style).filter(([, value]) => value !== void 0).map(([key, value]) => `${STYLE_KEY_MAP[key]}:${value}`).join(";") : void 0;
-	//#endregion
-	//#region src/file/vml/shape/vml-shape.ts
+	// src/file/vml/shape/vml-shape.ts
 	/**
 	* VML shape module for WordprocessingML documents.
 	*
@@ -25647,8 +25320,7 @@ MAX: 9026 };
 		},
 		children
 	});
-	//#endregion
-	//#region src/file/textbox/pict-element/pict-element.ts
+	// src/file/textbox/pict-element/pict-element.ts
 	/**
 	* Picture element module for WordprocessingML documents.
 	*
@@ -25692,8 +25364,7 @@ MAX: 9026 };
 	* ```
 	*/
 	var createPictElement = ({ shape }) => createPict({ children: [shape] });
-	//#endregion
-	//#region src/file/textbox/texbox-content/textbox-content.ts
+	// src/file/textbox/texbox-content/textbox-content.ts
 	/**
 	* Creates a textbox content element containing block-level content.
 	*
@@ -25722,8 +25393,7 @@ MAX: 9026 };
 		name: "w:txbxContent",
 		children
 	});
-	//#endregion
-	//#region src/file/textbox/vml-textbox/vml-texbox.ts
+	// src/file/textbox/vml-textbox/vml-texbox.ts
 	/**
 	* Creates a VML textbox element.
 	*
@@ -25776,8 +25446,7 @@ MAX: 9026 };
 		},
 		children: [createTextboxContent({ children })]
 	});
-	//#endregion
-	//#region src/file/textbox/shape/shape.ts
+	// src/file/textbox/shape/shape.ts
 	/** Identifier of the text box shape type as referenced by shapes. */
 	var SHAPE_TYPE = "#_x0000_t202";
 	/**
@@ -25833,8 +25502,7 @@ MAX: 9026 };
 			children
 		})]
 	});
-	//#endregion
-	//#region src/file/textbox/textbox.ts
+	// src/file/textbox/textbox.ts
 	/**
 	* Textbox module for WordprocessingML documents.
 	*
@@ -25930,8 +25598,7 @@ MAX: 9026 };
 			return elementOf(context.stack[context.stack.length - 1]) === "w:p" ? this.run.prepForXml(context) : super.prepForXml(context);
 		}
 	};
-	//#endregion
-	//#region src/file/fonts/obfuscate-ttf-to-odttf.ts
+	// src/file/fonts/obfuscate-ttf-to-odttf.ts
 	/**
 	* Font obfuscation module for embedding fonts in WordprocessingML documents.
 	*
@@ -25982,8 +25649,7 @@ MAX: 9026 };
 		out.set(buf.slice(obfuscatedEndOffset), obfuscatedStartOffset + obfuscatedBytes.length);
 		return out;
 	};
-	//#endregion
-	//#region src/export/formatter.ts
+	// src/export/formatter.ts
 	/**
 	* Converts XML components into serializable objects ready for XML generation.
 	*
@@ -26013,8 +25679,7 @@ MAX: 9026 };
 			else throw Error("XMLComponent did not format correctly");
 		}
 	};
-	//#endregion
-	//#region src/export/packer/placeholders.ts
+	// src/export/packer/placeholders.ts
 	/**
 	* Placeholder module for the `{key}` tokens docx writes before it knows an image's or a list's id.
 	*
@@ -26040,8 +25705,7 @@ MAX: 9026 };
 	* @returns The key of every placeholder in the XML
 	*/
 	var findPlaceholders = (xmlData) => new Set(Array.from(xmlData.matchAll(PLACEHOLDER), ([, key]) => key));
-	//#endregion
-	//#region src/export/packer/image-replacer.ts
+	// src/export/packer/image-replacer.ts
 	/**
 	* Replaces image placeholders with relationship IDs in XML content.
 	*
@@ -26080,8 +25744,7 @@ MAX: 9026 };
 			return media.Array.filter((image) => placeholders.has(image.fileName));
 		}
 	};
-	//#endregion
-	//#region src/export/packer/numbering-replacer.ts
+	// src/export/packer/numbering-replacer.ts
 	/**
 	* Replaces numbering instance placeholders with actual numbering IDs in XML content.
 	*
@@ -26110,8 +25773,7 @@ MAX: 9026 };
 			return replacePlaceholders(xmlData, new Map(concreteNumberings.map(({ reference, instance, restartedListId, numId }) => [listKey(reference, instance, restartedListId), numId.toString()])));
 		}
 	};
-	//#endregion
-	//#region src/export/packer/package-part-writer.ts
+	// src/export/packer/package-part-writer.ts
 	var formatter$4 = new Formatter();
 	/**
 	* Formats a part's XML, with the relationships that anything in it that refers to other parts adds to.
@@ -26163,8 +25825,7 @@ MAX: 9026 };
 		if (parts.length === 0) return [];
 		return [...parts.flatMap(({ part, path }) => xmlifyPackagePart(file, part, path, prettify)), ...xmlifyPackageParts(file, prettify, from + parts.length)];
 	};
-	//#endregion
-	//#region src/export/packer/next-compiler.ts
+	// src/export/packer/next-compiler.ts
 	var _excluded = ["PackageParts"];
 	/**
 	* Compiles File objects into the files of OOXML-compliant packages.
@@ -26714,8 +26375,7 @@ MAX: 9026 };
 			});
 		}
 	};
-	//#endregion
-	//#region src/export/packer/stream.ts
+	// src/export/packer/stream.ts
 	var import_events = (/* @__PURE__ */ __commonJSMin(((exports, module) => {
 		var R = typeof Reflect === "object" ? Reflect : null;
 		var ReflectApply = R && typeof R.apply === "function" ? R.apply : function ReflectApply(target, receiver, args) {
@@ -27088,8 +26748,7 @@ MAX: 9026 };
 			return dest;
 		}
 	};
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/asyncToGenerator.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/asyncToGenerator.js
 	function asyncGeneratorStep(n, t, e, r, o, a, c) {
 		try {
 			var i = n[a](c), u = i.value;
@@ -27114,8 +26773,7 @@ MAX: 9026 };
 			});
 		};
 	}
-	//#endregion
-	//#region src/export/packer/packer.ts
+	// src/export/packer/packer.ts
 	/**
 	* Prettify options for formatting XML output.
 	*
@@ -27250,8 +26908,7 @@ MAX: 9026 };
 		}
 	};
 	_defineProperty(Packer, "compiler", new Compiler());
-	//#endregion
-	//#region src/patcher/bookmark-ids.ts
+	// src/patcher/bookmark-ids.ts
 	var bookmarkIdOf = (element) => {
 		var _element$attributes;
 		if (element.name !== "w:bookmarkStart" && element.name !== "w:bookmarkEnd") return;
@@ -27299,8 +26956,7 @@ MAX: 9026 };
 		};
 		return (elements) => elements.map(renumber);
 	};
-	//#endregion
-	//#region src/patcher/util.ts
+	// src/patcher/util.ts
 	/**
 	* Utility functions for XML manipulation in document patching.
 	*
@@ -27393,8 +27049,7 @@ MAX: 9026 };
 		(_parent$elements = parent.elements) !== null && _parent$elements !== void 0 || (parent.elements = []);
 		return parent.elements;
 	};
-	//#endregion
-	//#region src/patcher/content-types-manager.ts
+	// src/patcher/content-types-manager.ts
 	/**
 	* Appends a content type definition to the [Content_Types].xml structure.
 	*
@@ -27466,8 +27121,7 @@ MAX: 9026 };
 			return !(el.name === "Override" && String((_el$attributes$PartNa = (_el$attributes4 = el.attributes) === null || _el$attributes4 === void 0 ? void 0 : _el$attributes4.PartName) !== null && _el$attributes$PartNa !== void 0 ? _el$attributes$PartNa : "").toLowerCase() === partName.toLowerCase());
 		});
 	};
-	//#endregion
-	//#region src/patcher/relationship-manager.ts
+	// src/patcher/relationship-manager.ts
 	/**
 	* Extracts the numeric ID from a relationship ID string.
 	*
@@ -27552,8 +27206,7 @@ MAX: 9026 };
 			elements: []
 		}]
 	});
-	//#endregion
-	//#region src/patcher/core-properties.ts
+	// src/patcher/core-properties.ts
 	var CORE_PROPERTIES_RELATIONSHIP_TYPE = "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties";
 	var CORE_PROPERTIES_CONTENT_TYPE = "application/vnd.openxmlformats-package.core-properties+xml";
 	var PACKAGE_RELATIONSHIPS_PATH = "_rels/.rels";
@@ -27695,8 +27348,7 @@ MAX: 9026 };
 			});
 		}
 	};
-	//#endregion
-	//#region src/patcher/drawing-ids.ts
+	// src/patcher/drawing-ids.ts
 	var DRAWINGS = /* @__PURE__ */ new Set(["wp:inline", "wp:anchor"]);
 	var ID_ELEMENTS = /* @__PURE__ */ new Set([
 		"wp:docPr",
@@ -27770,8 +27422,7 @@ MAX: 9026 };
 		};
 		return (elements) => elements.map(renumber);
 	};
-	//#endregion
-	//#region src/patcher/patch-type.ts
+	// src/patcher/patch-type.ts
 	/**
 	* The types of patch `patchDocument` applies.
 	*
@@ -27800,8 +27451,7 @@ MAX: 9026 };
 		*/
 		DRAWING: "drawing"
 	};
-	//#endregion
-	//#region src/patcher/drawing-patch.ts
+	// src/patcher/drawing-patch.ts
 	/**
 	* Patches for drawings in a template whose alt text holds a placeholder, such as a chart made in Word whose data a patch
 	* replaces, and the parts of the template's package they read and change.
@@ -28037,8 +27687,7 @@ MAX: 9026 };
 			contents.removeRelationships(drawing.part.path, new Set([...referenced].filter((id) => !used.has(id))));
 		}
 	};
-	//#endregion
-	//#region src/patcher/load-zip.ts
+	// src/patcher/load-zip.ts
 	var isStream = (data) => typeof data === "object" && data !== null && "on" in data && typeof data.on === "function";
 	var isZipArchive = (data) => typeof data === "object" && data !== null && "generateAsync" in data && typeof data.generateAsync === "function";
 	var isBlob = (data) => ["[object Blob]", "[object File]"].includes(Object.prototype.toString.call(data));
@@ -28097,8 +27746,7 @@ MAX: 9026 };
 			return _ref2.apply(this, arguments);
 		};
 	}();
-	//#endregion
-	//#region src/patcher/notes.ts
+	// src/patcher/notes.ts
 	/**
 	* Footnotes and endnotes for content inserted into an existing document.
 	*
@@ -28257,8 +27905,7 @@ MAX: 9026 };
 			}
 		};
 	};
-	//#endregion
-	//#region src/patcher/numbering.ts
+	// src/patcher/numbering.ts
 	/**
 	* Lists in content inserted into an existing document.
 	*
@@ -28370,8 +28017,7 @@ MAX: 9026 };
 			write
 		};
 	};
-	//#endregion
-	//#region src/patcher/page-numbers.ts
+	// src/patcher/page-numbers.ts
 	/**
 	* Page numbers written into a template's fields once `patchDocument` has patched it, from an estimate of its pages, as
 	* a document's are when it is written with `pageNumbers`.
@@ -28508,8 +28154,7 @@ MAX: 9026 };
 			return _ref3.apply(this, arguments);
 		};
 	}();
-	//#endregion
-	//#region src/patcher/paragraph-split-inject.ts
+	// src/patcher/paragraph-split-inject.ts
 	var TokenNotFoundError = class extends Error {
 		constructor(token) {
 			super(`Token ${token} not found`);
@@ -28585,8 +28230,7 @@ MAX: 9026 };
 			right: _objectSpread2(_objectSpread2({}, JSON.parse(JSON.stringify(runElement))), {}, { elements: splitElements.slice(splitIndex + 1) })
 		};
 	};
-	//#endregion
-	//#region src/patcher/paragraph-token-replacer.ts
+	// src/patcher/paragraph-token-replacer.ts
 	/**
 	* Replacement modes for multi-run text replacement.
 	*/
@@ -28652,8 +28296,7 @@ MAX: 9026 };
 		element.elements = createTextElementContents(text);
 		return element;
 	};
-	//#endregion
-	//#region src/patcher/run-renderer.ts
+	// src/patcher/run-renderer.ts
 	/**
 	* Renders a paragraph element into a structured representation with text content.
 	*
@@ -28727,8 +28370,7 @@ MAX: 9026 };
 		};
 	};
 	var buildNodePath = (node) => node.parent ? [...buildNodePath(node.parent), node.index] : [node.index];
-	//#endregion
-	//#region src/patcher/traverser.ts
+	// src/patcher/traverser.ts
 	var elementsToWrapper = (wrapper) => {
 		var _wrapper$element$elem, _wrapper$element$elem2;
 		return (_wrapper$element$elem = (_wrapper$element$elem2 = wrapper.element.elements) === null || _wrapper$element$elem2 === void 0 ? void 0 : _wrapper$element$elem2.map((e, i) => ({
@@ -28787,8 +28429,7 @@ MAX: 9026 };
 	* ```
 	*/
 	var findLocationOfText = (node, text) => traverse(node).filter((p) => p.text.includes(text));
-	//#endregion
-	//#region src/patcher/replacer.ts
+	// src/patcher/replacer.ts
 	var SPLIT_TOKEN = "￿";
 	/**
 	* Replaces placeholder text in XML with new content from a patch.
@@ -28987,8 +28628,7 @@ MAX: 9026 };
 	};
 	var goToParentElementFromPath = (json, path) => goToElementFromPath(json, path.slice(0, path.length - 1));
 	var getLastElementIndexFromPath = (path) => path[path.length - 1];
-	//#endregion
-	//#region src/patcher/styles.ts
+	// src/patcher/styles.ts
 	/**
 	* Styles of content inserted into an existing document.
 	*
@@ -29098,8 +28738,7 @@ MAX: 9026 };
 			write
 		};
 	};
-	//#endregion
-	//#region src/patcher/table-rows.ts
+	// src/patcher/table-rows.ts
 	var EMPTY = {
 		type: PatchType.PARAGRAPH,
 		children: []
@@ -29211,8 +28850,7 @@ MAX: 9026 };
 		var _e$name;
 		return !ELEMENTS_TO_REMOVE.includes((_e$name = e.name) !== null && _e$name !== void 0 ? _e$name : "") && !((parent === null || parent === void 0 ? void 0 : parent.name) === "w:sdtPr" && e.name === "w:id");
 	}).map((e) => _objectSpread2(_objectSpread2(_objectSpread2({}, e), e.attributes === void 0 ? {} : { attributes: Object.fromEntries(Object.entries(e.attributes).filter(([name]) => !ATTRIBUTES_TO_REMOVE.includes(name))) }), e.elements === void 0 ? {} : { elements: [...withoutIds(e.elements, e)] }));
-	//#endregion
-	//#region src/patcher/theme-colors.ts
+	// src/patcher/theme-colors.ts
 	/**
 	* Reads the colors of a document's theme, so that theme colors in patches are written with the hex color they come to
 	* in the document's own theme.
@@ -29231,8 +28869,7 @@ MAX: 9026 };
 		const theme = path === void 0 ? void 0 : (_find = [...files].find(([name]) => isSamePart(name, path))) === null || _find === void 0 ? void 0 : _find[1];
 		return theme === void 0 || isUtf16(theme) ? void 0 : themeColorValues(readThemeColorValues(decodeUtf8(theme)));
 	};
-	//#endregion
-	//#region src/patcher/trim-placeholders.ts
+	// src/patcher/trim-placeholders.ts
 	/**
 	* The first placeholder in a text, from an index on, with spaces inside its delimiters, whose key, without them, is
 	* one to patch.
@@ -29297,8 +28934,7 @@ MAX: 9026 };
 			if (text !== void 0) properties.attributes[name] = trimInText(String(text), delimiters, isDrawingKey);
 		}
 	};
-	//#endregion
-	//#region src/patcher/vml-shape-types.ts
+	// src/patcher/vml-shape-types.ts
 	var shapeTypeIdOf = (element) => {
 		var _element$attributes;
 		return element.name === "v:shapetype" && ((_element$attributes = element.attributes) === null || _element$attributes === void 0 ? void 0 : _element$attributes.id) !== void 0 ? String(element.attributes.id) : void 0;
@@ -29340,8 +28976,7 @@ MAX: 9026 };
 		};
 		return (elements) => elements.flatMap(remove);
 	};
-	//#endregion
-	//#region src/patcher/image-patch.ts
+	// src/patcher/image-patch.ts
 	/**
 	* Replaces the image of a picture in a template, such as a placeholder logo, with `patchDocument`, keeping its look.
 	*
@@ -29550,8 +29185,7 @@ MAX: 9026 };
 			if (pictureProperties !== void 0) setAltText(pictureProperties, placeholder, this.altText);
 		}
 	};
-	//#endregion
-	//#region src/patcher/from-docx.ts
+	// src/patcher/from-docx.ts
 	/**
 	* Throws if a patch, or a patch for a field of one of its rows, isn't one `patchDocument` can apply, such as a patch
 	* from JavaScript without its children.
@@ -29857,8 +29491,7 @@ MAX: 9026 };
 			return _ref.apply(this, arguments);
 		};
 	}();
-	//#endregion
-	//#region src/patcher/patch-detector.ts
+	// src/patcher/patch-detector.ts
 	/**
 	* Patch detector for discovering placeholders in document templates.
 	*
@@ -29917,7 +29550,6 @@ MAX: 9026 };
 		const pattern = new RegExp("(?<=\\{\\{).+?(?=\\}\\})", "gs");
 		return (_text$match = text.match(pattern)) !== null && _text$match !== void 0 ? _text$match : [];
 	};
-	//#endregion
 	exports.AbstractNumbering = AbstractNumbering;
 	exports.AlignmentType = AlignmentType;
 	exports.AnnotationReference = AnnotationReference;

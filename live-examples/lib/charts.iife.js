@@ -1,6 +1,6 @@
 var docxCharts = (function(exports, docx) {
 	Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
-	//#region src/charts/chart-categories.ts
+	// src/charts/chart-categories.ts
 	var isGroup$1 = (category) => typeof category === "object" && category !== null && !(category instanceof Date);
 	/**
 	* Whether the categories are groups of categories.
@@ -20,8 +20,7 @@ var docxCharts = (function(exports, docx) {
 	* Each category's label with its groups', from the outermost in, such as "2025 Q1", as a screen reader reads it.
 	*/
 	var groupedCategoryLabelsOf = (groups) => groups.flatMap(({ name, categories }) => (isCategoryGroups(categories) ? groupedCategoryLabelsOf(categories) : categories.map(String)).map((label) => `${name} ${label}`));
-	//#endregion
-	//#region src/charts/chart-dates.ts
+	// src/charts/chart-dates.ts
 	/**
 	* Dates as a chart's categories: Excel's serial numbers for them, and the unit a date axis spaces them by.
 	*
@@ -66,8 +65,7 @@ var docxCharts = (function(exports, docx) {
 		if (!dates.every(startsOf)) return "days";
 		return dates.every((date) => date.getUTCMonth() === 0) ? "years" : "months";
 	};
-	//#endregion
-	//#region src/charts/chart-stock.ts
+	// src/charts/chart-stock.ts
 	var DEFAULT_NAMES = {
 		volume: "Volume",
 		open: "Open",
@@ -95,8 +93,7 @@ var docxCharts = (function(exports, docx) {
 			values
 		}];
 	});
-	//#endregion
-	//#region src/charts/chart-legend.ts
+	// src/charts/chart-legend.ts
 	var TRENDLINE_NAMES = {
 		linear: "Linear",
 		exponential: "Expon.",
@@ -141,8 +138,7 @@ var docxCharts = (function(exports, docx) {
 			}
 		}
 	};
-	//#endregion
-	//#region src/charts/chart-checks.ts
+	// src/charts/chart-checks.ts
 	/**
 	* Checks a chart's options, so mistakes show up where the chart is made rather than when the document is opened.
 	*
@@ -772,8 +768,7 @@ var docxCharts = (function(exports, docx) {
 		}
 		checkHiddenEntries(options);
 	};
-	//#endregion
-	//#region src/charts/workbook/cell-reference.ts
+	// src/charts/workbook/cell-reference.ts
 	/**
 	* References to the cells of the embedded workbook's sheet, as a chart's formulas and the sheet's cells write them.
 	*
@@ -818,8 +813,7 @@ var docxCharts = (function(exports, docx) {
 		const first = `$${columnName(firstColumn)}$${firstRow + 1}`;
 		return rows === 1 && firstColumn === lastColumn ? `${SHEET_NAME}!${first}` : `${SHEET_NAME}!${first}:$${columnName(lastColumn)}$${firstRow + rows}`;
 	};
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/typeof.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/typeof.js
 	function _typeof(o) {
 		"@babel/helpers - typeof";
 		return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o) {
@@ -828,8 +822,7 @@ var docxCharts = (function(exports, docx) {
 			return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o;
 		}, _typeof(o);
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/toPrimitive.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/toPrimitive.js
 	function toPrimitive(t, r) {
 		if ("object" != _typeof(t) || !t) return t;
 		var e = t[Symbol.toPrimitive];
@@ -840,14 +833,12 @@ var docxCharts = (function(exports, docx) {
 		}
 		return ("string" === r ? String : Number)(t);
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/toPropertyKey.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/toPropertyKey.js
 	function toPropertyKey(t) {
 		var i = toPrimitive(t, "string");
 		return "symbol" == _typeof(i) ? i : i + "";
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/defineProperty.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/defineProperty.js
 	function _defineProperty(e, r, t) {
 		return (r = toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
 			value: t,
@@ -856,8 +847,7 @@ var docxCharts = (function(exports, docx) {
 			writable: !0
 		}) : e[r] = t, e;
 	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/objectSpread2.js
+	// \0@oxc-project+runtime@0.155.0/helpers/esm/objectSpread2.js
 	function ownKeys(e, r) {
 		var t = Object.keys(e);
 		if (Object.getOwnPropertySymbols) {
@@ -879,8 +869,7 @@ var docxCharts = (function(exports, docx) {
 		}
 		return e;
 	}
-	//#endregion
-	//#region src/charts/chart-data.ts
+	// src/charts/chart-data.ts
 	/**
 	* Lays a chart's data out as Word does in the embedded workbook's sheet: the cells, and the references to them that the
 	* chart's series are written with, with the values each holds. Plain data, not XML.
@@ -1105,8 +1094,7 @@ var docxCharts = (function(exports, docx) {
 			default: return createCategoryChartData(options.categories, options.series);
 		}
 	};
-	//#endregion
-	//#region src/charts/chart-elements.ts
+	// src/charts/chart-elements.ts
 	/**
 	* Small builders for the elements charts are written with.
 	*
@@ -1135,8 +1123,7 @@ var docxCharts = (function(exports, docx) {
 	* An element that holds text, such as `<c:v>Sales</c:v>`.
 	*/
 	var createText = (name, text) => new docx.StringContainer(name, text);
-	//#endregion
-	//#region src/charts/chart-color.ts
+	// src/charts/chart-color.ts
 	/**
 	* Colours for series, bars and slices.
 	*
@@ -1265,8 +1252,7 @@ var docxCharts = (function(exports, docx) {
 			children: changes.map(createColorChange)
 		});
 	};
-	//#endregion
-	//#region src/charts/chart-style.ts
+	// src/charts/chart-style.ts
 	var EMUS_PER_POINT = 12700;
 	/**
 	* A colour of the chart's theme, by the name Office's chart styles use (`tx1` for text, `bg1` for the background), as a
@@ -1613,8 +1599,7 @@ var docxCharts = (function(exports, docx) {
 		createElement("a:lstStyle"),
 		createElement("a:p", {}, [createElement("a:pPr", {}, [createElement("a:defRPr")]), createElement("a:endParaRPr", { lang: "en-US" })])
 	]);
-	//#endregion
-	//#region src/charts/chart-text.ts
+	// src/charts/chart-text.ts
 	/**
 	* The font of a piece of the chart's text: its own, over the chart's.
 	*/
@@ -1788,8 +1773,7 @@ var docxCharts = (function(exports, docx) {
 			title: ""
 		};
 	};
-	//#endregion
-	//#region src/charts/chart-reference.ts
+	// src/charts/chart-reference.ts
 	/**
 	* Elements that refer to a part of the package, and add it to the package when they are written.
 	*
@@ -1818,8 +1802,7 @@ var docxCharts = (function(exports, docx) {
 			return super.prepForXml(context);
 		}
 	};
-	//#endregion
-	//#region src/charts/plot-area/series.ts
+	// src/charts/plot-area/series.ts
 	/**
 	* A number as the chart's caches and the sheet's cells write it: JavaScript's shortest form that reads back as the same
 	* number.
@@ -1924,8 +1907,7 @@ var docxCharts = (function(exports, docx) {
 	* A series' categories and values (`c:cat` and `c:val`).
 	*/
 	var createCategoriesAndValues = (data) => [createDataSource("c:cat", data.categories), createDataSource("c:val", data.values)];
-	//#endregion
-	//#region src/charts/plot-area/axes.ts
+	// src/charts/plot-area/axes.ts
 	/** The primary axes, which every chart with axes has */
 	var PRIMARY_AXES = {
 		category: 1,
@@ -2133,8 +2115,7 @@ var docxCharts = (function(exports, docx) {
 		scatter: true,
 		font
 	}, options.yAxis)];
-	//#endregion
-	//#region src/charts/plot-area/chart-group.ts
+	// src/charts/plot-area/chart-group.ts
 	/**
 	* How line and area charts' series are grouped (`ST_Grouping`). Bar charts call `"none"` `clustered`.
 	*/
@@ -2155,8 +2136,7 @@ var docxCharts = (function(exports, docx) {
 		options,
 		data: data[index]
 	}));
-	//#endregion
-	//#region src/charts/plot-area/data-labels.ts
+	// src/charts/plot-area/data-labels.ts
 	var BESIDE_POINTS = [
 		"center",
 		"left",
@@ -2376,8 +2356,7 @@ var docxCharts = (function(exports, docx) {
 	* A chart group's labels, which show nothing, as Word writes them. Each series' own labels come first.
 	*/
 	var createGroupDataLabels = (leaderLines) => createElement("c:dLbls", {}, createShown({}, leaderLines));
-	//#endregion
-	//#region src/charts/plot-area/error-bars.ts
+	// src/charts/plot-area/error-bars.ts
 	var VALUE_TYPES = {
 		fixed: "fixedVal",
 		percentage: "percentage",
@@ -2432,8 +2411,7 @@ var docxCharts = (function(exports, docx) {
 			createErrorBarsProperties(errorBars.line)
 		])];
 	};
-	//#endregion
-	//#region src/charts/plot-area/trendline.ts
+	// src/charts/plot-area/trendline.ts
 	var TRENDLINE_OOXML_NAMES = {
 		linear: "linear",
 		exponential: "exp",
@@ -2523,8 +2501,7 @@ var docxCharts = (function(exports, docx) {
 			...equation || rSquared ? [createTrendlineLabel(trendline, font)] : []
 		]);
 	});
-	//#endregion
-	//#region src/charts/plot-area/bubble-chart.ts
+	// src/charts/plot-area/bubble-chart.ts
 	/**
 	* A bubble chart, with two value axes. Each bubble is filled with its series' colour at 75% opacity, as Office draws
 	* them, so the bubbles behind show through.
@@ -2599,8 +2576,7 @@ var docxCharts = (function(exports, docx) {
 			axes: createPointAxes(options, font)
 		};
 	};
-	//#endregion
-	//#region src/charts/plot-area/area-chart.ts
+	// src/charts/plot-area/area-chart.ts
 	/**
 	* A group of areas.
 	*
@@ -2652,8 +2628,7 @@ var docxCharts = (function(exports, docx) {
 		createValue("c:axId", axes.category),
 		createValue("c:axId", axes.value)
 	]);
-	//#endregion
-	//#region src/charts/plot-area/bar-chart.ts
+	// src/charts/plot-area/bar-chart.ts
 	/**
 	* A bar's own colour (`c:dPt`), as Word writes it when one bar of a series is given a colour of its own.
 	*/
@@ -2737,8 +2712,7 @@ var docxCharts = (function(exports, docx) {
 			createValue("c:axId", axes.value)
 		]);
 	};
-	//#endregion
-	//#region src/charts/plot-area/line-chart.ts
+	// src/charts/plot-area/line-chart.ts
 	/**
 	* A marker for each point of a series, or none: the series' own markers, or the chart's.
 	*
@@ -2812,8 +2786,7 @@ var docxCharts = (function(exports, docx) {
 			createValue("c:axId", axes.value)
 		]);
 	};
-	//#endregion
-	//#region src/charts/plot-area/category-chart.ts
+	// src/charts/plot-area/category-chart.ts
 	var KINDS = [
 		"area",
 		"bars",
@@ -2935,8 +2908,7 @@ var docxCharts = (function(exports, docx) {
 			]
 		};
 	};
-	//#endregion
-	//#region src/charts/plot-area/pie-chart.ts
+	// src/charts/plot-area/pie-chart.ts
 	var SPLIT_TYPES = {
 		position: "pos",
 		value: "val",
@@ -3082,8 +3054,7 @@ var docxCharts = (function(exports, docx) {
 			axes: []
 		};
 	};
-	//#endregion
-	//#region src/charts/plot-area/radar-chart.ts
+	// src/charts/plot-area/radar-chart.ts
 	/**
 	* A radar chart: a spoke for each category, the category axis' gridlines, and rings at each value, the value axis'
 	* gridlines. Each series is a line around the spokes, 2.25 points wide, or a filled area.
@@ -3160,8 +3131,7 @@ var docxCharts = (function(exports, docx) {
 			}, options.valueAxis)]
 		};
 	};
-	//#endregion
-	//#region src/charts/plot-area/scatter-chart.ts
+	// src/charts/plot-area/scatter-chart.ts
 	/**
 	* A scatter chart, with two value axes. Applications draw a scatter series' line from the series' own line, whatever
 	* `c:scatterStyle` says, so a series without lines has a line with no fill, as Word's "Scatter" writes it.
@@ -3232,8 +3202,7 @@ var docxCharts = (function(exports, docx) {
 			axes: createPointAxes(options, font)
 		};
 	};
-	//#endregion
-	//#region src/charts/plot-area/stock-chart.ts
+	// src/charts/plot-area/stock-chart.ts
 	/**
 	* A stock chart: its prices, drawn by what joins them, and if it has volumes, their columns.
 	*
@@ -3355,8 +3324,7 @@ var docxCharts = (function(exports, docx) {
 			]
 		};
 	};
-	//#endregion
-	//#region src/charts/plot-area/plot-area.ts
+	// src/charts/plot-area/plot-area.ts
 	var createChartGroups = (options, data, font) => {
 		switch (options.type) {
 			case "pie":
@@ -3447,8 +3415,7 @@ var docxCharts = (function(exports, docx) {
 			createPlotAreaProperties(options.plotArea)
 		]);
 	};
-	//#endregion
-	//#region src/charts/chart-space.ts
+	// src/charts/chart-space.ts
 	var CHART_NAMESPACE = "http://schemas.openxmlformats.org/drawingml/2006/chart";
 	var RELATIONSHIPS_NAMESPACE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
 	var LEGEND_POSITIONS = {
@@ -3561,8 +3528,7 @@ var docxCharts = (function(exports, docx) {
 			new PartReference("c:externalData", workbook, { children: [createValue("c:autoUpdate", false)] })
 		]);
 	};
-	//#endregion
-	//#region src/charts/workbook/workbook.ts
+	// src/charts/workbook/workbook.ts
 	/**
 	* The embedded workbook (`word/embeddings/Microsoft_Excel_Worksheet1.xlsx`) that holds a chart's data, so Word's "Edit
 	* Data" opens it. It has one sheet, laid out as Word lays out a new chart's data, with its text in shared strings, as
@@ -3745,8 +3711,7 @@ var docxCharts = (function(exports, docx) {
 		relationshipType: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/package",
 		content: { files: createWorkbookFiles(sheet) }
 	});
-	//#endregion
-	//#region src/charts/chart-run.ts
+	// src/charts/chart-run.ts
 	/**
 	* Chart run module: native Word charts, drawn by the application from their data.
 	*
@@ -3827,8 +3792,7 @@ var docxCharts = (function(exports, docx) {
 			}));
 		}
 	};
-	//#endregion
-	//#region src/charts/template/template-xml.ts
+	// src/charts/template/template-xml.ts
 	/**
 	* An element's name, such as "c:ser", or "" for text and comments, which have none.
 	*/
@@ -3945,8 +3909,7 @@ var docxCharts = (function(exports, docx) {
 		type: "element",
 		name
 	}, Object.keys(attributes).length > 0 ? { attributes: _objectSpread2({}, attributes) } : {}), children.length > 0 ? { elements: [...children] } : {});
-	//#endregion
-	//#region src/charts/template/template-chart.ts
+	// src/charts/template/template-chart.ts
 	var barType = (group) => valueOf(childOf(group, "c:barDir")) === "bar" ? "bar" : "column";
 	var GROUPS = /* @__PURE__ */ new Map([
 		["c:barChart", barType],
@@ -4087,8 +4050,7 @@ var docxCharts = (function(exports, docx) {
 	* "#,##0" or "0.0%". Quoted and escaped text, and colours and conditions in brackets, are left out.
 	*/
 	var isDateFormat = (code) => /\[(h+|m+|s+)\]/i.test(code) || /[dmyhs]/i.test(code.replace(/"[^"]*"/g, "").replace(/\\./g, "").replace(/\[[^\]]*\]/g, "").replace(/[_*]./g, ""));
-	//#endregion
-	//#region src/charts/template/template-series.ts
+	// src/charts/template/template-series.ts
 	/**
 	* The children of every type of series, in the schema's order (`CT_BarSer`, `CT_LineSer`, `CT_AreaSer`, `CT_PieSer`,
 	* `CT_RadarSer`, `CT_ScatterSer` and `CT_BubbleSer`), as one order all of them keep.
@@ -4241,8 +4203,7 @@ var docxCharts = (function(exports, docx) {
 		});
 		return keepPointColors ? copy : withColor(copy, color);
 	};
-	//#endregion
-	//#region src/charts/template/patch-chart.ts
+	// src/charts/template/patch-chart.ts
 	/**
 	* The children of a chart part's root (`CT_ChartSpace`), in the schema's order.
 	*/
@@ -4457,8 +4418,7 @@ var docxCharts = (function(exports, docx) {
 			return names.some((name) => name === "c:dLbl" || name === "c:dLbls" || name === "c:trendlineLbl") ? "A label is linked to a cell of its workbook. Type the label in Word instead" : `Something in it refers to cells of its workbook (${names.join(" > ")})`;
 		})()}: the new data replaces the workbook`;
 	};
-	//#endregion
-	//#region src/charts/chart-data-patch.ts
+	// src/charts/chart-data-patch.ts
 	/**
 	* Replaces the data of charts in a template, such as charts made in Word, with `patchDocument`, keeping their look.
 	*
@@ -4810,7 +4770,6 @@ var docxCharts = (function(exports, docx) {
 			setAltText(drawing, this.data.description, () => describeChart(options));
 		}
 	};
-	//#endregion
 	exports.ChartDataPatch = ChartDataPatch;
 	exports.ChartRun = ChartRun;
 	return exports;
