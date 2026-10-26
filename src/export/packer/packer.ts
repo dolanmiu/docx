@@ -166,6 +166,9 @@ export class Packer {
     /**
      * Exports a document to a Node.js Stream.
      *
+     * The stream gives the document as one Node.js Buffer, then ends. Where there's no Buffer, as in a browser, it
+     * emits an `error` event instead, so use `toBlob` there.
+     *
      * @param file - The document to export
      * @param prettify - Whether to prettify the XML output
      * @param overrides - Optional array of file overrides
@@ -179,11 +182,17 @@ export class Packer {
         const stream = new LegacyStream();
         const files = this.compiler.compile(file, convertPrettifyType(prettify), overrides);
 
-        // Zipped and given after the caller has had the chance to listen, as when JSZip zipped it, asynchronously
-        new Promise((resolve) => setTimeout(resolve)).then(() => {
-            stream.emit("data", zipOutput(zipFiles(files), "nodebuffer", mimeTypeOf(file)));
-            stream.emit("end");
-        });
+        // Zipped and given after the caller has had the chance to listen, as when JSZip zipped it, asynchronously. Failing
+        // to zip, as in a browser, which has no Buffer, is the stream's error, not a rejection nothing can catch
+        new Promise((resolve) => setTimeout(resolve))
+            .then(() => zipOutput(zipFiles(files), "nodebuffer", mimeTypeOf(file)))
+            .then(
+                (data) => {
+                    stream.emit("data", data);
+                    stream.emit("end");
+                },
+                (error) => stream.emit("error", error),
+            );
 
         return stream;
     }
