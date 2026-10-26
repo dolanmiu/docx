@@ -20,7 +20,7 @@ git log --oneline "$PREVIOUS"..master
 ```
 
 - **Minor** (`9.14.0` to `9.15.0`) when any commit is a `feat:`.
-- **Patch** (`9.14.0` to `9.14.1`) when there are only fixes, docs, perf and dependency bumps.
+- **Patch** (`9.14.0` to `9.14.1`) otherwise, such as when there are only fixes, docs, chores and dependency bumps.
 - **Never major.** docx stays on v9, with no breaking changes.
 
 Tags are the bare version, such as `9.15.0`, with no `v`.
