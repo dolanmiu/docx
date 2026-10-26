@@ -15,9 +15,17 @@ const ESCAPES: ReadonlyMap<string, string> = new Map([
     [">", "&gt;"],
 ]);
 
-const escapeAll = (value: string): string => value.replace(/[&"'<>]/g, (char) => ESCAPES.get(char)!);
+// The control characters other than tab, line feed and carriage return are not allowed anywhere in an XML 1.0 document,
+// not even as character references, so they are left out: a part that has one can't be parsed, and Word can't open the
+// document. U+FFFE and U+FFFF aren't allowed either, but are kept, as the patcher writes U+FFFF as its split token
+// (`SPLIT_TOKEN` in src/patcher/replacer.ts) through stringifyXmlable and looks for it in what comes back
+const escapeAll = (value: string): string =>
+    // eslint-disable-next-line no-control-regex
+    value.replace(/[&"'<>\x00-\x08\x0B\x0C\x0E-\x1F]/g, (char) => ESCAPES.get(char) ?? "");
 
-const escapeText = (value: string): string => value.replace(/[&<>]/g, (char) => ESCAPES.get(char)!);
+const escapeText = (value: string): string =>
+    // eslint-disable-next-line no-control-regex
+    value.replace(/[&<>\x00-\x08\x0B\x0C\x0E-\x1F]/g, (char) => ESCAPES.get(char) ?? "");
 
 /**
  * Escapes a value the way the xml package did, leaving values that aren't strings, such as numbers, as they are.
