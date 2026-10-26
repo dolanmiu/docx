@@ -75,12 +75,12 @@ GitHub works out the previous release itself, so the "Full Changelog" link runs 
 ## 6. Watch the publish
 
 ```bash
-gh run list --workflow npm-publish.yml --limit 1
+gh run list --workflow npm-publish.yml --branch "$VERSION" --json databaseId,status
 gh run watch <run id> --exit-status
 npm view docx version   # must be $VERSION
 ```
 
-The workflow tests and builds, then publishes with npm's trusted publishing, so it needs no token. It takes about 5 minutes. If a job fails on something flaky, rerun it with `gh run rerun <run id> --failed`. Never delete and recreate the tag or the release to retry.
+A release's run is listed under its tag, so `--branch "$VERSION"` finds this release's run and not the last one. If it lists nothing, the run hasn't started yet, so look again in a few seconds. The workflow tests and builds, then publishes with npm's trusted publishing, so it needs no token. It takes about 5 minutes. If a job fails on something flaky, rerun it with `gh run rerun <run id> --failed`. Never delete and recreate the tag or the release to retry.
 
 ## 7. Report
 
