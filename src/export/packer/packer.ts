@@ -3,13 +3,14 @@
  *
  * @module
  */
-import { Stream } from "stream";
+import type { Stream } from "stream";
 
 import type { File } from "@file/file";
 import type { OutputByType, OutputType } from "@util/output-type";
 import { zipFiles, zipOutput } from "@util/zip";
 
 import { Compiler, type IXmlifyedFile } from "./next-compiler";
+import { Stream as LegacyStream } from "./stream";
 
 /**
  * Prettify options for formatting XML output.
@@ -175,7 +176,7 @@ export class Packer {
         prettify?: boolean | (typeof PrettifyType)[keyof typeof PrettifyType],
         overrides: readonly IXmlifyedFile[] = [],
     ): Stream {
-        const stream = new Stream();
+        const stream = new LegacyStream();
         const files = this.compiler.compile(file, convertPrettifyType(prettify), overrides);
 
         // Zipped and given after the caller has had the chance to listen, as when JSZip zipped it, asynchronously
