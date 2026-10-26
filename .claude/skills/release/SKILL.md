@@ -33,7 +33,7 @@ Pushing to `master` is blocked, so the bump goes through a PR like any other cha
 git checkout -b "chore/version-bump-$VERSION"
 npm version "$VERSION" --no-git-tag-version
 npm install
-git diff --stat   # only package.json and package-lock.json, with only the version lines changed
+git diff          # only the version line in package.json, and the two in package-lock.json
 git commit -am "chore: Version bump to $VERSION"
 git push -u origin "chore/version-bump-$VERSION"
 gh pr create --base master --title "chore: Version bump to $VERSION" --body-file <file>
