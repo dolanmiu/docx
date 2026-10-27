@@ -104,7 +104,7 @@ const doc = new Document({
 
 ### Styling the numbers
 
-A level's `style.run` formats the numbers or bullets at that level: their font, size, colour, bold and so on, with the same options as a `TextRun`. It leaves the text after them as it is.
+A level's `style.run` formats the numbers or bullets at that level: their font, size, colour, bold and so on, with a `TextRun`'s formatting options, except `highlight`, `math` and `revision`, which a level doesn't write. It leaves the text after them as it is.
 
 ```ts live
 import { AlignmentType, Document, LevelFormat, Paragraph } from "docx";
