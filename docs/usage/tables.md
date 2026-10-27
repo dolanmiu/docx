@@ -372,6 +372,34 @@ const doc = new Document({
 });
 ```
 
+#### Rows taller than a page
+
+Word never splits a row whose `height` has `rule: HeightRule.EXACT`, as the row is exactly that tall. When such a row is taller than the space left on a page, Word moves it to the top of the next page, and whatever doesn't fit there runs over the footer and off the bottom of the page, where it's cut off.
+
+For a row that's at least a certain height but grows with what's in it, use `HeightRule.ATLEAST`. It splits across pages like any other row:
+
+```ts live
+import { Document, HeightRule, Paragraph, Table, TableCell, TableRow } from "docx";
+
+const row = new TableRow({
+    // At least 2 inches (2880 twips) tall, and taller when its lines need more room
+    height: { value: 2880, rule: HeightRule.ATLEAST },
+    children: [
+        new TableCell({
+            children: Array.from({ length: 70 }, (_, index) => new Paragraph(`Line ${index + 1}`)),
+        }),
+    ],
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [new Table({ rows: [row] })],
+        },
+    ],
+});
+```
+
 #### Keep a table on one page
 
 Word has no setting that keeps a whole table on one page. Instead, set `keepNext` on every row except the last, so each row stays on the same page as the row after it, and `cantSplit` on every row. A row's `keepNext` keeps each paragraph in its cells with the next, unless the paragraph sets `keepNext` itself. If the last row has `keepNext` too, the table is also kept with whatever follows it. A table taller than a page still splits.
