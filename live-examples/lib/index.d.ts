@@ -2038,10 +2038,10 @@ export declare const createIndent: ({ start, end, left, right, hanging, firstLin
 export declare const createLineNumberType: ({ countBy, start, restart, distance }: ILineNumberAttributes) => XmlComponent;
 
 /**
- * Creates an accent character element for n-ary operators.
+ * Creates the character of an n-ary operator (`m:chr`), such as summation (∑), integral (∫) or product (∏).
  *
- * This element specifies the character used for the n-ary operator,
- * such as summation (∑), integral (∫), or product (∏) symbols.
+ * It isn't an accent, despite its name. To put an accent over math, such as x̂ or a vector's arrow x⃗, use
+ * `MathAccent` from `docx/math`.
  *
  * Reference: http://www.datypic.com/sc/ooxml/e-m_chr-1.html
  *
