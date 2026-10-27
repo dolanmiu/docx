@@ -102,6 +102,60 @@ const doc = new Document({
 });
 ```
 
+### Styling the numbers
+
+A level's `style.run` formats the numbers or bullets at that level: their font, size, colour, bold and so on, with a `TextRun`'s formatting options, except `highlight`, `math` and `revision`, which a level doesn't write. It leaves the text after them as it is.
+
+```ts live
+import { AlignmentType, Document, LevelFormat, Paragraph } from "docx";
+
+const doc = new Document({
+    numbering: {
+        config: [
+            {
+                reference: "styled-numbers",
+                levels: [
+                    {
+                        level: 0,
+                        format: LevelFormat.DECIMAL,
+                        text: "%1)",
+                        alignment: AlignmentType.START,
+                        style: {
+                            // The numbers at this level are 14 pt bold red Arial
+                            run: { font: "Arial", size: 28, bold: true, color: "C00000" },
+                            paragraph: { indent: { left: 720, hanging: 360 } },
+                        },
+                    },
+                    {
+                        level: 1,
+                        format: LevelFormat.LOWER_LETTER,
+                        text: "%2.",
+                        alignment: AlignmentType.START,
+                        style: {
+                            // The letters at this level are 12 pt Courier New
+                            run: { font: "Courier New", size: 24 },
+                            paragraph: { indent: { left: 1440, hanging: 360 } },
+                        },
+                    },
+                ],
+            },
+        ],
+    },
+    sections: [
+        {
+            children: [
+                new Paragraph({ text: "Fruit", numbering: { reference: "styled-numbers", level: 0 } }),
+                new Paragraph({ text: "Apples", numbering: { reference: "styled-numbers", level: 1 } }),
+                new Paragraph({ text: "Pears", numbering: { reference: "styled-numbers", level: 1 } }),
+                new Paragraph({ text: "Vegetables", numbering: { reference: "styled-numbers", level: 0 } }),
+            ],
+        },
+    ],
+});
+```
+
+What a level's `run` doesn't set, Word takes from the paragraph's mark, which a `Paragraph`'s `run` option formats, and not from the paragraph's text. So in a paragraph whose `TextRun`s have a bigger `size`, the number stays the size of the paragraph's style, unless the level sets a `size`, or the paragraph has the same `run: { size }` as its text.
+
 ### Lists that bring their own definition
 
 A paragraph's `numbering` can give its list's definition, its `reference` and its `levels`, rather than the reference of one in the document's `numbering` option. The definition is added to the document's numbering when the paragraph is written, unless the document already has a list with its reference. It is how content made before the document it goes in, such as by a function that returns paragraphs, brings its lists with it.
