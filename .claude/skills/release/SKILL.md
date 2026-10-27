@@ -48,14 +48,14 @@ The user merges the PR. Don't merge it yourself unless they ask you to. Stop her
 ## 4. Tag the tip of master
 
 ```bash
-git checkout master && git pull --ff-only
-git log --oneline -1                            # the commit being tagged
-git show HEAD:package.json | grep '"version"'   # must be $VERSION
-git tag -a "$VERSION" -m ""
-git push origin "$VERSION"
+git fetch origin &&
+    git log --oneline -1 origin/master &&
+    git show origin/master:package.json | grep -qF "\"version\": \"$VERSION\"" &&
+    git tag -a "$VERSION" origin/master -m "" &&
+    git push origin "$VERSION"
 ```
 
-Tag the latest commit on `master`, even when other PRs, such as dependabot's, have merged since the version bump. Past tags are annotated with an empty message.
+Tag the latest commit on `master`, even when other PRs, such as dependabot's, have merged since the version bump. Tag `origin/master` rather than your local `master`, which may have commits that were never pushed. The commands are chained, so nothing is tagged if the fetch fails or `package.json` there doesn't have `$VERSION`. A tag that's been pushed can only be moved with a force-push, so get it right the first time. Past tags are annotated with an empty message.
 
 ## 5. Create the release
 
