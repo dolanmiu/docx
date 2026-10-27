@@ -45,18 +45,17 @@ The description says which versions it goes from and to, and why it's a minor or
 
 The user merges the PR. Don't merge it yourself unless they ask you to. Stop here and tell them the PR is ready, unless they have said to carry on once it merges.
 
-## 4. Tag the merge commit
+## 4. Tag the tip of master
 
 ```bash
-git fetch origin
-SHA=$(gh pr view <PR> --json mergeCommit --jq .mergeCommit.oid)
-git log --oneline -1 "$SHA"                   # must be "chore: Version bump to $VERSION (#<PR>)"
-git show "$SHA:package.json" | grep '"version"'   # must be $VERSION
-git tag -a "$VERSION" "$SHA" -m ""
+git checkout master && git pull --ff-only
+git log --oneline -1                            # the commit being tagged
+git show HEAD:package.json | grep '"version"'   # must be $VERSION
+git tag -a "$VERSION" -m ""
 git push origin "$VERSION"
 ```
 
-Tag the version bump's own commit, not the latest on `master`, as other PRs, such as dependabot's, may have merged since. Past tags are annotated with an empty message.
+Tag the latest commit on `master`, even when other PRs, such as dependabot's, have merged since the version bump. Past tags are annotated with an empty message.
 
 ## 5. Create the release
 
