@@ -44,7 +44,9 @@ const doc = new Document({
 
 ## Sizing
 
-### Fixed Size
+`width` sets a text box's width, so give every text box a `style` with one. Without a `style`, Word draws the box 50pt wide and LibreOffice gives it no width at all.
+
+Word, WPS Office, LibreOffice and Pages make a text box as tall as its text, whatever its `height`, which is how tall applications that don't, such as the preview on this page, draw it. A `style` without a `height`, or with `"auto"`, is written 1 inch tall, as WPS Office makes a box of auto height too short, cutting off its last line.
 
 ```ts live
 import { Document, Paragraph, Textbox } from "docx";
@@ -54,29 +56,7 @@ const doc = new Document({
         {
             children: [
                 new Textbox({
-                    children: [new Paragraph("Fixed size textbox")],
-                    style: {
-                        width: "200pt",
-                        height: "100pt",
-                    },
-                }),
-            ],
-        },
-    ],
-});
-```
-
-### Auto Height
-
-```ts live
-import { Document, Paragraph, Textbox } from "docx";
-
-const doc = new Document({
-    sections: [
-        {
-            children: [
-                new Textbox({
-                    children: [new Paragraph("Auto height based on content")],
+                    children: [new Paragraph("As tall as its text")],
                     style: {
                         width: "200pt",
                         height: "auto",

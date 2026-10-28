@@ -25458,6 +25458,15 @@ MAX: 9026 };
 	/** Identifier of the text box shape type as referenced by shapes. */
 	var SHAPE_TYPE = "#_x0000_t202";
 	/**
+	* The height a text box's style is written with when it has none, or `"auto"`. Word, WPS Office, LibreOffice and Pages
+	* make the box as tall as its text (`mso-fit-shape-to-text`) from any height of 8pt or more, but WPS makes a box of auto
+	* height too short by its top and bottom insets, cutting off its last line. Applications that don't fit the box to its
+	* text, such as docx-preview, draw it this tall. A text box with no style is left without one: it has no width either,
+	* so Word draws it 50pt wide and LibreOffice gives it none, and a height changes neither.
+	*/
+	var FIT_FROM_HEIGHT = "1in";
+	var withFitFromHeight = (style) => style && (style.height === void 0 || style.height === "auto") ? _objectSpread2(_objectSpread2({}, style), {}, { height: FIT_FROM_HEIGHT }) : style;
+	/**
 	* Creates a VML shape element with textbox content.
 	*
 	* The VML shape element (v:shape) represents a vector graphics shape in WordprocessingML documents.
@@ -25504,7 +25513,7 @@ MAX: 9026 };
 	var createShape = ({ id, children, type = SHAPE_TYPE, style }) => createVmlShape({
 		id,
 		type,
-		style,
+		style: withFitFromHeight(style),
 		children: [createVmlTextbox({
 			style: "mso-fit-shape-to-text:t;",
 			children
