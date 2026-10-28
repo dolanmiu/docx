@@ -486,6 +486,69 @@ const doc = new Document({
 
 To place an image at page coordinates or control text wrapping, use [`floating`](#floating) instead.
 
+## Space between images
+
+An inline image sits in its line like a letter, so images next to each other in a paragraph touch. To space them out, put a space between each two, in a `TextRun` whose `characterSpacing` widens it by that many twentieths of a point. Word ignores `characterSpacing` on an image's own `run`, and an image's [`margins`](#margins) only work when it floats.
+
+```ts live
+import { Document, ImageRun, Paragraph, TextRun } from "docx";
+import * as fs from "fs";
+
+const photos = [
+    { file: "./demo/assets/images/cat.jpg", width: 150 },
+    { file: "./demo/assets/images/image1.jpeg", width: 133 },
+    { file: "./demo/assets/images/cat.jpg", width: 150 },
+];
+
+const images = photos.map(
+    ({ file, width }) => new ImageRun({ type: "jpg", data: fs.readFileSync(file), transformation: { width, height: 100 } }),
+);
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    // Between each two images, a space 10 points (200 twentieths) wider than usual
+                    children: images.flatMap((image, index) =>
+                        index === 0 ? [image] : [new TextRun({ text: " ", characterSpacing: 200 }), image],
+                    ),
+                }),
+            ],
+        },
+    ],
+});
+```
+
+The preview on this page doesn't widen the spaces, so download the document to see them in Word.
+
+To put images one under another instead, give each its own paragraph, with space after it:
+
+```ts live
+import { Document, ImageRun, Paragraph } from "docx";
+import * as fs from "fs";
+
+const photos = [
+    { file: "./demo/assets/images/cat.jpg", width: 150 },
+    { file: "./demo/assets/images/image1.jpeg", width: 133 },
+];
+
+const doc = new Document({
+    sections: [
+        {
+            children: photos.map(
+                ({ file, width }) =>
+                    new Paragraph({
+                        // 10 points (200 twentieths) of space after each image
+                        spacing: { after: 200 },
+                        children: [new ImageRun({ type: "jpg", data: fs.readFileSync(file), transformation: { width, height: 100 } })],
+                    }),
+            ),
+        },
+    ],
+});
+```
+
 ## Alternative Text
 
 Give a picture a `description` for screen readers, as Word's **Alt Text** does, and optionally a `title`. Its `name` is what Word's Selection Pane calls it, and is empty unless given. All three are optional.
