@@ -48,7 +48,7 @@ const doc = new Document({
 
 ## Custom Checkbox Symbols
 
-You can customize the symbols used for checked and unchecked states. This is useful for branding consistency, platform compatibility, or when the default symbols don't render correctly on certain systems:
+A checked box shows ☒ (`2612`) and an unchecked one ☐ (`2610`), both in MS Gothic, as Word's own checkboxes do. `checkedState` and `uncheckedState` set another symbol for each, as its Unicode code point in hex, and the font to draw it in:
 
 ```ts live
 import { CheckBox, Document, Paragraph } from "docx";
@@ -90,23 +90,23 @@ const doc = new Document({
 
 ## Checkbox Options
 
-| Property       | Type          | Notes    | Description                          |
-| -------------- | ------------- | -------- | ------------------------------------ |
-| checked        | `boolean`     | Optional | Whether the checkbox is checked      |
-| checkedState   | `SymbolState` | Optional | Symbol and font for checked state    |
-| uncheckedState | `SymbolState` | Optional | Symbol and font for unchecked state  |
-| alias          | `string`      | Optional | Accessibility label for the checkbox |
+| Property       | Type                        | Notes    | Description                                                              |
+| -------------- | --------------------------- | -------- | ------------------------------------------------------------------------ |
+| checked        | `boolean`                   | Optional | Whether the box starts checked. Defaults to `false`                      |
+| checkedState   | `ICheckboxSymbolProperties` | Optional | The symbol, and its font, when checked                                   |
+| uncheckedState | `ICheckboxSymbolProperties` | Optional | The symbol, and its font, when not checked                               |
+| alias          | `string`                    | Optional | The checkbox's title, which Word shows above it when the cursor is in it |
 
-### SymbolState Options
+### checkedState and uncheckedState
 
-| Property | Type     | Notes    | Description                |
-| -------- | -------- | -------- | -------------------------- |
-| value    | `string` | Required | Unicode hex value          |
-| font     | `string` | Optional | Font to use for the symbol |
+| Property | Type     | Notes    | Description                                                                                                         |
+| -------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------------- |
+| value    | `string` | Optional | The symbol's Unicode code point in hex, such as `2611`. Defaults to `2612` (☒) when checked and `2610` (☐) when not |
+| font     | `string` | Optional | The font to draw the symbol in. Defaults to MS Gothic                                                               |
 
-## Accessibility
+## Title
 
-Use the `alias` property to provide an accessibility label:
+`alias` gives the checkbox a title. Word shows it on a tab above the checkbox when the cursor is in it:
 
 ```ts live
 import { CheckBox, Document, Paragraph, TextRun } from "docx";
