@@ -282,7 +282,7 @@ export const LevelSuffix = {
  * @property alignment - Text alignment for the numbering
  * @property start - Starting number for this level
  * @property suffix - Character(s) following the numbering (tab, space, nothing)
- * @property isLegalNumberingStyle - Use legal numbering style
+ * @property isLegalNumberingStyle - Write every number in the level's text as a decimal number
  * @property style - Run and paragraph style properties
  */
 export type ILevelsOptions = {
@@ -301,7 +301,10 @@ export type ILevelsOptions = {
     readonly start?: number;
     /** Character(s) following the numbering. */
     readonly suffix?: (typeof LevelSuffix)[keyof typeof LevelSuffix];
-    /** Use legal numbering style (e.g., 1.1.1). */
+    /**
+     * Writes every number in the level's `text`, the levels above's too, as a decimal number, as Word's Legal style
+     * numbering does. Under a level in Chinese counting, `"%1.%2"` is then 1.1 rather than 一.1.
+     */
     readonly isLegalNumberingStyle?: boolean;
     /** Run and paragraph style properties. */
     readonly style?: {
@@ -340,7 +343,8 @@ class Suffix extends XmlComponent {
 /**
  * Legal numbering style flag.
  *
- * When enabled, creates multi-level legal numbering like 1.1.1.
+ * When enabled, every number in the level's text is a decimal number, whatever its own level's format, such as 1.1
+ * rather than 一.1.
  *
  * Reference: http://officeopenxml.com/WPnumbering-isLgl.php
  */
