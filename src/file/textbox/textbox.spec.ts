@@ -22,7 +22,7 @@ const TEXTBOX_RUN = {
             "w:pict": [
                 {
                     "v:shape": [
-                        { _attr: { id: expect.any(String), type: "#_x0000_t202", style: "width:10pt" } },
+                        { _attr: { id: expect.any(String), type: "#_x0000_t202", style: "width:10pt;height:1in" } },
                         {
                             "v:textbox": [
                                 { _attr: { style: "mso-fit-shape-to-text:t;" } },

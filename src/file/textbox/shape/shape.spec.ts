@@ -19,7 +19,7 @@ describe("createShape", () => {
 
         expect(tree).toStrictEqual({
             "v:shape": [
-                { _attr: { id: "test-id", type: "#_x0000_t202", style: "width:10pt" } },
+                { _attr: { id: "test-id", type: "#_x0000_t202", style: "width:10pt;height:1in" } },
                 {
                     "v:textbox": [
                         { _attr: { style: "mso-fit-shape-to-text:t;" } },
@@ -54,5 +54,19 @@ describe("createShape", () => {
                 },
             ],
         });
+    });
+
+    it("should write a height of auto as 1in, which Word, WPS Office, LibreOffice and Pages resize to fit the text", () => {
+        const tree = new Formatter().format(createShape({ id: "test-id", style: { width: "200pt", height: "auto", zIndex: "auto" } }));
+
+        expect(tree["v:shape"][0]).toStrictEqual({
+            _attr: { id: "test-id", type: "#_x0000_t202", style: "width:200pt;height:1in;z-index:auto" },
+        });
+    });
+
+    it("should keep a height that is given", () => {
+        const tree = new Formatter().format(createShape({ id: "test-id", style: { width: "200pt", height: "50pt" } }));
+
+        expect(tree["v:shape"][0]).toStrictEqual({ _attr: { id: "test-id", type: "#_x0000_t202", style: "width:200pt;height:50pt" } });
     });
 });

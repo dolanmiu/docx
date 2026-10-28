@@ -24,6 +24,17 @@ export type { VmlShapeStyle } from "@file/vml";
 const SHAPE_TYPE = "#_x0000_t202";
 
 /**
+ * The height a text box is written with when it has none, or `"auto"`. Word, WPS Office, LibreOffice and Pages make the
+ * box as tall as its text (`mso-fit-shape-to-text`) from any height of 8pt or more, but WPS makes a box of auto height
+ * too short by its top and bottom insets, cutting off its last line. Applications that don't fit the box to its text,
+ * such as docx-preview, draw it this tall.
+ */
+const FIT_FROM_HEIGHT = "1in";
+
+const withFitFromHeight = (style?: VmlShapeStyle): VmlShapeStyle | undefined =>
+    style && (style.height === undefined || style.height === "auto") ? { ...style, height: FIT_FROM_HEIGHT } : style;
+
+/**
  * Options for creating a VML shape.
  *
  * @property id - Unique identifier for the shape
@@ -90,6 +101,6 @@ export const createShape = ({ id, children, type = SHAPE_TYPE, style }: ShapeOpt
     createVmlShape({
         id,
         type,
-        style,
+        style: withFitFromHeight(style),
         children: [createVmlTextbox({ style: "mso-fit-shape-to-text:t;", children })],
     });
