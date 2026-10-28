@@ -24,10 +24,11 @@ export type { VmlShapeStyle } from "@file/vml";
 const SHAPE_TYPE = "#_x0000_t202";
 
 /**
- * The height a text box is written with when it has none, or `"auto"`. Word, WPS Office, LibreOffice and Pages make the
- * box as tall as its text (`mso-fit-shape-to-text`) from any height of 8pt or more, but WPS makes a box of auto height
- * too short by its top and bottom insets, cutting off its last line. Applications that don't fit the box to its text,
- * such as docx-preview, draw it this tall.
+ * The height a text box's style is written with when it has none, or `"auto"`. Word, WPS Office, LibreOffice and Pages
+ * make the box as tall as its text (`mso-fit-shape-to-text`) from any height of 8pt or more, but WPS makes a box of auto
+ * height too short by its top and bottom insets, cutting off its last line. Applications that don't fit the box to its
+ * text, such as docx-preview, draw it this tall. A text box with no style is left without one: it has no width either,
+ * so Word draws it 50pt wide and LibreOffice gives it none, and a height changes neither.
  */
 const FIT_FROM_HEIGHT = "1in";
 

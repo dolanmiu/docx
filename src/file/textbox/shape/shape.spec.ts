@@ -34,7 +34,7 @@ describe("createShape", () => {
         });
     });
 
-    it("should create default styles", () => {
+    it("should write no style when given none, as a height alone doesn't change how the box is drawn", () => {
         const tree = new Formatter().format(
             createShape({
                 id: "test-id",
