@@ -7,6 +7,7 @@
 - `Tables` contain a list of `Rows`
 - `Rows` contain a list of `TableCells`
 - `TableCells` contain a list of `Paragraphs` and/or `Tables`. You can add `Tables` as tables can be nested inside each other
+- A `Table` goes next to `Paragraphs`, in a section's, header's, footer's, cell's or text box's `children`, never in a paragraph's. Word can't open a document with a table inside a paragraph, and since 9.13.0 TypeScript reports it: `Type 'Table' is not assignable to type 'ParagraphChild'`
 
 Create a simple table, then add the table in the `section`:
 
