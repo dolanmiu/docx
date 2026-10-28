@@ -19665,7 +19665,8 @@ MAX: 9026 };
 	/**
 	* Legal numbering style flag.
 	*
-	* When enabled, creates multi-level legal numbering like 1.1.1.
+	* When enabled, every number in the level's text is a decimal number, whatever its own level's format, such as 1.1
+	* rather than 一.1.
 	*
 	* Reference: http://officeopenxml.com/WPnumbering-isLgl.php
 	*/
