@@ -64,6 +64,65 @@ fs.writeFileSync("output.docx", doc);
 - Only the placeholders of the patches given lose their spaces. Other text that looks like a placeholder, such as `{{ not_patched }}`, is left as it is.
 - [`patchDetector`](usage/patcher.md#discover-placeholders-before-building-patches) takes `trimPlaceholders` too, and then gives the key of `{{ customer_name }}` as `customer_name`.
 
+### Placeholders in links, content controls and tracked changes
+
+A placeholder is patched wherever it is in a paragraph's text: in a link's text, in a content control, in text typed with Track Changes on, or in a field's result. The patch's content goes where the placeholder was, so the text of a link stays linked, and a tracked insertion stays tracked:
+
+```ts live
+import * as fs from "fs";
+import { Document, ExternalHyperlink, InsertedTextRun, Packer, Paragraph, patchDocument, PatchType, TextRun } from "docx";
+
+// The template, made here as it would be in Word: a link whose text is a placeholder, and a placeholder typed with Track Changes on
+const template = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new TextRun("Our website: "),
+                        new ExternalHyperlink({
+                            link: "https://example.com",
+                            children: [new TextRun({ text: "{{site}}", style: "Hyperlink" })],
+                        }),
+                    ],
+                }),
+                new Paragraph({
+                    children: [
+                        new InsertedTextRun({
+                            text: "Dear {{customer_name}},",
+                            id: 1,
+                            author: "Template author",
+                            date: "2024-05-01T00:00:00Z",
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
+
+const doc = await patchDocument({
+    outputType: "nodebuffer",
+    data: await Packer.toBuffer(template),
+    patches: {
+        site: { type: PatchType.PARAGRAPH, children: [new TextRun("example.com")] },
+        customer_name: { type: PatchType.PARAGRAPH, children: [new TextRun("John Smith")] },
+    },
+});
+
+fs.writeFileSync("output.docx", doc);
+```
+
+Where the content can't go in what holds the placeholder, it goes as close as it can, so Word opens the document:
+
+- **A link in a tracked insertion**: a tracked insertion can't hold a link, so the link goes between two parts of the insertion and isn't tracked, as when a link is added with Track Changes off.
+- **A link in a link**: the patch's link takes the place of the template's link where the placeholder was, and the text around it keeps the template's link.
+- **A plain text content control**: given anything but text, such as a link, a picture, a field or a symbol, it becomes a rich text content control, as Word won't open a plain text one holding it.
+- **A content control showing its placeholder text**: if `{{name}}` is the control's placeholder text, the control shows the patch's content as its own, with the control's formatting rather than the grey of placeholder text.
+- **A content control bound to custom XML or a document property**: the binding is removed, as Word fills a bound control in from its data when it opens the document, which would put the placeholder back.
+
+Deleted text, which Word shows struck through when Track Changes is on, isn't the document's text, so a placeholder in it isn't patched.
+
 ## Basic Usage
 
 ```ts live
@@ -775,6 +834,46 @@ const doc = await patchDocument({
 
 fs.writeFileSync("invoice-output.docx", doc);
 ```
+
+## A placeholder isn't replaced
+
+`patchDocument` doesn't throw for a patch whose placeholder isn't in the template, as one set of patches can be given to templates that don't all have every placeholder. The placeholder is left as it is. To find such patches, compare their keys with the placeholders [`patchDetector`](usage/patcher.md#discover-placeholders-before-building-patches) finds, giving it the same `placeholderDelimiters` and `trimPlaceholders` as `patchDocument`:
+
+```ts live
+import * as fs from "fs";
+import { Document, Packer, Paragraph, patchDetector, patchDocument, PatchType, TextRun } from "docx";
+
+// The template, with one placeholder typed in single braces
+const template = await Packer.toBuffer(
+    new Document({
+        sections: [{ children: [new Paragraph("Dear {{customer_name}},"), new Paragraph("Your order: {order_number}")] }],
+    }),
+);
+
+const patches = {
+    customer_name: { type: PatchType.PARAGRAPH, children: [new TextRun("John Smith")] },
+    order_number: { type: PatchType.PARAGRAPH, children: [new TextRun("12345")] },
+};
+
+// The patches whose placeholder isn't in the template. Here it's ["order_number"], as the template has {order_number}
+const found = await patchDetector({ data: template });
+const notFound = Object.keys(patches).filter((key) => !found.includes(key));
+console.log("No placeholder for:", notFound);
+
+const doc = await patchDocument({ outputType: "nodebuffer", data: template, patches });
+
+fs.writeFileSync("output.docx", doc);
+```
+
+A patch whose placeholder isn't found is usually one of these:
+
+- **The key has the delimiters**: the key of `{{customer_name}}` is `customer_name`, not `"{{customer_name}}"`, which is looked for as `{{{{customer_name}}}}`.
+- **The key isn't spelled as the placeholder is**: keys match exactly, including upper and lower case.
+- **The template has other delimiters**, such as `{name}`, `<<name>>` or `[name]`: give `patchDocument` and `patchDetector` the template's delimiters, such as `placeholderDelimiters: { start: "<<", end: ">>" }`.
+- **Spaces inside the delimiters**, such as `{{ name }}`: see [Spaces inside placeholders](#spaces-inside-placeholders).
+- **The placeholder is only in a picture's or a chart's alt text**: only an [`ImagePatch`](#replacing-a-picture) or a `ChartDataPatch` patches it, and a text patch leaves it as it is. `patchDetector` finds placeholders in alt text too, so the check above doesn't list this patch.
+
+A placeholder in deleted text, which Word shows struck through when Track Changes is on, isn't patched or found, nor is one in a chart's own text, such as its title.
 
 ## Tips
 

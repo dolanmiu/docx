@@ -31,7 +31,7 @@ describe("paragraph-token-replacer", () => {
                     runs: [
                         {
                             end: 4,
-                            index: 0,
+                            path: [0],
                             parts: [
                                 {
                                     end: 4,
@@ -123,9 +123,9 @@ describe("paragraph-token-replacer", () => {
                 renderedParagraph: {
                     text: "Hello {{name}} World",
                     runs: [
-                        { text: "Hello ", parts: [{ text: "Hello ", index: 0, start: 0, end: 5 }], index: 1, start: 0, end: 5 },
-                        { text: "{{name}} ", parts: [{ text: "{{name}} ", index: 0, start: 6, end: 14 }], index: 2, start: 6, end: 14 },
-                        { text: "World", parts: [{ text: "World", index: 0, start: 15, end: 19 }], index: 3, start: 15, end: 19 },
+                        { text: "Hello ", parts: [{ text: "Hello ", index: 0, start: 0, end: 5 }], path: [1], start: 0, end: 5 },
+                        { text: "{{name}} ", parts: [{ text: "{{name}} ", index: 0, start: 6, end: 14 }], path: [2], start: 6, end: 14 },
+                        { text: "World", parts: [{ text: "World", index: 0, start: 15, end: 19 }], path: [3], start: 15, end: 19 },
                     ],
                     index: 0,
                     pathToParagraph: [0, 1, 0, 0],
@@ -252,7 +252,7 @@ describe("paragraph-token-replacer", () => {
                     runs: [
                         {
                             end: 0,
-                            index: 0,
+                            path: [0],
                             parts: [
                                 {
                                     end: 0,
@@ -266,7 +266,7 @@ describe("paragraph-token-replacer", () => {
                         },
                         {
                             end: 5,
-                            index: 1,
+                            path: [1],
                             parts: [
                                 {
                                     end: 5,
@@ -332,9 +332,9 @@ describe("paragraph-token-replacer", () => {
                 renderedParagraph: {
                     text: "{{name}} world",
                     runs: [
-                        { text: "{{na", parts: [{ text: "{{na", index: 0, start: 0, end: 3 }], index: 0, start: 0, end: 3 },
-                        { text: "me}}", parts: [{ text: "me}}", index: 0, start: 4, end: 7 }], index: 1, start: 4, end: 7 },
-                        { text: " world", parts: [{ text: " world", index: 0, start: 8, end: 13 }], index: 2, start: 8, end: 13 },
+                        { text: "{{na", parts: [{ text: "{{na", index: 0, start: 0, end: 3 }], path: [0], start: 0, end: 3 },
+                        { text: "me}}", parts: [{ text: "me}}", index: 0, start: 4, end: 7 }], path: [1], start: 4, end: 7 },
+                        { text: " world", parts: [{ text: " world", index: 0, start: 8, end: 13 }], path: [2], start: 8, end: 13 },
                     ],
                     index: 0,
                     pathToParagraph: [0],
@@ -373,7 +373,7 @@ describe("paragraph-token-replacer", () => {
                                 { text: "Name:", index: 0, start: 0, end: 4 },
                                 { text: "{{name}}", index: 2, start: 5, end: 12 },
                             ],
-                            index: 0,
+                            path: [0],
                             start: 0,
                             end: 12,
                         },
@@ -400,7 +400,7 @@ describe("paragraph-token-replacer", () => {
                         {
                             text: "{{name}} {{name}}",
                             parts: [{ text: "{{name}} {{name}}", index: 0, start: 0, end: 16 }],
-                            index: 0,
+                            path: [0],
                             start: 0,
                             end: 16,
                         },

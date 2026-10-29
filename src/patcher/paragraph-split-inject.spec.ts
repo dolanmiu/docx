@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { findRunElementIndexWithToken, splitRunElement } from "./paragraph-split-inject";
+import { findRunElementPathWithToken, splitRunElement } from "./paragraph-split-inject";
 
 describe("paragraph-split-inject", () => {
-    describe("findRunElementIndexWithToken", () => {
-        it("should find the index of a run element with a token", () => {
-            const output = findRunElementIndexWithToken(
+    describe("findRunElementPathWithToken", () => {
+        it("should find the path to a run element with a token", () => {
+            const output = findRunElementPathWithToken(
                 {
                     name: "w:p",
                     type: "element",
@@ -30,12 +30,12 @@ describe("paragraph-split-inject", () => {
                 },
                 "hello",
             );
-            expect(output).to.deep.equal(0);
+            expect(output).to.deep.equal([0]);
         });
 
         it("should throw an exception when ran with empty elements", () => {
             expect(() =>
-                findRunElementIndexWithToken(
+                findRunElementPathWithToken(
                     {
                         name: "w:p",
                         type: "element",
@@ -47,7 +47,7 @@ describe("paragraph-split-inject", () => {
 
         it("should throw an exception when ran with empty elements", () => {
             expect(() =>
-                findRunElementIndexWithToken(
+                findRunElementPathWithToken(
                     {
                         name: "w:p",
                         type: "element",
@@ -65,31 +65,7 @@ describe("paragraph-split-inject", () => {
 
         it("should throw an exception when ran with empty elements", () => {
             expect(() =>
-                findRunElementIndexWithToken(
-                    {
-                        name: "w:p",
-                        type: "element",
-                        elements: [
-                            {
-                                name: "w:r",
-                                type: "element",
-                                elements: [
-                                    {
-                                        name: "w:t",
-                                        type: "element",
-                                    },
-                                ],
-                            },
-                        ],
-                    },
-                    "hello",
-                ),
-            ).to.throw();
-        });
-
-        it("should continue if text run doesn't have text", () => {
-            expect(() =>
-                findRunElementIndexWithToken(
+                findRunElementPathWithToken(
                     {
                         name: "w:p",
                         type: "element",
@@ -113,7 +89,31 @@ describe("paragraph-split-inject", () => {
 
         it("should continue if text run doesn't have text", () => {
             expect(() =>
-                findRunElementIndexWithToken(
+                findRunElementPathWithToken(
+                    {
+                        name: "w:p",
+                        type: "element",
+                        elements: [
+                            {
+                                name: "w:r",
+                                type: "element",
+                                elements: [
+                                    {
+                                        name: "w:t",
+                                        type: "element",
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    "hello",
+                ),
+            ).to.throw();
+        });
+
+        it("should continue if text run doesn't have text", () => {
+            expect(() =>
+                findRunElementPathWithToken(
                     {
                         name: "w:p",
                         type: "element",

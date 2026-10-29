@@ -6,6 +6,7 @@
 
 import type { XmlElement as Element } from "@util/xml";
 
+import { renderParagraphNode } from "./run-renderer";
 import { createTextElementContents, patchSpaceAttribute } from "./util";
 
 export class TokenNotFoundError extends Error {
@@ -16,42 +17,34 @@ export class TokenNotFoundError extends Error {
 }
 
 /**
- * Finds the index of the run element containing a specific token.
+ * Finds the run element containing a specific token.
  *
- * Searches through all run (w:r) elements in a paragraph to find which one
- * contains the specified token text. This is used to locate where new content
- * should be injected during replacement operations.
+ * Searches through all run (w:r) elements in a paragraph, including those in a link,
+ * content control or tracked insertion, to find which one contains the specified
+ * token text. This is used to locate where new content should be injected during
+ * replacement operations.
  *
  * @param paragraphElement - The paragraph element to search
  * @param token - The token text to find
- * @returns The index of the run element containing the token
+ * @returns The position indices from the paragraph to the run element containing the token
  * @throws Error if the token is not found in any run
  *
  * @example
  * ```typescript
- * const index = findRunElementIndexWithToken(paragraph, "ɵ");
- * // Returns the index of the run containing the split token
+ * const path = findRunElementPathWithToken(paragraph, "ɵ");
+ * // Returns [0] for the paragraph's first run, or [2, 1] for the second run in a link that is its third element
  * ```
  */
-export const findRunElementIndexWithToken = (paragraphElement: Element, token: string): number => {
-    for (let i = 0; i < (paragraphElement.elements ?? []).length; i++) {
-        const element = paragraphElement.elements![i];
-        if (element.type === "element" && element.name === "w:r") {
-            const textElement = (element.elements ?? []).filter((e) => e.type === "element" && e.name === "w:t");
+export const findRunElementPathWithToken = (paragraphElement: Element, token: string): readonly number[] => {
+    const run = renderParagraphNode({ element: paragraphElement, index: 0, parent: undefined }).runs.find(({ parts }) =>
+        parts.some(({ text }) => text.includes(token)),
+    );
 
-            for (const text of textElement) {
-                if (!text.elements?.[0]) {
-                    continue;
-                }
-
-                if ((text.elements[0].text as string)?.includes(token)) {
-                    return i;
-                }
-            }
-        }
+    if (!run) {
+        throw new TokenNotFoundError(token);
     }
 
-    throw new TokenNotFoundError(token);
+    return run.path;
 };
 
 // cspell:words Helloɵworld

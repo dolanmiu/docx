@@ -44,7 +44,7 @@ import { patchStyles } from "./styles";
 import { patchTableRows } from "./table-rows";
 import { readThemeColors } from "./theme-colors";
 import { trimPlaceholders as trimPlaceholdersIn } from "./trim-placeholders";
-import { decodeUtf8, toJson } from "./util";
+import { checkPlaceholderDelimiters, decodeUtf8, toJson } from "./util";
 import { removeShapeTypesIn } from "./vml-shape-types";
 
 /**
@@ -382,9 +382,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
 
     const binaryContentMap = new Map<string, Uint8Array>();
 
-    if (!placeholderDelimiters?.start.trim() || !placeholderDelimiters?.end.trim()) {
-        throw new Error("Both start and end delimiters must be non-empty strings.");
-    }
+    checkPlaceholderDelimiters(placeholderDelimiters);
     const { start, end } = placeholderDelimiters;
 
     for (const [key, patch] of Object.entries(patches)) {

@@ -6,7 +6,7 @@
 
 import type { XmlElement as Element } from "@util/xml";
 
-import type { IRenderedParagraphNode } from "./run-renderer";
+import { type IRenderedParagraphNode, elementAtPath } from "./run-renderer";
 import { createTextElementContents, patchSpaceAttribute } from "./util";
 
 /**
@@ -64,6 +64,7 @@ export const replaceTokenInParagraphElement = ({
     let replaceMode: (typeof ReplaceMode)[keyof typeof ReplaceMode] = ReplaceMode.START;
 
     for (const run of renderedParagraph.runs) {
+        const runElement = elementAtPath(paragraphElement, run.path);
         for (const { text, index, start, end } of run.parts) {
             switch (replaceMode) {
                 case ReplaceMode.START:
@@ -80,7 +81,7 @@ export const replaceTokenInParagraphElement = ({
 
                         // Replace by position, as the same text can come earlier in the part
                         const firstPart = text.substring(0, offsetStartIndex) + replacementText + text.substring(offsetEndIndex + 1);
-                        patchTextElement(paragraphElement.elements![run.index].elements![index], firstPart);
+                        patchTextElement(runElement.elements![index], firstPart);
                         replaceMode = ReplaceMode.MIDDLE;
                         continue;
                         /* c8 ignore next 2 */
@@ -89,15 +90,15 @@ export const replaceTokenInParagraphElement = ({
                 case ReplaceMode.MIDDLE:
                     if (endIndex <= end) {
                         const lastPart = text.substring(endIndex - start + 1);
-                        patchTextElement(paragraphElement.elements![run.index].elements![index], lastPart);
-                        const currentElement = paragraphElement.elements![run.index].elements![index];
+                        patchTextElement(runElement.elements![index], lastPart);
+                        const currentElement = runElement.elements![index];
                         // We need to add xml:space="preserve" to the last element to preserve the whitespace
                         // Otherwise, the text will be merged with the next element
                         // eslint-disable-next-line functional/immutable-data
-                        paragraphElement.elements![run.index].elements![index] = patchSpaceAttribute(currentElement);
+                        runElement.elements![index] = patchSpaceAttribute(currentElement);
                         replaceMode = ReplaceMode.END;
                     } else {
-                        patchTextElement(paragraphElement.elements![run.index].elements![index], "");
+                        patchTextElement(runElement.elements![index], "");
                     }
                     break;
                 default:

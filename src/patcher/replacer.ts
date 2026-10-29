@@ -8,9 +8,9 @@ import type { IContext, XmlComponent } from "@file/xml-components";
 import { type XmlElement as Element, stringifyXmlable } from "@util/xml";
 
 import { type IPatch, PatchType } from "./from-docx";
-import { findRunElementIndexWithToken, splitRunElement } from "./paragraph-split-inject";
+import { findRunElementPathWithToken, splitRunElement } from "./paragraph-split-inject";
 import { replaceTokenInParagraphElement } from "./paragraph-token-replacer";
-import { type IRenderedParagraphNode, renderParagraphNode } from "./run-renderer";
+import { type IRenderedParagraphNode, elementAtPath, renderParagraphNode } from "./run-renderer";
 import { findLocationOfText } from "./traverser";
 import { toJson } from "./util";
 
@@ -83,6 +83,13 @@ export const replacer = ({
     // A document patch replaces the whole paragraph, so a match inside another match, such as in its text box, would be thrown away
     const paragraphsToPatch = patch.type === PatchType.DOCUMENT ? withoutNestedParagraphs(paragraphsInPatchOrder) : paragraphsInPatchOrder;
 
+    // A tracked change split around a link is given ids for its new pieces that nothing in the part has
+    let highestId: number | undefined;
+    const newTrackedChangeId = (): string => {
+        highestId = (highestId ?? highestIdIn(json)) + 1;
+        return String(highestId);
+    };
+
     for (const renderedParagraph of paragraphsToPatch) {
         switch (patch.type) {
             case PatchType.DOCUMENT: {
@@ -103,20 +110,18 @@ export const replacer = ({
                 let fromIndex = 0;
 
                 do {
-                    const nextRunIndex = replaceOccurrenceInParagraph({
+                    // Look for the next occurrence after the inserted content, so a placeholder in the patch is never patched
+                    fromIndex = replaceOccurrenceInParagraph({
                         paragraphElement,
                         renderedParagraph: paragraph,
                         patchText,
                         fromIndex,
                         children: formatChildren(patch, context, renumberIds),
                         keepOriginalStyles,
+                        newTrackedChangeId,
                     });
 
                     paragraph = renderParagraphNode({ element: paragraphElement, index: renderedParagraph.index, parent: undefined });
-                    // Look for the next occurrence after the inserted content, so a placeholder in the patch is never patched
-                    fromIndex = paragraph.runs
-                        .filter((run) => run.index < nextRunIndex)
-                        .reduce((length, run) => length + run.text.length, 0);
                 } while (recursive && paragraph.text.includes(patchText, fromIndex));
                 break;
             }
@@ -138,9 +143,11 @@ const formatChildren = (patch: IPatch, context: IContext, renumberIds: RenumberI
     );
 
 /**
- * Replaces the first occurrence of the placeholder from `fromIndex` on, splitting the run it starts in.
+ * Replaces the first occurrence of the placeholder from `fromIndex` on, splitting the run it starts in. The content goes
+ * where that run is, in the paragraph or in what holds the run in it, such as a link or a content control, unless that
+ * can't hold it.
  *
- * @returns The index of the run after the inserted content
+ * @returns Where the text after the inserted content starts in the paragraph's text
  */
 const replaceOccurrenceInParagraph = ({
     paragraphElement,
@@ -149,6 +156,7 @@ const replaceOccurrenceInParagraph = ({
     fromIndex,
     children,
     keepOriginalStyles,
+    newTrackedChangeId,
 }: {
     readonly paragraphElement: Element;
     readonly renderedParagraph: IRenderedParagraphNode;
@@ -156,7 +164,10 @@ const replaceOccurrenceInParagraph = ({
     readonly fromIndex: number;
     readonly children: readonly Element[];
     readonly keepOriginalStyles: boolean;
+    readonly newTrackedChangeId: () => string;
 }): number => {
+    const start = renderedParagraph.text.indexOf(patchText, fromIndex);
+
     replaceTokenInParagraphElement({
         paragraphElement,
         renderedParagraph,
@@ -165,20 +176,126 @@ const replaceOccurrenceInParagraph = ({
         fromIndex,
     });
 
-    const index = findRunElementIndexWithToken(paragraphElement, SPLIT_TOKEN);
+    const runPath = findRunElementPathWithToken(paragraphElement, SPLIT_TOKEN);
+    const containerPath = runPath.slice(0, -1);
+    const container = elementAtPath(paragraphElement, containerPath);
+    const index = runPath[runPath.length - 1];
+    // The content controls the placeholder is in, the innermost last
+    const contentControls = containerPath
+        .map((_, depth) => elementAtPath(paragraphElement, containerPath.slice(0, depth + 1)))
+        .filter((e) => e.name === "w:sdt");
+    const controlShowingPlaceholder = [...contentControls].reverse().find(isShowingPlaceholder);
 
-    const runElementToBeReplaced = paragraphElement.elements![index];
+    const runElementToBeReplaced = container.elements![index];
     const { left, right } = splitRunElement(runElementToBeReplaced, SPLIT_TOKEN);
     const runProperties = runElementToBeReplaced.elements!.find((e) => e.type === "element" && e.name === "w:rPr");
+    // A content control's placeholder text has a look of its own, such as Word's grey Placeholder Text, and what
+    // replaces it takes the control's run properties instead, as text typed in it does
+    const contentRunProperties = controlShowingPlaceholder ? runPropertiesOfContentControl(controlShowingPlaceholder) : runProperties;
 
-    const newRunElements = keepOriginalStyles && runProperties ? children.map((e) => withRunPropertiesOnRuns(e, runProperties)) : children;
+    const newRunElements =
+        keepOriginalStyles && contentRunProperties ? children.map((e) => withRunPropertiesOnRuns(e, contentRunProperties)) : children;
     // The text after the placeholder is the document's own, so it keeps its formatting either way
     const patchedRightElement = runProperties ? { ...right, elements: [runProperties, ...right.elements!] } : right;
 
     // eslint-disable-next-line functional/immutable-data
-    paragraphElement.elements!.splice(index, 1, left, ...newRunElements, patchedRightElement);
+    container.elements!.splice(index, 1, left, ...newRunElements, patchedRightElement);
+    contentControls.forEach((contentControl) => fillContentControl(contentControl, newRunElements));
+    liftOutOfContainers(paragraphElement, containerPath, newTrackedChangeId);
 
-    return index + 1 + newRunElements.length;
+    return (
+        start + renderParagraphNode({ element: { name: "w:p", elements: [...newRunElements] }, index: 0, parent: undefined }).text.length
+    );
+};
+
+const propertiesOfContentControl = (contentControl: Element): Element | undefined =>
+    contentControl.elements?.find((e) => e.name === "w:sdtPr");
+
+const isShowingPlaceholder = (contentControl: Element): boolean =>
+    !!propertiesOfContentControl(contentControl)?.elements?.some((e) => e.name === "w:showingPlcHdr");
+
+const runPropertiesOfContentControl = (contentControl: Element): Element | undefined =>
+    propertiesOfContentControl(contentControl)?.elements?.find((e) => e.name === "w:rPr");
+
+// What Word opens in a plain text content control: runs of text, tabs and breaks, and bookmarks. A link, a picture, a
+// field or a symbol in one makes Word find the document unreadable
+const PLAIN_TEXT_RUN_CONTENT: ReadonlySet<string | undefined> = new Set(["w:rPr", "w:t", "w:tab", "w:br"]);
+
+const isPlainText = (element: Element): boolean =>
+    element.name === "w:bookmarkStart" ||
+    element.name === "w:bookmarkEnd" ||
+    (element.name === "w:r" && childElementsOf(element).every((e) => PLAIN_TEXT_RUN_CONTENT.has(e.name)));
+
+/**
+ * Makes a content control show the content a patch put in it as its own. It no longer shows its placeholder text, as
+ * when text is typed in it, and a plain text control given more than text, such as a link or a picture, becomes a rich
+ * text control, as Word won't open a plain text one with it. A control bound to custom XML or a document property is
+ * no longer bound, as Word fills a bound control in from its data when it opens the document, which would put the
+ * placeholder back.
+ */
+const fillContentControl = (contentControl: Element, insertedElements: readonly Element[]): void => {
+    const properties = propertiesOfContentControl(contentControl);
+    if (!properties?.elements) {
+        return;
+    }
+
+    const isPlainTextControl = properties.elements.some((e) => e.name === "w:text");
+    const needsRichText = isPlainTextControl && !insertedElements.every(isPlainText);
+    properties.elements = properties.elements.filter(
+        (e) => e.name !== "w:showingPlcHdr" && e.name !== "w:dataBinding" && !(needsRichText && e.name === "w:text"),
+    );
+};
+
+// What a tracked insertion or move can't hold, though a paragraph can: a link, a field or a subdocument
+const NOT_IN_TRACKED_CHANGES: ReadonlySet<string | undefined> = new Set(["w:hyperlink", "w:fldSimple", "w:subDoc"]);
+
+/**
+ * The elements each container of runs can't hold. Word reads a link in a link as two links over the same text, so a
+ * patch's link in place of a placeholder in a link takes the place of that link there.
+ */
+const NOT_IN_CONTAINER: ReadonlyMap<string | undefined, ReadonlySet<string | undefined>> = new Map([
+    ["w:ins", NOT_IN_TRACKED_CHANGES],
+    ["w:moveTo", NOT_IN_TRACKED_CHANGES],
+    ["w:hyperlink", new Set(["w:hyperlink"])],
+]);
+
+/**
+ * Splits each container of runs, from the placeholder's run up to the paragraph, around the content in it that it can't
+ * hold, such as a link a patch put in place of a placeholder typed with Track Changes on. That content then isn't
+ * tracked, as when Word inserts a link with Track Changes off, and the text before and after it still is. Each tracked
+ * change must have an id of its own, so the pieces after the first are given new ones.
+ */
+const liftOutOfContainers = (paragraphElement: Element, containerPath: readonly number[], newTrackedChangeId: () => string): void => {
+    for (let depth = containerPath.length; depth > 0; depth--) {
+        const parent = elementAtPath(paragraphElement, containerPath.slice(0, depth - 1));
+        const index = containerPath[depth - 1];
+        const container = parent.elements![index];
+        const cantHold = NOT_IN_CONTAINER.get(container.name);
+        const isLifted = (element: Element): boolean => !!cantHold?.has(element.name);
+
+        if (!container.elements?.some(isLifted)) {
+            continue;
+        }
+
+        // Each stretch of what it can hold stays in a copy of it. A stretch starts at a lifted element and after one
+        const { elements } = container;
+        const starts = elements.flatMap((element, i) => (i === 0 || isLifted(element) || isLifted(elements[i - 1]) ? [i] : []));
+        const stretches = starts.map((start, i) => elements.slice(start, starts[i + 1]));
+        const isTrackedChange = cantHold === NOT_IN_TRACKED_CHANGES;
+        let isFirstCopy = true;
+        const pieces = stretches.map((stretch) => {
+            if (isLifted(stretch[0])) {
+                return stretch[0];
+            }
+            const attributes =
+                isTrackedChange && !isFirstCopy ? { ...container.attributes, "w:id": newTrackedChangeId() } : container.attributes;
+            isFirstCopy = false;
+            return { ...container, attributes, elements: [...stretch] };
+        });
+
+        // eslint-disable-next-line functional/immutable-data
+        parent.elements!.splice(index, 1, ...pieces);
+    }
 };
 
 /**
@@ -288,6 +405,14 @@ const runPropertyRank = (element: Element): number => {
 };
 
 const childElementsOf = (element: Element): readonly Element[] => element.elements ?? [];
+
+/**
+ * The highest whole number id (w:id) of an element or anything in it.
+ */
+const highestIdIn = (element: Element): number => {
+    const id = Number(element.attributes?.["w:id"]);
+    return (element.elements ?? []).reduce((highest, child) => Math.max(highest, highestIdIn(child)), Number.isInteger(id) ? id : 0);
+};
 
 const isInsideElementAtPath = (path: readonly number[], ancestorPath: readonly number[]): boolean =>
     path.length > ancestorPath.length && ancestorPath.every((index, i) => path[i] === index);

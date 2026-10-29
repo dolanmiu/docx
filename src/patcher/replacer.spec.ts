@@ -1268,6 +1268,188 @@ describe("replacer", () => {
                 expect(namesOf(shapeRun.elements)).to.deep.equal(["w:rPr", "w:drawing"]);
                 expect(runsIn(shapeRun).map((run) => namesOf(run.elements))).to.deep.equal([["w:t"]]);
             });
+
+            describe("with the placeholder in a link, a content control or a tracked change", () => {
+                const createElement = (name: string, attributes: Element["attributes"], ...elements: readonly Element[]): Element => ({
+                    type: "element",
+                    name,
+                    attributes,
+                    elements: [...elements],
+                });
+                const link = new ConcreteHyperlink([new TextRun("link")], "9");
+                const contentControl = (properties: readonly Element[], ...content: readonly Element[]): Element =>
+                    createElement(
+                        "w:sdt",
+                        undefined,
+                        createElement("w:sdtPr", undefined, ...properties),
+                        createElement("w:sdtContent", undefined, ...content),
+                    );
+                const plainText = createElement("w:text", undefined);
+
+                it("should replace the placeholder where it is, in the element holding its run", () => {
+                    for (const name of ["w:hyperlink", "w:ins", "w:moveTo", "w:smartTag", "w:customXml", "w:fldSimple", "w:dir", "w:bdo"]) {
+                        const holder = createElement(name, undefined, createRun(createText("A {{ph}} B")));
+                        const paragraph = createParagraph(holder);
+
+                        expect(replaceWith({ elements: [paragraph] }, [new TextRun("X")]).didFindOccurrence).to.equal(true);
+
+                        expect(textsOf({ elements: [paragraph] }), name).to.deep.equal(["A X B"]);
+                        expect(namesOf(paragraph.elements), name).to.deep.equal([name]);
+                        expect(namesOf(holder.elements), name).to.deep.equal(["w:r", "w:r", "w:r"]);
+                    }
+                });
+
+                it("should replace the placeholder in a content control's content", () => {
+                    const control = contentControl([], createRun(createText("{{ph}}")));
+                    const paragraph = createParagraph(control);
+
+                    replaceWith({ elements: [paragraph] }, [new TextRun("X")]);
+
+                    expect(textsOf({ elements: [paragraph] })).to.deep.equal(["X"]);
+                    expect(namesOf(control.elements![1].elements)).to.deep.equal(["w:r", "w:r", "w:r"]);
+                });
+
+                it("should replace every occurrence, in the paragraph and in a link, but not one in the content it inserts", () => {
+                    const paragraph = createParagraph(
+                        createRun(createText("{{ph}} and ")),
+                        createElement("w:hyperlink", undefined, createRun(createText("{{ph}}"))),
+                        createElement("w:ins", undefined, createRun(createText(" and {{ph}}"))),
+                    );
+
+                    replaceWith({ elements: [paragraph] }, [new TextRun("[{{ph}}]")]);
+
+                    expect(textsOf({ elements: [paragraph] })).to.deep.equal(["[{{ph}}] and [{{ph}}] and [{{ph}}]"]);
+                });
+
+                it("should replace a placeholder that starts in the paragraph and ends in a tracked insertion, where it starts", () => {
+                    const insertion = createElement("w:ins", { "w:id": "1" }, createRun(createText("h}} after")));
+                    const paragraph = createParagraph(createRun(createText("Before {{p")), insertion);
+
+                    replaceWith({ elements: [paragraph] }, [new TextRun("X")]);
+
+                    expect(textsOf({ elements: [paragraph] })).to.deep.equal(["Before X after"]);
+                    expect(namesOf(paragraph.elements)).to.deep.equal(["w:r", "w:r", "w:r", "w:ins"]);
+                });
+
+                it("should take a link out of a tracked insertion, which can't hold it, giving the insertion after it an id nothing else has", () => {
+                    const insertion = createElement(
+                        "w:ins",
+                        { "w:id": "1", "w:author": "A" },
+                        createRun(createText("Dear ")),
+                        createRun(createText("{{ph}}, welcome")),
+                    );
+                    const paragraph = createParagraph(insertion, createElement("w:bookmarkStart", { "w:id": "7", "w:name": "b" }));
+
+                    replaceWith({ elements: [paragraph] }, [link]);
+
+                    expect(textsOf({ elements: [paragraph] })).to.deep.equal(["Dear link, welcome"]);
+                    expect(paragraph.elements!.map((e) => [e.name, e.attributes])).to.deep.equal([
+                        ["w:ins", { "w:id": "1", "w:author": "A" }],
+                        ["w:hyperlink", { "w:history": "1", "r:id": "rId9" }],
+                        ["w:ins", { "w:id": "8", "w:author": "A" }],
+                        ["w:bookmarkStart", { "w:id": "7", "w:name": "b" }],
+                    ]);
+                    // The runs before the link stay together in the first part
+                    expect(namesOf(paragraph.elements![0].elements)).to.deep.equal(["w:r", "w:r"]);
+                });
+
+                it("should take a link out of a link, so the patch's link takes the place of the template's there", () => {
+                    const paragraph = createParagraph(
+                        createElement("w:hyperlink", { "w:anchor": "top" }, createRun(createText("Go to {{ph}} now"))),
+                    );
+
+                    replaceWith({ elements: [paragraph] }, [link]);
+
+                    expect(textsOf({ elements: [paragraph] })).to.deep.equal(["Go to link now"]);
+                    expect(paragraph.elements!.map((e) => e.attributes)).to.deep.equal([
+                        { "w:anchor": "top" },
+                        { "w:history": "1", "r:id": "rId9" },
+                        { "w:anchor": "top" },
+                    ]);
+                });
+
+                it("should take a link out of a tracked insertion in a link, and then out of the link", () => {
+                    const paragraph = createParagraph(
+                        createElement(
+                            "w:hyperlink",
+                            { "w:anchor": "top" },
+                            createElement("w:ins", { "w:id": "1" }, createRun(createText("{{ph}}"))),
+                        ),
+                    );
+
+                    replaceWith({ elements: [paragraph] }, [link]);
+
+                    expect(paragraph.elements!.map((e) => [e.attributes, namesOf(e.elements)])).to.deep.equal([
+                        [{ "w:anchor": "top" }, ["w:ins"]],
+                        [{ "w:history": "1", "r:id": "rId9" }, ["w:r"]],
+                        [{ "w:anchor": "top" }, ["w:ins"]],
+                    ]);
+                    expect(paragraph.elements!.map((e) => e.elements![0].attributes?.["w:id"])).to.deep.equal(["1", undefined, "2"]);
+                });
+
+                it("should replace a placeholder in a content control without properties, as it needs none", () => {
+                    const control = createElement(
+                        "w:sdt",
+                        undefined,
+                        createElement("w:sdtContent", undefined, createRun(createText("{{ph}}"))),
+                    );
+                    const paragraph = createParagraph(control);
+
+                    replaceWith({ elements: [paragraph] }, [link]);
+
+                    expect(textsOf({ elements: [paragraph] })).to.deep.equal(["link"]);
+                    expect(namesOf(control.elements)).to.deep.equal(["w:sdtContent"]);
+                    expect(namesOf(control.elements![0].elements)).to.deep.equal(["w:r", "w:hyperlink", "w:r"]);
+                });
+
+                it("should make a plain text content control a rich text one when a link is put in it, as Word won't open it otherwise", () => {
+                    const control = contentControl([plainText], createRun(createText("{{ph}}")));
+
+                    replaceWith({ elements: [createParagraph(control)] }, [link]);
+
+                    expect(namesOf(control.elements![0].elements)).to.deep.equal([]);
+                });
+
+                it("should keep a plain text content control when only text, tabs, breaks and bookmarks are put in it", () => {
+                    const control = contentControl([plainText], createRun(createText("{{ph}}")));
+
+                    replaceWith({ elements: [createParagraph(control)] }, [
+                        new TextRun({ text: "X", bold: true, break: 1 }),
+                        new Bookmark({ id: "here", children: [new TextRun("\tY")] }),
+                    ]);
+
+                    expect(namesOf(control.elements![0].elements)).to.deep.equal(["w:text"]);
+                });
+
+                it("should unbind a content control bound to custom XML, so Word doesn't fill the placeholder back in from it", () => {
+                    const binding = createElement("w:dataBinding", {
+                        "w:xpath": "/ns0:root[1]/ns0:name[1]",
+                        "w:storeItemID": "{6E5A1C1B-2B7B-4C55-9E36-7B9C5B0F2A11}",
+                    });
+                    const control = contentControl(
+                        [createElement("w:id", { "w:val": "1" }), binding, plainText],
+                        createRun(createText("{{ph}}")),
+                    );
+
+                    replaceWith({ elements: [createParagraph(control)] }, [new TextRun("X")]);
+
+                    expect(namesOf(control.elements![0].elements)).to.deep.equal(["w:id", "w:text"]);
+                });
+
+                it("should stop a content control showing its placeholder text, giving the content the control's run properties", () => {
+                    const bold: Element = { type: "element", name: "w:rPr", elements: [{ type: "element", name: "w:b" }] };
+                    const control = contentControl(
+                        [createElement("w:showingPlcHdr", undefined), bold, plainText],
+                        createRun(italic, createText("Enter {{ph}}")),
+                    );
+
+                    replaceWith({ elements: [createParagraph(control)] }, [new TextRun("X")]);
+
+                    const runs = control.elements![1].elements!;
+                    expect(namesOf(control.elements![0].elements)).to.deep.equal(["w:rPr", "w:text"]);
+                    expect(runs.map((run) => namesOf(run.elements![0].elements))).to.deep.equal([["w:i"], ["w:b"], ["w:i"]]);
+                });
+            });
         });
     });
 });

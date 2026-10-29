@@ -639,7 +639,7 @@ describe("traverser", () => {
                     runs: [
                         {
                             end: 18,
-                            index: 0,
+                            path: [0],
                             parts: [
                                 {
                                     end: 18,
@@ -667,7 +667,7 @@ describe("traverser", () => {
                         {
                             text: "What a {{bold}} text!",
                             parts: [{ text: "What a {{bold}} text!", index: 1, start: 0, end: 20 }],
-                            index: 0,
+                            path: [0],
                             start: 0,
                             end: 20,
                         },
@@ -688,7 +688,7 @@ describe("traverser", () => {
                         {
                             text: "What a {{bold}} text!",
                             parts: [{ text: "What a {{bold}} text!", index: 1, start: 0, end: 20 }],
-                            index: 0,
+                            path: [0],
                             start: 0,
                             end: 20,
                         },
@@ -709,15 +709,15 @@ describe("traverser", () => {
                         {
                             text: "This is a {{head",
                             parts: [{ text: "This is a {{head", index: 0, start: 0, end: 15 }],
-                            index: 1,
+                            path: [1],
                             start: 0,
                             end: 15,
                         },
-                        { text: "er", parts: [{ text: "er", index: 0, start: 16, end: 17 }], index: 2, start: 16, end: 17 },
+                        { text: "er", parts: [{ text: "er", index: 0, start: 16, end: 17 }], path: [2], start: 16, end: 17 },
                         {
                             text: "_adjective}} don’t you think?",
                             parts: [{ text: "_adjective}} don’t you think?", index: 0, start: 18, end: 46 }],
-                            index: 3,
+                            path: [3],
                             start: 18,
                             end: 46,
                         },
