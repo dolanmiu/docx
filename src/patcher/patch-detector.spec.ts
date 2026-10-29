@@ -406,6 +406,54 @@ describe("patch-detector", () => {
         expect(await patchDetector({ data })).to.deep.equal([" name ", "name", " ", "first name ", "\tname"]);
     });
 
+    describe("with placeholderDelimiters", () => {
+        it("should detect the placeholders patchDocument patches with the same delimiters", async () => {
+            const data = await Packer.toBuffer(
+                new Document({ sections: [{ children: [new Paragraph("Dear <<name>>, {{not a placeholder}}")] }] }),
+            );
+            const placeholderDelimiters = { start: "<<", end: ">>" };
+
+            const keys = await patchDetector({ data, placeholderDelimiters });
+            const output = await patchDocument({
+                outputType: "nodebuffer",
+                data,
+                patches: { name: { type: PatchType.PARAGRAPH, children: [new TextRun("Ada")] } },
+                placeholderDelimiters,
+            });
+
+            expect(keys).toEqual(["name"]);
+            expect(textOf(unzip(output), "word/document.xml")).toMatch(/<w:t[^>]*>Ada<\/w:t>/);
+        });
+
+        it("should look for delimiters with characters a regular expression gives a meaning to as they are", async () => {
+            const data = await Packer.toBuffer(new Document({ sections: [{ children: [new Paragraph("[[a]] $(b) ((c) .d.")] }] }));
+
+            expect(await patchDetector({ data, placeholderDelimiters: { start: "[[", end: "]]" } })).toEqual(["a"]);
+            expect(await patchDetector({ data, placeholderDelimiters: { start: "$(", end: ")" } })).toEqual(["b"]);
+            expect(await patchDetector({ data, placeholderDelimiters: { start: ".", end: "." } })).toEqual(["d"]);
+        });
+
+        it("should give the keys without the spaces inside the delimiters, with trimPlaceholders", async () => {
+            const data = await Packer.toBuffer(new Document({ sections: [{ children: [new Paragraph("<< name >> <<city>>")] }] }));
+
+            expect(await patchDetector({ data, placeholderDelimiters: { start: "<<", end: ">>" }, trimPlaceholders: true })).toEqual([
+                "name",
+                "city",
+            ]);
+        });
+
+        it("should throw for a delimiter that is empty or only spaces, as patchDocument does", async () => {
+            const data = await Packer.toBuffer(new Document({ sections: [{ children: [new Paragraph("<<name>>")] }] }));
+
+            await expect(patchDetector({ data, placeholderDelimiters: { start: "", end: ">>" } })).rejects.toThrow(
+                "Both start and end delimiters must be non-empty strings.",
+            );
+            await expect(patchDetector({ data, placeholderDelimiters: { start: "<<", end: " " } })).rejects.toThrow(
+                "Both start and end delimiters must be non-empty strings.",
+            );
+        });
+    });
+
     it("should detect and patch placeholders in a template read from a stream", async () => {
         const data = await Packer.toBuffer(new Document({ sections: [{ children: [new Paragraph("Hello {{name}}")] }] }));
         // A stream such as fs.createReadStream gives a template in chunks, and can be read only once

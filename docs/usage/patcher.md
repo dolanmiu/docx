@@ -29,7 +29,7 @@ fs.writeFileSync("My Patched Document.docx", doc);
 
 Use `patchDetector({ data })` to find the placeholder keys in a template before calling `patchDocument`. It returns distinct keys without the `{{` and `}}` delimiters. This is useful when templates differ: an expensive patch, such as downloading images, only needs to be built when its placeholder is present.
 
-This discovery workflow supports only `{{...}}` placeholders. `patchDetector` does not accept the custom `placeholderDelimiters` supported by `patchDocument`.
+If the template's placeholders have other delimiters, such as `<<name>>`, give `patchDetector` the same `placeholderDelimiters` as `patchDocument`, such as `{ start: "<<", end: ">>" }`.
 
 If the template's placeholders can have spaces inside their braces, such as `{{ name }}`, give both `patchDetector` and `patchDocument` `trimPlaceholders: true`. `patchDetector` then gives the key as `name`, and `patchDocument` patches the placeholder with the patch `name`. See [Spaces inside placeholders](usage/templates.md#spaces-inside-placeholders).
 
@@ -57,7 +57,7 @@ const doc = await patchDocument({ outputType: "nodebuffer", data, patches: Objec
 fs.writeFileSync("My Patched Document.docx", doc);
 ```
 
-This example patches only keys with a registered builder; other placeholders remain in the document. If every placeholder must be resolved, validate the detected keys against your builders and report unsupported keys before patching. Detection discovers keys; it does not generate replacement content or call `patchDocument` for you.
+This example patches only keys with a registered builder; other placeholders remain in the document. To find patches whose placeholder isn't in the template, which `patchDocument` leaves out without an error, see [A placeholder isn't replaced](usage/templates.md#a-placeholder-isnt-replaced). If every placeholder must be resolved, validate the detected keys against your builders and report unsupported keys before patching. Detection discovers keys; it does not generate replacement content or call `patchDocument` for you.
 
 ## Patches
 
@@ -80,6 +80,8 @@ A patch can also repeat the rows of a table in the template, once for each row o
 A paragraph in a patch can be a heading. Its style is added to a template that doesn't have it yet. See [Headings and styles](usage/templates.md#headings-and-styles).
 
 The patcher also takes in a `keepOriginalStyles` boolean, which will preserve the styles of the patched text when set to true.
+
+It also takes in `placeholderDelimiters`, for a template whose placeholders aren't in double curly braces, such as `{ start: "<<", end: ">>" }` for `<<name>>`.
 
 It also takes in a `trimPlaceholders` boolean, which patches a placeholder with spaces inside its delimiters, such as `{{ name }}`, as if it had none. See [Spaces inside placeholders](usage/templates.md#spaces-inside-placeholders).
 

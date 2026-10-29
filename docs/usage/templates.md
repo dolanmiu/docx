@@ -834,6 +834,45 @@ const doc = await patchDocument({
 fs.writeFileSync("invoice-output.docx", doc);
 ```
 
+## A placeholder isn't replaced
+
+`patchDocument` doesn't throw for a patch whose placeholder isn't in the template, as one set of patches can be given to templates that don't all have every placeholder. The placeholder is left as it is. To find such patches, compare their keys with the placeholders [`patchDetector`](usage/patcher.md#discover-placeholders-before-building-patches) finds, giving it the same `placeholderDelimiters` and `trimPlaceholders` as `patchDocument`:
+
+```ts live
+import * as fs from "fs";
+import { Document, Packer, Paragraph, patchDetector, patchDocument, PatchType, TextRun } from "docx";
+
+// The template, with one placeholder typed in single braces
+const template = await Packer.toBuffer(
+    new Document({
+        sections: [{ children: [new Paragraph("Dear {{customer_name}},"), new Paragraph("Your order: {order_number}")] }],
+    }),
+);
+
+const patches = {
+    customer_name: { type: PatchType.PARAGRAPH, children: [new TextRun("John Smith")] },
+    order_number: { type: PatchType.PARAGRAPH, children: [new TextRun("12345")] },
+};
+
+// The patches whose placeholder isn't in the template. Here it's ["order_number"], as the template has {order_number}
+const found = await patchDetector({ data: template });
+const notFound = Object.keys(patches).filter((key) => !found.includes(key));
+console.log("No placeholder for:", notFound);
+
+const doc = await patchDocument({ outputType: "nodebuffer", data: template, patches });
+
+fs.writeFileSync("output.docx", doc);
+```
+
+A patch whose placeholder isn't found is usually one of these:
+
+- **The key has the delimiters**: the key of `{{customer_name}}` is `customer_name`, not `"{{customer_name}}"`, which is looked for as `{{{{customer_name}}}}`.
+- **The key isn't spelled as the placeholder is**: keys match exactly, including upper and lower case.
+- **The template has other delimiters**, such as `{name}`, `<<name>>` or `[name]`: give `patchDocument` and `patchDetector` the template's delimiters, such as `placeholderDelimiters: { start: "<<", end: ">>" }`.
+- **Spaces inside the delimiters**, such as `{{ name }}`: see [Spaces inside placeholders](#spaces-inside-placeholders).
+
+`patchDetector` finds placeholders in the alt text of pictures and charts too, but only an [`ImagePatch`](#replacing-a-picture) or a `ChartDataPatch` patches those; a text patch leaves them as they are. A placeholder in deleted text, which Word shows struck through when Track Changes is on, isn't patched or found, nor is one in a chart's own text, such as its title.
+
 ## Tips
 
 - **Placeholder naming**: Use descriptive names like `customer_name` instead of `x1`

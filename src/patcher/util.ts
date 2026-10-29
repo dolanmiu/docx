@@ -112,3 +112,15 @@ export const getFirstLevelElements = (relationships: Element, id: string): Eleme
     parent.elements ??= [];
     return parent.elements;
 };
+
+/**
+ * Checks the delimiters of a template's placeholders, which must be more than spaces.
+ *
+ * @param delimiters - The delimiters, such as `{{` and `}}`
+ * @throws Error if either delimiter is empty or only spaces
+ */
+export const checkPlaceholderDelimiters = (delimiters: { readonly start: string; readonly end: string } | undefined): void => {
+    if (!delimiters?.start.trim() || !delimiters?.end.trim()) {
+        throw new Error("Both start and end delimiters must be non-empty strings.");
+    }
+};
