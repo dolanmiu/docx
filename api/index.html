@@ -27,11 +27,41 @@
 </p>
 <h1 id="demo" class="tsd-anchor-link">Demo<a href="#demo" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h1>
 <h2 id="browser" class="tsd-anchor-link">Browser<a href="#browser" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<p>Here are examples of <code>docx</code> being used with basic <code>HTML/JS</code> in a browser environment:</p>
-<ul>
-<li><a href="https://codepen.io/dolanmiu/pen/RwNeObg">https://codepen.io/dolanmiu/pen/RwNeObg</a></li>
-<li><a href="https://jsfiddle.net/dolanmiu/onadx1gu/">https://jsfiddle.net/dolanmiu/onadx1gu/</a></li>
-</ul>
+<p>With basic <code>HTML/JS</code> in a browser, load <code>docx</code>'s browser build, which defines a global <code>docx</code>:</p>
+<pre><code class="html"><!DOCTYPE html>
+<html>
+    <head>
+        <script src="https://unpkg.com/docx@9/dist/index.iife.js"></script>
+    </head>
+    <body>
+        <button type="button" onclick="generate()">Download a Word document</button>
+
+        <script>
+            function generate() {
+                const doc = new docx.Document({
+                    sections: [
+                        {
+                            children: [
+                                new docx.Paragraph({
+                                    children: [new docx.TextRun("Hello World"), new docx.TextRun({ text: "Foo Bar", bold: true })],
+                                }),
+                            ],
+                        },
+                    ],
+                });
+
+                docx.Packer.toBlob(doc).then((blob) => {
+                    const link = document.createElement("a");
+                    link.href = URL.createObjectURL(blob);
+                    link.download = "example.docx";
+                    link.click();
+                });
+            }
+        </script>
+    </body>
+</html>
+</code><button type="button">Copy</button></pre>
+
 <p>Here are examples of <code>docx</code> working in <code>Angular</code>:</p>
 <ul>
 <li><a href="https://stackblitz.com/edit/angular-docx">https://stackblitz.com/edit/angular-docx</a></li>
