@@ -1420,6 +1420,21 @@ describe("replacer", () => {
                     expect(namesOf(control.elements![0].elements)).to.deep.equal(["w:text"]);
                 });
 
+                it("should unbind a content control bound to custom XML, so Word doesn't fill the placeholder back in from it", () => {
+                    const binding = createElement("w:dataBinding", {
+                        "w:xpath": "/ns0:root[1]/ns0:name[1]",
+                        "w:storeItemID": "{6E5A1C1B-2B7B-4C55-9E36-7B9C5B0F2A11}",
+                    });
+                    const control = contentControl(
+                        [createElement("w:id", { "w:val": "1" }), binding, plainText],
+                        createRun(createText("{{ph}}")),
+                    );
+
+                    replaceWith({ elements: [createParagraph(control)] }, [new TextRun("X")]);
+
+                    expect(namesOf(control.elements![0].elements)).to.deep.equal(["w:id", "w:text"]);
+                });
+
                 it("should stop a content control showing its placeholder text, giving the content the control's run properties", () => {
                     const bold: Element = { type: "element", name: "w:rPr", elements: [{ type: "element", name: "w:b" }] };
                     const control = contentControl(

@@ -229,7 +229,9 @@ const isPlainText = (element: Element): boolean =>
 /**
  * Makes a content control show the content a patch put in it as its own. It no longer shows its placeholder text, as
  * when text is typed in it, and a plain text control given more than text, such as a link or a picture, becomes a rich
- * text control, as Word won't open a plain text one with it.
+ * text control, as Word won't open a plain text one with it. A control bound to custom XML or a document property is
+ * no longer bound, as Word fills a bound control in from its data when it opens the document, which would put the
+ * placeholder back.
  */
 const fillContentControl = (contentControl: Element, insertedElements: readonly Element[]): void => {
     const properties = propertiesOfContentControl(contentControl);
@@ -239,7 +241,9 @@ const fillContentControl = (contentControl: Element, insertedElements: readonly 
 
     const isPlainTextControl = properties.elements.some((e) => e.name === "w:text");
     const needsRichText = isPlainTextControl && !insertedElements.every(isPlainText);
-    properties.elements = properties.elements.filter((e) => e.name !== "w:showingPlcHdr" && !(needsRichText && e.name === "w:text"));
+    properties.elements = properties.elements.filter(
+        (e) => e.name !== "w:showingPlcHdr" && e.name !== "w:dataBinding" && !(needsRichText && e.name === "w:text"),
+    );
 };
 
 // What a tracked insertion or move can't hold, though a paragraph can: a link, a field or a subdocument

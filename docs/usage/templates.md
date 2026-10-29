@@ -119,6 +119,7 @@ Where the content can't go in what holds the placeholder, it goes as close as it
 - **A link in a link**: the patch's link takes the place of the template's link where the placeholder was, and the text around it keeps the template's link.
 - **A plain text content control**: given anything but text, such as a link, a picture, a field or a symbol, it becomes a rich text content control, as Word won't open a plain text one holding it.
 - **A content control showing its placeholder text**: if `{{name}}` is the control's placeholder text, the control shows the patch's content as its own, with the control's formatting rather than the grey of placeholder text.
+- **A content control bound to custom XML or a document property**: the binding is removed, as Word fills a bound control in from its data when it opens the document, which would put the placeholder back.
 
 Deleted text, which Word shows struck through when Track Changes is on, isn't the document's text, so a placeholder in it isn't patched.
 
