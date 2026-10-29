@@ -871,8 +871,9 @@ A patch whose placeholder isn't found is usually one of these:
 - **The key isn't spelled as the placeholder is**: keys match exactly, including upper and lower case.
 - **The template has other delimiters**, such as `{name}`, `<<name>>` or `[name]`: give `patchDocument` and `patchDetector` the template's delimiters, such as `placeholderDelimiters: { start: "<<", end: ">>" }`.
 - **Spaces inside the delimiters**, such as `{{ name }}`: see [Spaces inside placeholders](#spaces-inside-placeholders).
+- **The placeholder is only in a picture's or a chart's alt text**: only an [`ImagePatch`](#replacing-a-picture) or a `ChartDataPatch` patches it, and a text patch leaves it as it is. `patchDetector` finds placeholders in alt text too, so the check above doesn't list this patch.
 
-`patchDetector` finds placeholders in the alt text of pictures and charts too, but only an [`ImagePatch`](#replacing-a-picture) or a `ChartDataPatch` patches those; a text patch leaves them as they are. A placeholder in deleted text, which Word shows struck through when Track Changes is on, isn't patched or found, nor is one in a chart's own text, such as its title.
+A placeholder in deleted text, which Word shows struck through when Track Changes is on, isn't patched or found, nor is one in a chart's own text, such as its title.
 
 ## Tips
 
