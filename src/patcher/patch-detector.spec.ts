@@ -433,6 +433,15 @@ describe("patch-detector", () => {
             expect(await patchDetector({ data, placeholderDelimiters: { start: ".", end: "." } })).toEqual(["d"]);
         });
 
+        it("should not let a start delimiter before a placeholder hide it", async () => {
+            const data = await Packer.toBuffer(
+                new Document({ sections: [{ children: [new Paragraph("<<unfinished <<name>>"), new Paragraph("a < b and <city>")] }] }),
+            );
+
+            expect(await patchDetector({ data, placeholderDelimiters: { start: "<<", end: ">>" } })).toEqual(["name"]);
+            expect(await patchDetector({ data, placeholderDelimiters: { start: "<", end: ">" } })).toEqual(["name", "city"]);
+        });
+
         it("should give the keys without the spaces inside the delimiters, with trimPlaceholders", async () => {
             const data = await Packer.toBuffer(new Document({ sections: [{ children: [new Paragraph("<< name >> <<city>>")] }] }));
 

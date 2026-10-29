@@ -89,10 +89,12 @@ export const patchDetector = async ({
 const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /**
- * The pattern of the keys of placeholders: the text between the delimiters, without them.
+ * The pattern of the keys of placeholders: the text between the delimiters, without them. A key has no start delimiter
+ * in it, so a start delimiter before a placeholder, such as in `<<unfinished <<name>>` or `a < b and <name>`, doesn't
+ * hide it, and the search from a start delimiter with no end after it stops at the next start delimiter.
  *
  * @param delimiters - The delimiters, such as `{{` and `}}`
  * @returns A pattern that matches every key in a text
  */
 const placeholderPattern = ({ start, end }: { readonly start: string; readonly end: string }): RegExp =>
-    new RegExp(`(?<=${escapeRegExp(start)}).+?(?=${escapeRegExp(end)})`, "gs");
+    new RegExp(`(?<=${escapeRegExp(start)})(?:(?!${escapeRegExp(start)}).)+?(?=${escapeRegExp(end)})`, "gs");
