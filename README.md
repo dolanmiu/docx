@@ -24,10 +24,42 @@
 
 ## Browser
 
-Here are examples of `docx` being used with basic `HTML/JS` in a browser environment:
+With basic `HTML/JS` in a browser, load `docx`'s browser build, which defines a global `docx`:
 
--   https://codepen.io/dolanmiu/pen/RwNeObg
--   https://jsfiddle.net/dolanmiu/onadx1gu/
+```html
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="https://unpkg.com/docx@9/dist/index.iife.js"></script>
+    </head>
+    <body>
+        <button type="button" onclick="generate()">Download a Word document</button>
+
+        <script>
+            function generate() {
+                const doc = new docx.Document({
+                    sections: [
+                        {
+                            children: [
+                                new docx.Paragraph({
+                                    children: [new docx.TextRun("Hello World"), new docx.TextRun({ text: "Foo Bar", bold: true })],
+                                }),
+                            ],
+                        },
+                    ],
+                });
+
+                docx.Packer.toBlob(doc).then((blob) => {
+                    const link = document.createElement("a");
+                    link.href = URL.createObjectURL(blob);
+                    link.download = "example.docx";
+                    link.click();
+                });
+            }
+        </script>
+    </body>
+</html>
+```
 
 Here are examples of `docx` working in `Angular`:
 
