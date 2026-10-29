@@ -277,13 +277,10 @@ const liftOutOfContainers = (paragraphElement: Element, containerPath: readonly 
             continue;
         }
 
-        // Each stretch of what it can hold stays in a copy of it
-        const stretches = container.elements.reduce<readonly (readonly Element[])[]>((all, element) => {
-            const previous = all[all.length - 1];
-            return isLifted(element) || !previous || isLifted(previous[0])
-                ? [...all, [element]]
-                : [...all.slice(0, -1), [...previous, element]];
-        }, []);
+        // Each stretch of what it can hold stays in a copy of it. A stretch starts at a lifted element and after one
+        const { elements } = container;
+        const starts = elements.flatMap((element, i) => (i === 0 || isLifted(element) || isLifted(elements[i - 1]) ? [i] : []));
+        const stretches = starts.map((start, i) => elements.slice(start, starts[i + 1]));
         const isTrackedChange = cantHold === NOT_IN_TRACKED_CHANGES;
         let isFirstCopy = true;
         const pieces = stretches.map((stretch) => {
