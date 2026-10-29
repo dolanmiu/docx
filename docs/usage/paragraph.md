@@ -340,15 +340,15 @@ Set paragraph indentation from the page margins using the `indent` property.
 
 ### IIndentAttributesProperties
 
-| Property       | Type                                 | Notes    | Description                                                                 |
-| -------------- | ------------------------------------ | -------- | --------------------------------------------------------------------------- |
-| start          | `number \| UniversalMeasure`         | Optional | Indentation from the leading edge (left in LTR, right in RTL), in twips     |
-| end            | `number \| UniversalMeasure`         | Optional | Indentation from the trailing edge (right in LTR, left in RTL), in twips    |
-| left           | `number \| UniversalMeasure`         | Optional | Indentation from the left margin, in twips                                  |
-| right          | `number \| UniversalMeasure`         | Optional | Indentation from the right margin, in twips                                 |
-| hanging        | `number \| PositiveUniversalMeasure` | Optional | Hanging indent removed from the first line, in twips                        |
-| firstLine      | `number \| PositiveUniversalMeasure` | Optional | Additional first-line indent, in twips                                      |
-| firstLineChars | `number`                             | Optional | First-line indent in hundredths of a character width (e.g. `200` = 2 chars) |
+| Property       | Type                                 | Notes    | Description                                                                              |
+| -------------- | ------------------------------------ | -------- | ---------------------------------------------------------------------------------------- |
+| start          | `number \| UniversalMeasure`         | Optional | Indentation from the leading edge (left in LTR, right in RTL), in twips                  |
+| end            | `number \| UniversalMeasure`         | Optional | Indentation from the trailing edge (right in LTR, left in RTL), in twips                 |
+| left           | `number \| UniversalMeasure`         | Optional | Indentation from the left margin, in twips. With `hanging`, of the lines after the first |
+| right          | `number \| UniversalMeasure`         | Optional | Indentation from the right margin, in twips                                              |
+| hanging        | `number \| PositiveUniversalMeasure` | Optional | How far the first line starts before `left`, in twips                                    |
+| firstLine      | `number \| PositiveUniversalMeasure` | Optional | Additional first-line indent, in twips                                                   |
+| firstLineChars | `number`                             | Optional | First-line indent in hundredths of a character width (e.g. `200` = 2 chars)              |
 
 > `start`/`end` are the bidi-aware equivalents of `left`/`right`. Prefer `start`/`end` for documents that may be rendered in RTL languages.
 
@@ -410,6 +410,28 @@ const doc = new Document({
                     indent: {
                         left: 720,
                         hanging: 360, // first line hangs back 360 twips from the left indent
+                    },
+                }),
+            ],
+        },
+    ],
+});
+```
+
+Word's Paragraph dialog shows a hanging paragraph's Left indent where its first line starts, which is `left` minus `hanging`. So `left: 0, hanging: 1077` (1.9 cm) shows there as Left −1.9 cm and Hanging 1.9 cm, with the first line out in the margin. For Word's Left 0 cm and Hanging 1.9 cm, where the first line starts at the margin and the lines after it 1.9 cm in, give `left` and `hanging` the same value:
+
+```ts live
+import { convertMillimetersToTwip, Document, Paragraph } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    text: "Shows in Word as Left 0 cm, Hanging 1.9 cm. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque vehicula nec nulla vitae efficitur. Ut interdum mauris eu ipsum rhoncus, nec pharetra velit placerat.",
+                    indent: {
+                        left: convertMillimetersToTwip(19),
+                        hanging: convertMillimetersToTwip(19),
                     },
                 }),
             ],

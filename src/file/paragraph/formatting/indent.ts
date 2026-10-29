@@ -23,19 +23,25 @@ import {
  * Values can be specified as numbers (in twips) or as universal measures (e.g., "1in", "2.5cm").
  */
 export type IIndentAttributesProperties = {
-    // Indentation from the leading edge — left in LTR, right in RTL (ST_SignedTwipsMeasure)
+    /** Indentation from the leading edge — left in LTR, right in RTL (ST_SignedTwipsMeasure) */
     readonly start?: number | UniversalMeasure;
-    // Indentation from the trailing edge — right in LTR, left in RTL (ST_SignedTwipsMeasure)
+    /** Indentation from the trailing edge — right in LTR, left in RTL (ST_SignedTwipsMeasure) */
     readonly end?: number | UniversalMeasure;
-    // Indentation from the left margin (ST_SignedTwipsMeasure)
+    /**
+     * Indentation from the left margin (ST_SignedTwipsMeasure). With `hanging`, it's where the lines after the first start.
+     * Word's Paragraph dialog shows a hanging paragraph's Left as where its first line starts: `left` minus `hanging`.
+     */
     readonly left?: number | UniversalMeasure;
-    // Indentation from the right margin (ST_SignedTwipsMeasure)
+    /** Indentation from the right margin (ST_SignedTwipsMeasure) */
     readonly right?: number | UniversalMeasure;
-    // Hanging indent removed from the first line (ST_TwipsMeasure)
+    /**
+     * How far the first line starts before `left` (ST_TwipsMeasure).
+     * For Word's Left 0 cm and Hanging 1.9 cm, give `left` and `hanging` both 1.9 cm (1077 twips).
+     */
     readonly hanging?: number | PositiveUniversalMeasure;
-    // Additional first-line indent in twips (ST_TwipsMeasure)
+    /** Additional first-line indent in twips (ST_TwipsMeasure) */
     readonly firstLine?: number | PositiveUniversalMeasure;
-    // Hundredths of a character width (ST_DecimalNumber); e.g. 200 = 2 characters
+    /** Hundredths of a character width (ST_DecimalNumber); e.g. 200 = 2 characters */
     readonly firstLineChars?: number;
 };
 
