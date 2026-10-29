@@ -27092,6 +27092,15 @@ MAX: 9026 };
 		(_parent$elements = parent.elements) !== null && _parent$elements !== void 0 || (parent.elements = []);
 		return parent.elements;
 	};
+	/**
+	* Checks the delimiters of a template's placeholders, which must be more than spaces.
+	*
+	* @param delimiters - The delimiters, such as `{{` and `}}`
+	* @throws Error if either delimiter is empty or only spaces
+	*/
+	var checkPlaceholderDelimiters = (delimiters) => {
+		if (!(delimiters === null || delimiters === void 0 ? void 0 : delimiters.start.trim()) || !(delimiters === null || delimiters === void 0 ? void 0 : delimiters.end.trim())) throw new Error("Both start and end delimiters must be non-empty strings.");
+	};
 	// src/patcher/content-types-manager.ts
 	/**
 	* Appends a content type definition to the [Content_Types].xml structure.
@@ -28197,6 +28206,113 @@ MAX: 9026 };
 			return _ref3.apply(this, arguments);
 		};
 	}();
+	// src/patcher/run-renderer.ts
+	/**
+	* The elements in a paragraph that hold runs of its text, so a placeholder can be in a link, a content control, a
+	* tracked insertion, a smart tag or a field's result. A content control holds them in its w:sdtContent. Deleted text, in
+	* w:del or w:moveFrom, isn't the paragraph's text, and a run's own content, such as a text box, has paragraphs of its own.
+	*/
+	var RUN_CONTAINERS = /* @__PURE__ */ new Set([
+		"w:hyperlink",
+		"w:sdt",
+		"w:sdtContent",
+		"w:ins",
+		"w:moveTo",
+		"w:smartTag",
+		"w:customXml",
+		"w:fldSimple",
+		"w:dir",
+		"w:bdo"
+	]);
+	/**
+	* The runs in an element of a paragraph, in the order they are read, with the indices from the paragraph to each.
+	*/
+	var runsIn = (element, path) => {
+		var _element$elements;
+		return ((_element$elements = element.elements) !== null && _element$elements !== void 0 ? _element$elements : []).flatMap((child, i) => {
+			var _child$name;
+			if (child.name === "w:r") return [{
+				element: child,
+				path: [...path, i]
+			}];
+			return RUN_CONTAINERS.has((_child$name = child.name) !== null && _child$name !== void 0 ? _child$name : "") ? runsIn(child, [...path, i]) : [];
+		});
+	};
+	/**
+	* The element at the end of a path of position indices from an element, such as a run from its paragraph.
+	*/
+	var elementAtPath = (element, path) => path.reduce((parent, index) => parent.elements[index], element);
+	/**
+	* Renders a paragraph element into a structured representation with text content.
+	*
+	* Extracts all text content from a paragraph (w:p) element by processing its
+	* runs (w:r), including those in a link, content control or tracked insertion.
+	* Calculates character positions for each text fragment to enable precise text
+	* replacement operations.
+	*
+	* @param node - The paragraph element wrapper to render
+	* @returns Rendered paragraph with text content, runs, and position information
+	* @throws Error if the node is not a paragraph element
+	*
+	* @example
+	* ```typescript
+	* const rendered = renderParagraphNode(paragraphWrapper);
+	* console.log(rendered.text); // "Hello World"
+	* console.log(rendered.runs.length); // 2 (if text is in separate runs)
+	* ```
+	*/
+	var renderParagraphNode = (node) => {
+		if (node.element.name !== "w:p") throw new Error(`Invalid node type: ${node.element.name}`);
+		if (!node.element.elements) return {
+			text: "",
+			runs: [],
+			index: -1,
+			pathToParagraph: []
+		};
+		let currentRunStringLength = 0;
+		const runs = runsIn(node.element, []).map(({ element, path }) => {
+			const renderedRunNode = renderRunNode(element, path, currentRunStringLength);
+			currentRunStringLength += renderedRunNode.text.length;
+			return renderedRunNode;
+		});
+		return {
+			text: runs.reduce((acc, curr) => acc + curr.text, ""),
+			runs,
+			index: node.index,
+			pathToParagraph: buildNodePath(node)
+		};
+	};
+	var renderRunNode = (node, path, currentRunStringIndex) => {
+		if (!node.elements) return {
+			text: "",
+			parts: [],
+			path,
+			start: currentRunStringIndex,
+			end: currentRunStringIndex
+		};
+		let currentTextStringIndex = currentRunStringIndex;
+		const parts = node.elements.map((element, i) => {
+			var _element$elements$0$t, _element$elements$0$t2;
+			if (element.name !== "w:t" || !element.elements || element.elements.length === 0) return;
+			const partText = (_element$elements$0$t = (_element$elements$0$t2 = element.elements[0].text) === null || _element$elements$0$t2 === void 0 ? void 0 : _element$elements$0$t2.toString()) !== null && _element$elements$0$t !== void 0 ? _element$elements$0$t : "";
+			const start = currentTextStringIndex;
+			currentTextStringIndex += partText.length;
+			return {
+				text: partText,
+				index: i,
+				start,
+				end: start + partText.length - 1
+			};
+		}).filter((e) => !!e).map((e) => e);
+		return {
+			text: parts.reduce((acc, curr) => acc + curr.text, ""),
+			parts,
+			path,
+			start: currentRunStringIndex,
+			end: parts.length > 0 ? parts[parts.length - 1].end : currentRunStringIndex
+		};
+	};
+	var buildNodePath = (node) => node.parent ? [...buildNodePath(node.parent), node.index] : [node.index];
 	// src/patcher/paragraph-split-inject.ts
 	var TokenNotFoundError = class extends Error {
 		constructor(token) {
@@ -28205,38 +28321,32 @@ MAX: 9026 };
 		}
 	};
 	/**
-	* Finds the index of the run element containing a specific token.
+	* Finds the run element containing a specific token.
 	*
-	* Searches through all run (w:r) elements in a paragraph to find which one
-	* contains the specified token text. This is used to locate where new content
-	* should be injected during replacement operations.
+	* Searches through all run (w:r) elements in a paragraph, including those in a link,
+	* content control or tracked insertion, to find which one contains the specified
+	* token text. This is used to locate where new content should be injected during
+	* replacement operations.
 	*
 	* @param paragraphElement - The paragraph element to search
 	* @param token - The token text to find
-	* @returns The index of the run element containing the token
+	* @returns The position indices from the paragraph to the run element containing the token
 	* @throws Error if the token is not found in any run
 	*
 	* @example
 	* ```typescript
-	* const index = findRunElementIndexWithToken(paragraph, "ɵ");
-	* // Returns the index of the run containing the split token
+	* const path = findRunElementPathWithToken(paragraph, "ɵ");
+	* // Returns [0] for the paragraph's first run, or [2, 1] for the second run in a link that is its third element
 	* ```
 	*/
-	var findRunElementIndexWithToken = (paragraphElement, token) => {
-		var _paragraphElement$ele;
-		for (let i = 0; i < ((_paragraphElement$ele = paragraphElement.elements) !== null && _paragraphElement$ele !== void 0 ? _paragraphElement$ele : []).length; i++) {
-			const element = paragraphElement.elements[i];
-			if (element.type === "element" && element.name === "w:r") {
-				var _element$elements;
-				const textElement = ((_element$elements = element.elements) !== null && _element$elements !== void 0 ? _element$elements : []).filter((e) => e.type === "element" && e.name === "w:t");
-				for (const text of textElement) {
-					var _text$elements, _text$elements$0$text;
-					if (!((_text$elements = text.elements) === null || _text$elements === void 0 ? void 0 : _text$elements[0])) continue;
-					if ((_text$elements$0$text = text.elements[0].text) === null || _text$elements$0$text === void 0 ? void 0 : _text$elements$0$text.includes(token)) return i;
-				}
-			}
-		}
-		throw new TokenNotFoundError(token);
+	var findRunElementPathWithToken = (paragraphElement, token) => {
+		const run = renderParagraphNode({
+			element: paragraphElement,
+			index: 0,
+			parent: void 0
+		}).runs.find(({ parts }) => parts.some(({ text }) => text.includes(token)));
+		if (!run) throw new TokenNotFoundError(token);
+		return run.path;
 	};
 	/**
 	* Splits a run element at a token position into left and right parts.
@@ -28313,25 +28423,28 @@ MAX: 9026 };
 		const startIndex = renderedParagraph.text.indexOf(originalText, fromIndex);
 		const endIndex = startIndex + originalText.length - 1;
 		let replaceMode = ReplaceMode.START;
-		for (const run of renderedParagraph.runs) for (const { text, index, start, end } of run.parts) switch (replaceMode) {
-			case ReplaceMode.START:
-				if (startIndex >= start && startIndex <= end) {
-					const offsetStartIndex = startIndex - start;
-					const offsetEndIndex = Math.min(endIndex, end) - start;
-					if (text.substring(offsetStartIndex, offsetEndIndex + 1) === "") continue;
-					const firstPart = text.substring(0, offsetStartIndex) + replacementText + text.substring(offsetEndIndex + 1);
-					patchTextElement(paragraphElement.elements[run.index].elements[index], firstPart);
-					replaceMode = ReplaceMode.MIDDLE;
-					continue;
-				}
-				break;
-			case ReplaceMode.MIDDLE: if (endIndex <= end) {
-				const lastPart = text.substring(endIndex - start + 1);
-				patchTextElement(paragraphElement.elements[run.index].elements[index], lastPart);
-				const currentElement = paragraphElement.elements[run.index].elements[index];
-				paragraphElement.elements[run.index].elements[index] = patchSpaceAttribute(currentElement);
-				replaceMode = ReplaceMode.END;
-			} else patchTextElement(paragraphElement.elements[run.index].elements[index], "");
+		for (const run of renderedParagraph.runs) {
+			const runElement = elementAtPath(paragraphElement, run.path);
+			for (const { text, index, start, end } of run.parts) switch (replaceMode) {
+				case ReplaceMode.START:
+					if (startIndex >= start && startIndex <= end) {
+						const offsetStartIndex = startIndex - start;
+						const offsetEndIndex = Math.min(endIndex, end) - start;
+						if (text.substring(offsetStartIndex, offsetEndIndex + 1) === "") continue;
+						const firstPart = text.substring(0, offsetStartIndex) + replacementText + text.substring(offsetEndIndex + 1);
+						patchTextElement(runElement.elements[index], firstPart);
+						replaceMode = ReplaceMode.MIDDLE;
+						continue;
+					}
+					break;
+				case ReplaceMode.MIDDLE: if (endIndex <= end) {
+					const lastPart = text.substring(endIndex - start + 1);
+					patchTextElement(runElement.elements[index], lastPart);
+					const currentElement = runElement.elements[index];
+					runElement.elements[index] = patchSpaceAttribute(currentElement);
+					replaceMode = ReplaceMode.END;
+				} else patchTextElement(runElement.elements[index], "");
+			}
 		}
 		return paragraphElement;
 	};
@@ -28339,80 +28452,6 @@ MAX: 9026 };
 		element.elements = createTextElementContents(text);
 		return element;
 	};
-	// src/patcher/run-renderer.ts
-	/**
-	* Renders a paragraph element into a structured representation with text content.
-	*
-	* Extracts all text content from a paragraph (w:p) element by processing its
-	* run (w:r) children. Calculates character positions for each text fragment
-	* to enable precise text replacement operations.
-	*
-	* @param node - The paragraph element wrapper to render
-	* @returns Rendered paragraph with text content, runs, and position information
-	* @throws Error if the node is not a paragraph element
-	*
-	* @example
-	* ```typescript
-	* const rendered = renderParagraphNode(paragraphWrapper);
-	* console.log(rendered.text); // "Hello World"
-	* console.log(rendered.runs.length); // 2 (if text is in separate runs)
-	* ```
-	*/
-	var renderParagraphNode = (node) => {
-		if (node.element.name !== "w:p") throw new Error(`Invalid node type: ${node.element.name}`);
-		if (!node.element.elements) return {
-			text: "",
-			runs: [],
-			index: -1,
-			pathToParagraph: []
-		};
-		let currentRunStringLength = 0;
-		const runs = node.element.elements.map((element, i) => ({
-			element,
-			i
-		})).filter(({ element }) => element.name === "w:r").map(({ element, i }) => {
-			const renderedRunNode = renderRunNode(element, i, currentRunStringLength);
-			currentRunStringLength += renderedRunNode.text.length;
-			return renderedRunNode;
-		}).filter((e) => !!e);
-		return {
-			text: runs.reduce((acc, curr) => acc + curr.text, ""),
-			runs,
-			index: node.index,
-			pathToParagraph: buildNodePath(node)
-		};
-	};
-	var renderRunNode = (node, index, currentRunStringIndex) => {
-		if (!node.elements) return {
-			text: "",
-			parts: [],
-			index: -1,
-			start: currentRunStringIndex,
-			end: currentRunStringIndex
-		};
-		let currentTextStringIndex = currentRunStringIndex;
-		const parts = node.elements.map((element, i) => {
-			var _element$elements$0$t, _element$elements$0$t2;
-			if (element.name !== "w:t" || !element.elements || element.elements.length === 0) return;
-			const partText = (_element$elements$0$t = (_element$elements$0$t2 = element.elements[0].text) === null || _element$elements$0$t2 === void 0 ? void 0 : _element$elements$0$t2.toString()) !== null && _element$elements$0$t !== void 0 ? _element$elements$0$t : "";
-			const start = currentTextStringIndex;
-			currentTextStringIndex += partText.length;
-			return {
-				text: partText,
-				index: i,
-				start,
-				end: start + partText.length - 1
-			};
-		}).filter((e) => !!e).map((e) => e);
-		return {
-			text: parts.reduce((acc, curr) => acc + curr.text, ""),
-			parts,
-			index,
-			start: currentRunStringIndex,
-			end: parts.length > 0 ? parts[parts.length - 1].end : currentRunStringIndex
-		};
-	};
-	var buildNodePath = (node) => node.parent ? [...buildNodePath(node.parent), node.index] : [node.index];
 	// src/patcher/traverser.ts
 	var elementsToWrapper = (wrapper) => {
 		var _wrapper$element$elem, _wrapper$element$elem2;
@@ -28500,6 +28539,12 @@ MAX: 9026 };
 		};
 		const paragraphsInPatchOrder = [...renderedParagraphs].reverse();
 		const paragraphsToPatch = patch.type === PatchType.DOCUMENT ? withoutNestedParagraphs(paragraphsInPatchOrder) : paragraphsInPatchOrder;
+		let highestId;
+		const newTrackedChangeId = () => {
+			var _highestId;
+			highestId = ((_highestId = highestId) !== null && _highestId !== void 0 ? _highestId : highestIdIn(json)) + 1;
+			return String(highestId);
+		};
 		for (const renderedParagraph of paragraphsToPatch) switch (patch.type) {
 			case PatchType.DOCUMENT: {
 				var _children;
@@ -28519,20 +28564,20 @@ MAX: 9026 };
 				let paragraph = renderedParagraph;
 				let fromIndex = 0;
 				do {
-					const nextRunIndex = replaceOccurrenceInParagraph({
+					fromIndex = replaceOccurrenceInParagraph({
 						paragraphElement,
 						renderedParagraph: paragraph,
 						patchText,
 						fromIndex,
 						children: formatChildren(patch, context, renumberIds),
-						keepOriginalStyles
+						keepOriginalStyles,
+						newTrackedChangeId
 					});
 					paragraph = renderParagraphNode({
 						element: paragraphElement,
 						index: renderedParagraph.index,
 						parent: void 0
 					});
-					fromIndex = paragraph.runs.filter((run) => run.index < nextRunIndex).reduce((length, run) => length + run.text.length, 0);
 				} while (recursive && paragraph.text.includes(patchText, fromIndex));
 				break;
 			}
@@ -28550,11 +28595,14 @@ MAX: 9026 };
 		return formatted ? [toJson(stringifyXmlable(formatted)).elements[0]] : [];
 	}));
 	/**
-	* Replaces the first occurrence of the placeholder from `fromIndex` on, splitting the run it starts in.
+	* Replaces the first occurrence of the placeholder from `fromIndex` on, splitting the run it starts in. The content goes
+	* where that run is, in the paragraph or in what holds the run in it, such as a link or a content control, unless that
+	* can't hold it.
 	*
-	* @returns The index of the run after the inserted content
+	* @returns Where the text after the inserted content starts in the paragraph's text
 	*/
-	var replaceOccurrenceInParagraph = ({ paragraphElement, renderedParagraph, patchText, fromIndex, children, keepOriginalStyles }) => {
+	var replaceOccurrenceInParagraph = ({ paragraphElement, renderedParagraph, patchText, fromIndex, children, keepOriginalStyles, newTrackedChangeId }) => {
+		const start = renderedParagraph.text.indexOf(patchText, fromIndex);
 		replaceTokenInParagraphElement({
 			paragraphElement,
 			renderedParagraph,
@@ -28562,14 +28610,107 @@ MAX: 9026 };
 			replacementText: SPLIT_TOKEN,
 			fromIndex
 		});
-		const index = findRunElementIndexWithToken(paragraphElement, SPLIT_TOKEN);
-		const runElementToBeReplaced = paragraphElement.elements[index];
+		const runPath = findRunElementPathWithToken(paragraphElement, SPLIT_TOKEN);
+		const containerPath = runPath.slice(0, -1);
+		const container = elementAtPath(paragraphElement, containerPath);
+		const index = runPath[runPath.length - 1];
+		const contentControls = containerPath.map((_, depth) => elementAtPath(paragraphElement, containerPath.slice(0, depth + 1))).filter((e) => e.name === "w:sdt");
+		const controlShowingPlaceholder = [...contentControls].reverse().find(isShowingPlaceholder);
+		const runElementToBeReplaced = container.elements[index];
 		const { left, right } = splitRunElement(runElementToBeReplaced, SPLIT_TOKEN);
 		const runProperties = runElementToBeReplaced.elements.find((e) => e.type === "element" && e.name === "w:rPr");
-		const newRunElements = keepOriginalStyles && runProperties ? children.map((e) => withRunPropertiesOnRuns(e, runProperties)) : children;
+		const contentRunProperties = controlShowingPlaceholder ? runPropertiesOfContentControl(controlShowingPlaceholder) : runProperties;
+		const newRunElements = keepOriginalStyles && contentRunProperties ? children.map((e) => withRunPropertiesOnRuns(e, contentRunProperties)) : children;
 		const patchedRightElement = runProperties ? _objectSpread2(_objectSpread2({}, right), {}, { elements: [runProperties, ...right.elements] }) : right;
-		paragraphElement.elements.splice(index, 1, left, ...newRunElements, patchedRightElement);
-		return index + 1 + newRunElements.length;
+		container.elements.splice(index, 1, left, ...newRunElements, patchedRightElement);
+		contentControls.forEach((contentControl) => fillContentControl(contentControl, newRunElements));
+		liftOutOfContainers(paragraphElement, containerPath, newTrackedChangeId);
+		return start + renderParagraphNode({
+			element: {
+				name: "w:p",
+				elements: [...newRunElements]
+			},
+			index: 0,
+			parent: void 0
+		}).text.length;
+	};
+	var propertiesOfContentControl = (contentControl) => {
+		var _contentControl$eleme;
+		return (_contentControl$eleme = contentControl.elements) === null || _contentControl$eleme === void 0 ? void 0 : _contentControl$eleme.find((e) => e.name === "w:sdtPr");
+	};
+	var isShowingPlaceholder = (contentControl) => {
+		var _propertiesOfContentC;
+		return !!((_propertiesOfContentC = propertiesOfContentControl(contentControl)) === null || _propertiesOfContentC === void 0 || (_propertiesOfContentC = _propertiesOfContentC.elements) === null || _propertiesOfContentC === void 0 ? void 0 : _propertiesOfContentC.some((e) => e.name === "w:showingPlcHdr"));
+	};
+	var runPropertiesOfContentControl = (contentControl) => {
+		var _propertiesOfContentC2;
+		return (_propertiesOfContentC2 = propertiesOfContentControl(contentControl)) === null || _propertiesOfContentC2 === void 0 || (_propertiesOfContentC2 = _propertiesOfContentC2.elements) === null || _propertiesOfContentC2 === void 0 ? void 0 : _propertiesOfContentC2.find((e) => e.name === "w:rPr");
+	};
+	var PLAIN_TEXT_RUN_CONTENT = /* @__PURE__ */ new Set([
+		"w:rPr",
+		"w:t",
+		"w:tab",
+		"w:br"
+	]);
+	var isPlainText = (element) => element.name === "w:bookmarkStart" || element.name === "w:bookmarkEnd" || element.name === "w:r" && childElementsOf(element).every((e) => PLAIN_TEXT_RUN_CONTENT.has(e.name));
+	/**
+	* Makes a content control show the content a patch put in it as its own. It no longer shows its placeholder text, as
+	* when text is typed in it, and a plain text control given more than text, such as a link or a picture, becomes a rich
+	* text control, as Word won't open a plain text one with it. A control bound to custom XML or a document property is
+	* no longer bound, as Word fills a bound control in from its data when it opens the document, which would put the
+	* placeholder back.
+	*/
+	var fillContentControl = (contentControl, insertedElements) => {
+		const properties = propertiesOfContentControl(contentControl);
+		if (!(properties === null || properties === void 0 ? void 0 : properties.elements)) return;
+		const needsRichText = properties.elements.some((e) => e.name === "w:text") && !insertedElements.every(isPlainText);
+		properties.elements = properties.elements.filter((e) => e.name !== "w:showingPlcHdr" && e.name !== "w:dataBinding" && !(needsRichText && e.name === "w:text"));
+	};
+	var NOT_IN_TRACKED_CHANGES = /* @__PURE__ */ new Set([
+		"w:hyperlink",
+		"w:fldSimple",
+		"w:subDoc"
+	]);
+	/**
+	* The elements each container of runs can't hold. Word reads a link in a link as two links over the same text, so a
+	* patch's link in place of a placeholder in a link takes the place of that link there.
+	*/
+	var NOT_IN_CONTAINER = /* @__PURE__ */ new Map([
+		["w:ins", NOT_IN_TRACKED_CHANGES],
+		["w:moveTo", NOT_IN_TRACKED_CHANGES],
+		["w:hyperlink", /* @__PURE__ */ new Set(["w:hyperlink"])]
+	]);
+	/**
+	* Splits each container of runs, from the placeholder's run up to the paragraph, around the content in it that it can't
+	* hold, such as a link a patch put in place of a placeholder typed with Track Changes on. That content then isn't
+	* tracked, as when Word inserts a link with Track Changes off, and the text before and after it still is. Each tracked
+	* change must have an id of its own, so the pieces after the first are given new ones.
+	*/
+	var liftOutOfContainers = (paragraphElement, containerPath, newTrackedChangeId) => {
+		for (let depth = containerPath.length; depth > 0; depth--) {
+			var _container$elements;
+			const parent = elementAtPath(paragraphElement, containerPath.slice(0, depth - 1));
+			const index = containerPath[depth - 1];
+			const container = parent.elements[index];
+			const cantHold = NOT_IN_CONTAINER.get(container.name);
+			const isLifted = (element) => !!(cantHold === null || cantHold === void 0 ? void 0 : cantHold.has(element.name));
+			if (!((_container$elements = container.elements) === null || _container$elements === void 0 ? void 0 : _container$elements.some(isLifted))) continue;
+			const { elements } = container;
+			const starts = elements.flatMap((element, i) => i === 0 || isLifted(element) || isLifted(elements[i - 1]) ? [i] : []);
+			const stretches = starts.map((start, i) => elements.slice(start, starts[i + 1]));
+			const isTrackedChange = cantHold === NOT_IN_TRACKED_CHANGES;
+			let isFirstCopy = true;
+			const pieces = stretches.map((stretch) => {
+				if (isLifted(stretch[0])) return stretch[0];
+				const attributes = isTrackedChange && !isFirstCopy ? _objectSpread2(_objectSpread2({}, container.attributes), {}, { "w:id": newTrackedChangeId() }) : container.attributes;
+				isFirstCopy = false;
+				return _objectSpread2(_objectSpread2({}, container), {}, {
+					attributes,
+					elements: [...stretch]
+				});
+			});
+			parent.elements.splice(index, 1, ...pieces);
+		}
 	};
 	/**
 	* Gives the runs of inserted content the placeholder's run properties. Content such as a hyperlink can't take run
@@ -28658,6 +28799,14 @@ MAX: 9026 };
 	var childElementsOf = (element) => {
 		var _element$elements;
 		return (_element$elements = element.elements) !== null && _element$elements !== void 0 ? _element$elements : [];
+	};
+	/**
+	* The highest whole number id (w:id) of an element or anything in it.
+	*/
+	var highestIdIn = (element) => {
+		var _element$attributes, _element$elements2;
+		const id = Number((_element$attributes = element.attributes) === null || _element$attributes === void 0 ? void 0 : _element$attributes["w:id"]);
+		return ((_element$elements2 = element.elements) !== null && _element$elements2 !== void 0 ? _element$elements2 : []).reduce((highest, child) => Math.max(highest, highestIdIn(child)), Number.isInteger(id) ? id : 0);
 	};
 	var isInsideElementAtPath = (path, ancestorPath) => path.length > ancestorPath.length && ancestorPath.every((index, i) => path[i] === index);
 	var withoutNestedParagraphs = (paragraphs) => paragraphs.filter((paragraph) => !paragraphs.some((other) => isInsideElementAtPath(paragraph.pathToParagraph, other.pathToParagraph)));
@@ -29322,7 +29471,7 @@ MAX: 9026 };
 			const relationshipAdditions = [];
 			let hasMedia = false;
 			const binaryContentMap = /* @__PURE__ */ new Map();
-			if (!(placeholderDelimiters === null || placeholderDelimiters === void 0 ? void 0 : placeholderDelimiters.start.trim()) || !(placeholderDelimiters === null || placeholderDelimiters === void 0 ? void 0 : placeholderDelimiters.end.trim())) throw new Error("Both start and end delimiters must be non-empty strings.");
+			checkPlaceholderDelimiters(placeholderDelimiters);
 			const { start, end } = placeholderDelimiters;
 			for (const [key, patch] of Object.entries(patches)) assertValidPatch(key, patch, { inTableRow: false });
 			for (const [key, binaryValue] of zipContent) {
@@ -29545,7 +29694,7 @@ MAX: 9026 };
 	* Detects all placeholders present in a document template.
 	*
 	* Scans through all XML content in a .docx file to find placeholder text
-	* enclosed in delimiters (default: {{placeholder}}), and placeholders in the
+	* enclosed in delimiters (default: {{placeholder}}, or `placeholderDelimiters`), and placeholders in the
 	* alt text of drawings, such as a chart for `docx/charts`' `ChartDataPatch`.
 	* This is useful for discovering what patches a template expects before
 	* performing replacement.
@@ -29558,6 +29707,9 @@ MAX: 9026 };
 	* const placeholders = await patchDetector({ data: templateBuffer });
 	* // Returns: ["name", "date", "address"] if template contains {{name}}, {{date}}, {{address}}
 	*
+	* // With the delimiters given to patchDocument, such as for <<name>>
+	* const keys = await patchDetector({ data: templateBuffer, placeholderDelimiters: { start: "<<", end: ">>" } });
+	*
 	* // Use detected placeholders to create patches
 	* const patches = {};
 	* placeholders.forEach(key => {
@@ -29569,12 +29721,20 @@ MAX: 9026 };
 	* ```
 	*/
 	var patchDetector = function() {
-		var _ref = _asyncToGenerator(function* ({ data, trimPlaceholders = false }) {
+		var _ref = _asyncToGenerator(function* ({ data, placeholderDelimiters = {
+			start: "{{",
+			end: "}}"
+		}, trimPlaceholders = false }) {
+			checkPlaceholderDelimiters(placeholderDelimiters);
+			const pattern = placeholderPattern(placeholderDelimiters);
 			const zipContent = yield loadZip(data, isSearched);
 			const patches = /* @__PURE__ */ new Set();
 			for (const [, value] of zipContent) {
 				const json = toJson(decodeUtf8(value));
-				[...traverse(json).map((p) => p.text), ...findDrawings(json).flatMap(({ properties }) => altTextOf(properties))].flatMap((text) => findPatchKeys(text)).map((patch) => trimPlaceholders ? patch.trim() : patch).filter((patch) => patch !== "").forEach((patch) => patches.add(patch));
+				[...traverse(json).map((p) => p.text), ...findDrawings(json).flatMap(({ properties }) => altTextOf(properties))].flatMap((text) => {
+					var _text$match;
+					return (_text$match = text.match(pattern)) !== null && _text$match !== void 0 ? _text$match : [];
+				}).map((patch) => trimPlaceholders ? patch.trim() : patch).filter((patch) => patch !== "").forEach((patch) => patches.add(patch));
 			}
 			return Array.from(patches);
 		});
@@ -29582,17 +29742,16 @@ MAX: 9026 };
 			return _ref.apply(this, arguments);
 		};
 	}();
+	var escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 	/**
-	* Extracts placeholder keys from text using regex pattern.
+	* The pattern of the keys of placeholders: the text between the delimiters, without them. A key has no start delimiter
+	* in it, so a start delimiter before a placeholder, such as in `<<unfinished <<name>>` or `a < b and <name>`, doesn't
+	* hide it, and the search from a start delimiter with no end after it stops at the next start delimiter.
 	*
-	* @param text - Text to search for placeholders
-	* @returns Array of placeholder keys (without delimiters)
+	* @param delimiters - The delimiters, such as `{{` and `}}`
+	* @returns A pattern that matches every key in a text
 	*/
-	var findPatchKeys = (text) => {
-		var _text$match;
-		const pattern = new RegExp("(?<=\\{\\{).+?(?=\\}\\})", "gs");
-		return (_text$match = text.match(pattern)) !== null && _text$match !== void 0 ? _text$match : [];
-	};
+	var placeholderPattern = ({ start, end }) => new RegExp(`(?<=${escapeRegExp(start)})(?:(?!${escapeRegExp(start)}).)+?(?=${escapeRegExp(end)})`, "gs");
 	exports.AbstractNumbering = AbstractNumbering;
 	exports.AlignmentType = AlignmentType;
 	exports.AnnotationReference = AnnotationReference;

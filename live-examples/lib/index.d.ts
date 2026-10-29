@@ -11635,7 +11635,7 @@ export declare class ParagraphRunProperties extends RunProperties {
  * Detects all placeholders present in a document template.
  *
  * Scans through all XML content in a .docx file to find placeholder text
- * enclosed in delimiters (default: {{placeholder}}), and placeholders in the
+ * enclosed in delimiters (default: {{placeholder}}, or `placeholderDelimiters`), and placeholders in the
  * alt text of drawings, such as a chart for `docx/charts`' `ChartDataPatch`.
  * This is useful for discovering what patches a template expects before
  * performing replacement.
@@ -11648,6 +11648,9 @@ export declare class ParagraphRunProperties extends RunProperties {
  * const placeholders = await patchDetector({ data: templateBuffer });
  * // Returns: ["name", "date", "address"] if template contains {{name}}, {{date}}, {{address}}
  *
+ * // With the delimiters given to patchDocument, such as for <<name>>
+ * const keys = await patchDetector({ data: templateBuffer, placeholderDelimiters: { start: "<<", end: ">>" } });
+ *
  * // Use detected placeholders to create patches
  * const patches = {};
  * placeholders.forEach(key => {
@@ -11658,16 +11661,19 @@ export declare class ParagraphRunProperties extends RunProperties {
  * });
  * ```
  */
-export declare const patchDetector: ({ data, trimPlaceholders }: PatchDetectorOptions) => Promise<readonly string[]>;
+export declare const patchDetector: ({ data, placeholderDelimiters, trimPlaceholders, }: PatchDetectorOptions) => Promise<readonly string[]>;
 
 /**
  * Options for patch detection.
  *
  * @property data - The document template to scan for placeholders
+ * @property placeholderDelimiters - Custom delimiter characters for placeholders, as given to `patchDocument`
  * @property trimPlaceholders - Whether to give the key of a placeholder with spaces inside its delimiters without them
  */
 declare type PatchDetectorOptions = {
     readonly data: InputDataType;
+    /** Custom placeholder delimiters, the same as `patchDocument`'s (default: {{ and }}) */
+    readonly placeholderDelimiters?: PatchDocumentOptions["placeholderDelimiters"];
     /**
      * Give the key of a placeholder with spaces inside its delimiters without them, such as "name" for `{{ name }}`, as
      * `patchDocument`'s `trimPlaceholders` patches it (default: false)
