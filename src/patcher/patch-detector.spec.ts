@@ -2,7 +2,7 @@
 import { Readable } from "stream";
 import { describe, expect, it, vi } from "vitest";
 
-import { Document, Packer, Paragraph, TextRun } from "../index";
+import { Document, ExternalHyperlink, InsertedTextRun, Packer, Paragraph, SimpleField, TextRun } from "../index";
 import { type IPatch, patchDocument } from "./from-docx";
 import { patchDetector } from "./patch-detector";
 import { PatchType } from "./patch-type";
@@ -422,6 +422,43 @@ describe("patch-detector", () => {
         expect(keys).toEqual(["name"]);
         expect(xml).toMatch(/<w:t[^>]*>Ada<\/w:t>/);
         expect(xml).not.toContain("{{name}}");
+    });
+
+    it("should detect and patch placeholders in a link, a tracked insertion and a field's result, not only in the paragraph", async () => {
+        const data = await Packer.toBuffer(
+            new Document({
+                sections: [
+                    {
+                        children: [
+                            new Paragraph({
+                                children: [new ExternalHyperlink({ link: "https://example.com", children: [new TextRun("{{site}}")] })],
+                            }),
+                            new Paragraph({
+                                children: [
+                                    new InsertedTextRun({ text: "Dear {{name}},", id: 1, author: "Author", date: "2024-05-01T00:00:00Z" }),
+                                ],
+                            }),
+                            new Paragraph({ children: [new SimpleField("FILENAME", "{{file}}")] }),
+                        ],
+                    },
+                ],
+            }),
+        );
+        const text = (value: string): IPatch => ({ type: PatchType.PARAGRAPH, children: [new TextRun(value)] });
+
+        const keys = await patchDetector({ data });
+        const output = await patchDocument({
+            outputType: "nodebuffer",
+            data,
+            patches: { site: text("Example"), name: text("Ada"), file: text("letter.docx") },
+        });
+        const xml = textOf(unzip(output), "word/document.xml")!;
+
+        expect(keys).toEqual(["site", "name", "file"]);
+        expect(xml).not.toContain("{{");
+        expect(xml).toMatch(/<w:hyperlink [^>]*>(<w:r>(?:(?!<\/w:r>).)*<\/w:r>)*<w:r><w:t[^>]*>Example<\/w:t>/);
+        expect(xml).toMatch(/<w:ins [^>]*>(<w:r>(?:(?!<\/w:r>).)*<\/w:r>)*<w:r><w:t[^>]*>Ada<\/w:t>/);
+        expect(xml).toMatch(/<w:fldSimple [^>]*>(<w:r>(?:(?!<\/w:r>).)*<\/w:r>)*<w:r><w:t[^>]*>letter.docx<\/w:t>/);
     });
 
     it("should read only the parts placeholders can be in, leaving a template's images uninflated", async () => {

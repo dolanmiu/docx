@@ -64,6 +64,64 @@ fs.writeFileSync("output.docx", doc);
 - Only the placeholders of the patches given lose their spaces. Other text that looks like a placeholder, such as `{{ not_patched }}`, is left as it is.
 - [`patchDetector`](usage/patcher.md#discover-placeholders-before-building-patches) takes `trimPlaceholders` too, and then gives the key of `{{ customer_name }}` as `customer_name`.
 
+### Placeholders in links, content controls and tracked changes
+
+A placeholder is patched wherever it is in a paragraph's text: in a link's text, in a content control, in text typed with Track Changes on, or in a field's result. The patch's content goes where the placeholder was, so the text of a link stays linked, and a tracked insertion stays tracked:
+
+```ts live
+import * as fs from "fs";
+import { Document, ExternalHyperlink, InsertedTextRun, Packer, Paragraph, patchDocument, PatchType, TextRun } from "docx";
+
+// The template, made here as it would be in Word: a link whose text is a placeholder, and a placeholder typed with Track Changes on
+const template = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new TextRun("Our website: "),
+                        new ExternalHyperlink({
+                            link: "https://example.com",
+                            children: [new TextRun({ text: "{{site}}", style: "Hyperlink" })],
+                        }),
+                    ],
+                }),
+                new Paragraph({
+                    children: [
+                        new InsertedTextRun({
+                            text: "Dear {{customer_name}},",
+                            id: 1,
+                            author: "Template author",
+                            date: "2024-05-01T00:00:00Z",
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
+
+const doc = await patchDocument({
+    outputType: "nodebuffer",
+    data: await Packer.toBuffer(template),
+    patches: {
+        site: { type: PatchType.PARAGRAPH, children: [new TextRun("example.com")] },
+        customer_name: { type: PatchType.PARAGRAPH, children: [new TextRun("John Smith")] },
+    },
+});
+
+fs.writeFileSync("output.docx", doc);
+```
+
+Where the content can't go in what holds the placeholder, it goes as close as it can, so Word opens the document:
+
+- **A link in a tracked insertion**: a tracked insertion can't hold a link, so the link goes between two parts of the insertion and isn't tracked, as when a link is added with Track Changes off.
+- **A link in a link**: the patch's link takes the place of the template's link where the placeholder was, and the text around it keeps the template's link.
+- **A plain text content control**: given anything but text, such as a link, a picture, a field or a symbol, it becomes a rich text content control, as Word won't open a plain text one holding it.
+- **A content control showing its placeholder text**: if `{{name}}` is the control's placeholder text, the control shows the patch's content as its own, with the control's formatting rather than the grey of placeholder text.
+
+Deleted text, which Word shows struck through when Track Changes is on, isn't the document's text, so a placeholder in it isn't patched.
+
 ## Basic Usage
 
 ```ts live

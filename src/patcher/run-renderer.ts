@@ -48,22 +48,58 @@ type IParts = {
  *
  * @property text - Complete text content of the run
  * @property parts - Array of text fragments (w:t elements) within the run
- * @property index - Position index of the run within the paragraph
+ * @property path - Position indices from the paragraph to the run, through the element holding it, such as a link
  * @property start - Starting character index in the paragraph
  * @property end - Ending character index in the paragraph
  */
 export type IRenderedRunNode = {
     readonly text: string;
     readonly parts: readonly IParts[];
-    readonly index: number;
+    readonly path: readonly number[];
 } & StartAndEnd;
+
+/**
+ * The elements in a paragraph that hold runs of its text, so a placeholder can be in a link, a content control, a
+ * tracked insertion, a smart tag or a field's result. A content control holds them in its w:sdtContent. Deleted text, in
+ * w:del or w:moveFrom, isn't the paragraph's text, and a run's own content, such as a text box, has paragraphs of its own.
+ */
+const RUN_CONTAINERS: ReadonlySet<string> = new Set([
+    "w:hyperlink",
+    "w:sdt",
+    "w:sdtContent",
+    "w:ins",
+    "w:moveTo",
+    "w:smartTag",
+    "w:customXml",
+    "w:fldSimple",
+    "w:dir",
+    "w:bdo",
+]);
+
+/**
+ * The runs in an element of a paragraph, in the order they are read, with the indices from the paragraph to each.
+ */
+const runsIn = (element: Element, path: readonly number[]): readonly { readonly element: Element; readonly path: readonly number[] }[] =>
+    (element.elements ?? []).flatMap((child, i) => {
+        if (child.name === "w:r") {
+            return [{ element: child, path: [...path, i] }];
+        }
+        return RUN_CONTAINERS.has(child.name ?? "") ? runsIn(child, [...path, i]) : [];
+    });
+
+/**
+ * The element at the end of a path of position indices from an element, such as a run from its paragraph.
+ */
+export const elementAtPath = (element: Element, path: readonly number[]): Element =>
+    path.reduce((parent, index) => parent.elements![index], element);
 
 /**
  * Renders a paragraph element into a structured representation with text content.
  *
  * Extracts all text content from a paragraph (w:p) element by processing its
- * run (w:r) children. Calculates character positions for each text fragment
- * to enable precise text replacement operations.
+ * runs (w:r), including those in a link, content control or tracked insertion.
+ * Calculates character positions for each text fragment to enable precise text
+ * replacement operations.
  *
  * @param node - The paragraph element wrapper to render
  * @returns Rendered paragraph with text content, runs, and position information
@@ -92,16 +128,12 @@ export const renderParagraphNode = (node: ElementWrapper): IRenderedParagraphNod
 
     let currentRunStringLength = 0;
 
-    const runs = node.element.elements
-        .map((element, i) => ({ element, i }))
-        .filter(({ element }) => element.name === "w:r")
-        .map(({ element, i }) => {
-            const renderedRunNode = renderRunNode(element, i, currentRunStringLength);
-            currentRunStringLength += renderedRunNode.text.length;
+    const runs = runsIn(node.element, []).map(({ element, path }) => {
+        const renderedRunNode = renderRunNode(element, path, currentRunStringLength);
+        currentRunStringLength += renderedRunNode.text.length;
 
-            return renderedRunNode;
-        })
-        .filter((e) => !!e);
+        return renderedRunNode;
+    });
 
     const text = runs.reduce((acc, curr) => acc + curr.text, "");
 
@@ -113,12 +145,12 @@ export const renderParagraphNode = (node: ElementWrapper): IRenderedParagraphNod
     };
 };
 
-const renderRunNode = (node: Element, index: number, currentRunStringIndex: number): IRenderedRunNode => {
+const renderRunNode = (node: Element, path: readonly number[], currentRunStringIndex: number): IRenderedRunNode => {
     if (!node.elements) {
         return {
             text: "",
             parts: [],
-            index: -1,
+            path,
             start: currentRunStringIndex,
             end: currentRunStringIndex,
         };
@@ -147,7 +179,7 @@ const renderRunNode = (node: Element, index: number, currentRunStringIndex: numb
     return {
         text,
         parts,
-        index,
+        path,
         start: currentRunStringIndex,
         end: parts.length > 0 ? parts[parts.length - 1].end : currentRunStringIndex,
     };
