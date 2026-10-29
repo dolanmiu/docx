@@ -1399,6 +1399,7 @@ describe("replacer", () => {
 
                     expect(textsOf({ elements: [paragraph] })).to.deep.equal(["link"]);
                     expect(namesOf(control.elements)).to.deep.equal(["w:sdtContent"]);
+                    expect(namesOf(control.elements![0].elements)).to.deep.equal(["w:r", "w:hyperlink", "w:r"]);
                 });
 
                 it("should make a plain text content control a rich text one when a link is put in it, as Word won't open it otherwise", () => {
