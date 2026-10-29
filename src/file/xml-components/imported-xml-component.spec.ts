@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
-import { Paragraph } from "@file/paragraph";
 import { EMPTY_OBJECT, type XmlComponent } from "@file/xml-components";
 import { type XmlElement as Element, parseXml } from "@util/xml";
 
@@ -94,10 +93,17 @@ describe("ImportedXmlComponent", () => {
             ],
         };
 
-        it("should write the XML's element in a paragraph, with no element around it", () => {
-            const paragraph = new Paragraph({ children: [ImportedXmlComponent.fromXmlString(math)] });
+        /** A paragraph with the given children, written as any component writes its children */
+        const paragraphOf = (...children: readonly XmlComponent[]): ImportedXmlComponent => {
+            const paragraph = new ImportedXmlComponent("w:p");
+            for (const child of children) {
+                paragraph.push(child);
+            }
+            return paragraph;
+        };
 
-            expect(new Formatter().format(paragraph)).to.deep.equal({ "w:p": [writtenMath] });
+        it("should write the XML's element in a paragraph, with no element around it", () => {
+            expect(new Formatter().format(paragraphOf(ImportedXmlComponent.fromXmlString(math)))).to.deep.equal({ "w:p": [writtenMath] });
         });
 
         it("should write the XML's element when written by itself", () => {
@@ -107,7 +113,7 @@ describe("ImportedXmlComponent", () => {
         it("should write each element of XML with several, one after another", () => {
             const runs = ImportedXmlComponent.fromXmlString("<w:r><w:t>a</w:t></w:r><w:r><w:t>b</w:t></w:r>");
 
-            expect(new Formatter().format(new Paragraph({ children: [runs] }))).to.deep.equal({
+            expect(new Formatter().format(paragraphOf(runs))).to.deep.equal({
                 "w:p": [{ "w:r": [{ "w:t": ["a"] }] }, { "w:r": [{ "w:t": ["b"] }] }],
             });
         });
@@ -115,7 +121,7 @@ describe("ImportedXmlComponent", () => {
         it("should still have the XML's element as its child, for code that takes the element from it", () => {
             const element = (ImportedXmlComponent.fromXmlString(math) as unknown as { readonly root: readonly XmlComponent[] }).root[0];
 
-            expect(new Formatter().format(new Paragraph({ children: [element] }))).to.deep.equal({ "w:p": [writtenMath] });
+            expect(new Formatter().format(paragraphOf(element))).to.deep.equal({ "w:p": [writtenMath] });
         });
     });
 
