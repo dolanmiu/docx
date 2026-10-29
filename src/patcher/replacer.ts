@@ -219,12 +219,12 @@ const runPropertiesOfContentControl = (contentControl: Element): Element | undef
 
 // What Word opens in a plain text content control: runs of text, tabs and breaks, and bookmarks. A link, a picture, a
 // field or a symbol in one makes Word find the document unreadable
-const PLAIN_TEXT_RUN_CONTENT: ReadonlySet<string> = new Set(["w:rPr", "w:t", "w:tab", "w:br"]);
+const PLAIN_TEXT_RUN_CONTENT: ReadonlySet<string | undefined> = new Set(["w:rPr", "w:t", "w:tab", "w:br"]);
 
 const isPlainText = (element: Element): boolean =>
     element.name === "w:bookmarkStart" ||
     element.name === "w:bookmarkEnd" ||
-    (element.name === "w:r" && childElementsOf(element).every((e) => PLAIN_TEXT_RUN_CONTENT.has(e.name ?? "")));
+    (element.name === "w:r" && childElementsOf(element).every((e) => PLAIN_TEXT_RUN_CONTENT.has(e.name)));
 
 /**
  * Makes a content control show the content a patch put in it as its own. It no longer shows its placeholder text, as
@@ -243,13 +243,13 @@ const fillContentControl = (contentControl: Element, insertedElements: readonly 
 };
 
 // What a tracked insertion or move can't hold, though a paragraph can: a link, a field or a subdocument
-const NOT_IN_TRACKED_CHANGES: ReadonlySet<string> = new Set(["w:hyperlink", "w:fldSimple", "w:subDoc"]);
+const NOT_IN_TRACKED_CHANGES: ReadonlySet<string | undefined> = new Set(["w:hyperlink", "w:fldSimple", "w:subDoc"]);
 
 /**
  * The elements each container of runs can't hold. Word reads a link in a link as two links over the same text, so a
  * patch's link in place of a placeholder in a link takes the place of that link there.
  */
-const NOT_IN_CONTAINER: ReadonlyMap<string, ReadonlySet<string>> = new Map([
+const NOT_IN_CONTAINER: ReadonlyMap<string | undefined, ReadonlySet<string | undefined>> = new Map([
     ["w:ins", NOT_IN_TRACKED_CHANGES],
     ["w:moveTo", NOT_IN_TRACKED_CHANGES],
     ["w:hyperlink", new Set(["w:hyperlink"])],
@@ -266,8 +266,8 @@ const liftOutOfContainers = (paragraphElement: Element, containerPath: readonly 
         const parent = elementAtPath(paragraphElement, containerPath.slice(0, depth - 1));
         const index = containerPath[depth - 1];
         const container = parent.elements![index];
-        const cantHold = NOT_IN_CONTAINER.get(container.name ?? "");
-        const isLifted = (element: Element): boolean => !!cantHold?.has(element.name ?? "");
+        const cantHold = NOT_IN_CONTAINER.get(container.name);
+        const isLifted = (element: Element): boolean => !!cantHold?.has(element.name);
 
         if (!container.elements?.some(isLifted)) {
             continue;

@@ -1335,7 +1335,8 @@ describe("replacer", () => {
                     const insertion = createElement(
                         "w:ins",
                         { "w:id": "1", "w:author": "A" },
-                        createRun(createText("Dear {{ph}}, welcome")),
+                        createRun(createText("Dear ")),
+                        createRun(createText("{{ph}}, welcome")),
                     );
                     const paragraph = createParagraph(insertion, createElement("w:bookmarkStart", { "w:id": "7", "w:name": "b" }));
 
@@ -1348,6 +1349,8 @@ describe("replacer", () => {
                         ["w:ins", { "w:id": "8", "w:author": "A" }],
                         ["w:bookmarkStart", { "w:id": "7", "w:name": "b" }],
                     ]);
+                    // The runs before the link stay together in the first part
+                    expect(namesOf(paragraph.elements![0].elements)).to.deep.equal(["w:r", "w:r"]);
                 });
 
                 it("should take a link out of a link, so the patch's link takes the place of the template's there", () => {
@@ -1382,6 +1385,20 @@ describe("replacer", () => {
                         [{ "w:anchor": "top" }, ["w:ins"]],
                     ]);
                     expect(paragraph.elements!.map((e) => e.elements![0].attributes?.["w:id"])).to.deep.equal(["1", undefined, "2"]);
+                });
+
+                it("should replace a placeholder in a content control without properties, as it needs none", () => {
+                    const control = createElement(
+                        "w:sdt",
+                        undefined,
+                        createElement("w:sdtContent", undefined, createRun(createText("{{ph}}"))),
+                    );
+                    const paragraph = createParagraph(control);
+
+                    replaceWith({ elements: [paragraph] }, [link]);
+
+                    expect(textsOf({ elements: [paragraph] })).to.deep.equal(["link"]);
+                    expect(namesOf(control.elements)).to.deep.equal(["w:sdtContent"]);
                 });
 
                 it("should make a plain text content control a rich text one when a link is put in it, as Word won't open it otherwise", () => {

@@ -209,6 +209,13 @@ describe("run-renderer", () => {
                 ]);
             });
 
+            it("should read a link with nothing in it as no text", () => {
+                const output = render(run("A"), { name: "w:hyperlink" }, run("B"));
+
+                expect(output.text).to.equal("AB");
+                expect(output.runs.map(({ path }) => path)).to.deep.equal([[0], [2]]);
+            });
+
             it("should leave out deleted and moved-away text, as it isn't the paragraph's", () => {
                 const output = render(run("A"), element("w:del", run("B")), element("w:moveFrom", run("C")), run("D"));
 
