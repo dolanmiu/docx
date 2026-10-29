@@ -11,7 +11,7 @@
 import { type IXmlableObject, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
 import { type XmlElement, parseXml } from "@util/xml";
 
-import type { IContext } from "./base";
+import type { BaseXmlComponent, IContext } from "./base";
 
 /**
  * Converts an XML element, in the shape of xml-js's non-compact `Element`, into an XmlComponent tree.
@@ -90,6 +90,9 @@ export class ImportedXmlComponent extends XmlComponent {
      * It parses the XML string into an {@link XmlElement} tree,
      * then converts that into a tree of XmlComponent objects.
      *
+     * The component is for the parsed document, with the XML's element in it, and is written as that element, with no
+     * element of its own around it.
+     *
      * @param importedContent - The XML content as a string
      * @returns An ImportedXmlComponent representing the parsed XML
      *
@@ -125,6 +128,32 @@ export class ImportedXmlComponent extends XmlComponent {
      */
     public push(xmlComponent: XmlComponent | string): void {
         this.root.push(xmlComponent);
+    }
+
+    /**
+     * A component of no element, such as the one {@link fromXmlString} gives for the parsed document, is written as the
+     * elements in it. Written as itself, it would be an `<undefined>` element, which Word can't open.
+     *
+     * The component itself is still returned, rather than its element, because code written for earlier versions takes
+     * the element from its children.
+     *
+     * @internal
+     */
+    public get writtenAs(): readonly BaseXmlComponent[] | undefined {
+        // Text outside a document's element can only be whitespace, kept when parsed with `keepWhitespaceText`
+        return this.rootKey === undefined ? this.root.filter((child) => typeof child !== "string") : undefined;
+    }
+
+    /**
+     * Prepares this element for XML serialization. A component of no element written by itself, rather than among a
+     * parent's children, such as by the formatter or by an earlier copy of docx, is written as the one element in it.
+     *
+     * @param context - The serialization context
+     * @returns The XML-serializable object
+     */
+    public prepForXml(context: IContext): IXmlableObject | undefined {
+        const parts = this.writtenAs;
+        return parts?.length === 1 ? parts[0].prepForXml(context) : super.prepForXml(context);
     }
 }
 

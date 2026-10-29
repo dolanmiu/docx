@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { EMPTY_OBJECT } from "@file/xml-components";
+import { Formatter } from "@export/formatter";
+import { Paragraph } from "@file/paragraph";
+import { EMPTY_OBJECT, type XmlComponent } from "@file/xml-components";
 import { type XmlElement as Element, parseXml } from "@util/xml";
 
 import type { IContext } from "./base";
@@ -83,11 +85,51 @@ describe("ImportedXmlComponent", () => {
         expect(JSON.parse(JSON.stringify(converted))).to.deep.equal(convertedXmlElement);
     });
 
+    describe("#fromXmlString()", () => {
+        const math = '<m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><m:r><m:t>x</m:t></m:r></m:oMath>';
+        const writtenMath = {
+            "m:oMath": [
+                { _attr: { "xmlns:m": "http://schemas.openxmlformats.org/officeDocument/2006/math" } },
+                { "m:r": [{ "m:t": ["x"] }] },
+            ],
+        };
+
+        it("should write the XML's element in a paragraph, with no element around it", () => {
+            const paragraph = new Paragraph({ children: [ImportedXmlComponent.fromXmlString(math)] });
+
+            expect(new Formatter().format(paragraph)).to.deep.equal({ "w:p": [writtenMath] });
+        });
+
+        it("should write the XML's element when written by itself", () => {
+            expect(new Formatter().format(ImportedXmlComponent.fromXmlString(math))).to.deep.equal(writtenMath);
+        });
+
+        it("should write each element of XML with several, one after another", () => {
+            const runs = ImportedXmlComponent.fromXmlString("<w:r><w:t>a</w:t></w:r><w:r><w:t>b</w:t></w:r>");
+
+            expect(new Formatter().format(new Paragraph({ children: [runs] }))).to.deep.equal({
+                "w:p": [{ "w:r": [{ "w:t": ["a"] }] }, { "w:r": [{ "w:t": ["b"] }] }],
+            });
+        });
+
+        it("should still have the XML's element as its child, for code that takes the element from it", () => {
+            const element = (ImportedXmlComponent.fromXmlString(math) as unknown as { readonly root: readonly XmlComponent[] }).root[0];
+
+            expect(new Formatter().format(new Paragraph({ children: [element] }))).to.deep.equal({ "w:p": [writtenMath] });
+        });
+    });
+
     describe("convertToXmlComponent", () => {
         it("should convert to xml component", () => {
             const xmlObj = parseXml(xmlString);
             const converted = convertToXmlComponent(xmlObj);
             expect(JSON.parse(JSON.stringify(converted))).to.deep.equal(convertedXmlElement);
+        });
+
+        it("should write a document parsed keeping whitespace as its element, without the whitespace around it", () => {
+            const document = convertToXmlComponent(parseXml("<w:p/>\n", { keepWhitespaceText: true })) as ImportedXmlComponent;
+
+            expect(new Formatter().format(document)).to.deep.equal({ "w:p": EMPTY_OBJECT });
         });
 
         it("should return undefined if xml type is invalid", () => {
