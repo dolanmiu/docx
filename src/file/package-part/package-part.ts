@@ -54,8 +54,8 @@ export type PackagePartOptions<Relationship extends PackagePartRelationshipType 
 // A folder, name or extension is one part of a path, without a separator or dots
 const PATH_PART = /^[\w-]+$/;
 
-// The folders under word/ that docx writes parts of its own in. Its images are in media/ too, but are named by a hash of
-// their data, which a part's numbered name never is, so a part can be an image there, as Word's are
+// The folders under word/ that docx writes parts of its own in. Its images are in media/ too, but take their numbered
+// names from the same PackageParts as a part does, so a part can be an image there, as Word's are
 const RESERVED_FOLDERS = new Set(["_rels", "fonts", "theme"]);
 
 /**
@@ -131,18 +131,23 @@ export class PackagePart<Relationship extends PackagePartRelationshipType = Rela
  */
 export class PackageParts {
     private readonly paths = new Map<PackagePart<PackagePartRelationshipType>, string>();
+    // The paths under word/ that are taken: the package's own, and those given out by takePath
+    // eslint-disable-next-line functional/prefer-readonly-type
+    private readonly taken: Set<string>;
     // The folders of the parts whose XML is being written, by the relationships the XML is formatted with
     private readonly folders = new WeakMap<Relationships, string>();
 
     /**
      * @param contentTypes - Where each part's content type is added
-     * @param existingPaths - The paths under word/ of the parts the package already has, such as a template's charts,
-     * which new parts don't take
+     * @param existingPaths - The paths under word/ of the parts the package already has, such as a template's charts
+     * and images, which new parts don't take
      */
     public constructor(
         private readonly contentTypes: Pick<ContentTypes, "addOverride">,
-        private readonly existingPaths: ReadonlySet<string> = new Set(),
-    ) {}
+        existingPaths: ReadonlySet<string> = new Set(),
+    ) {
+        this.taken = new Set(existingPaths);
+    }
 
     /**
      * Adds a part, and its content type, once.
@@ -156,16 +161,31 @@ export class PackageParts {
         }
 
         const { folder, name, extension, contentType } = part.options;
-        // The lowest number that no part already added with the same folder and name, or of the package's own, has
-        const taken = new Set([...this.existingPaths, ...this.paths.values()]);
+        const path = this.takePath(folder, name, extension);
+        // eslint-disable-next-line functional/immutable-data
+        this.paths.set(part, path);
+        this.contentTypes.addOverride(contentType, `/word/${path}`);
+        return path;
+    }
+
+    /**
+     * Takes the lowest-numbered path in a folder that nothing has yet, so that nothing else is written there: the
+     * package's own parts, the parts added, and the document's images, which `Media` names with this, as Word names
+     * them: media/image1.png, media/image2.png and so on.
+     *
+     * @param folder - The folder under word/, such as "media"
+     * @param name - The start of the file name, such as "image"
+     * @param extension - The file name's extension, such as "png"
+     * @returns The path under word/, such as "media/image1.png"
+     */
+    public takePath(folder: string, name: string, extension: string): string {
         let index = 1;
-        while (taken.has(`${folder}/${name}${index}.${extension}`)) {
+        while (this.taken.has(`${folder}/${name}${index}.${extension}`)) {
             index++;
         }
         const path = `${folder}/${name}${index}.${extension}`;
         // eslint-disable-next-line functional/immutable-data
-        this.paths.set(part, path);
-        this.contentTypes.addOverride(contentType, `/word/${path}`);
+        this.taken.add(path);
         return path;
     }
 

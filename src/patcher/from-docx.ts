@@ -8,14 +8,14 @@
  */
 import type { Stream } from "stream";
 
-import { ImageReplacer } from "@export/packer/image-replacer";
+import { type ImageReference, ImageReplacer } from "@export/packer/image-replacer";
 import { xmlifyPackageParts } from "@export/packer/package-part-writer";
 import { DocumentAttributeNamespaces } from "@file/document";
 import type { IViewWrapper } from "@file/document-wrapper";
 import type { File } from "@file/file";
 import type { FileChild } from "@file/file-child";
 import type { NoteContent } from "@file/footnotes";
-import { type IMediaData, Media } from "@file/media";
+import { Media } from "@file/media";
 import { type INumberingOptions, Numbering } from "@file/numbering";
 import { PackageParts } from "@file/package-part/package-part";
 import { Bookmark, ConcreteHyperlink, ExternalHyperlink, type Paragraph, type ParagraphChild } from "@file/paragraph";
@@ -95,8 +95,8 @@ type FilePatch = {
 type IImageRelationshipAddition = {
     /** XML file path where the image is used */
     readonly key: string;
-    /** Media data for the images */
-    readonly mediaDatas: readonly IMediaData[];
+    /** The images the file refers to */
+    readonly mediaDatas: readonly ImageReference[];
 };
 
 /**
@@ -350,8 +350,17 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     // The content types of parts that patches add to the package, such as charts
     // eslint-disable-next-line functional/prefer-readonly-type
     const contentTypeOverrides: { readonly contentType: string; readonly partName: string }[] = [];
+    const parts = new PackageParts(
+        {
+            // eslint-disable-next-line functional/immutable-data
+            addOverride: (contentType: string, partName: string) => contentTypeOverrides.push({ contentType, partName }),
+        },
+        // New parts and images take numbers the template's own parts, such as its charts and images, don't have
+        new Set([...zipContent.keys()].filter((path) => path.startsWith("word/")).map((path) => path.slice("word/".length))),
+    );
     const file = {
-        Media: new Media(),
+        // Images are named as Word names them, image1.png and so on, after the template's own
+        Media: new Media((extension) => parts.takePath("media", "image", extension)),
         // The paragraphs in patches add the lists they use to it as they're written, as in a Document
         Numbering: new Numbering(numbering),
         Theme: themeColors && { Colors: themeColors },
@@ -362,14 +371,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
         Endnotes: {
             View: { idOf: (reference: object, note: NoteContent, context: IContext) => carryNote("endnotes", reference, note, context) },
         },
-        PackageParts: new PackageParts(
-            {
-                // eslint-disable-next-line functional/immutable-data
-                addOverride: (contentType: string, partName: string) => contentTypeOverrides.push({ contentType, partName }),
-            },
-            // New parts take numbers the template's own parts, such as its charts, don't have
-            new Set([...zipContent.keys()].filter((path) => path.startsWith("word/")).map((path) => path.slice("word/".length))),
-        ),
+        PackageParts: parts,
     } as unknown as File;
 
     const map = new Map<string, Element>();

@@ -178,7 +178,7 @@ describe("EmbeddedFileRun", () => {
             );
             expect(relationships).toMatch(
                 new RegExp(
-                    `<Relationship Id="${imageId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/[0-9a-f]+\\.png"/>`,
+                    `<Relationship Id="${imageId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image\\d+\\.png"/>`,
                 ),
             );
             expect(read(files, "[Content_Types].xml")).toContain(
@@ -258,7 +258,7 @@ describe("EmbeddedFileRun", () => {
             expect([...files.keys()].filter((path) => /^word\/(embeddings|media)\/./.test(path)).sort()).toEqual([
                 "word/embeddings/Microsoft_Excel_Worksheet1.xlsx",
                 "word/embeddings/Microsoft_Excel_Worksheet2.xlsx",
-                expect.stringMatching(/^word\/media\/[0-9a-f]+\.png$/),
+                expect.stringMatching(/^word\/media\/image\d+\.png$/),
             ]);
         });
 
@@ -283,7 +283,7 @@ describe("EmbeddedFileRun", () => {
             ]) {
                 const relationships = read(files, `word/_rels/${part}.xml.rels`);
                 expect(relationships).toContain(`Target="${target}"`);
-                expect(relationships).toMatch(/Target="media\/[0-9a-f]+\.png"/);
+                expect(relationships).toMatch(/Target="media\/image\d+\.png"/);
             }
         });
 
@@ -372,7 +372,7 @@ describe("EmbeddedFileRun", () => {
 
             expect(read(files, "word/document.xml")).toContain('ProgID="Excel.Sheet.12"');
             expect(files.get("word/embeddings/Microsoft_Excel_Worksheet1.xlsx")).toEqual(WORKBOOK);
-            expect([...files.keys()].some((path) => /^word\/media\/[0-9a-f]+\.png$/.test(path))).toBe(true);
+            expect([...files.keys()].some((path) => /^word\/media\/image\d+\.png$/.test(path))).toBe(true);
         });
     });
 });

@@ -291,7 +291,8 @@ export class File {
             },
         });
 
-        this.media = new Media();
+        // Images are numbered with the other parts in word/, so an image never takes a part's name, nor a part an image's
+        this.media = new Media((extension) => this.packageParts.takePath("media", "image", extension));
 
         if (options.externalStyles !== undefined) {
             const given = options.styles?.default ?? {};
