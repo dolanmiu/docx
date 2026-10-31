@@ -152,7 +152,9 @@ describe("PackagePart", () => {
                 "word/media/image1.jpg",
                 "word/media/image2.png",
             ]);
+            expect(zip.get("word/media/image1.png")).to.deep.equal(new Uint8Array([1]));
             expect(zip.get("word/media/image1.jpg")).to.deep.equal(new Uint8Array([2]));
+            expect(zip.get("word/media/image2.png")).to.deep.equal(new Uint8Array([3]));
             const relationships = read(zip, "word/_rels/document.xml.rels");
             expect(relationships).to.contain('Target="media/image1.png"');
             expect(relationships).to.contain('Target="media/image1.jpg"');
