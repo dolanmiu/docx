@@ -30,7 +30,7 @@ git worktree list --porcelain                                    # which checkou
    gh pr list --state merged --head "$BRANCH" --json number,title,headRefOid,mergedAt
    git rev-parse "$BRANCH"
    ```
-   Stop if no merged PR is listed. Stop if the local tip differs from the PR's `headRefOid`, because it has commits that never reached the PR.
+   Stop if no merged PR is listed. Stop if the local tip differs from the PR's `headRefOid` (`PR_HEAD`), because it has commits that never reached the PR.
 2. **No uncommitted work in the worktree** (only when `WORKTREE` exists). `git -C "$WORKTREE" status --porcelain` must be empty. Removing the worktree would delete anything listed, including untracked files.
 3. **No tracked changes in `MAIN`.** `git -C "$MAIN" status --porcelain --untracked-files=no` must be empty. Untracked files in `MAIN`, such as plan notes, are fine because they carry over to `master`.
 
@@ -61,11 +61,11 @@ Skip this step if there is no `BRANCH`.
 
 ```bash
 git -C "$MAIN" branch -D "$BRANCH"                       # skip if ExitWorktree already deleted it
-git -C "$MAIN" ls-remote --exit-code --heads origin "$BRANCH" && git -C "$MAIN" push origin --delete "$BRANCH"
+git -C "$MAIN" ls-remote --exit-code --heads origin "$BRANCH" && git -C "$MAIN" push origin --delete --force-with-lease="$BRANCH:$PR_HEAD" "$BRANCH"
 git -C "$MAIN" fetch --prune
 ```
 
-GitHub often deletes the remote branch on merge. `ls-remote` exits non-zero when it is already gone, and then there is nothing to push.
+GitHub often deletes the remote branch on merge. `ls-remote` exits non-zero when it is already gone, and then there is nothing to push. The lease makes the delete fail with `stale info` if someone pushed to the branch after the PR merged. Then stop and report it.
 
 ## 6. Delete other merged branches
 
@@ -92,8 +92,10 @@ Delete `B` only when a merged PR is listed, no open PR has `B` as its head, and 
 git -C "$MAIN" fetch -q origin "pull/$PR/head"            # only when TIP is not the PR's head
 git -C "$MAIN" merge-base --is-ancestor "$TIP" FETCH_HEAD
 git -C "$MAIN" branch -D "$B"                              # local tip
-git -C "$MAIN" push origin --delete "$B"                   # tip on origin
+git -C "$MAIN" push origin --delete --force-with-lease="$B:$TIP" "$B"   # tip on origin
 ```
+
+The lease makes the delete fail with `stale info` if the branch on origin has moved since its tip was checked. Keep that branch and report it.
 
 Keep every other branch and list it in the report with its last commit date and subject. It may hold work that never reached a PR, so delete it only when the user says to.
 
