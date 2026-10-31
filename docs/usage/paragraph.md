@@ -340,15 +340,15 @@ Set paragraph indentation from the page margins using the `indent` property.
 
 ### IIndentAttributesProperties
 
-| Property       | Type                                 | Notes    | Description                                                                              |
-| -------------- | ------------------------------------ | -------- | ---------------------------------------------------------------------------------------- |
-| start          | `number \| UniversalMeasure`         | Optional | Indentation from the leading edge (left in LTR, right in RTL), in twips                  |
-| end            | `number \| UniversalMeasure`         | Optional | Indentation from the trailing edge (right in LTR, left in RTL), in twips                 |
-| left           | `number \| UniversalMeasure`         | Optional | Indentation from the left margin, in twips. With `hanging`, of the lines after the first |
-| right          | `number \| UniversalMeasure`         | Optional | Indentation from the right margin, in twips                                              |
-| hanging        | `number \| PositiveUniversalMeasure` | Optional | How far the first line starts before `left`, in twips                                    |
-| firstLine      | `number \| PositiveUniversalMeasure` | Optional | Additional first-line indent, in twips                                                   |
-| firstLineChars | `number`                             | Optional | First-line indent in hundredths of a character width (e.g. `200` = 2 chars)              |
+| Property       | Type                                 | Notes    | Description                                                                                            |
+| -------------- | ------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------ |
+| start          | `number \| UniversalMeasure`         | Optional | Indentation from the leading edge (left in LTR, right in RTL), in twips                                |
+| end            | `number \| UniversalMeasure`         | Optional | Indentation from the trailing edge (right in LTR, left in RTL), in twips                               |
+| left           | `number \| UniversalMeasure`         | Optional | Indentation from the left margin, in twips. With `hanging`, it's where the lines after the first start |
+| right          | `number \| UniversalMeasure`         | Optional | Indentation from the right margin, in twips                                                            |
+| hanging        | `number \| PositiveUniversalMeasure` | Optional | How far the first line starts before `left`, in twips                                                  |
+| firstLine      | `number \| PositiveUniversalMeasure` | Optional | Additional first-line indent, in twips                                                                 |
+| firstLineChars | `number`                             | Optional | First-line indent in hundredths of a character width (e.g. `200` = 2 chars)                            |
 
 > `start`/`end` are the bidi-aware equivalents of `left`/`right`. Prefer `start`/`end` for documents that may be rendered in RTL languages.
 
