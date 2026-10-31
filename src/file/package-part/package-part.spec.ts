@@ -153,6 +153,10 @@ describe("PackagePart", () => {
                 "word/media/image2.png",
             ]);
             expect(zip.get("word/media/image1.jpg")).to.deep.equal(new Uint8Array([2]));
+            const relationships = read(zip, "word/_rels/document.xml.rels");
+            expect(relationships).to.contain('Target="media/image1.png"');
+            expect(relationships).to.contain('Target="media/image1.jpg"');
+            expect(relationships).to.contain('Target="media/image2.png"');
         });
 
         it("should relate a part as an OLE object, which isn't one of the relationship types", async () => {
