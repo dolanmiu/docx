@@ -1733,9 +1733,7 @@ describe("ImageRun", () => {
             });
             const packed = unzip(await Packer.toBuffer(document));
 
-            expect([...packed.keys()].filter((name) => /^word\/media\//.test(name))).to.deep.equal([
-                `word/media/${convenienceFunctions.hashedId(PNG)}.png`,
-            ]);
+            expect([...packed.keys()].filter((name) => /^word\/media\//.test(name))).to.deep.equal(["word/media/image1.png"]);
             expect(textOf(packed, "[Content_Types].xml")).to.contain('Extension="png"');
         });
     });

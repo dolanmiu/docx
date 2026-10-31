@@ -612,51 +612,8 @@ describe("Compiler", () => {
             });
 
             vi.spyOn(compiler["imageReplacer"], "getMediaData").mockReturnValue([
-                {
-                    type: "png",
-                    data: Buffer.from(""),
-                    fileName: "test",
-                    transformation: {
-                        pixels: {
-                            x: 100,
-                            y: 100,
-                        },
-                        emus: {
-                            x: 100,
-                            y: 100,
-                        },
-                    },
-                },
-                {
-                    type: "svg",
-                    data: Buffer.from(""),
-                    fileName: "test",
-                    transformation: {
-                        pixels: {
-                            x: 100,
-                            y: 100,
-                        },
-                        emus: {
-                            x: 100,
-                            y: 100,
-                        },
-                    },
-                    fallback: {
-                        type: "png",
-                        data: Buffer.from(""),
-                        fileName: "test",
-                        transformation: {
-                            pixels: {
-                                x: 100,
-                                y: 100,
-                            },
-                            emus: {
-                                x: 100,
-                                y: 100,
-                            },
-                        },
-                    },
-                },
+                { key: "test.png", fileName: "image1.png" },
+                { key: "test.svg", fileName: "image2.svg" },
             ]);
 
             compiler.compile(file);

@@ -156,14 +156,8 @@ export class Compiler {
             ...packageParts.map(({ path, data }) => [path, data] as const),
             ...overrides.map(({ path, data }) => [path, data] as const),
             ...(file.Macros === undefined ? [] : [["word/vbaProject.bin", file.Macros.project] as const]),
-            ...file.Media.Array.flatMap((data) =>
-                data.type !== "svg"
-                    ? [[`word/media/${data.fileName}`, data.data] as const]
-                    : [
-                          [`word/media/${data.fileName}`, data.data] as const,
-                          [`word/media/${data.fallback.fileName}`, data.fallback.data] as const,
-                      ],
-            ),
+            // An SVG image's fallback is added to the media as an image of its own, so it is written with the others
+            ...file.Media.Array.map((data) => [`word/media/${data.fileName}`, data.data] as const),
             // Sequential filenames (font1.odttf, font2.odttf, …) — must match the
             // Target paths set in FontWrapper. Word rejects embedded-font paths
             // containing spaces or non-ASCII when those characters appear in the

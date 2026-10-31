@@ -104,7 +104,7 @@ describe("PackagePart", () => {
             expect(zip.has("word/charts/_rels/chart1.xml.rels")).to.equal(false);
         });
 
-        it("should write an image part in media/, beside docx's own images, which are named by a hash of their data", async () => {
+        it("should write an image part in media/, numbered with docx's own images, so neither takes the other's name", async () => {
             const image = new PackagePart({
                 folder: "media",
                 name: "image",
@@ -130,9 +130,12 @@ describe("PackagePart", () => {
                 }),
             );
 
+            // The part is added as its paragraph is written, before the image run's media is, so it takes the first number
             expect(zip.get("word/media/image1.png")).to.deep.equal(new Uint8Array([1]));
-            expect([...zip.keys()].filter((path) => /^word\/media\/[0-9a-f]{40}\.png$/.test(path))).to.have.length(1);
+            expect(zip.get("word/media/image2.png")).to.deep.equal(new Uint8Array([2]));
+            expect([...zip.keys()].filter((path) => path.startsWith("word/media/"))).to.have.length(2);
             expect(read(zip, "[Content_Types].xml")).to.contain('<Override ContentType="image/png" PartName="/word/media/image1.png"/>');
+            expect(read(zip, "word/_rels/document.xml.rels")).to.contain('Target="media/image2.png"');
         });
 
         it("should relate a part as an OLE object, which isn't one of the relationship types", async () => {
