@@ -356,7 +356,7 @@ const doc = new Document({
 
 ## Full-Page Background Images
 
-A picture behind the text of every page, such as letterhead artwork or a background for a flyer, goes in the header as a floating image behind the text, placed at the page's top left corner and as large as the page. The header repeats it on every page of the section.
+A picture behind the text of every page, such as letterhead artwork or a background for a flyer, goes in the header as a floating image behind the text, placed at the page's top left corner and as large as the page. The header repeats it on every page of the section. A section with a [different first page](#different-first-page), or a document with [different odd and even pages](#different-odd-and-even-pages), shows its `first` or `even` header on those pages, so put the picture in that header too.
 
 The paragraph that holds the picture still has the height of a line. When the header reaches below the top margin, Word and LibreOffice start the text below the header, so small margins leave a gap at the top of each page. A negative top margin is exact: the text starts that far from the top of the page, whatever the header holds. Keep the header's distance from the top of the page (`header`) no larger than that, as LibreOffice doesn't let a header overlap the text. A negative `bottom` margin does the same for the footer, with `footer` no larger.
 
