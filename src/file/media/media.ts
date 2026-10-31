@@ -40,11 +40,17 @@ export type IMediaTransformation = {
 export type MediaPathTaker = (extension: string) => string;
 
 /**
- * Numbers images media/image1.png, media/image2.png and so on, when the images aren't in a package with other parts.
+ * Numbers images by type, media/image1.png, media/image2.png and media/image1.jpg, as `PackageParts.takePath` does,
+ * when the images aren't in a package with other parts.
  */
 const sequentialMediaPaths = (): MediaPathTaker => {
-    let count = 0;
-    return (extension) => `media/image${++count}.${extension}`;
+    const counts = new Map<string, number>();
+    return (extension) => {
+        const count = (counts.get(extension) ?? 0) + 1;
+        // eslint-disable-next-line functional/immutable-data
+        counts.set(extension, count);
+        return `media/image${count}.${extension}`;
+    };
 };
 
 /**
@@ -53,9 +59,10 @@ const sequentialMediaPaths = (): MediaPathTaker => {
  * Media stores all images referenced in the document and provides access to their data for packaging into the DOCX
  * file. Each image is stored under a unique key, such as a hash of its data, so an image used twice is stored once.
  *
- * In the package, images are named as Word names them: image1.png, image2.jpg and so on in word/media, numbered in
- * the order they are added. Word for the web shows images with Word's own names, and has been seen to show an empty
- * box in place of an image whose name isn't like them. The {@link IMediaData.fileName} of an image in {@link Array}
+ * In the package, images are named as Word names them: image1.png, image2.png and so on in word/media, numbered in
+ * the order they are added. The numbering is by type, so a document with a PNG and a JPEG has image1.png and
+ * image1.jpg. Word for the web shows images with Word's own names, and has been seen to show an empty box in place of
+ * an image whose name isn't like them. The {@link IMediaData.fileName} of an image in {@link Array}
  * is the name it is written with, not the key it was added under.
  *
  * @example
@@ -80,8 +87,8 @@ export class Media {
 
     /**
      * @param takePath - Gives each image its path under word/, by its extension, so that it doesn't take the path of
-     * another part of the package, such as a template's image. Default numbers them media/image1.png, media/image2.png
-     * and so on
+     * another part of the package, such as a template's image. Default numbers them by type, media/image1.png,
+     * media/image2.png and so on
      */
     public constructor(takePath: MediaPathTaker = sequentialMediaPaths()) {
         this.takePath = takePath;

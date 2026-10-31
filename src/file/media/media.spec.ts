@@ -42,21 +42,21 @@ describe("Media", () => {
             });
         });
 
-        it("should name images as Word does, image1, image2 and so on with their types, in the order they are added", () => {
+        it("should name images as Word does, image1, image2 and so on, numbered by type in the order they are added", () => {
             const media = new Media();
 
             media.addImage("4bf7547c9322fd2143bd3e8dfa84109d9d3fed14.png", image("png"));
             media.addImage("5cc32650134d765766514dd7861ad203c1c6669d.jpg", image("jpg"));
             media.addImage("e3884837efe490b34ef730a130afef42056dfb0d.svg", image("svg"));
-            media.addImage("8001f7eded0c6358a19b92324e04897d5a29969c.gif", image("gif"));
-            media.addImage("9c5875b127e98914d759f3793ac8fb7c03bad422.bmp", image("bmp"));
+            media.addImage("6942a699d8712509702da846545cfb8bbec8b25e.png", image("png"));
+            media.addImage("9c5875b127e98914d759f3793ac8fb7c03bad422.jpg", image("jpg"));
 
             expect(media.Array.map(({ fileName }) => fileName)).to.deep.equal([
                 "image1.png",
+                "image1.jpg",
+                "image1.svg",
+                "image2.png",
                 "image2.jpg",
-                "image3.svg",
-                "image4.gif",
-                "image5.bmp",
             ]);
         });
 

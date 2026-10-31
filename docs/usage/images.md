@@ -132,7 +132,7 @@ The `type` is `jpg` (for JPEG files), `png`, `gif`, `bmp` or [`svg`](#svg-images
 
 The `width` and `height` in `transformation` are in pixels, at 96 to the inch, so `width: 528` is 5.5 inches wide. They aren't in EMUs, which floating offsets use. Word won't open a document with an image more than 225457 pixels wide or tall, so `docx` throws an error for one, such as an image sized in EMUs by mistake.
 
-In the `.docx`, images are written to `word/media` with the names Word gives them, `image1.png`, `image2.jpg` and so on, numbered in the order they are added. An image used more than once, such as a logo in the body and in a header, is written once. Word for the web shows images with Word's own names, and has shown an empty box in place of an image named otherwise.
+In the `.docx`, images are written to `word/media` with the names Word gives them, `image1.png`, `image2.png` and so on, numbered by type in the order they are added, so a document with a PNG and a JPEG has `image1.png` and `image1.jpg`. An image used more than once, such as a logo in the body and in a header, is written once. Word for the web shows images with Word's own names, and has shown an empty box in place of an image named otherwise.
 
 ## SVG Images
 
