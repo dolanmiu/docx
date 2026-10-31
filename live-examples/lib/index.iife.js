@@ -19393,48 +19393,83 @@ MAX: 9026 };
 	};
 	// src/file/media/media.ts
 	/**
+	* Numbers images by type, media/image1.png, media/image2.png and media/image1.jpg, as `PackageParts.takePath` does,
+	* when the images aren't in a package with other parts.
+	*/
+	var sequentialMediaPaths = () => {
+		const counts = /* @__PURE__ */ new Map();
+		return (extension) => {
+			var _counts$get;
+			const count = ((_counts$get = counts.get(extension)) !== null && _counts$get !== void 0 ? _counts$get : 0) + 1;
+			counts.set(extension, count);
+			return `media/image${count}.${extension}`;
+		};
+	};
+	/**
 	* Manages embedded media (images) in a document.
 	*
-	* Media stores all images referenced in the document and provides
-	* access to their data for packaging into the DOCX file. Each image
-	* is stored with a unique key for retrieval.
+	* Media stores all images referenced in the document and provides access to their data for packaging into the DOCX
+	* file. Each image is stored under a unique key, such as a hash of its data, so an image used twice is stored once.
+	*
+	* In the package, images are named as Word names them: image1.png, image2.png and so on in word/media, numbered in
+	* the order they are added. The numbering is by type, so a document with a PNG and a JPEG has image1.png and
+	* image1.jpg. Word for the web shows images with Word's own names, and has been seen to show an empty box in place of
+	* an image whose name isn't like them. The {@link IMediaData.fileName} of an image in {@link Array}
+	* is the name it is written with, not the key it was added under.
 	*
 	* @example
 	* ```typescript
 	* const media = new Media();
-	* media.addImage("image1", {
+	* media.addImage("4bf7547c9322fd2143bd3e8dfa84109d9d3fed14.png", {
 	*   type: "png",
-	*   fileName: "image1.png",
+	*   fileName: "4bf7547c9322fd2143bd3e8dfa84109d9d3fed14.png",
 	*   transformation: {
 	*     pixels: { x: 200, y: 100 },
 	*     emus: { x: 1828800, y: 914400 }
 	*   },
 	*   data: imageBuffer
 	* });
-	* const allImages = media.Array;
+	* const [image] = media.Array; // image.fileName is "image1.png"
 	* ```
 	*/
 	var Media = class {
-		constructor() {
-			_defineProperty(this, "map", void 0);
-			this.map = /* @__PURE__ */ new Map();
+		/**
+		* @param takePath - Gives each image its path under word/, by its extension, so that it doesn't take the path of
+		* another part of the package, such as a template's image. Default numbers them by type, media/image1.png,
+		* media/image2.png and so on
+		*/
+		constructor(takePath = sequentialMediaPaths()) {
+			_defineProperty(this, "map", /* @__PURE__ */ new Map());
+			_defineProperty(this, "takePath", void 0);
+			this.takePath = takePath;
 		}
 		/**
-		* Adds an image to the media collection.
+		* Adds an image to the media collection, once: an image added again under the same key, such as one used in the
+		* body and in a header, keeps the file name it was given the first time.
 		*
-		* @param key - Unique identifier for this image
-		* @param mediaData - Complete image data including file name, transformation, and raw data
+		* @param key - Unique identifier for this image, which the XML refers to it by until it is packed
+		* @param mediaData - Complete image data including type, transformation, and raw data
 		*/
 		addImage(key, mediaData) {
-			this.map.set(key, mediaData);
+			if (this.map.has(key)) return;
+			const path = this.takePath(mediaData.type);
+			this.map.set(key, _objectSpread2(_objectSpread2({}, mediaData), {}, { fileName: path.slice(path.lastIndexOf("/") + 1) }));
 		}
 		/**
-		* Gets all images as an array.
+		* Gets all images as an array, in the order they were added, each with the file name it is written with.
 		*
 		* @returns Read-only array of all media data in the collection
 		*/
 		get Array() {
 			return Array.from(this.map.values());
+		}
+		/**
+		* Gets all images with the keys they were added under, in the order they were added.
+		*
+		* @returns Read-only array of each image's key and media data, whose file name is the one it is written with
+		*/
+		get Entries() {
+			return Array.from(this.map.entries());
 		}
 	};
 	// src/file/numbering/level.ts
@@ -20487,16 +20522,16 @@ MAX: 9026 };
 	var PackageParts = class {
 		/**
 		* @param contentTypes - Where each part's content type is added
-		* @param existingPaths - The paths under word/ of the parts the package already has, such as a template's charts,
-		* which new parts don't take
+		* @param existingPaths - The paths under word/ of the parts the package already has, such as a template's charts
+		* and images, which new parts don't take
 		*/
 		constructor(contentTypes, existingPaths = /* @__PURE__ */ new Set()) {
 			_defineProperty(this, "contentTypes", void 0);
-			_defineProperty(this, "existingPaths", void 0);
 			_defineProperty(this, "paths", /* @__PURE__ */ new Map());
+			_defineProperty(this, "taken", void 0);
 			_defineProperty(this, "folders", /* @__PURE__ */ new WeakMap());
 			this.contentTypes = contentTypes;
-			this.existingPaths = existingPaths;
+			this.taken = new Set(existingPaths);
 		}
 		/**
 		* Adds a part, and its content type, once.
@@ -20507,12 +20542,26 @@ MAX: 9026 };
 			const added = this.paths.get(part);
 			if (added !== void 0) return added;
 			const { folder, name, extension, contentType } = part.options;
-			const taken = /* @__PURE__ */ new Set([...this.existingPaths, ...this.paths.values()]);
-			let index = 1;
-			while (taken.has(`${folder}/${name}${index}.${extension}`)) index++;
-			const path = `${folder}/${name}${index}.${extension}`;
+			const path = this.takePath(folder, name, extension);
 			this.paths.set(part, path);
 			this.contentTypes.addOverride(contentType, `/word/${path}`);
+			return path;
+		}
+		/**
+		* Takes the lowest-numbered path in a folder that nothing has yet, so that nothing else is written there: the
+		* package's own parts, the parts added, and the document's images, which `Media` names with this, as Word names
+		* them: media/image1.png, media/image2.png and so on.
+		*
+		* @param folder - The folder under word/, such as "media"
+		* @param name - The start of the file name, such as "image"
+		* @param extension - The file name's extension, such as "png"
+		* @returns The path under word/, such as "media/image1.png"
+		*/
+		takePath(folder, name, extension) {
+			let index = 1;
+			while (this.taken.has(`${folder}/${name}${index}.${extension}`)) index++;
+			const path = `${folder}/${name}${index}.${extension}`;
+			this.taken.add(path);
 			return path;
 		}
 		/**
@@ -24270,7 +24319,7 @@ MAX: 9026 };
 					doNotHyphenateCaps: (_options$hyphenation4 = options.hyphenation) === null || _options$hyphenation4 === void 0 ? void 0 : _options$hyphenation4.doNotHyphenateCaps
 				}
 			});
-			this.media = new Media();
+			this.media = new Media((extension) => this.packageParts.takePath("media", "image", extension));
 			if (options.externalStyles !== void 0) {
 				var _options$styles$defau, _options$styles, _options$styles2, _options$styles3;
 				const given = (_options$styles$defau = (_options$styles = options.styles) === null || _options$styles === void 0 ? void 0 : _options$styles.default) !== null && _options$styles$defau !== void 0 ? _options$styles$defau : {};
@@ -25753,14 +25802,15 @@ MAX: 9026 };
 	* Replaces image placeholders with relationship IDs in XML content.
 	*
 	* During document compilation, images are referenced using placeholder tokens
-	* like {image1.png}. This class replaces those placeholders with the actual
-	* relationship IDs used in the OOXML structure.
+	* like {4bf7547c9322fd2143bd3e8dfa84109d9d3fed14.png}, the key the image was
+	* added to the media under. This class replaces those placeholders with the
+	* actual relationship IDs used in the OOXML structure.
 	*
 	* @example
 	* ```typescript
 	* const replacer = new ImageReplacer();
-	* const mediaData = replacer.getMediaData(xmlString, media);
-	* const updatedXml = replacer.replace(xmlString, mediaData, 1);
+	* const images = replacer.getMediaData(xmlString, media);
+	* const updatedXml = replacer.replace(xmlString, images, 1);
 	* ```
 	*/
 	var ImageReplacer = class {
@@ -25768,23 +25818,26 @@ MAX: 9026 };
 		* Replaces image placeholder tokens with relationship IDs.
 		*
 		* @param xmlData - The XML string containing image placeholders
-		* @param mediaData - Array of media data to replace
+		* @param images - The images the XML refers to, in the order their relationships are numbered
 		* @param offset - Starting offset for relationship IDs
 		* @returns XML string with placeholders replaced by relationship IDs
 		*/
-		replace(xmlData, mediaData, offset) {
-			return replacePlaceholders(xmlData, new Map(mediaData.map((image, i) => [image.fileName, (offset + i).toString()])));
+		replace(xmlData, images, offset) {
+			return replacePlaceholders(xmlData, new Map(images.map((image, i) => [image.key, (offset + i).toString()])));
 		}
 		/**
-		* Extracts media data referenced in the XML content.
+		* Finds the images referenced in the XML content.
 		*
-		* @param xmlData - The XML string to search for media references
+		* @param xmlData - The XML string to search for image references
 		* @param media - The media collection to search within
-		* @returns Array of media data found in the XML
+		* @returns The images found in the XML, in the order they were added to the media
 		*/
 		getMediaData(xmlData, media) {
 			const placeholders = findPlaceholders(xmlData);
-			return media.Array.filter((image) => placeholders.has(image.fileName));
+			return media.Entries.filter(([key]) => placeholders.has(key)).map(([key, { fileName }]) => ({
+				key,
+				fileName
+			}));
 		}
 	};
 	// src/export/packer/numbering-replacer.ts
@@ -25919,7 +25972,7 @@ MAX: 9026 };
 				...packageParts.map(({ path, data }) => [path, data]),
 				...overrides.map(({ path, data }) => [path, data]),
 				...file.Macros === void 0 ? [] : [["word/vbaProject.bin", file.Macros.project]],
-				...file.Media.Array.flatMap((data) => data.type !== "svg" ? [[`word/media/${data.fileName}`, data.data]] : [[`word/media/${data.fileName}`, data.data], [`word/media/${data.fallback.fileName}`, data.fallback.data]]),
+				...file.Media.Array.map((data) => [`word/media/${data.fileName}`, data.data]),
 				...file.FontTable.files.map(({ data: buffer, fontKey }, i) => [`word/fonts/font${i + 1}.odttf`, obfuscate(buffer, fontKey)])
 			]);
 		}
@@ -29455,16 +29508,17 @@ MAX: 9026 };
 			const contexts = /* @__PURE__ */ new Map();
 			const themeColors = readThemeColors(zipContent);
 			const contentTypeOverrides = [];
+			const parts = new PackageParts({ addOverride: (contentType, partName) => contentTypeOverrides.push({
+				contentType,
+				partName
+			}) }, new Set([...zipContent.keys()].filter((path) => path.startsWith("word/")).map((path) => path.slice(5))));
 			const file = {
-				Media: new Media(),
+				Media: new Media((extension) => parts.takePath("media", "image", extension)),
 				Numbering: new Numbering(numbering),
 				Theme: themeColors && { Colors: themeColors },
 				FootNotes: { View: { idOf: (reference, note, context) => carryNote("footnotes", reference, note, context) } },
 				Endnotes: { View: { idOf: (reference, note, context) => carryNote("endnotes", reference, note, context) } },
-				PackageParts: new PackageParts({ addOverride: (contentType, partName) => contentTypeOverrides.push({
-					contentType,
-					partName
-				}) }, new Set([...zipContent.keys()].filter((path) => path.startsWith("word/")).map((path) => path.slice(5))))
+				PackageParts: parts
 			};
 			const map = /* @__PURE__ */ new Map();
 			const imageRelationshipAdditions = [];

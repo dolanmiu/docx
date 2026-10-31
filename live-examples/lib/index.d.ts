@@ -10073,42 +10073,66 @@ export declare const measurementOrPercentValue: (val: number | Percentage | Univ
 /**
  * Manages embedded media (images) in a document.
  *
- * Media stores all images referenced in the document and provides
- * access to their data for packaging into the DOCX file. Each image
- * is stored with a unique key for retrieval.
+ * Media stores all images referenced in the document and provides access to their data for packaging into the DOCX
+ * file. Each image is stored under a unique key, such as a hash of its data, so an image used twice is stored once.
+ *
+ * In the package, images are named as Word names them: image1.png, image2.png and so on in word/media, numbered in
+ * the order they are added. The numbering is by type, so a document with a PNG and a JPEG has image1.png and
+ * image1.jpg. Word for the web shows images with Word's own names, and has been seen to show an empty box in place of
+ * an image whose name isn't like them. The {@link IMediaData.fileName} of an image in {@link Array}
+ * is the name it is written with, not the key it was added under.
  *
  * @example
  * ```typescript
  * const media = new Media();
- * media.addImage("image1", {
+ * media.addImage("4bf7547c9322fd2143bd3e8dfa84109d9d3fed14.png", {
  *   type: "png",
- *   fileName: "image1.png",
+ *   fileName: "4bf7547c9322fd2143bd3e8dfa84109d9d3fed14.png",
  *   transformation: {
  *     pixels: { x: 200, y: 100 },
  *     emus: { x: 1828800, y: 914400 }
  *   },
  *   data: imageBuffer
  * });
- * const allImages = media.Array;
+ * const [image] = media.Array; // image.fileName is "image1.png"
  * ```
  */
 export declare class Media {
     private readonly map;
-    constructor();
+    private readonly takePath;
     /**
-     * Adds an image to the media collection.
+     * @param takePath - Gives each image its path under word/, by its extension, so that it doesn't take the path of
+     * another part of the package, such as a template's image. Default numbers them by type, media/image1.png,
+     * media/image2.png and so on
+     */
+    constructor(takePath?: MediaPathTaker);
+    /**
+     * Adds an image to the media collection, once: an image added again under the same key, such as one used in the
+     * body and in a header, keeps the file name it was given the first time.
      *
-     * @param key - Unique identifier for this image
-     * @param mediaData - Complete image data including file name, transformation, and raw data
+     * @param key - Unique identifier for this image, which the XML refers to it by until it is packed
+     * @param mediaData - Complete image data including type, transformation, and raw data
      */
     addImage(key: string, mediaData: IMediaData): void;
     /**
-     * Gets all images as an array.
+     * Gets all images as an array, in the order they were added, each with the file name it is written with.
      *
      * @returns Read-only array of all media data in the collection
      */
     get Array(): readonly IMediaData[];
+    /**
+     * Gets all images with the keys they were added under, in the order they were added.
+     *
+     * @returns Read-only array of each image's key and media data, whose file name is the one it is written with
+     */
+    get Entries(): readonly (readonly [key: string, mediaData: IMediaData])[];
 }
+
+/**
+ * The path under word/ of a file to write, by its extension, which no other file has: Media takes an image's path with
+ * it as `PackageParts.takePath("media", "image", extension)` does, so an image's name isn't taken by another part.
+ */
+export declare type MediaPathTaker = (extension: string) => string;
 
 /**
  * Represents the current month in long format (e.g., "January", "December").
@@ -10852,13 +10876,13 @@ export declare type PackagePartRelationshipType = RelationshipType | OleObjectRe
  */
 declare class PackageParts {
     private readonly contentTypes;
-    private readonly existingPaths;
     private readonly paths;
+    private readonly taken;
     private readonly folders;
     /**
      * @param contentTypes - Where each part's content type is added
-     * @param existingPaths - The paths under word/ of the parts the package already has, such as a template's charts,
-     * which new parts don't take
+     * @param existingPaths - The paths under word/ of the parts the package already has, such as a template's charts
+     * and images, which new parts don't take
      */
     constructor(contentTypes: Pick<ContentTypes, "addOverride">, existingPaths?: ReadonlySet<string>);
     /**
@@ -10867,6 +10891,17 @@ declare class PackageParts {
      * @returns The part's path under word/, such as "charts/chart1.xml"
      */
     add(part: PackagePart<PackagePartRelationshipType>): string;
+    /**
+     * Takes the lowest-numbered path in a folder that nothing has yet, so that nothing else is written there: the
+     * package's own parts, the parts added, and the document's images, which `Media` names with this, as Word names
+     * them: media/image1.png, media/image2.png and so on.
+     *
+     * @param folder - The folder under word/, such as "media"
+     * @param name - The start of the file name, such as "image"
+     * @param extension - The file name's extension, such as "png"
+     * @returns The path under word/, such as "media/image1.png"
+     */
+    takePath(folder: string, name: string, extension: string): string;
     /**
      * Each part added, with its path under word/, in the order they were added.
      *
