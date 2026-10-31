@@ -132,15 +132,15 @@ const doc = new Document({
 
 ### Margin Options
 
-| Property | Type     | Description                                                      |
-| -------- | -------- | ---------------------------------------------------------------- |
-| top      | `number` | Top margin (twips)                                               |
-| right    | `number` | Right margin                                                     |
-| bottom   | `number` | Bottom margin                                                    |
-| left     | `number` | Left margin                                                      |
-| header   | `number` | Header margin                                                    |
-| footer   | `number` | Footer margin                                                    |
-| gutter   | `number` | Gutter margin (extra space for binding in double-sided printing) |
+| Property | Type     | Description                                                                                                                                                                              |
+| -------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| top      | `number` | Top margin (twips). A negative margin is exact: the header doesn't push the text below it, as in [Full-Page Background Images](usage/headers-and-footers.md#full-page-background-images) |
+| right    | `number` | Right margin                                                                                                                                                                             |
+| bottom   | `number` | Bottom margin. A negative margin is exact: the footer doesn't push the text above it                                                                                                     |
+| left     | `number` | Left margin                                                                                                                                                                              |
+| header   | `number` | Header margin                                                                                                                                                                            |
+| footer   | `number` | Footer margin                                                                                                                                                                            |
+| gutter   | `number` | Gutter margin (extra space for binding in double-sided printing)                                                                                                                         |
 
 ## Page Borders
 

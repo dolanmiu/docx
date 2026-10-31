@@ -354,6 +354,70 @@ const doc = new Document({
 });
 ```
 
+## Full-Page Background Images
+
+A picture behind the text of every page, such as letterhead artwork or a background for a flyer, goes in the header as a floating image behind the text, placed at the page's top left corner and as large as the page. The header repeats it on every page of the section.
+
+The paragraph that holds the picture still has the height of a line. When the header reaches below the top margin, Word and LibreOffice start the text below the header, so small margins leave a gap at the top of each page. A negative top margin is exact: the text starts that far from the top of the page, whatever the header holds. Keep the header's distance from the top of the page (`header`) no larger than that, as LibreOffice doesn't let a header overlap the text. A negative `bottom` margin does the same for the footer, with `footer` no larger.
+
+```ts live
+import * as fs from "fs";
+import {
+    Document,
+    Header,
+    HorizontalPositionRelativeFrom,
+    ImageRun,
+    PageOrientation,
+    Paragraph,
+    TextRun,
+    VerticalPositionRelativeFrom,
+} from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            properties: {
+                page: {
+                    size: { orientation: PageOrientation.LANDSCAPE },
+                    margin: {
+                        // Negative, so the header's paragraph doesn't push the text down: it starts exactly half an inch from the top
+                        top: -720,
+                        // No more than the top margin, as LibreOffice doesn't let the header overlap the text
+                        header: 0,
+                    },
+                },
+            },
+            headers: {
+                default: new Header({
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new ImageRun({
+                                    type: "jpg",
+                                    data: fs.readFileSync("./demo/assets/images/image1.jpeg"),
+                                    // The size of an A4 page across, in pixels
+                                    transformation: { width: 1123, height: 794 },
+                                    floating: {
+                                        horizontalPosition: { relative: HorizontalPositionRelativeFrom.PAGE, offset: 0 },
+                                        verticalPosition: { relative: VerticalPositionRelativeFrom.PAGE, offset: 0 },
+                                        behindDocument: true,
+                                    },
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            },
+            children: [new Paragraph({ children: [new TextRun({ text: "Penguins", bold: true, size: 72 })] })],
+        },
+    ],
+});
+```
+
+To start the text at the very top of the page, give `top` a margin of `-1`, a twentieth of a point, with `header: 0`: `-0` is the same as `0`.
+
+The preview on this page draws the picture where the header is, above the text, so download the document to see it behind the text in Word.
+
 ## Multiple Elements in Headers/Footers
 
 Headers and footers can contain multiple paragraphs, tables, and images:
@@ -572,6 +636,12 @@ _Source: https://github.com/dolanmiu/docx/blob/master/demo/headers-and-footers/o
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/headers-and-footers/header-and-footer-margins.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/headers-and-footers/header-and-footer-margins.ts_
+
+### Full-Page Background Image
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/headers-and-footers/full-page-background-image.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/headers-and-footers/full-page-background-image.ts_
 
 ### Images in Header and Footer
 
