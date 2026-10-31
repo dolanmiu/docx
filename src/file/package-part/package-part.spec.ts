@@ -138,6 +138,23 @@ describe("PackagePart", () => {
             expect(read(zip, "word/_rels/document.xml.rels")).to.contain('Target="media/image2.png"');
         });
 
+        it("should number a document's images by type, in the order they are added, as the parts are", async () => {
+            const imageRun = (type: "png" | "jpg", byte: number) =>
+                new ImageRun({ type, data: new Uint8Array([byte]), transformation: { width: 1, height: 1 } });
+            const zip = await pack(
+                new File({
+                    sections: [{ children: [new Paragraph({ children: [imageRun("png", 1), imageRun("jpg", 2), imageRun("png", 3)] })] }],
+                }),
+            );
+
+            expect([...zip.keys()].filter((path) => path.startsWith("word/media/"))).to.deep.equal([
+                "word/media/image1.png",
+                "word/media/image1.jpg",
+                "word/media/image2.png",
+            ]);
+            expect(zip.get("word/media/image1.jpg")).to.deep.equal(new Uint8Array([2]));
+        });
+
         it("should relate a part as an OLE object, which isn't one of the relationship types", async () => {
             const oleObject = new PackagePart({
                 folder: "embeddings",
