@@ -105,7 +105,7 @@ const stream = Packer.toStream(doc);
 
 The `Packer` methods support 2 optional arguments.
 
-The first is for controlling the indentation of the xml and should be a `boolean` or `keyof typeof PrettifyType`.
+The first is for controlling the indentation of the xml and should be a `boolean` or a value from `PrettifyType`.
 
 The second is an array of subfile overrides (`{path: string, data: string}[]`). These overrides can be used to write additional subfiles to the result or even override default subfiles in the case that the default handling of these subfiles does not meet your needs.
 
