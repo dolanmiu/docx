@@ -18,6 +18,9 @@ export default defineConfig({
                 // lib files it can't follow symbols such as Readonly into
                 invokeOptions: { typescriptCompilerFolder: undefined },
             },
+            // Specs aren't part of the package. A global declaration in one, such as corpus.spec.ts's for import.meta.glob,
+            // would otherwise be copied into the types and apply to every project that installs docx
+            exclude: ["**/*.spec.ts"],
             // tsconfig.json removes comments, but the JSDoc in declarations is what users see in their editors
             compilerOptions: { removeComments: false },
             afterBuild: () => {
