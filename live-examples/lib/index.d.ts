@@ -15043,15 +15043,3 @@ declare type ZipArchive = {
 };
 
 export { }
-
-
-/**
- * Checks parseXml and stringifyElement against every XML part in the repository: the parts of each Word document, such
- * as those Word saved for the layout probes, and the OOXML schemas. jsdom's DOMParser, a separate XML parser, says what
- * each part holds, so a mistake parseXml and stringifyElement make alike still shows.
- */
-declare global {
-    interface ImportMeta {
-        readonly glob: ImportGlobFunction;
-    }
-}
