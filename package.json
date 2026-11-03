@@ -215,7 +215,7 @@
         "eslint-plugin-prefer-arrow": "^1.2.3",
         "eslint-plugin-unicorn": "^79.0.0",
         "execa": "^10.0.1",
-        "glob": "^13.0.3",
+        "glob": "^14.0.3",
         "globals": "^17.12.0",
         "inquirer": "^14.0.0",
         "jiti": "^2.3.3",
