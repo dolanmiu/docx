@@ -728,8 +728,11 @@ describe("traverser", () => {
             ]);
         });
 
-        it("should traverse thousands of elements linearly without performance degradation", () => {
-            const count = 1000;
+        // More children than queue.push(...children) can take as arguments, about 124,000 on Node 24, and enough that
+        // shift() or copying the result array on every paragraph takes tens of seconds, so the test fails if any of them
+        // comes back. Without them, the traversal takes about 200 ms.
+        it("should find every paragraph, in order, of a body with 150,000 paragraphs", () => {
+            const count = 150_000;
             const mockDoc = {
                 elements: [
                     {

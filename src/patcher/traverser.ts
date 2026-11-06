@@ -58,11 +58,14 @@ export const traverse = (node: Element): readonly IRenderedParagraphNode[] => {
         }),
     ];
 
+    // for...of visits the elements pushed while it runs, so the queue is read in order without shift(), which moves every
+    // remaining element each time and made the traversal quadratic
     for (const currentNode of queue) {
         if (currentNode.element.name === "w:p") {
             // eslint-disable-next-line functional/immutable-data
             renderedParagraphs.push(renderParagraphNode(currentNode));
         }
+        // One at a time: queue.push(...children) throws on a body with more children than a call can take as arguments
         for (const child of elementsToWrapper(currentNode)) {
             // eslint-disable-next-line functional/immutable-data
             queue.push(child);
