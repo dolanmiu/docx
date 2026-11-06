@@ -763,8 +763,8 @@ describe("traverser", () => {
 
             const output = findLocationOfText(mockDoc as unknown as Parameters<typeof findLocationOfText>[0], "Paragraph");
             expect(output).to.have.lengthOf(count);
-            expect(output[0].text).to.equal("Paragraph 0");
-            expect(output[count - 1].text).to.equal(`Paragraph ${count - 1}`);
+            // The index of the first paragraph out of place, if any
+            expect(output.findIndex((paragraph, i) => paragraph.text !== `Paragraph ${i}`)).to.equal(-1);
         });
     });
 });
