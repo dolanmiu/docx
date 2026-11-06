@@ -46,7 +46,8 @@ const elementsToWrapper = (wrapper: ElementWrapper): readonly ElementWrapper[] =
  * ```
  */
 export const traverse = (node: Element): readonly IRenderedParagraphNode[] => {
-    let renderedParagraphs: readonly IRenderedParagraphNode[] = [];
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const renderedParagraphs: IRenderedParagraphNode[] = [];
 
     // eslint-disable-next-line functional/prefer-readonly-type
     const queue: ElementWrapper[] = [
@@ -57,16 +58,18 @@ export const traverse = (node: Element): readonly IRenderedParagraphNode[] => {
         }),
     ];
 
-    let currentNode: ElementWrapper | undefined;
-    while (queue.length > 0) {
-        // eslint-disable-next-line functional/immutable-data
-        currentNode = queue.shift()!; // This is safe because we check the length of the queue
-
+    // for...of visits the elements pushed while it runs, so the queue is read in order without shift(), which moves every
+    // remaining element each time and made the traversal quadratic
+    for (const currentNode of queue) {
         if (currentNode.element.name === "w:p") {
-            renderedParagraphs = [...renderedParagraphs, renderParagraphNode(currentNode)];
+            // eslint-disable-next-line functional/immutable-data
+            renderedParagraphs.push(renderParagraphNode(currentNode));
         }
-        // eslint-disable-next-line functional/immutable-data
-        queue.push(...elementsToWrapper(currentNode));
+        // One at a time: queue.push(...children) throws on a body with more children than a call can take as arguments
+        for (const child of elementsToWrapper(currentNode)) {
+            // eslint-disable-next-line functional/immutable-data
+            queue.push(child);
+        }
     }
 
     return renderedParagraphs;

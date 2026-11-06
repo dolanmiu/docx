@@ -727,5 +727,44 @@ describe("traverser", () => {
                 },
             ]);
         });
+
+        // More children than queue.push(...children) can take as arguments, about 124,000 on Node 24, and enough that
+        // shift() or copying the result array on every paragraph takes tens of seconds, so the test fails if any of them
+        // comes back. Without them, the traversal takes about 200 ms.
+        it("should find every paragraph, in order, of a body with 150,000 paragraphs", () => {
+            const count = 150_000;
+            const mockDoc = {
+                elements: [
+                    {
+                        type: "element",
+                        name: "w:document",
+                        elements: [
+                            {
+                                type: "element",
+                                name: "w:body",
+                                elements: Array.from({ length: count }, (_, i) => ({
+                                    type: "element",
+                                    name: "w:p",
+                                    elements: [
+                                        {
+                                            type: "element",
+                                            name: "w:r",
+                                            elements: [
+                                                { type: "element", name: "w:t", elements: [{ type: "text", text: `Paragraph ${i}` }] },
+                                            ],
+                                        },
+                                    ],
+                                })),
+                            },
+                        ],
+                    },
+                ],
+            };
+
+            const output = findLocationOfText(mockDoc as unknown as Parameters<typeof findLocationOfText>[0], "Paragraph");
+            expect(output).to.have.lengthOf(count);
+            // The index of the first paragraph out of place, if any
+            expect(output.findIndex((paragraph, i) => paragraph.text !== `Paragraph ${i}`)).to.equal(-1);
+        });
     });
 });
