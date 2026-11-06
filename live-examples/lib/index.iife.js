@@ -28532,17 +28532,15 @@ MAX: 9026 };
 	* ```
 	*/
 	var traverse = (node) => {
-		let renderedParagraphs = [];
+		const renderedParagraphs = [];
 		const queue = [...elementsToWrapper({
 			element: node,
 			index: 0,
 			parent: void 0
 		})];
-		let currentNode;
-		while (queue.length > 0) {
-			currentNode = queue.shift();
-			if (currentNode.element.name === "w:p") renderedParagraphs = [...renderedParagraphs, renderParagraphNode(currentNode)];
-			queue.push(...elementsToWrapper(currentNode));
+		for (const currentNode of queue) {
+			if (currentNode.element.name === "w:p") renderedParagraphs.push(renderParagraphNode(currentNode));
+			for (const child of elementsToWrapper(currentNode)) queue.push(child);
 		}
 		return renderedParagraphs;
 	};
