@@ -727,5 +727,41 @@ describe("traverser", () => {
                 },
             ]);
         });
+
+        it("should traverse thousands of elements linearly without performance degradation", () => {
+            const count = 1000;
+            const mockDoc = {
+                elements: [
+                    {
+                        type: "element",
+                        name: "w:document",
+                        elements: [
+                            {
+                                type: "element",
+                                name: "w:body",
+                                elements: Array.from({ length: count }, (_, i) => ({
+                                    type: "element",
+                                    name: "w:p",
+                                    elements: [
+                                        {
+                                            type: "element",
+                                            name: "w:r",
+                                            elements: [
+                                                { type: "element", name: "w:t", elements: [{ type: "text", text: `Paragraph ${i}` }] },
+                                            ],
+                                        },
+                                    ],
+                                })),
+                            },
+                        ],
+                    },
+                ],
+            };
+
+            const output = findLocationOfText(mockDoc as unknown as Parameters<typeof findLocationOfText>[0], "Paragraph");
+            expect(output).to.have.lengthOf(count);
+            expect(output[0].text).to.equal("Paragraph 0");
+            expect(output[count - 1].text).to.equal(`Paragraph ${count - 1}`);
+        });
     });
 });
