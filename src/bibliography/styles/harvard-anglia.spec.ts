@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import { type CorpusOutput, describeWordOutput, outputOf } from "tests/bibliography";
 
-import { harvardAnglia } from "./harvard-anglia";
 import type { CitedSourceOptions } from "../format";
 import type { Source } from "../source";
 import expected from "./fixtures/harvard-anglia.json";
+import { harvardAnglia } from "./harvard-anglia";
 
 // Sources none of the corpora have, which take the style down paths it has for them. What Word's style writes for each
 // is from running Word's own XSL with libxslt and Word's English wording, as corpus s is

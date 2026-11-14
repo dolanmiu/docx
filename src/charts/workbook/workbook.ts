@@ -9,8 +9,8 @@ import { type EmbeddedPackageFile, PackagePart, type XmlComponent } from "docx";
 
 import type { ChartCell, ChartSheet } from "../chart-data";
 import { createElement, createText } from "../chart-elements";
-import { SHEET_NAME, cellName } from "./cell-reference";
 import { formatNumber } from "../plot-area/series";
+import { SHEET_NAME, cellName } from "./cell-reference";
 
 // cspell:ignore Fmts
 const SPREADSHEET_NAMESPACE = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";

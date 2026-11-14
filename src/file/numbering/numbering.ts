@@ -14,11 +14,11 @@ import { type IContext, type IXmlableObject, XmlComponent } from "@file/xml-comp
 import { abstractNumUniqueNumericIdGen, concreteNumUniqueNumericIdGen, convertInchesToTwip } from "@util/convenience-functions";
 import { decimalNumber } from "@util/values";
 
+import { DocumentAttributes } from "../document/document-attributes";
 import { AbstractNumbering } from "./abstract-numbering";
 import { type ILevelsOptions, LevelFormat } from "./level";
 import { listKey } from "./list-key";
 import { ConcreteNumbering } from "./num";
-import { DocumentAttributes } from "../document/document-attributes";
 
 /**
  * A list's definition: its reference and its levels.

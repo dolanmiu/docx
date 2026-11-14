@@ -2,9 +2,9 @@ import type { DocPropertiesOptions } from "@file/drawing/doc-properties/doc-prop
 import type { IContext, IXmlableObject } from "@file/xml-components";
 
 import { Run } from ".";
-import { createTransformation } from "./wps-shape-run";
 import { Drawing, type IFloating } from "../../drawing";
 import type { IGroupChildMediaData, IMediaData, IMediaTransformation, WpgMediaData } from "../../media";
+import { createTransformation } from "./wps-shape-run";
 
 export * from "@file/drawing/inline/graphic/graphic-data/wps/body-properties";
 

@@ -13,10 +13,10 @@ import { Bookmark, ExternalHyperlink, HeadingLevel, ImageRun, Paragraph, Run, Te
 import { Table, TableCell, TableRow } from "@file/table";
 import { BuilderElement, type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 
+import { textOf, unzip, zip } from "../tests/zip";
 import { type IPatch, type PatchDocumentOptions, PatchType, type TableRowsPatch, patchDocument } from "./from-docx";
 import { traverse } from "./traverser";
 import { toJson } from "./util";
-import { textOf, unzip, zip } from "../tests/zip";
 
 const MOCK_XML = `
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>

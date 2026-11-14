@@ -5,8 +5,8 @@
  */
 import { BuilderElement, type IMediaDataTransformation, type XmlComponent } from "docx";
 
-import { createTransform } from "./drawing-parts";
 import { type PresetShapeNonVisualProperties, createNonVisualDrawingProperties } from "../preset-shape/preset-shape";
+import { createTransform } from "./drawing-parts";
 
 type Point = {
     readonly x: number;

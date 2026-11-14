@@ -6,9 +6,9 @@
  */
 import type { DocPropertiesOptions, DrawingLinkOptions, Paragraph } from "docx";
 
+import { WORD_DEFAULT_STYLES } from "../text-layout";
 import type { IShapeConnectorOptions } from "./shape-connector";
 import type { IShapeGroupChildOptions } from "./shape-drawing";
-import { WORD_DEFAULT_STYLES } from "../text-layout";
 import { readTextParagraphs } from "./shape-text-styles";
 
 type Step = {

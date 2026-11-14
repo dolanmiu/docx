@@ -5,13 +5,13 @@
  */
 import { BuilderElement, type IMediaDataTransformation, type XmlComponent } from "docx";
 
+import { type CustomGeometryOptions, createCustomGeometry, createCustomGeometryData } from "../custom-geometry/custom-geometry";
+import { createPresetGeometry, createTransform } from "../drawing/drawing-parts";
 import { type PresetShapeType, getOoxmlShapeName } from "./preset-shape-type";
 import { createShapeGuides } from "./shape-adjustments";
 import { type ShapeEffects, createShapeEffects } from "./shape-effects";
 import { type ShapeFill, createShapeFill } from "./shape-fill";
 import { type ShapeLine, createShapeLine } from "./shape-line";
-import { type CustomGeometryOptions, createCustomGeometry, createCustomGeometryData } from "../custom-geometry/custom-geometry";
-import { createPresetGeometry, createTransform } from "../drawing/drawing-parts";
 
 /**
  * The geometry of a shape: a preset shape with its adjustments, or a custom shape drawn from SVG path data.

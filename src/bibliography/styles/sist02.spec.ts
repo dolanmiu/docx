@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import { describeWordOutput, markupOf } from "tests/bibliography";
 
-import expected from "./fixtures/sist02.json";
-import { sist02 } from "./sist02";
 import { formatBibliography } from "../format";
 import type { Source } from "../source";
 import { wordSourceOf } from "../word-source";
+import expected from "./fixtures/sist02.json";
+import { sist02 } from "./sist02";
 
 const paragraphsOf = (sources: readonly Source[]): readonly string[] => {
     const bibliography = formatBibliography(

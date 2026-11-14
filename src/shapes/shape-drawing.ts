@@ -16,6 +16,7 @@ import {
     docPropertiesUniqueNumericId,
 } from "docx";
 
+import { type TextStyles, WORD_DEFAULT_STYLES, measureText } from "../text-layout";
 import {
     type Bounds,
     type ConnectionSite,
@@ -48,7 +49,6 @@ import type { ConnectorEnd, ConnectorLabel, ConnectorSide, IShapeConnectorOption
 import { type ShapeLane, type ShapeLayout, type ShapeLayoutDirection, layoutItems } from "./shape-layout";
 import { type ShapeBaseOptions, type WithPresetShape, createPresetShapeData, getShapeOverhang } from "./shape-run-data";
 import { createTextParagraphs, resolveShapeSize } from "./shape-text-size";
-import { type TextStyles, WORD_DEFAULT_STYLES, measureText } from "../text-layout";
 import { readTextParagraphs } from "./shape-text-styles";
 
 /**

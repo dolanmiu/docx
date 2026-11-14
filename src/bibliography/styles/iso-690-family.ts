@@ -11,10 +11,6 @@
  * @module
  */
 // cspell:words Countinous MSXML Nmerical
-import { type FormattedRun, type FormattedText, textOf } from "./formatted-text";
-import { LOCALS } from "./locals";
-import type { CitedSource, FormattedBibliography } from "./style";
-import { sortByKey, translate, xslTemplates } from "./xsl";
 import {
     type Field,
     type Role,
@@ -26,6 +22,10 @@ import {
     organizationOf,
     peopleOf,
 } from "../word-source";
+import { type FormattedRun, type FormattedText, textOf } from "./formatted-text";
+import { LOCALS } from "./locals";
+import type { CitedSource, FormattedBibliography } from "./style";
+import { sortByKey, translate, xslTemplates } from "./xsl";
 
 const { General, Strings, ISO690 } = LOCALS;
 

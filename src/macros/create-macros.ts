@@ -8,9 +8,9 @@
 /* eslint-disable no-bitwise -- the project's records and its obfuscated properties are bytes */
 import type { DocumentMacroEvent, DocumentMacros } from "docx";
 
+import { createCompoundFile } from "../compound-file/compound-file";
 import { CODE_PAGE, encodeWindows1252 } from "./code-page";
 import { compress } from "./compression";
-import { createCompoundFile } from "../compound-file/compound-file";
 
 /**
  * A module of VBA code, as the VBA editor shows it.

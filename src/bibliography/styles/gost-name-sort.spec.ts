@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import { describeWordOutput, markupOf } from "tests/bibliography";
 
-import expected from "./fixtures/gost-name-sort.json";
-import { gostNameSort } from "./gost-name-sort";
 import { formatCitation } from "../format";
 import { wordSourceOf } from "../word-source";
+import expected from "./fixtures/gost-name-sort.json";
+import { gostNameSort } from "./gost-name-sort";
 
 describe("gostNameSort", () => {
     describeWordOutput(gostNameSort, expected);

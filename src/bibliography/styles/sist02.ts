@@ -9,11 +9,11 @@
  *
  * @module
  */
+import { type Field, type Role, type WordNames, type WordPerson, type WordSource, type WordSourceType, fieldOf } from "../word-source";
 import { type FormattedText, bold, formatted, italic, join, textOf } from "./formatted-text";
 import { LOCALS, type NamePatterns } from "./locals";
 import type { CitedSource, FormattedBibliography, StyleDefinition } from "./style";
 import { type Punctuation, sortByKey, translate, xslTemplates } from "./xsl";
-import { type Field, type Role, type WordNames, type WordPerson, type WordSource, type WordSourceType, fieldOf } from "../word-source";
 
 const { General, ISO690, SIST, Strings } = LOCALS;
 

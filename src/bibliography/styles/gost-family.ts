@@ -9,10 +9,6 @@
  *
  * @module
  */
-import { type FormattedText, bold, join, textOf } from "./formatted-text";
-import { LOCALS } from "./locals";
-import type { CitedSource } from "./style";
-import { translate, xslTemplates } from "./xsl";
 import {
     type Field,
     type Role,
@@ -23,6 +19,10 @@ import {
     fieldOf,
     peopleOf,
 } from "../word-source";
+import { type FormattedText, bold, join, textOf } from "./formatted-text";
+import { LOCALS } from "./locals";
+import type { CitedSource } from "./style";
+import { translate, xslTemplates } from "./xsl";
 
 const { General, Gost, Strings, SourceNames } = LOCALS;
 const xsl = xslTemplates(General);

@@ -13,6 +13,7 @@
 // The names of the XSL's templates and variables, which the functions and variables here keep, such as templateCPY for
 // the city, the publisher and the year, and its spellings of "sufix" and "Seperator"
 // cspell:words Turabian TURABIAN CPDMY DACURL RICPY VIYP sufix Sufix Seperator Forno
+import { type Field, type Role, type WordNames, type WordSource, type WordSourceType, fieldOf } from "../word-source";
 import {
     bibliographyOf,
     citation,
@@ -38,7 +39,6 @@ import { type FormattedRun, type FormattedText, join, textOf } from "./formatted
 import { LOCALS } from "./locals";
 import type { FormattedBibliography, StyleDefinition } from "./style";
 import { applyItalic, xslTemplates } from "./xsl";
-import { type Field, type Role, type WordNames, type WordSource, type WordSourceType, fieldOf } from "../word-source";
 
 const { General, Strings, Chicago, APA } = LOCALS;
 const xsl = xslTemplates(General);

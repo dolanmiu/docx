@@ -1,12 +1,12 @@
 import { fillPartPageNumbers } from "@file/document/body/page-numbers";
 import { type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 
-import { EndnotesAttributes } from "./endnotes-attributes";
-import { LineRuleType, Paragraph } from "../paragraph";
-import { Endnote, EndnoteType } from "./endnote/endnote";
 import { ContinuationSeperatorRun } from "../footnotes/footnote/run/continuation-seperator-run";
 import type { NoteContent } from "../footnotes/footnote/run/reference-run";
 import { SeperatorRun } from "../footnotes/footnote/run/seperator-run";
+import { LineRuleType, Paragraph } from "../paragraph";
+import { Endnote, EndnoteType } from "./endnote/endnote";
+import { EndnotesAttributes } from "./endnotes-attributes";
 
 export class Endnotes extends XmlComponent {
     // The endnotes that reference runs bring with them, by their runs, with the ids they are given

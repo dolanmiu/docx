@@ -11,10 +11,6 @@
  */
 // The names of the XSL's templates and parameters
 // cspell:words Hypen templ Unavailale
-import { type FormattedText, LINE_BREAK, italic, join, textOf, underline } from "./formatted-text";
-import { LOCALS } from "./locals";
-import type { CitedSource, StyleDefinition } from "./style";
-import { sortByKey, translate, xslTemplates } from "./xsl";
 import {
     type Role,
     type WordNames,
@@ -25,6 +21,10 @@ import {
     organizationOf,
     peopleOf,
 } from "../word-source";
+import { type FormattedText, LINE_BREAK, italic, join, textOf, underline } from "./formatted-text";
+import { LOCALS } from "./locals";
+import type { CitedSource, StyleDefinition } from "./style";
+import { sortByKey, translate, xslTemplates } from "./xsl";
 
 const general = LOCALS.General;
 const strings = LOCALS.Strings;

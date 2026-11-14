@@ -7,11 +7,11 @@
  *
  * @module
  */
+import { type Field, type Role, type WordNames, type WordSource, type WordSourceType, fieldOf } from "../word-source";
 import { type FormattedText, type TextLike, italic, join, textOf } from "./formatted-text";
 import { LOCALS } from "./locals";
 import type { CitedSource, FormattedBibliography, StyleDefinition } from "./style";
 import { sortByKey, translate, xslTemplates } from "./xsl";
-import { type Field, type Role, type WordNames, type WordSource, type WordSourceType, fieldOf } from "../word-source";
 
 // Some of the style's names for its templates and variables, as it spells them
 // cspell:words Seperator VIYP dups

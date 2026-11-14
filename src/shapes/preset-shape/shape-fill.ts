@@ -13,10 +13,10 @@ import {
     XmlComponent,
 } from "docx";
 
-import { type ShapeColor, type ShapeThemeColor, createShapeColor, isThemeColor } from "./shape-color";
-import { percentageValue, positiveFixedAngle } from "./shape-units";
 import { createNoFill, createSourceRectangle, createStretch, createSvgBlipExtension } from "../drawing/drawing-parts";
 import { type ImageSource, createImageMediaData } from "../picture/image-data";
+import { type ShapeColor, type ShapeThemeColor, createShapeColor, isThemeColor } from "./shape-color";
+import { percentageValue, positiveFixedAngle } from "./shape-units";
 
 export type { ImageSource } from "../picture/image-data";
 

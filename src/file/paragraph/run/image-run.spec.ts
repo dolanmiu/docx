@@ -9,10 +9,10 @@ import type { IContext, IXmlableObject } from "@file/xml-components";
 import * as convenienceFunctions from "@util/convenience-functions";
 import { textOf, unzip } from "tests/zip";
 
-import { type IImageOptions, ImageRun } from "./image-run";
-import type { IRunOptions } from "./run";
 import { ConcreteHyperlink } from "../links";
 import { Paragraph } from "../paragraph";
+import { type IImageOptions, ImageRun } from "./image-run";
+import type { IRunOptions } from "./run";
 
 describe("ImageRun", () => {
     beforeEach(() => {

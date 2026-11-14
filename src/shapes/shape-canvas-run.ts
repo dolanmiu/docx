@@ -17,6 +17,7 @@ import {
     docPropertiesUniqueNumericId,
 } from "docx";
 
+import type { TextStyles } from "../text-layout";
 import { createAlternateContent } from "./drawing/alternate-content";
 import { CANVAS_URI, GROUP_URI, type ShapeDrawingChildMediaData, createShapeDrawingChild } from "./drawing/shape-drawing-child";
 import { createShapeGroup } from "./drawing/shape-group";
@@ -33,7 +34,6 @@ import {
 } from "./shape-drawing";
 import type { ShapeLayout } from "./shape-layout";
 import { createDrawingProperties, createUniformEffectExtent } from "./shape-run-data";
-import type { TextStyles } from "../text-layout";
 
 /**
  * A shape, picture, group or connector on a canvas. It takes the same options as a child of a {@link ShapeGroupRun}.

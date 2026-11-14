@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as convenienceFunctions from "@util/convenience-functions";
 import { Paragraph } from "docx";
 
+import { measureTextWidth } from "../text-layout";
 import type { ShapeDrawingChildMediaData } from "./drawing/shape-drawing-child";
 import type { PresetShapeCoreOptions } from "./preset-shape";
 import type { ConnectorEnd } from "./shape-connector";
@@ -14,7 +15,6 @@ import {
     drawingStyledParagraphs,
     layoutShapeDrawing,
 } from "./shape-drawing";
-import { measureTextWidth } from "../text-layout";
 
 const EMUS_PER_PIXEL = 9525;
 

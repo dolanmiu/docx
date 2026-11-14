@@ -5,10 +5,10 @@
  *
  * @module
  */
+import { type WordSource, fieldOf } from "../word-source";
 import { formatCitation, formatEntry, formatPersons, mainOf } from "./gost-family";
 import type { StyleDefinition } from "./style";
 import { sortByKey } from "./xsl";
-import { type WordSource, fieldOf } from "../word-source";
 
 /** What the bibliography is sorted by (`b:SortingString`, as `populateMain` writes it): the authors, then the title */
 const sortingStringOf = (source: WordSource): string => {

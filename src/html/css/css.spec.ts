@@ -4,13 +4,13 @@ import { parse } from "parse5";
 import { adapter } from "parse5-htmlparser2-tree-adapter";
 import { describe, expect, it } from "vitest";
 
+import { descendantsOf } from "../dom";
 import { type ComputedStyle, ROOT_STYLE, computeStyle } from "./computed-style";
 import { compileUserAgentStyleSheet, createCascade, substituteVariables } from "./css-cascade";
 import { expandShorthand } from "./css-shorthands";
 import { isForPrint, parseDeclarations, parseStyleSheet, splitTopLevel, withoutComments } from "./css-syntax";
 import { isCssWideKeyword, listOf, parseLength, parseNumber, toPoints, unquote, wordsOf } from "./css-values";
 import { presentationalHints } from "./presentational-hints";
-import { descendantsOf } from "../dom";
 
 /**
  * The style of an element with these declarations, such as `"color: red; font-size: 2em"`, in an element with the

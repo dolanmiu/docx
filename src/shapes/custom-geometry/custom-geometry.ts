@@ -12,10 +12,10 @@
 // cspell:ignore custGeom
 import { BuilderElement, type XmlComponent } from "docx";
 
-import { orientParts } from "./path-holes";
-import { type EllipticalArc, type PathBounds, type PathPoint, type PathSegment, getPathBounds, parseSvgPath, pointOnArc } from "./svg-path";
 import type { ConnectionSite } from "../connector/connection-sites";
 import type { ConnectorSide } from "../shape-connector";
+import { orientParts } from "./path-holes";
+import { type EllipticalArc, type PathBounds, type PathPoint, type PathSegment, getPathBounds, parseSvgPath, pointOnArc } from "./svg-path";
 
 /**
  * How a path of a custom shape is filled: with the shape's `fill` (`true`), not at all (`false`), or with the shape's

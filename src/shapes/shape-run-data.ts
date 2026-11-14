@@ -13,6 +13,7 @@ import {
     docPropertiesUniqueNumericId,
 } from "docx";
 
+import type { TextStyles } from "../text-layout";
 import type { CustomShapeGeometry } from "./custom-geometry";
 import {
     type PresetShapeCoreOptions,
@@ -26,7 +27,6 @@ import {
     getShapeLineOverhang,
 } from "./preset-shape";
 import { type ShapeTransformation, createTextParagraphs } from "./shape-text-size";
-import type { TextStyles } from "../text-layout";
 
 /**
  * Options every shape has, whatever its type.

@@ -3,10 +3,10 @@ import { Readable } from "stream";
 import { describe, expect, it, vi } from "vitest";
 
 import { Document, ExternalHyperlink, InsertedTextRun, Packer, Paragraph, SimpleField, TextRun } from "../index";
+import { declaringSize, textOf, unzip, zip } from "../tests/zip";
 import { type IPatch, patchDocument } from "./from-docx";
 import { patchDetector } from "./patch-detector";
 import { PatchType } from "./patch-type";
-import { declaringSize, textOf, unzip, zip } from "../tests/zip";
 
 const MOCK_XML = `
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>

@@ -8,9 +8,6 @@
  *
  * @module
  */
-import { type FormattedText, type TextLike, italic, join } from "./formatted-text";
-import { LOCALS } from "./locals";
-import type { StyleDefinition } from "./style";
 import {
     type Field,
     type Role,
@@ -21,6 +18,9 @@ import {
     organizationOf,
     peopleOf,
 } from "../word-source";
+import { type FormattedText, type TextLike, italic, join } from "./formatted-text";
+import { LOCALS } from "./locals";
+import type { StyleDefinition } from "./style";
 
 // The names of some of the style's templates, as the style spells them
 // cspell:words Hypen Artcicle

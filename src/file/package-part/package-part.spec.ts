@@ -7,8 +7,8 @@ import { Footer, Header } from "@file/header";
 import { ImageRun, Paragraph, Run, TextRun } from "@file/paragraph";
 import { BuilderElement, type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 
-import { PackagePart, type PackagePartOptions, type PackagePartRelationshipType, PackageParts } from "./package-part";
 import { textOf, unzip } from "../../tests/zip";
+import { PackagePart, type PackagePartOptions, type PackagePartRelationshipType, PackageParts } from "./package-part";
 
 const CHART_TYPE = "application/vnd.openxmlformats-officedocument.drawingml.chart+xml";
 const CHART_RELATIONSHIP = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart";

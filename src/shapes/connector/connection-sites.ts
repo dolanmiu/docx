@@ -5,9 +5,9 @@
  *
  * @module
  */
-import { evaluateShapeGuides } from "./shape-guides";
 import { PRESET_SHAPE_GEOMETRY } from "../preset-shape/preset-shape-geometry";
 import type { PresetShapeType } from "../preset-shape/preset-shape-type";
+import { evaluateShapeGuides } from "./shape-guides";
 
 /**
  * A point where a connector can attach to a shape.
