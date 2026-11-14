@@ -5,10 +5,10 @@
  *
  * @module
  */
+import { type WordSource, fieldOf } from "../word-source";
 import { formatCitation, formatEntry, mainOf } from "./gost-family";
 import type { StyleDefinition } from "./style";
 import { sortByKey } from "./xsl";
-import { type WordSource, fieldOf } from "../word-source";
 
 /**
  * The sources sorted by title, then by the last, first and middle names of the first of the people they're named by

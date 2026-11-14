@@ -4,11 +4,11 @@ import { Formatter } from "@export/formatter";
 import { AlignmentType } from "@file/paragraph";
 import { ShadingType } from "@file/shading";
 
+import { CellSpacingType } from "../table-cell-spacing";
 import { WidthType } from "../table-width";
 import { OverlapType, RelativeHorizontalPosition, RelativeVerticalPosition, TableAnchorType } from "./table-float-properties";
 import { TableLayoutType } from "./table-layout";
 import { TableProperties } from "./table-properties";
-import { CellSpacingType } from "../table-cell-spacing";
 
 describe("TableProperties", () => {
     describe("#constructor", () => {

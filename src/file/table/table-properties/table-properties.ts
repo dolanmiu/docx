@@ -49,6 +49,7 @@ import { BuilderElement, IgnoreIfEmptyXmlComponent, StringValueElement, XmlCompo
 import { AlignmentType, createAlignment } from "../../paragraph";
 import { type IShadingAttributesProperties, createShading } from "../../shading";
 import { createOnOffOnlyElement } from "../on-off-only-element";
+import { type ITableCellSpacingProperties, createTableCellSpacing } from "../table-cell-spacing";
 import { type ITableWidthProperties, createTableWidthElement } from "../table-width";
 import { type ITableBordersOptions, TableBorders } from "./table-borders";
 import { type ITableCellMarginOptions, createTableCellMargin } from "./table-cell-margin";
@@ -60,7 +61,6 @@ import {
     createTableFloatProperties,
 } from "./table-float-properties";
 import { type TableLayoutType, createTableLayout } from "./table-layout";
-import { type ITableCellSpacingProperties, createTableCellSpacing } from "../table-cell-spacing";
 import { type ITableLookOptions, createTableLook } from "./table-look";
 
 export type ITablePropertiesOptionsBase = {

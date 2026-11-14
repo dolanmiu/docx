@@ -4,8 +4,8 @@ import { Formatter } from "@export/formatter";
 import { File } from "@file/file";
 import { type IContext, Paragraph } from "docx";
 
-import { createTextParagraphs, resolveShapeSize } from "./shape-text-size";
 import { type TextStyles, getTextStyles, measureLineHeight, measureTextWidth } from "../text-layout";
+import { createTextParagraphs, resolveShapeSize } from "./shape-text-size";
 
 const PIXELS_PER_POINT = 4 / 3;
 

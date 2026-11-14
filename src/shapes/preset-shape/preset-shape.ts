@@ -12,14 +12,14 @@ import {
     type XmlComponent,
 } from "docx";
 
+import { createTextBox } from "../drawing/drawing-parts";
+import { createTextFlowBox } from "../drawing/text-flow";
 import { type PresetShapeGeometry, createPresetShapeProperties } from "./preset-shape-properties";
 import { isConnectorShapeType } from "./preset-shape-type";
 import type { ShapeEffects } from "./shape-effects";
 import type { ShapeFill } from "./shape-fill";
 import type { ShapeLine } from "./shape-line";
 import { type ShapeTextOptions, createShapeTextProperties } from "./shape-text";
-import { createTextBox } from "../drawing/drawing-parts";
-import { createTextFlowBox } from "../drawing/text-flow";
 
 /**
  * Non-visual properties (`wps:cNvPr`) that identify a shape inside a group: its id, name and alternative text,

@@ -3,9 +3,9 @@ import { Readable, Stream } from "stream";
 import { describe, expect, it, vi } from "vitest";
 
 import { Document, Packer, Paragraph } from "../index";
+import { textOf, zip } from "../tests/zip";
 import type { InputDataType } from "./from-docx";
 import { loadZip } from "./load-zip";
-import { textOf, zip } from "../tests/zip";
 
 const zipBytes = (): Uint8Array => zip({ "word/document.xml": "<w:document/>" });
 

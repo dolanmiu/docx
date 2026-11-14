@@ -7,8 +7,8 @@ import { EMPTY_OBJECT, type IContext } from "@file/xml-components";
 
 import { Table } from "../table";
 import { TableCell } from "../table-cell";
-import { TableRow } from "./table-row";
 import { CellSpacingType } from "../table-cell-spacing";
+import { TableRow } from "./table-row";
 
 describe("TableRow", () => {
     describe("#CellCount", () => {

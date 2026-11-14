@@ -9,9 +9,9 @@
  */
 import { XmlComponent } from "@file/xml-components";
 
-import { createMathSubSuperScriptProperties } from "./math-sub-super-script-function-properties";
 import type { MathComponent } from "../../math-component";
 import { createMathBase, createMathSubScriptElement, createMathSuperScriptElement } from "../../n-ary";
+import { createMathSubSuperScriptProperties } from "./math-sub-super-script-function-properties";
 
 /**
  * Options for creating a MathSubSuperScript.

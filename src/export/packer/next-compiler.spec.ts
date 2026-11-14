@@ -9,8 +9,8 @@ import { BuilderElement } from "@file/xml-components";
 import * as convenienceFunctions from "@util/convenience-functions";
 import { zipFiles } from "@util/zip";
 
-import { Compiler } from "./next-compiler";
 import { textOf, unzip } from "../../tests/zip";
+import { Compiler } from "./next-compiler";
 
 describe("Compiler", () => {
     let compiler: Compiler;

@@ -2,13 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import { describeWordOutput, markupOf } from "tests/bibliography";
 
+import { formatBibliography } from "../format";
+import type { Source } from "../source";
+import { wordSourceOf } from "../word-source";
 import expected from "./fixtures/gost-title-sort.json";
 import { gostNameSort } from "./gost-name-sort";
 import { gostTitleSort } from "./gost-title-sort";
-import { formatBibliography } from "../format";
-import type { Source } from "../source";
 import type { FormattedBibliography } from "./style";
-import { wordSourceOf } from "../word-source";
 
 const paragraphsOf = (bibliography: FormattedBibliography): readonly string[] =>
     "paragraphs" in bibliography ? bibliography.paragraphs.map(markupOf) : [];

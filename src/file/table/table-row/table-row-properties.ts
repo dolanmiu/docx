@@ -53,8 +53,8 @@ import { IgnoreIfEmptyXmlComponent, XmlComponent } from "@file/xml-components";
 import type { PositiveUniversalMeasure } from "@util/values";
 
 import { createOnOffOnlyElement } from "../on-off-only-element";
-import { type HeightRule, createTableRowHeight } from "./table-row-height";
 import { type ITableCellSpacingProperties, createTableCellSpacing } from "../table-cell-spacing";
+import { type HeightRule, createTableRowHeight } from "./table-row-height";
 
 export type ITableRowPropertiesOptionsBase = {
     /** Whether the row can be split across pages (cantSplit) */

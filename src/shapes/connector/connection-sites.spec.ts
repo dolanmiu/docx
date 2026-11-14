@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { getConnectionSites } from "./connection-sites";
 import { PRESET_SHAPE_GEOMETRY } from "../preset-shape/preset-shape-geometry";
 import type { PresetShapeType } from "../preset-shape/preset-shape-type";
+import { getConnectionSites } from "./connection-sites";
 
 describe("getConnectionSites", () => {
     it("should find a rectangle's sites at the middle of each side, in OOXML order", () => {

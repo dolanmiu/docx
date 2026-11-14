@@ -9,6 +9,7 @@
 // The names of the XSL's templates and variables, which the functions and variables here keep, such as templateMDEP for
 // the month and day, edition and pages, and its spelling of "sufix"
 // cspell:words CCMD CPMD CPMDP CSPP DAUD MDEP PVIP RICP sufix Sufix Forno
+import { type Field, type Role, type WordNames, type WordSource, type WordSourceType, fieldOf } from "../word-source";
 import {
     bibliographyOf,
     citation,
@@ -34,7 +35,6 @@ import { type FormattedText, join, textOf } from "./formatted-text";
 import { LOCALS, type NamePatterns } from "./locals";
 import type { FormattedBibliography, StyleDefinition } from "./style";
 import { applyItalic, xslTemplates } from "./xsl";
-import { type Field, type Role, type WordNames, type WordSource, type WordSourceType, fieldOf } from "../word-source";
 
 const { General, Strings, Chicago, APA } = LOCALS;
 const xsl = xslTemplates(General);

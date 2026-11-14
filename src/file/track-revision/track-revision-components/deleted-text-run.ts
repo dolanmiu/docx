@@ -7,13 +7,13 @@
  */
 import { type BaseXmlComponent, XmlComponent } from "@file/xml-components";
 
-import { DeletedNumberOfPages, DeletedNumberOfPagesSection, DeletedPage } from "./deleted-page-number";
-import { DeletedText } from "./deleted-text";
 import { createBreak } from "../../paragraph/run/break";
 import { createBegin, createEnd, createSeparate } from "../../paragraph/run/field";
 import { RunProperties } from "../../paragraph/run/properties";
 import { type IRunOptions, PageNumber, Run } from "../../paragraph/run/run";
 import { ChangeAttributes, type IChangedAttributesProperties } from "../track-revision";
+import { DeletedNumberOfPages, DeletedNumberOfPagesSection, DeletedPage } from "./deleted-page-number";
+import { DeletedText } from "./deleted-text";
 
 /**
  * Options for creating a deleted text run.

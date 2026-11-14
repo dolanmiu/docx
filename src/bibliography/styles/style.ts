@@ -5,8 +5,8 @@
  *
  * @module
  */
-import type { FormattedText } from "./formatted-text";
 import type { WordSource } from "../word-source";
+import type { FormattedText } from "./formatted-text";
 
 /**
  * A source a citation cites, as Word gives it to a style (`b:Citation`): the source, where it is in the citation, how

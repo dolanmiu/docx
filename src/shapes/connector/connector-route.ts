@@ -11,8 +11,8 @@
  *
  * @module
  */
-import { findOrthogonalRoute } from "./orthogonal-route";
 import type { PresetShapeType } from "../preset-shape/preset-shape-type";
+import { findOrthogonalRoute } from "./orthogonal-route";
 
 /**
  * A point, in EMUs.

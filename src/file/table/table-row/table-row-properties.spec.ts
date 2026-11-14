@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import { Formatter } from "@export/formatter";
 import { HeightRule } from "@file/table/table-row/table-row-height";
 
-import { TableRowProperties } from "./table-row-properties";
 import { CellSpacingType } from "../table-cell-spacing";
+import { TableRowProperties } from "./table-row-properties";
 
 describe("TableRowProperties", () => {
     describe("#constructor", () => {

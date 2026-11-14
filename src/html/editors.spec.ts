@@ -5,8 +5,6 @@ import { describe, expect, it, vi } from "vitest";
 import "docx";
 import { formatted, formattedWithNotes, written as writtenOf } from "tests/html";
 
-import { htmlToContent } from "./html-to-content";
-import type { HtmlWarning } from "./options";
 // @ts-expect-error -- Vite reads the file as text, which TypeScript has no type for
 import ckeditor5 from "../../demo/assets/html/ckeditor5.html?raw";
 // @ts-expect-error -- Vite reads the file as text, which TypeScript has no type for
@@ -25,6 +23,8 @@ import tinymce from "../../demo/assets/html/tinymce.html?raw";
 import tiptap from "../../demo/assets/html/tiptap.html?raw";
 // @ts-expect-error -- Vite reads the file as text, which TypeScript has no type for
 import word from "../../demo/assets/html/word.html?raw";
+import { htmlToContent } from "./html-to-content";
+import type { HtmlWarning } from "./options";
 
 // HTML in the shapes rich-text editors, Word, Google Docs and Markdown write, which the demos convert too
 const FIXTURES = { ckeditor5, googleDocs, lexical, markdown, quill, tinymce, tiptap, word } as Readonly<Record<string, string>>;

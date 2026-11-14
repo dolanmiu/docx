@@ -5,10 +5,10 @@
  */
 import { BuilderElement, type XmlComponent } from "docx";
 
+import { createNoFill } from "../drawing/drawing-parts";
 import { type ShapeColor, type ShapeThemeColor, createShapeColor, isThemeColor } from "./shape-color";
 import { type GradientShapeFill, createShapeFill } from "./shape-fill";
 import { pointsToEmus } from "./shape-units";
-import { createNoFill } from "../drawing/drawing-parts";
 
 /* cspell:disable */
 // Each dash pattern mapped to its OOXML name (`ST_PresetLineDashVal`). The "short" patterns are the ones OOXML calls "sys"

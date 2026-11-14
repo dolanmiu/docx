@@ -9,6 +9,7 @@
  * @module
  */
 // cspell:words Nmerical
+import type { WordSource } from "../word-source";
 import { type FormattedText } from "./formatted-text";
 import {
     type HtmlNode,
@@ -29,7 +30,6 @@ import {
 import { LOCALS } from "./locals";
 import type { CitedSource, FormattedBibliography, StyleDefinition } from "./style";
 import { xslTemplates } from "./xsl";
-import type { WordSource } from "../word-source";
 
 const { General, ISO690 } = LOCALS;
 const { appendDot, needDot } = xslTemplates(General);

@@ -12,6 +12,7 @@ import type { ChartData, ChartSeriesData } from "../chart-data";
 import type { TimeUnit } from "../chart-dates";
 import { CHART_NAMESPACE, RELATIONSHIPS_NAMESPACE } from "../chart-space";
 import { createSeriesColor } from "../chart-style";
+import { createDataSource, createSeriesName } from "../plot-area/series";
 import { type TemplateChart, type TemplateGroup, pointCountOf } from "./template-chart";
 import { copySeries, withData, withIndex, withPointsUpTo, withoutPointsPast } from "./template-series";
 import {
@@ -29,7 +30,6 @@ import {
     withChildren,
     withoutChildren,
 } from "./template-xml";
-import { createDataSource, createSeriesName } from "../plot-area/series";
 
 /**
  * The children of a chart part's root (`CT_ChartSpace`), in the schema's order.

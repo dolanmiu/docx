@@ -6,10 +6,10 @@
  */
 import { AlignmentType, type IMediaTransformation, Paragraph, TextRun } from "docx";
 
+import { type TextStyles, WORD_DEFAULT_STYLES, hasDefaultParagraphSpacing, measureText } from "../text-layout";
 import { type CustomGeometryOptions, getCustomTextRectangle } from "./custom-geometry";
 import { type PresetShapeType, type ShapeTextOptions, createShapeGuides } from "./preset-shape";
 import { type ShapePercentage, percentageOf } from "./shape-floating";
-import { type TextStyles, WORD_DEFAULT_STYLES, hasDefaultParagraphSpacing, measureText } from "../text-layout";
 import { readTextParagraphs } from "./shape-text-styles";
 import { getTextRectangle } from "./text-metrics";
 

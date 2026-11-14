@@ -2,9 +2,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 // cspell:words unstub
 
+import { damaging, declaringSize } from "../tests/zip";
 import type { OutputType } from "./output-type";
 import { unzipFiles, zipFiles, zipOutput } from "./zip";
-import { damaging, declaringSize } from "../tests/zip";
 
 const DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 

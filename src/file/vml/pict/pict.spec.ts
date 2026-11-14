@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 
-import { createPict } from "./pict";
 import { createVmlShape } from "../shape/vml-shape";
+import { createPict } from "./pict";
 
 describe("createPict", () => {
     it("should wrap VML children in a w:pict element in order", () => {

@@ -5,9 +5,9 @@
  */
 import type { IMediaDataTransformation, XmlComponent } from "docx";
 
-import { createShapeGroup } from "./shape-group";
 import { type ShapePictureCoreOptions, createShapePicture } from "../picture/shape-picture";
 import { type PresetShapeCoreOptions, type PresetShapeNonVisualProperties, createPresetShape } from "../preset-shape/preset-shape";
+import { createShapeGroup } from "./shape-group";
 
 /** The `a:graphicData` URI of a shape (`wps:wsp`) */
 export const SHAPE_URI = "http://schemas.microsoft.com/office/word/2010/wordprocessingShape";

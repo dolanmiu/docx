@@ -10,6 +10,7 @@
 import type { XmlComponent } from "@file/xml-components";
 import { universalMeasureToTwips } from "@util/values";
 
+import { DocumentAttributes } from "../document/document-attributes";
 import { DocumentDefaults, type IDocumentDefaultsOptions } from "./defaults";
 import {
     BibliographyStyle,
@@ -38,7 +39,6 @@ import {
     TitleStyle,
 } from "./style";
 import type { IStylesOptions } from "./styles";
-import { DocumentAttributes } from "../document/document-attributes";
 
 /**
  * Options for configuring default document styles.

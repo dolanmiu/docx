@@ -8,9 +8,9 @@ import { createBegin, createEnd, createSeparate } from "@file/paragraph/run/fiel
 import { TableOfContents } from "@file/table-of-contents";
 import { type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 
+import { Footer, Header } from "../../header";
 import { Body } from "./body";
 import { type PageNumberEstimator, fillPageNumbers, fillPartPageNumbers } from "./page-numbers";
-import { Footer, Header } from "../../header";
 
 /** An estimator that places the bookmarks given */
 const placing =

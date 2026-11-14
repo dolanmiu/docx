@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 
+import { SectionProperties } from "../document/body/section-properties/section-properties";
 import { DocumentWrapper } from "../document-wrapper";
 import type { File } from "../file";
+import { FontWrapper } from "../fonts/font-wrapper";
 import { AlignmentType } from "./formatting";
 import { ParagraphProperties } from "./properties";
-import { SectionProperties } from "../document/body/section-properties/section-properties";
-import { FontWrapper } from "../fonts/font-wrapper";
 
 describe("ParagraphProperties", () => {
     describe("#constructor()", () => {

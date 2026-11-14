@@ -7,12 +7,12 @@
  */
 import { BuilderElement, type ICropOptions, type IMediaDataTransformation, type XmlComponent } from "docx";
 
-import type { ImageSource } from "./image-data";
 import { createPictureLocks, createPresetGeometry, createTransform } from "../drawing/drawing-parts";
 import { type PresetShapeNonVisualProperties, createNonVisualDrawingProperties } from "../preset-shape/preset-shape";
 import { type ShapeEffects, createShapeEffects } from "../preset-shape/shape-effects";
 import { createPictureFill } from "../preset-shape/shape-fill";
 import { type ShapeLine, createShapeLine } from "../preset-shape/shape-line";
+import type { ImageSource } from "./image-data";
 
 export type ShapePictureCoreOptions = {
     readonly image: ImageSource;

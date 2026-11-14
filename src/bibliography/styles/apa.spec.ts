@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import { type CorpusOutput, describeWordOutput, outputOf } from "tests/bibliography";
 
-import { apa } from "./apa";
 import type { CitedSourceOptions } from "../format";
 import type { Source } from "../source";
+import { apa } from "./apa";
 import expected from "./fixtures/apa.json";
 
 // Sources none of the corpora have, which take the style down paths it has for them. What Word's style writes for each

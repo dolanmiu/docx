@@ -9,11 +9,11 @@
  */
 // Turabian's name, and the XSL's spelling of "sufix" in the names of its variables
 // cspell:words Turabian TURABIAN sufix
+import { type Field, type Role, type WordNames, type WordSource, type WordSourceType, fieldOf } from "../word-source";
 import { type FormattedText, type TextLike, join, textOf } from "./formatted-text";
 import { LOCALS } from "./locals";
 import type { CitedSource, FormattedBibliography } from "./style";
 import { sortByKey, translate, xslTemplates } from "./xsl";
-import { type Field, type Role, type WordNames, type WordSource, type WordSourceType, fieldOf } from "../word-source";
 
 const { General, Strings, Chicago } = LOCALS;
 const xsl = xslTemplates(General);

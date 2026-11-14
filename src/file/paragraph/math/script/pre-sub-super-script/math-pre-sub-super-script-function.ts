@@ -10,9 +10,9 @@
  */
 import { BuilderElement } from "@file/xml-components";
 
-import { createMathPreSubSuperScriptProperties } from "./math-pre-sub-super-script-function-properties";
 import type { MathComponent } from "../../math-component";
 import { createMathBase, createMathSubScriptElement, createMathSuperScriptElement } from "../../n-ary";
+import { createMathPreSubSuperScriptProperties } from "./math-pre-sub-super-script-function-properties";
 
 /**
  * Options for creating a MathPreSubSuperScript.

@@ -11,11 +11,11 @@
  */
 // The names of the XSL's templates and variables, and Word's own spelling of `PagesCountinousShort`
 // cspell:words Countinous ensufix JVIP MSXML PTVI PVEP PVIEP RDAFU RIDC
+import { type Field, type Role, type WordNames, type WordPerson, type WordSource, fieldOf } from "../word-source";
 import { type FormattedRun, type FormattedText, type TextLike, join, textOf } from "./formatted-text";
 import { type DatePatterns, LOCALS } from "./locals";
 import type { CitedSource, StyleDefinition } from "./style";
 import { applyItalic, sortByKey, translate, xslTemplates } from "./xsl";
-import { type Field, type Role, type WordNames, type WordPerson, type WordSource, fieldOf } from "../word-source";
 
 const general = LOCALS.General;
 const strings = LOCALS.Strings;

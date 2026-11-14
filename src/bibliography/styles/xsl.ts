@@ -8,9 +8,9 @@
  * @module
  */
 // cspell:ignore Mabe Müller
+import type { WordPerson } from "../word-source";
 import { type FormattedText, type TextLike, formatted, italic, join, textOf } from "./formatted-text";
 import type { DatePatterns, NamePatterns } from "./locals";
-import type { WordPerson } from "../word-source";
 
 /** The punctuation a style writes with: Word's own (`LOCALS.General`), or the style's, where it has its own */
 export type Punctuation = {
