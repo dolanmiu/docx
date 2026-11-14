@@ -222,7 +222,7 @@ var docxHtml = (function(exports, docx, docx_math) {
 		_processSurrogate(cp) {
 			if (this.pos !== this.html.length - 1) {
 				const nextCp = this.html.charCodeAt(this.pos + 1);
-				if (isSurrogatePair(nextCp)) {
+				if (!isSurrogatePair(cp) && isSurrogatePair(nextCp)) {
 					this.pos++;
 					this._addGap();
 					return getSurrogatePairCodePoint(cp, nextCp);
@@ -237,16 +237,20 @@ var docxHtml = (function(exports, docx, docx_math) {
 		willDropParsedChunk() {
 			return this.pos > this.bufferWaterline;
 		}
-		dropParsedChunk() {
+		/**
+		* Drop the parsed input, except for the current code point and the `keep` code units before it. The gap history is
+		* reset, so the kept units must contain no preprocessing gap.
+		*/
+		dropParsedChunk(keep = 0) {
 			if (this.willDropParsedChunk()) {
-				const droppedSize = this.offset - this.droppedBufferSize;
+				const droppedSize = this.offset - this.droppedBufferSize - keep;
 				this.html = this.html.substring(droppedSize);
 				this.lineStartPos -= droppedSize;
 				this.droppedBufferSize += droppedSize;
 				this.pos -= droppedSize;
 				this.lastGapPos = -2;
 				this.gapStack.length = 0;
-				if (this.pos > 0) this._addGap();
+				if (this.pos > keep) this._addGap();
 			}
 		}
 		write(chunk, isLastChunk) {
@@ -1611,7 +1615,7 @@ var docxHtml = (function(exports, docx, docx_math) {
 		[NS.XML]: /* @__PURE__ */ new Set(),
 		[NS.XMLNS]: /* @__PURE__ */ new Set()
 	};
-	var NUMBERED_HEADERS = /* @__PURE__ */ new Set([
+	var NUMBERED_HEADERS$1 = /* @__PURE__ */ new Set([
 		$.H1,
 		$.H2,
 		$.H3,
@@ -1621,6 +1625,7 @@ var docxHtml = (function(exports, docx, docx_math) {
 	]);
 	TAG_NAMES.STYLE, TAG_NAMES.SCRIPT, TAG_NAMES.XMP, TAG_NAMES.IFRAME, TAG_NAMES.NOEMBED, TAG_NAMES.NOFRAMES, TAG_NAMES.PLAINTEXT;
 	// node_modules/parse5/dist/tokenizer/index.js
+	var ATTR_NAME_SET_THRESHOLD = 64;
 	var State;
 	(function(State) {
 		State[State["DATA"] = 0] = "DATA";
@@ -1764,6 +1769,7 @@ var docxHtml = (function(exports, docx, docx_math) {
 				value: ""
 			};
 			this.currentAttrLocation = null;
+			this.currentAttrNames = null;
 			/**
 			* `[start, end)` of `preprocessor.html` still to be appended to the attribute value, comment data or character
 			* token being built (`_flushRun`): input that is used as is is appended as one slice, not a code point at a time.
@@ -1776,6 +1782,7 @@ var docxHtml = (function(exports, docx, docx_math) {
 				this.preprocessor.pos = this.entityStartPos + consumed - 1;
 				if (!this._isCharacterReferenceInAttribute()) this._ensureCharacterToken(isWhitespace$1(cp) ? TokenType.WHITESPACE_CHARACTER : cp === CODE_POINTS.NULL ? TokenType.NULL_CHARACTER : TokenType.CHARACTER);
 				this._extendRunWith(String.fromCodePoint(cp), 0);
+				this.entityStartPos = this.preprocessor.pos - consumed + 1;
 			}, handler.onParseError ? {
 				missingSemicolonAfterCharacterReference: () => {
 					this._err(ERR.missingSemicolonAfterCharacterReference, 1);
@@ -1905,6 +1912,18 @@ var docxHtml = (function(exports, docx, docx_math) {
 			this.preprocessor.insertHtmlAtCurrentPos(chunk);
 			this._runParsingLoop();
 		}
+		/** @internal Flush completed streaming text without splitting an unfinished token. */
+		flushCurrentCharacterToken() {
+			if (this.paused || this.active || !this.currentCharacterToken || this.currentToken || this.state === State.DOCTYPE || this.state === State.BEFORE_DOCTYPE_NAME || !this.preprocessor.willDropParsedChunk()) return;
+			const pending = this.preprocessor.droppedBufferSize + this.preprocessor.pos + 1 - this.getCharacterTokenEndOffset();
+			this.preprocessor.advance();
+			this.currentLocation = this.getCurrentLocation(pending);
+			this.preprocessor.retreat(1);
+			this._emitCurrentCharacterToken(this.currentLocation);
+			this._createCharacterToken(TokenType.CHARACTER);
+			this.preprocessor.dropParsedChunk(Math.max(pending - 1, 0));
+			this.entityStartPos = this.preprocessor.pos + 1 - pending;
+		}
 		_ensureHibernation() {
 			if (this.preprocessor.endOfChunkHit) {
 				this.preprocessor.retreat(this.consumedAfterSnapshot);
@@ -1995,14 +2014,25 @@ var docxHtml = (function(exports, docx, docx_math) {
 			var _a;
 			var _b;
 			const token = this.currentToken;
-			if (getTokenAttr(token, this.currentAttr.name) === null) {
+			const { name } = this.currentAttr;
+			const names = this.currentAttrNames;
+			let duplicate;
+			if (names === null) {
+				duplicate = getTokenAttr(token, name) !== null;
+				if (!duplicate && token.attrs.length === ATTR_NAME_SET_THRESHOLD) this.currentAttrNames = new Set(token.attrs.map((attr) => attr.name)).add(name);
+			} else {
+				duplicate = names.has(name);
+				if (!duplicate) names.add(name);
+			}
+			if (duplicate) this._err(ERR.duplicateAttribute);
+			else {
 				token.attrs.push(this.currentAttr);
 				if (token.location && this.currentAttrLocation) {
 					const attrLocations = (_a = (_b = token.location).attrs) !== null && _a !== void 0 ? _a : _b.attrs = Object.create(null);
 					attrLocations[this.currentAttr.name] = this.currentAttrLocation;
 					this._leaveAttrValue();
 				}
-			} else this._err(ERR.duplicateAttribute);
+			}
 		}
 		_leaveAttrValue() {
 			if (this.currentAttrLocation) {
@@ -2072,6 +2102,7 @@ var docxHtml = (function(exports, docx, docx_math) {
 		}
 		emitCurrentTagToken() {
 			const ct = this.currentToken;
+			this.currentAttrNames = null;
 			this.prepareToken(ct);
 			ct.tagID = getTagID(ct.tagName);
 			if (ct.type === TokenType.START_TAG) {
@@ -2115,13 +2146,14 @@ var docxHtml = (function(exports, docx, docx_math) {
 			}
 		}
 		_emitEOFToken() {
+			var _a, _b;
 			const location = this.getCurrentLocation(0);
 			if (location) {
 				location.endLine = location.startLine;
 				location.endCol = location.startCol;
 				location.endOffset = location.startOffset;
 			}
-			this._emitCurrentCharacterToken(location);
+			this._emitCurrentCharacterToken((_b = (_a = this.currentToken) === null || _a === void 0 ? void 0 : _a.location) !== null && _b !== void 0 ? _b : location);
 			this.handler.onEof({
 				type: TokenType.EOF,
 				location
@@ -3846,7 +3878,53 @@ var docxHtml = (function(exports, docx, docx_math) {
 		TAG_ID.THEAD,
 		TAG_ID.TR
 	]);
-	var SCOPING_ELEMENTS_HTML = /* @__PURE__ */ new Set([
+	/** A stack this deep starts to index its elements; a shallower one is cheaper to scan than to index. */
+	var INDEX_DEPTH = 64;
+	var SVG_KEYS = 256;
+	var MATHML_KEYS = 512;
+	var NAME_KEYS = 768;
+	var NUMBERED_HEADERS = [
+		TAG_ID.H1,
+		TAG_ID.H2,
+		TAG_ID.H3,
+		TAG_ID.H4,
+		TAG_ID.H5,
+		TAG_ID.H6
+	];
+	var TABLE_BODIES = [
+		TAG_ID.TBODY,
+		TAG_ID.TFOOT,
+		TAG_ID.THEAD
+	];
+	var TABLE_ROW_CONTEXT = [
+		TAG_ID.TR,
+		TAG_ID.TEMPLATE,
+		TAG_ID.HTML
+	];
+	var TABLE_BODY_CONTEXT = [
+		...TABLE_BODIES,
+		TAG_ID.TEMPLATE,
+		TAG_ID.HTML
+	];
+	var TABLE_CONTEXT = [
+		TAG_ID.TABLE,
+		TAG_ID.TEMPLATE,
+		TAG_ID.HTML
+	];
+	var TABLE_CELLS = [TAG_ID.TD, TAG_ID.TH];
+	var SPECIAL = 1;
+	var LIST_ITEM_BOUNDARY = 2;
+	var SCOPE = 4;
+	var LIST_ITEM_SCOPE = 8;
+	var BUTTON_SCOPE = 16;
+	var TABLE_SCOPE = 32;
+	var KEY_CLASSES = new Uint8Array(NAME_KEYS);
+	for (const [ns, offset] of [
+		[NS.HTML, 0],
+		[NS.SVG, SVG_KEYS],
+		[NS.MATHML, MATHML_KEYS]
+	]) for (const tn of SPECIAL_ELEMENTS[ns]) KEY_CLASSES[offset + tn] = ns === NS.HTML && (tn === TAG_ID.ADDRESS || tn === TAG_ID.DIV || tn === TAG_ID.P) ? SPECIAL : 3;
+	for (const key of [
 		TAG_ID.APPLET,
 		TAG_ID.CAPTION,
 		TAG_ID.HTML,
@@ -3855,45 +3933,57 @@ var docxHtml = (function(exports, docx, docx_math) {
 		TAG_ID.TABLE,
 		TAG_ID.TD,
 		TAG_ID.TEMPLATE,
-		TAG_ID.TH
-	]);
-	var SCOPING_ELEMENTS_HTML_LIST = /* @__PURE__ */ new Set([
-		...SCOPING_ELEMENTS_HTML,
-		TAG_ID.OL,
-		TAG_ID.UL
-	]);
-	var SCOPING_ELEMENTS_HTML_BUTTON = /* @__PURE__ */ new Set([...SCOPING_ELEMENTS_HTML, TAG_ID.BUTTON]);
-	var SCOPING_ELEMENTS_MATHML = /* @__PURE__ */ new Set([
-		TAG_ID.ANNOTATION_XML,
-		TAG_ID.MI,
-		TAG_ID.MN,
-		TAG_ID.MO,
-		TAG_ID.MS,
-		TAG_ID.MTEXT
-	]);
-	var SCOPING_ELEMENTS_SVG = /* @__PURE__ */ new Set([
-		TAG_ID.DESC,
-		TAG_ID.FOREIGN_OBJECT,
-		TAG_ID.TITLE
-	]);
-	var TABLE_ROW_CONTEXT = /* @__PURE__ */ new Set([
-		TAG_ID.TR,
-		TAG_ID.TEMPLATE,
-		TAG_ID.HTML
-	]);
-	var TABLE_BODY_CONTEXT = /* @__PURE__ */ new Set([
-		TAG_ID.TBODY,
-		TAG_ID.TFOOT,
-		TAG_ID.THEAD,
-		TAG_ID.TEMPLATE,
-		TAG_ID.HTML
-	]);
-	var TABLE_CONTEXT = /* @__PURE__ */ new Set([
-		TAG_ID.TABLE,
-		TAG_ID.TEMPLATE,
-		TAG_ID.HTML
-	]);
-	var TABLE_CELLS = /* @__PURE__ */ new Set([TAG_ID.TD, TAG_ID.TH]);
+		TAG_ID.TH,
+		SVG_KEYS + TAG_ID.DESC,
+		SVG_KEYS + TAG_ID.FOREIGN_OBJECT,
+		SVG_KEYS + TAG_ID.TITLE,
+		MATHML_KEYS + TAG_ID.ANNOTATION_XML,
+		MATHML_KEYS + TAG_ID.MI,
+		MATHML_KEYS + TAG_ID.MN,
+		MATHML_KEYS + TAG_ID.MO,
+		MATHML_KEYS + TAG_ID.MS,
+		MATHML_KEYS + TAG_ID.MTEXT
+	]) KEY_CLASSES[key] |= 28;
+	KEY_CLASSES[TAG_ID.OL] |= LIST_ITEM_SCOPE;
+	KEY_CLASSES[TAG_ID.UL] |= LIST_ITEM_SCOPE;
+	KEY_CLASSES[TAG_ID.BUTTON] |= BUTTON_SCOPE;
+	KEY_CLASSES[TAG_ID.TABLE] |= TABLE_SCOPE;
+	KEY_CLASSES[TAG_ID.HTML] |= TABLE_SCOPE;
+	var FORMATTING_TAGS = new Uint8Array(NAME_KEYS);
+	for (const tn of [
+		TAG_ID.A,
+		TAG_ID.B,
+		TAG_ID.BIG,
+		TAG_ID.CODE,
+		TAG_ID.EM,
+		TAG_ID.FONT,
+		TAG_ID.I,
+		TAG_ID.NOBR,
+		TAG_ID.S,
+		TAG_ID.SMALL,
+		TAG_ID.STRIKE,
+		TAG_ID.STRONG,
+		TAG_ID.TT,
+		TAG_ID.U
+	]) FORMATTING_TAGS[tn] = 1;
+	/** The key of an element with a tag ID in HTML, SVG or MathML, or -1 for an element keyed by its name. */
+	function tagKey(ns, tagID) {
+		if (tagID === TAG_ID.UNKNOWN) return -1;
+		switch (ns) {
+			case NS.HTML: return tagID;
+			case NS.SVG: return SVG_KEYS + tagID;
+			case NS.MATHML: return MATHML_KEYS + tagID;
+			default: return -1;
+		}
+	}
+	/**
+	* The stack of open elements. Each element has a slot in `items` and `tagIDs`. Once the stack is `INDEX_DEPTH` deep, it
+	* indexes its elements so that the searches the parser repeats per token take constant time: it chains the elements
+	* with each key, so that the topmost one is found without a scan, and counts per slot the special elements and scope
+	* boundaries at or below it, which tell whether one lies between two slots. Removing an element from the middle then
+	* leaves its slot free instead of moving the elements above it; `slotBelow` and `slotAbove` step over free slots, and
+	* `depth` counts the open elements.
+	*/
 	var OpenElementStack = class {
 		get currentTmplContentOrNode() {
 			return this._isInTemplate() ? this.treeAdapter.getTemplateContent(this.current) : this.current;
@@ -3903,13 +3993,48 @@ var docxHtml = (function(exports, docx, docx_math) {
 			this.handler = handler;
 			this.items = [];
 			this.tagIDs = [];
+			/** The slot of the current element. */
 			this.stackTop = -1;
+			/** The number of open elements. */
+			this.depth = 0;
 			this.tmplCount = 0;
 			this.currentTagId = TAG_ID.UNKNOWN;
+			this.indexed = false;
+			/** The slot of the open element below, and above, each open element's slot; -1 for none. */
+			this.below = [];
+			this.above = [];
+			this.keys = [];
+			/** The slot of the next lower, and higher, open element with the same key; -1 for none. */
+			this.keyPrev = [];
+			this.keyNext = [];
+			/** The slot of the topmost open element with each key, -1 for none. */
+			this.keyTops = /* @__PURE__ */ new Int32Array(0);
+			/** Per slot, the open special elements, list item boundaries and scope boundaries at or below it. */
+			this.specials = [];
+			this.listItemBoundaries = [];
+			this.scopeBoundaries = [];
+			/** Per slot, the slot of the topmost open HTML element at or below it, or -1. */
+			this.htmlSlots = [];
+			this.formattingSlots = /* @__PURE__ */ new Map();
 			this.current = document;
 		}
+		/** The slot of an open element, or -1. */
 		_indexOf(element) {
+			if (this.indexed) {
+				const idx = this.formattingSlots.get(element);
+				if (idx !== void 0) return idx;
+				if (FORMATTING_TAGS[getTagID(this.treeAdapter.getTagName(element))]) return -1;
+			}
 			return this.items.lastIndexOf(element, this.stackTop);
+		}
+		/** The slot of the open element below the one at `idx`, or -1. */
+		slotBelow(idx) {
+			return this.indexed ? this.below[idx] : idx - 1;
+		}
+		/** The slot of the open element above the one at `idx`, or -1. */
+		slotAbove(idx) {
+			if (this.indexed) return this.above[idx];
+			return idx === this.stackTop ? -1 : idx + 1;
 		}
 		_isInTemplate() {
 			return this.currentTagId === TAG_ID.TEMPLATE && this.treeAdapter.getNamespaceURI(this.current) === NS.HTML;
@@ -3918,48 +4043,243 @@ var docxHtml = (function(exports, docx, docx_math) {
 			this.current = this.items[this.stackTop];
 			this.currentTagId = this.tagIDs[this.stackTop];
 		}
+		_nameKey(ns, tagName, create) {
+			var _a, _b;
+			const name = `${ns} ${tagName}`;
+			let key = (_a = this.nameKeys) === null || _a === void 0 ? void 0 : _a.get(name);
+			if (key === void 0 && create) {
+				(_b = this.nameKeys) !== null && _b !== void 0 || (this.nameKeys = /* @__PURE__ */ new Map());
+				key = NAME_KEYS + this.nameKeys.size;
+				this.nameKeys.set(name, key);
+				if (key === this.keyTops.length) {
+					const keyTops = new Int32Array(2 * key).fill(-1);
+					keyTops.set(this.keyTops);
+					this.keyTops = keyTops;
+				}
+			}
+			return key !== null && key !== void 0 ? key : -1;
+		}
+		/** Indexes the open elements once the stack is `INDEX_DEPTH` deep. */
+		_indexAll() {
+			this.indexed = true;
+			this.keyTops = new Int32Array(NAME_KEYS).fill(-1);
+			for (let i = 0; i <= this.stackTop; i++) this._index(i, i - 1);
+		}
+		/** Indexes the element at `slot`, above the open element at `belowIdx`. */
+		_index(slot, belowIdx) {
+			const element = this.items[slot];
+			const tagID = this.tagIDs[slot];
+			const ns = this.treeAdapter.getNamespaceURI(element);
+			let key = tagKey(ns, tagID);
+			if (key === -1) key = this._nameKey(ns, this.treeAdapter.getTagName(element), true);
+			const keyPrev = this.keyTops[key];
+			this.keys[slot] = key;
+			this.keyPrev[slot] = keyPrev;
+			this.keyNext[slot] = -1;
+			if (keyPrev !== -1) this.keyNext[keyPrev] = slot;
+			this.keyTops[key] = slot;
+			this.above[slot] = -1;
+			this._link(slot, belowIdx, ns === NS.HTML);
+			if (FORMATTING_TAGS[tagID]) this.formattingSlots.set(element, slot);
+		}
+		/** Puts the indexed element at `slot` above the one at `belowIdx`, and counts the elements of each class. */
+		_link(slot, belowIdx, isHtml) {
+			const key = this.keys[slot];
+			const classes = key < NAME_KEYS ? KEY_CLASSES[key] : 0;
+			this.below[slot] = belowIdx;
+			if (belowIdx === -1) {
+				this.specials[slot] = classes & SPECIAL;
+				this.listItemBoundaries[slot] = (classes & LIST_ITEM_BOUNDARY) >> 1;
+				this.scopeBoundaries[slot] = (classes & SCOPE) >> 2;
+				this.htmlSlots[slot] = isHtml ? slot : -1;
+			} else {
+				this.above[belowIdx] = slot;
+				this.specials[slot] = this.specials[belowIdx] + (classes & SPECIAL);
+				this.listItemBoundaries[slot] = this.listItemBoundaries[belowIdx] + ((classes & LIST_ITEM_BOUNDARY) >> 1);
+				this.scopeBoundaries[slot] = this.scopeBoundaries[belowIdx] + ((classes & SCOPE) >> 2);
+				this.htmlSlots[slot] = isHtml ? slot : this.htmlSlots[belowIdx];
+			}
+		}
+		/** Takes the element at `slot` out of the index, except for the links between slots. */
+		_unindex(slot) {
+			const key = this.keys[slot];
+			const keyPrev = this.keyPrev[slot];
+			const keyNext = this.keyNext[slot];
+			if (keyPrev !== -1) this.keyNext[keyPrev] = keyNext;
+			if (keyNext === -1) this.keyTops[key] = keyPrev;
+			else this.keyPrev[keyNext] = keyPrev;
+			if (FORMATTING_TAGS[this.tagIDs[slot]]) this.formattingSlots.delete(this.items[slot]);
+		}
+		/** Moves the indexed element at `from` down to the free slot `to`, keeping its key chain in order. */
+		_move(from, to) {
+			const element = this.items[from];
+			const key = this.keys[from];
+			const keyPrev = this.keyPrev[from];
+			const keyNext = this.keyNext[from];
+			this.items[to] = element;
+			this.tagIDs[to] = this.tagIDs[from];
+			this.keys[to] = key;
+			this.keyPrev[to] = keyPrev;
+			this.keyNext[to] = keyNext;
+			if (keyPrev !== -1) this.keyNext[keyPrev] = to;
+			if (keyNext === -1) this.keyTops[key] = to;
+			else this.keyPrev[keyNext] = to;
+			if (FORMATTING_TAGS[this.tagIDs[to]]) this.formattingSlots.set(element, to);
+		}
+		/** The slot of the topmost open HTML element with this tag, or -1. */
+		indexOfTopmost(tagID) {
+			if (this.indexed) return this.keyTops[tagID];
+			for (let i = this.stackTop; i >= 0; i--) if (this.tagIDs[i] === tagID && this.treeAdapter.getNamespaceURI(this.items[i]) === NS.HTML) return i;
+			return -1;
+		}
+		/** The slot of the topmost open HTML element with any of these tags, or -1. */
+		indexOfTopmostOf(tagIDs) {
+			if (this.indexed) {
+				let top = -1;
+				for (const tagID of tagIDs) if (this.keyTops[tagID] > top) top = this.keyTops[tagID];
+				return top;
+			}
+			for (let i = this.stackTop; i >= 0; i--) if (tagIDs.includes(this.tagIDs[i]) && this.treeAdapter.getNamespaceURI(this.items[i]) === NS.HTML) return i;
+			return -1;
+		}
+		/** The slot of the topmost open element in this namespace with this tag name, or -1. */
+		indexOfTopmostByName(ns, tagName) {
+			if (this.indexed) {
+				let key = tagKey(ns, getTagID(tagName));
+				if (key === -1) key = this._nameKey(ns, tagName, false);
+				return key === -1 ? -1 : this.keyTops[key];
+			}
+			for (let i = this.stackTop; i >= 0; i--) {
+				const element = this.items[i];
+				if (this.treeAdapter.getTagName(element) === tagName && this.treeAdapter.getNamespaceURI(element) === ns) return i;
+			}
+			return -1;
+		}
+		/** The slot of the topmost open HTML element, or -1. */
+		indexOfTopmostHtmlElement() {
+			if (this.indexed) return this.stackTop === -1 ? -1 : this.htmlSlots[this.stackTop];
+			let i = this.stackTop;
+			while (i >= 0 && this.treeAdapter.getNamespaceURI(this.items[i]) !== NS.HTML) i--;
+			return i;
+		}
+		/** Whether an element of the classes is open above the slot `idx`, on a stack that is not indexed. */
+		_hasAbove(idx, classes) {
+			for (let i = this.stackTop; i > idx; i--) {
+				const key = tagKey(this.treeAdapter.getNamespaceURI(this.items[i]), this.tagIDs[i]);
+				if (key !== -1 && KEY_CLASSES[key] & classes) return true;
+			}
+			return false;
+		}
+		/** Whether a special element is open above the slot `idx`. */
+		hasSpecialElementAbove(idx) {
+			return this.indexed ? this.specials[this.stackTop] !== this.specials[idx] : this._hasAbove(idx, SPECIAL);
+		}
+		/** Whether a special element other than HTML `address`, `div` and `p` is open above the slot `idx`. */
+		hasListItemBoundaryAbove(idx) {
+			return this.indexed ? this.listItemBoundaries[this.stackTop] !== this.listItemBoundaries[idx] : this._hasAbove(idx, LIST_ITEM_BOUNDARY);
+		}
 		push(element, tagID) {
+			const belowIdx = this.stackTop;
 			this.stackTop++;
+			this.depth++;
 			this.items[this.stackTop] = element;
 			this.current = element;
 			this.tagIDs[this.stackTop] = tagID;
 			this.currentTagId = tagID;
+			if (this.indexed) this._index(this.stackTop, belowIdx);
+			else if (this.depth === INDEX_DEPTH) this._indexAll();
 			if (this._isInTemplate()) this.tmplCount++;
 			this.handler.onItemPush(element, tagID, true);
 		}
+		/** Pops the current element without calling the handler. */
+		_popCurrent() {
+			if (this.tmplCount > 0 && this._isInTemplate()) this.tmplCount--;
+			if (this.indexed) {
+				this._unindex(this.stackTop);
+				this.stackTop = this.below[this.stackTop];
+				if (this.stackTop !== -1) this.above[this.stackTop] = -1;
+			} else this.stackTop--;
+			this.depth--;
+			this._updateCurrentElement();
+		}
 		pop() {
 			const popped = this.current;
-			if (this.tmplCount > 0 && this._isInTemplate()) this.tmplCount--;
-			this.stackTop--;
-			this._updateCurrentElement();
+			this._popCurrent();
 			this.handler.onItemPop(popped, true);
 		}
 		replace(oldElement, newElement) {
 			const idx = this._indexOf(oldElement);
 			this.items[idx] = newElement;
+			if (this.indexed && FORMATTING_TAGS[this.tagIDs[idx]]) {
+				this.formattingSlots.delete(oldElement);
+				this.formattingSlots.set(newElement, idx);
+			}
 			if (idx === this.stackTop) this.current = newElement;
 		}
-		insertAfter(referenceElement, newElement, newElementID) {
-			const insertionIdx = this._indexOf(referenceElement) + 1;
-			this.items.splice(insertionIdx, 0, newElement);
-			this.tagIDs.splice(insertionIdx, 0, newElementID);
-			this.stackTop++;
-			if (insertionIdx === this.stackTop) this._updateCurrentElement();
-			if (this.current && this.currentTagId !== void 0) this.handler.onItemPush(this.current, this.currentTagId, insertionIdx === this.stackTop);
+		/**
+		* The adoption agency's last stack step: removes the formatting element at `formattingIdx` and opens `element`
+		* directly above the furthest block at `furthestBlockIdx`. On an indexed stack, only formatting elements the agency
+		* kept are still open between them; the furthest block, with those directly below it, moves down by one slot, and
+		* `element` takes the furthest block's slot. No open element above the furthest block moves, and as all these
+		* elements are HTML elements and only the furthest block is special, the counts above it stay the same.
+		*/
+		replaceFormattingElement(formattingIdx, furthestBlockIdx, element, tagID) {
+			const formattingElement = this.items[formattingIdx];
+			if (!this.indexed) {
+				this.items.splice(formattingIdx, 1);
+				this.tagIDs.splice(formattingIdx, 1);
+				this.handler.onItemPop(formattingElement, false);
+				this.items.splice(furthestBlockIdx, 0, element);
+				this.tagIDs.splice(furthestBlockIdx, 0, tagID);
+				if (furthestBlockIdx === this.stackTop) this._updateCurrentElement();
+				if (this.current && this.currentTagId !== void 0) this.handler.onItemPush(this.current, this.currentTagId, furthestBlockIdx === this.stackTop);
+				return;
+			}
+			const key = this.keys[formattingIdx];
+			const belowIdx = this.below[formattingIdx];
+			const aboveIdx = this.above[furthestBlockIdx];
+			const kept = [];
+			for (let i = this.above[formattingIdx]; i !== furthestBlockIdx; i = this.above[i]) kept.push(i);
+			const keyNext = this.keyNext[formattingIdx];
+			this._unindex(formattingIdx);
+			this.items[formattingIdx] = void 0;
+			this.handler.onItemPop(formattingElement, false);
+			let free = furthestBlockIdx - 1;
+			while (kept.length > 0 && kept[kept.length - 1] === free) {
+				kept.pop();
+				free--;
+			}
+			for (let i = free + 1; i <= furthestBlockIdx; i++) this._move(i, i - 1);
+			const keyPrev = keyNext === -1 ? this.keyTops[key] : this.keyPrev[keyNext];
+			this.items[furthestBlockIdx] = element;
+			this.tagIDs[furthestBlockIdx] = tagID;
+			this.keys[furthestBlockIdx] = key;
+			this.keyPrev[furthestBlockIdx] = keyPrev;
+			this.keyNext[furthestBlockIdx] = keyNext;
+			if (keyPrev !== -1) this.keyNext[keyPrev] = furthestBlockIdx;
+			if (keyNext === -1) this.keyTops[key] = furthestBlockIdx;
+			else this.keyPrev[keyNext] = furthestBlockIdx;
+			if (FORMATTING_TAGS[tagID]) this.formattingSlots.set(element, furthestBlockIdx);
+			let prev = belowIdx;
+			for (const i of kept) {
+				this._link(i, prev, true);
+				prev = i;
+			}
+			for (let i = free; i < furthestBlockIdx; i++) {
+				this._link(i, prev, true);
+				prev = i;
+			}
+			this._link(furthestBlockIdx, prev, true);
+			if (aboveIdx === -1) this._updateCurrentElement();
+			if (this.current && this.currentTagId !== void 0) this.handler.onItemPush(this.current, this.currentTagId, aboveIdx === -1);
 		}
 		popUntilTagNamePopped(tagName) {
-			let targetIdx = this.stackTop + 1;
-			do
-				targetIdx = this.tagIDs.lastIndexOf(tagName, targetIdx - 1);
-			while (targetIdx > 0 && this.treeAdapter.getNamespaceURI(this.items[targetIdx]) !== NS.HTML);
-			this.shortenToLength(Math.max(targetIdx, 0));
+			this.shortenToLength(Math.max(this.indexOfTopmost(tagName), 0));
 		}
 		shortenToLength(idx) {
 			while (this.stackTop >= idx) {
 				const popped = this.current;
-				if (this.tmplCount > 0 && this._isInTemplate()) this.tmplCount -= 1;
-				this.stackTop--;
-				this._updateCurrentElement();
+				this._popCurrent();
 				this.handler.onItemPop(popped, this.stackTop < idx);
 			}
 		}
@@ -3967,49 +4287,59 @@ var docxHtml = (function(exports, docx, docx_math) {
 			const idx = this._indexOf(element);
 			this.shortenToLength(Math.max(idx, 0));
 		}
-		popUntilPopped(tagNames, targetNS) {
-			const idx = this._indexOfTagNames(tagNames, targetNS);
-			this.shortenToLength(Math.max(idx, 0));
-		}
 		popUntilNumberedHeaderPopped() {
-			this.popUntilPopped(NUMBERED_HEADERS, NS.HTML);
+			this.shortenToLength(Math.max(this.indexOfTopmostOf(NUMBERED_HEADERS), 0));
 		}
 		popUntilTableCellPopped() {
-			this.popUntilPopped(TABLE_CELLS, NS.HTML);
+			this.shortenToLength(Math.max(this.indexOfTopmostOf(TABLE_CELLS), 0));
 		}
 		popAllUpToHtmlElement() {
 			this.tmplCount = 0;
 			this.shortenToLength(1);
 		}
-		_indexOfTagNames(tagNames, namespace) {
-			for (let i = this.stackTop; i >= 0; i--) if (tagNames.has(this.tagIDs[i]) && this.treeAdapter.getNamespaceURI(this.items[i]) === namespace) return i;
-			return -1;
-		}
-		clearBackTo(tagNames, targetNS) {
-			const idx = this._indexOfTagNames(tagNames, targetNS);
-			this.shortenToLength(idx + 1);
-		}
 		clearBackToTableContext() {
-			this.clearBackTo(TABLE_CONTEXT, NS.HTML);
+			this.shortenToLength(this.indexOfTopmostOf(TABLE_CONTEXT) + 1);
 		}
 		clearBackToTableBodyContext() {
-			this.clearBackTo(TABLE_BODY_CONTEXT, NS.HTML);
+			this.shortenToLength(this.indexOfTopmostOf(TABLE_BODY_CONTEXT) + 1);
 		}
 		clearBackToTableRowContext() {
-			this.clearBackTo(TABLE_ROW_CONTEXT, NS.HTML);
+			this.shortenToLength(this.indexOfTopmostOf(TABLE_ROW_CONTEXT) + 1);
 		}
 		remove(element) {
 			const idx = this._indexOf(element);
-			if (idx >= 0) {
-				if (idx === this.stackTop) this.pop();
-				else {
-					this.items.splice(idx, 1);
-					this.tagIDs.splice(idx, 1);
-					this.stackTop--;
-					this._updateCurrentElement();
-					this.handler.onItemPop(element, false);
-				}
+			if (idx !== -1) this.removeAt(idx);
+		}
+		/** Removes the open element at the slot `idx`; on an indexed stack, the elements above it keep their slots. */
+		removeAt(idx) {
+			if (idx === this.stackTop) {
+				this.pop();
+				return;
 			}
+			const element = this.items[idx];
+			this.depth--;
+			if (this.indexed) {
+				const classes = this.keys[idx] < NAME_KEYS ? KEY_CLASSES[this.keys[idx]] : 0;
+				const belowIdx = this.below[idx];
+				const aboveIdx = this.above[idx];
+				this._unindex(idx);
+				this.items[idx] = void 0;
+				this.below[aboveIdx] = belowIdx;
+				if (belowIdx !== -1) this.above[belowIdx] = aboveIdx;
+				if (classes !== 0) for (let i = aboveIdx; i !== -1; i = this.above[i]) {
+					this.specials[i] -= classes & SPECIAL;
+					this.listItemBoundaries[i] -= (classes & LIST_ITEM_BOUNDARY) >> 1;
+					this.scopeBoundaries[i] -= (classes & SCOPE) >> 2;
+				}
+				const html = belowIdx === -1 ? -1 : this.htmlSlots[belowIdx];
+				for (let i = aboveIdx; i !== -1 && this.htmlSlots[i] === idx; i = this.above[i]) this.htmlSlots[i] = html;
+			} else {
+				this.items.splice(idx, 1);
+				this.tagIDs.splice(idx, 1);
+				this.stackTop--;
+				this._updateCurrentElement();
+			}
+			this.handler.onItemPop(element, false);
 		}
 		tryPeekProperlyNestedBodyElement() {
 			return this.stackTop >= 1 && this.tagIDs[1] === TAG_ID.BODY ? this.items[1] : null;
@@ -4018,79 +4348,67 @@ var docxHtml = (function(exports, docx, docx_math) {
 			return this._indexOf(element) > -1;
 		}
 		getCommonAncestor(element) {
-			const elementIdx = this._indexOf(element) - 1;
-			return elementIdx >= 0 ? this.items[elementIdx] : null;
+			const idx = this._indexOf(element);
+			const belowIdx = idx === -1 ? -1 : this.slotBelow(idx);
+			return belowIdx === -1 ? null : this.items[belowIdx];
 		}
 		isRootHtmlElementCurrent() {
 			return this.stackTop === 0 && this.tagIDs[0] === TAG_ID.HTML;
 		}
-		hasInDynamicScope(tagName, htmlScope) {
+		/**
+		* On an indexed stack: whether no element of the `scope` class is open above the slot `target`. A target that is not
+		* open is in scope only on a stack without such an element, as a scan from the top would end there.
+		*/
+		_isInScope(target, scope) {
+			let boundary = -1;
+			switch (scope) {
+				case LIST_ITEM_SCOPE:
+					boundary = Math.max(this.keyTops[TAG_ID.OL], this.keyTops[TAG_ID.UL]);
+					break;
+				case BUTTON_SCOPE:
+					boundary = this.keyTops[TAG_ID.BUTTON];
+					break;
+				case TABLE_SCOPE:
+					boundary = Math.max(this.keyTops[TAG_ID.TABLE], this.keyTops[TAG_ID.HTML]);
+					return target === -1 ? boundary === -1 : target >= boundary;
+			}
+			return target === -1 ? boundary === -1 && (this.stackTop === -1 || this.scopeBoundaries[this.stackTop] === 0) : target >= boundary && this.scopeBoundaries[this.stackTop] === this.scopeBoundaries[target];
+		}
+		/**
+		* On a stack that is not indexed: whether an HTML element with the tag, or one of the tags, and if passed the element
+		* itself, is open above every element of the `scope` class; true if neither is open.
+		*/
+		_scanScope(tagID, tagIDs, scope, element) {
 			for (let i = this.stackTop; i >= 0; i--) {
-				const tn = this.tagIDs[i];
-				switch (this.treeAdapter.getNamespaceURI(this.items[i])) {
-					case NS.HTML:
-						if (tn === tagName) return true;
-						if (htmlScope.has(tn)) return false;
-						break;
-					case NS.SVG:
-						if (SCOPING_ELEMENTS_SVG.has(tn)) return false;
-						break;
-					case NS.MATHML: if (SCOPING_ELEMENTS_MATHML.has(tn)) return false;
-				}
+				const key = tagKey(this.treeAdapter.getNamespaceURI(this.items[i]), this.tagIDs[i]);
+				if (key === -1) continue;
+				if ((tagIDs ? tagIDs.includes(key) : key === tagID) && (!element || this.items[i] === element)) return true;
+				if (KEY_CLASSES[key] & scope) return false;
 			}
 			return true;
 		}
-		hasInScope(tagName) {
-			return this.hasInDynamicScope(tagName, SCOPING_ELEMENTS_HTML);
+		/** If `element` is passed, only that element (which has to be a `tagName` element) is looked for. */
+		hasInScope(tagName, element) {
+			if (!this.indexed) return this._scanScope(tagName, null, SCOPE, element);
+			return this._isInScope(element ? this._indexOf(element) : this.keyTops[tagName], SCOPE);
 		}
 		hasInListItemScope(tagName) {
-			return this.hasInDynamicScope(tagName, SCOPING_ELEMENTS_HTML_LIST);
+			return this.indexed ? this._isInScope(this.keyTops[tagName], LIST_ITEM_SCOPE) : this._scanScope(tagName, null, LIST_ITEM_SCOPE);
 		}
 		hasInButtonScope(tagName) {
-			return this.hasInDynamicScope(tagName, SCOPING_ELEMENTS_HTML_BUTTON);
+			return this.indexed ? this._isInScope(this.keyTops[tagName], BUTTON_SCOPE) : this._scanScope(tagName, null, BUTTON_SCOPE);
 		}
 		hasNumberedHeaderInScope() {
-			for (let i = this.stackTop; i >= 0; i--) {
-				const tn = this.tagIDs[i];
-				switch (this.treeAdapter.getNamespaceURI(this.items[i])) {
-					case NS.HTML:
-						if (NUMBERED_HEADERS.has(tn)) return true;
-						if (SCOPING_ELEMENTS_HTML.has(tn)) return false;
-						break;
-					case NS.SVG:
-						if (SCOPING_ELEMENTS_SVG.has(tn)) return false;
-						break;
-					case NS.MATHML: if (SCOPING_ELEMENTS_MATHML.has(tn)) return false;
-				}
-			}
-			return true;
+			return this.indexed ? this._isInScope(this.indexOfTopmostOf(NUMBERED_HEADERS), SCOPE) : this._scanScope(TAG_ID.UNKNOWN, NUMBERED_HEADERS, SCOPE);
 		}
 		hasInTableScope(tagName) {
-			for (let i = this.stackTop; i >= 0; i--) {
-				if (this.treeAdapter.getNamespaceURI(this.items[i]) !== NS.HTML) continue;
-				switch (this.tagIDs[i]) {
-					case tagName: return true;
-					case TAG_ID.TABLE:
-					case TAG_ID.HTML: return false;
-				}
-			}
-			return true;
+			return this.indexed ? this._isInScope(this.keyTops[tagName], TABLE_SCOPE) : this._scanScope(tagName, null, TABLE_SCOPE);
 		}
 		hasTableBodyContextInTableScope() {
-			for (let i = this.stackTop; i >= 0; i--) {
-				if (this.treeAdapter.getNamespaceURI(this.items[i]) !== NS.HTML) continue;
-				switch (this.tagIDs[i]) {
-					case TAG_ID.TBODY:
-					case TAG_ID.THEAD:
-					case TAG_ID.TFOOT: return true;
-					case TAG_ID.TABLE:
-					case TAG_ID.HTML: return false;
-				}
-			}
-			return true;
+			return this.indexed ? this._isInScope(this.indexOfTopmostOf(TABLE_BODIES), TABLE_SCOPE) : this._scanScope(TAG_ID.UNKNOWN, TABLE_BODIES, TABLE_SCOPE);
 		}
 		hasInSelectScope(tagName) {
-			for (let i = this.stackTop; i >= 0; i--) {
+			for (let i = this.stackTop; i >= 0; i = this.slotBelow(i)) {
 				if (this.treeAdapter.getNamespaceURI(this.items[i]) !== NS.HTML) continue;
 				switch (this.tagIDs[i]) {
 					case tagName: return true;
@@ -4102,13 +4420,13 @@ var docxHtml = (function(exports, docx, docx_math) {
 			return true;
 		}
 		generateImpliedEndTags() {
-			while (this.currentTagId !== void 0 && IMPLICIT_END_TAG_REQUIRED.has(this.currentTagId)) this.pop();
+			while (this.currentTagId !== void 0 && IMPLICIT_END_TAG_REQUIRED.has(this.currentTagId) && this.treeAdapter.getNamespaceURI(this.current) === NS.HTML) this.pop();
 		}
 		generateImpliedEndTagsThoroughly() {
-			while (this.currentTagId !== void 0 && IMPLICIT_END_TAG_REQUIRED_THOROUGHLY.has(this.currentTagId)) this.pop();
+			while (this.currentTagId !== void 0 && IMPLICIT_END_TAG_REQUIRED_THOROUGHLY.has(this.currentTagId) && this.treeAdapter.getNamespaceURI(this.current) === NS.HTML) this.pop();
 		}
 		generateImpliedEndTagsWithExclusion(exclusionId) {
-			while (this.currentTagId !== void 0 && this.currentTagId !== exclusionId && IMPLICIT_END_TAG_REQUIRED_THOROUGHLY.has(this.currentTagId)) this.pop();
+			while (this.currentTagId !== void 0 && this.currentTagId !== exclusionId && IMPLICIT_END_TAG_REQUIRED_THOROUGHLY.has(this.currentTagId) && this.treeAdapter.getNamespaceURI(this.current) === NS.HTML) this.pop();
 		}
 	};
 	// node_modules/parse5/dist/parser/formatting-element-list.js
@@ -4118,69 +4436,114 @@ var docxHtml = (function(exports, docx, docx_math) {
 		EntryType[EntryType["Marker"] = 0] = "Marker";
 		EntryType[EntryType["Element"] = 1] = "Element";
 	})(EntryType || (EntryType = {}));
-	var MARKER = { type: EntryType.Marker };
 	var FormattingElementList = class {
-		constructor(treeAdapter) {
-			this.treeAdapter = treeAdapter;
-			this.entries = [];
+		constructor() {
+			this.newest = null;
 			this.bookmark = null;
+			/** The index of the entries after the last marker; null only while there are at most NOAH_ARK_CAPACITY of them. */
+			this.index = null;
+			/** The entries by element, except possibly those after the last marker while they are not indexed. */
+			this.elementEntries = /* @__PURE__ */ new Map();
 		}
-		_getNoahArkConditionCandidates(newElement, neAttrs) {
-			const candidates = [];
-			const neAttrsLength = neAttrs.length;
-			const neTagName = this.treeAdapter.getTagName(newElement);
-			const neNamespaceURI = this.treeAdapter.getNamespaceURI(newElement);
-			for (let i = 0; i < this.entries.length; i++) {
-				const entry = this.entries[i];
-				if (entry.type === EntryType.Marker) break;
-				const { element } = entry;
-				if (this.treeAdapter.getTagName(element) === neTagName && this.treeAdapter.getNamespaceURI(element) === neNamespaceURI) {
-					const elementAttrs = this.treeAdapter.getAttrList(element);
-					if (elementAttrs.length === neAttrsLength) candidates.push({
-						idx: i,
-						attrs: elementAttrs
-					});
-				}
-			}
-			return candidates;
+		/** Returns the entry's ark, or null if the entries after the last marker are not indexed. */
+		_insertElementEntry(element, token, older) {
+			const newer = older === null ? null : older.newer;
+			const entry = {
+				type: EntryType.Element,
+				element,
+				token,
+				older,
+				newer,
+				ark: null,
+				olderSameTag: null,
+				newerSameTag: null
+			};
+			if (newer === null) this.newest = entry;
+			else newer.older = entry;
+			if (older !== null) older.newer = entry;
+			return this.index === null ? null : this._addToIndex(this.index, entry);
 		}
-		_ensureNoahArkCondition(newElement) {
-			if (this.entries.length < NOAH_ARK_CAPACITY) return;
-			const neAttrs = this.treeAdapter.getAttrList(newElement);
-			const candidates = this._getNoahArkConditionCandidates(newElement, neAttrs);
-			if (candidates.length < NOAH_ARK_CAPACITY) return;
-			const neAttrsMap = new Map(neAttrs.map((neAttr) => [neAttr.name, neAttr.value]));
-			let validCandidates = 0;
-			for (let i = 0; i < candidates.length; i++) {
-				const candidate = candidates[i];
-				if (candidate.attrs.every((cAttr) => neAttrsMap.get(cAttr.name) === cAttr.value)) {
-					validCandidates += 1;
-					if (validCandidates >= NOAH_ARK_CAPACITY) this.entries.splice(candidate.idx, 1);
-				}
+		_addToIndex(index, entry) {
+			const { tagName, attrs } = entry.token;
+			const key = tagName + attrs.map(({ name, value }) => `\0${name}\0${value}`).sort().join("");
+			let ark = index.arks.get(key);
+			if (ark === void 0) {
+				ark = {
+					entries: [],
+					key
+				};
+				index.arks.set(key, ark);
 			}
+			ark.entries.push(entry);
+			entry.ark = ark;
+			this.elementEntries.set(entry.element, entry);
+			let head = index.tagNames.get(tagName);
+			if (head === void 0) {
+				head = { olderSameTag: null };
+				index.tagNames.set(tagName, head);
+			}
+			entry.olderSameTag = head.olderSameTag;
+			entry.newerSameTag = head;
+			if (head.olderSameTag !== null) head.olderSameTag.newerSameTag = entry;
+			head.olderSameTag = entry;
+			return ark;
 		}
 		insertMarker() {
-			this.entries.unshift(MARKER);
+			if (this.index === null) for (let entry = this.newest; entry !== null && entry.type === EntryType.Element; entry = entry.older) this.elementEntries.set(entry.element, entry);
+			const marker = {
+				type: EntryType.Marker,
+				older: this.newest,
+				newer: null,
+				outerIndex: this.index
+			};
+			if (this.newest !== null) this.newest.newer = marker;
+			this.newest = marker;
+			this.index = null;
 		}
 		pushElement(element, token) {
-			this._ensureNoahArkCondition(element);
-			this.entries.unshift({
-				type: EntryType.Element,
-				element,
-				token
-			});
+			if (this.index === null) {
+				let oldest = null;
+				let count = 0;
+				for (let entry = this.newest; entry !== null && entry.type === EntryType.Element; entry = entry.older) {
+					oldest = entry;
+					count++;
+				}
+				if (count >= NOAH_ARK_CAPACITY) {
+					this.index = {
+						arks: /* @__PURE__ */ new Map(),
+						tagNames: /* @__PURE__ */ new Map()
+					};
+					for (let entry = oldest; entry !== null && entry.type === EntryType.Element; entry = entry.newer) this._addToIndex(this.index, entry);
+				}
+			}
+			const ark = this._insertElementEntry(element, token, this.newest);
+			if (ark !== null && ark.entries.length > NOAH_ARK_CAPACITY) this.removeEntry(ark.entries[0]);
 		}
 		insertElementAfterBookmark(element, token) {
-			const bookmarkIdx = this.entries.indexOf(this.bookmark);
-			this.entries.splice(bookmarkIdx, 0, {
-				type: EntryType.Element,
-				element,
-				token
-			});
+			const { bookmark } = this;
+			this.bookmark = null;
+			this._insertElementEntry(element, token, bookmark);
 		}
 		removeEntry(entry) {
-			const entryIndex = this.entries.indexOf(entry);
-			if (entryIndex !== -1) this.entries.splice(entryIndex, 1);
+			var _a;
+			if (entry.newer === null ? this.newest !== entry : entry.newer.older !== entry) return;
+			this.elementEntries.delete(entry.element);
+			if (entry.newer === null) this.newest = entry.older;
+			else entry.newer.older = entry.older;
+			if (entry.older !== null) entry.older.newer = entry.newer;
+			if (entry.ark !== null) {
+				const { entries, key } = entry.ark;
+				entries.splice(entries.indexOf(entry), 1);
+				if (entries.length === 0) (_a = this.index) === null || _a === void 0 || _a.arks.delete(key);
+			}
+			if (entry.newerSameTag !== null) {
+				entry.newerSameTag.olderSameTag = entry.olderSameTag;
+				if (entry.olderSameTag !== null) entry.olderSameTag.newerSameTag = entry.newerSameTag;
+			}
+		}
+		replaceElement(entry, element) {
+			if (this.elementEntries.delete(entry.element)) this.elementEntries.set(element, entry);
+			entry.element = element;
 		}
 		/**
 		* Clears the list of formatting elements up to the last marker.
@@ -4188,16 +4551,23 @@ var docxHtml = (function(exports, docx, docx_math) {
 		* @see https://html.spec.whatwg.org/multipage/parsing.html#clear-the-list-of-active-formatting-elements-up-to-the-last-marker
 		*/
 		clearToLastMarker() {
-			const markerIdx = this.entries.indexOf(MARKER);
-			if (markerIdx === -1) this.entries.length = 0;
-			else this.entries.splice(0, markerIdx + 1);
+			let marker = this.newest;
+			for (; marker !== null && marker.type === EntryType.Element; marker = marker.older) this.elementEntries.delete(marker.element);
+			this.newest = marker === null ? null : marker.older;
+			this.index = marker === null ? null : marker.outerIndex;
+			if (this.newest !== null) this.newest.newer = null;
 		}
 		getElementEntryInScopeWithTagName(tagName) {
-			const entry = this.entries.find((entry) => entry.type === EntryType.Marker || this.treeAdapter.getTagName(entry.element) === tagName);
-			return entry && entry.type === EntryType.Element ? entry : null;
+			var _a, _b;
+			if (this.index !== null) return (_b = (_a = this.index.tagNames.get(tagName)) === null || _a === void 0 ? void 0 : _a.olderSameTag) !== null && _b !== void 0 ? _b : null;
+			for (let entry = this.newest; entry !== null && entry.type === EntryType.Element; entry = entry.older) if (entry.token.tagName === tagName) return entry;
+			return null;
 		}
 		getElementEntry(element) {
-			return this.entries.find((entry) => entry.type === EntryType.Element && entry.element === element);
+			if (this.index === null) {
+				for (let entry = this.newest; entry !== null && entry.type === EntryType.Element; entry = entry.older) if (entry.element === element) return entry;
+			}
+			return this.elementEntries.get(element);
 		}
 	};
 	// \0@oxc-project+runtime@0.156.0/helpers/esm/objectSpread2.js
@@ -4223,6 +4593,8 @@ var docxHtml = (function(exports, docx, docx_math) {
 		return e;
 	}
 	// node_modules/parse5/dist/tree-adapters/default.js
+	/** The position of each name in the attribute lists `adoptAttributes` merged into, kept for the next merge into that list. */
+	var attrListIndexes = /* @__PURE__ */ new WeakMap();
 	var defaultTreeAdapter = {
 		createDocument() {
 			return {
@@ -4266,8 +4638,9 @@ var docxHtml = (function(exports, docx, docx_math) {
 			newNode.parentNode = parentNode;
 		},
 		insertBefore(parentNode, newNode, referenceNode) {
-			const insertionIdx = parentNode.childNodes.indexOf(referenceNode);
-			parentNode.childNodes.splice(insertionIdx, 0, newNode);
+			const { childNodes } = parentNode;
+			const insertionIdx = childNodes[childNodes.length - 1] === referenceNode ? childNodes.length - 1 : childNodes.indexOf(referenceNode);
+			childNodes.splice(insertionIdx, 0, newNode);
 			newNode.parentNode = parentNode;
 		},
 		setTemplateContent(templateElement, contentElement) {
@@ -4301,8 +4674,9 @@ var docxHtml = (function(exports, docx, docx_math) {
 		},
 		detachNode(node) {
 			if (node.parentNode) {
-				const idx = node.parentNode.childNodes.indexOf(node);
-				node.parentNode.childNodes.splice(idx, 1);
+				const { childNodes } = node.parentNode;
+				const idx = childNodes[childNodes.length - 1] === node ? childNodes.length - 1 : childNodes.indexOf(node);
+				childNodes.splice(idx, 1);
 				node.parentNode = null;
 			}
 		},
@@ -4317,13 +4691,36 @@ var docxHtml = (function(exports, docx, docx_math) {
 			defaultTreeAdapter.appendChild(parentNode, defaultTreeAdapter.createTextNode(text));
 		},
 		insertTextBefore(parentNode, text, referenceNode) {
-			const prevNode = parentNode.childNodes[parentNode.childNodes.indexOf(referenceNode) - 1];
+			const { childNodes } = parentNode;
+			const prevNode = childNodes[(childNodes[childNodes.length - 1] === referenceNode ? childNodes.length - 1 : childNodes.indexOf(referenceNode)) - 1];
 			if (prevNode && defaultTreeAdapter.isTextNode(prevNode)) prevNode.value += text;
 			else defaultTreeAdapter.insertBefore(parentNode, defaultTreeAdapter.createTextNode(text), referenceNode);
 		},
+		/**
+		* Keeps the recipient's names between merges as a map from name to position. The map is rebuilt when the list changed
+		* length or has a repeated name, or when a merged name it holds no longer names the entry at that position. A name that
+		* other code gives an existing entry between two merges is missed otherwise, and merging it appends it a second time.
+		*/
 		adoptAttributes(recipient, attrs) {
-			const recipientAttrsMap = new Set(recipient.attrs.map((attr) => attr.name));
+			if (attrs.length === 0 || attrs === recipient.attrs) return;
+			const cached = attrListIndexes.get(recipient.attrs);
+			const isIndexed = (cached === null || cached === void 0 ? void 0 : cached.size) === recipient.attrs.length && attrs.every(({ name }) => {
+				var _a;
+				const index = cached.get(name);
+				return index === void 0 || ((_a = recipient.attrs[index]) === null || _a === void 0 ? void 0 : _a.name) === name;
+			});
+			const recipientAttrsMap = isIndexed ? cached : /* @__PURE__ */ new Map();
+			if (!isIndexed) {
+				for (let i = 0; i < recipient.attrs.length; i++) {
+					const attr = recipient.attrs[i];
+					if (attr !== void 0) recipientAttrsMap.set(attr.name, i);
+				}
+				attrListIndexes.set(recipient.attrs, recipientAttrsMap);
+			}
+			const adoptedFrom = recipient.attrs.length;
 			for (let j = 0; j < attrs.length; j++) if (!recipientAttrsMap.has(attrs[j].name)) recipient.attrs.push(attrs[j]);
+			for (let j = adoptedFrom; j < recipient.attrs.length; j++) recipientAttrsMap.set(recipient.attrs[j].name, j);
+			if (recipientAttrsMap.size !== recipient.attrs.length) attrListIndexes.delete(recipient.attrs);
 		},
 		getFirstChild(node) {
 			return node.childNodes[0];
@@ -4735,7 +5132,25 @@ var docxHtml = (function(exports, docx, docx_math) {
 		return (!foreignNS || foreignNS === NS.HTML) && isHtmlIntegrationPoint(tn, ns, attrs) || (!foreignNS || foreignNS === NS.MATHML) && isMathMLTextIntegrationPoint(tn, ns);
 	}
 	// node_modules/parse5/dist/parser/index.js
+	var INSERTION_MODE_TAGS = [
+		TAG_ID.TR,
+		TAG_ID.TBODY,
+		TAG_ID.THEAD,
+		TAG_ID.TFOOT,
+		TAG_ID.CAPTION,
+		TAG_ID.COLGROUP,
+		TAG_ID.TABLE,
+		TAG_ID.FRAMESET,
+		TAG_ID.SELECT,
+		TAG_ID.TEMPLATE,
+		TAG_ID.TD,
+		TAG_ID.TH,
+		TAG_ID.HEAD,
+		TAG_ID.BODY,
+		TAG_ID.HTML
+	];
 	var HIDDEN_INPUT_TYPE = "hidden";
+	var EMPTY_ATTRS = [];
 	var AA_OUTER_LOOP_ITER = 8;
 	var AA_INNER_LOOP_ITER = 3;
 	var InsertionMode;
@@ -4802,8 +5217,7 @@ var docxHtml = (function(exports, docx, docx_math) {
 			/** Indicates that the current node is not an element in the HTML namespace */
 			this.currentNotInHTML = false;
 			/**
-			* The template insertion mode stack is maintained from the left.
-			* Ie. the topmost element will always have index 0.
+			* The topmost template insertion mode is the last element.
 			*
 			* @internal
 			*/
@@ -4824,7 +5238,7 @@ var docxHtml = (function(exports, docx, docx_math) {
 			if (this.onParseError) this.options.sourceCodeLocationInfo = true;
 			this.document = document !== null && document !== void 0 ? document : this.treeAdapter.createDocument();
 			this.tokenizer = new Tokenizer(this.options, this);
-			this.activeFormattingElements = new FormattingElementList(this.treeAdapter);
+			this.activeFormattingElements = new FormattingElementList();
 			this.fragmentContextID = fragmentContext ? getTagID(this.treeAdapter.getTagName(fragmentContext)) : TAG_ID.UNKNOWN;
 			this._setContextModes(fragmentContext !== null && fragmentContext !== void 0 ? fragmentContext : this.document, this.fragmentContextID);
 			this.openElements = new OpenElementStack(this.document, this.treeAdapter, this);
@@ -4839,7 +5253,7 @@ var docxHtml = (function(exports, docx, docx_math) {
 			fragmentContext !== null && fragmentContext !== void 0 || (fragmentContext = opts.treeAdapter.createElement(TAG_NAMES.TEMPLATE, NS.HTML, []));
 			const documentMock = opts.treeAdapter.createElement("documentmock", NS.HTML, []);
 			const parser = new this(opts, documentMock, fragmentContext);
-			if (parser.fragmentContextID === TAG_ID.TEMPLATE) parser.tmplInsertionModeStack.unshift(InsertionMode.IN_TEMPLATE);
+			if (parser.fragmentContextID === TAG_ID.TEMPLATE) parser.tmplInsertionModeStack.push(InsertionMode.IN_TEMPLATE);
 			parser._initTokenizerForFragmentParsing();
 			parser._insertFakeRootElement();
 			parser._resetInsertionMode();
@@ -4876,9 +5290,10 @@ var docxHtml = (function(exports, docx, docx_math) {
 		}
 		/** @internal */
 		onItemPop(node, isTop) {
-			var _a, _b;
+			var _a, _b, _c;
 			if (this.options.sourceCodeLocationInfo) this._setEndLocation(node, this.currentToken);
 			(_b = (_a = this.treeAdapter).onItemPop) === null || _b === void 0 || _b.call(_a, node, this.openElements.current);
+			(_c = this.annotationXmlIntegrationPoints) === null || _c === void 0 || _c.delete(node);
 			if (isTop) {
 				let current;
 				let currentTagId;
@@ -4914,7 +5329,7 @@ var docxHtml = (function(exports, docx, docx_math) {
 		_findFormInFragmentContext() {
 			let node = this.fragmentContext;
 			while (node) {
-				if (this.treeAdapter.getTagName(node) === TAG_NAMES.FORM) {
+				if (this.treeAdapter.getTagName(node) === TAG_NAMES.FORM && this.treeAdapter.getNamespaceURI(node) === NS.HTML) {
 					this.formElement = node;
 					break;
 				}
@@ -5055,10 +5470,9 @@ var docxHtml = (function(exports, docx, docx_math) {
 		}
 		/** @protected */
 		_adoptNodes(donor, recipient) {
-			for (let child = this.treeAdapter.getFirstChild(donor); child; child = this.treeAdapter.getFirstChild(donor)) {
-				this.treeAdapter.detachNode(child);
-				this.treeAdapter.appendChild(recipient, child);
-			}
+			const children = [...this.treeAdapter.getChildNodes(donor)];
+			for (let i = children.length - 1; i >= 0; i--) this.treeAdapter.detachNode(children[i]);
+			for (const child of children) this.treeAdapter.appendChild(recipient, child);
 		}
 		/** @protected */
 		_setEndLocation(element, closingToken) {
@@ -5118,19 +5532,26 @@ var docxHtml = (function(exports, docx, docx_math) {
 		}
 		/** @protected */
 		_isIntegrationPoint(tid, element, foreignNS) {
-			return isIntegrationPoint(tid, this.treeAdapter.getNamespaceURI(element), this.treeAdapter.getAttrList(element), foreignNS);
+			var _a;
+			const ns = this.treeAdapter.getNamespaceURI(element);
+			if (tid === TAG_ID.ANNOTATION_XML && ns === NS.MATHML && foreignNS !== NS.MATHML) {
+				const verdicts = (_a = this.annotationXmlIntegrationPoints) !== null && _a !== void 0 ? _a : this.annotationXmlIntegrationPoints = /* @__PURE__ */ new Map();
+				let isIntegrationPoint$1 = verdicts.get(element);
+				if (isIntegrationPoint$1 === void 0) {
+					isIntegrationPoint$1 = isIntegrationPoint(tid, ns, this.treeAdapter.getAttrList(element));
+					verdicts.set(element, isIntegrationPoint$1);
+				}
+				return isIntegrationPoint$1;
+			}
+			return isIntegrationPoint(tid, ns, EMPTY_ATTRS, foreignNS);
 		}
 		/** @protected */
 		_reconstructActiveFormattingElements() {
-			const listLength = this.activeFormattingElements.entries.length;
-			if (listLength) {
-				const endIndex = this.activeFormattingElements.entries.findIndex((entry) => entry.type === EntryType.Marker || this.openElements.contains(entry.element));
-				const unopenIdx = endIndex === -1 ? listLength - 1 : endIndex - 1;
-				for (let i = unopenIdx; i >= 0; i--) {
-					const entry = this.activeFormattingElements.entries[i];
-					this._insertElement(entry.token, this.treeAdapter.getNamespaceURI(entry.element));
-					entry.element = this.openElements.current;
-				}
+			let oldest = null;
+			for (let entry = this.activeFormattingElements.newest; entry !== null && entry.type === EntryType.Element && !this.openElements.contains(entry.element); entry = entry.older) oldest = entry;
+			for (let entry = oldest; entry !== null && entry.type === EntryType.Element; entry = entry.newer) {
+				this._insertElement(entry.token, this.treeAdapter.getNamespaceURI(entry.element));
+				this.activeFormattingElements.replaceElement(entry, this.openElements.current);
 			}
 		}
 		/** @protected */
@@ -5147,7 +5568,10 @@ var docxHtml = (function(exports, docx, docx_math) {
 		}
 		/** @protected */
 		_resetInsertionMode() {
-			for (let i = this.openElements.stackTop; i >= 0; i--) switch (i === 0 && this.fragmentContext ? this.fragmentContextID : this.openElements.tagIDs[i]) {
+			const i = this.openElements.indexOfTopmostOf(INSERTION_MODE_TAGS);
+			const tn = i === 0 && this.fragmentContext ? this.fragmentContextID : this.openElements.tagIDs[i];
+			const node = i === 0 && this.fragmentContext ? this.fragmentContext : this.openElements.items[i];
+			if (node !== void 0 && this.treeAdapter.getNamespaceURI(node) === NS.HTML) switch (tn) {
 				case TAG_ID.TR:
 					this.insertionMode = InsertionMode.IN_ROW;
 					return;
@@ -5175,7 +5599,7 @@ var docxHtml = (function(exports, docx, docx_math) {
 					this._resetInsertionModeForSelect(i);
 					return;
 				case TAG_ID.TEMPLATE:
-					this.insertionMode = this.tmplInsertionModeStack[0];
+					this.insertionMode = this.tmplInsertionModeStack[this.tmplInsertionModeStack.length - 1];
 					return;
 				case TAG_ID.HTML:
 					this.insertionMode = this.headElement ? InsertionMode.AFTER_HEAD : InsertionMode.BEFORE_HEAD;
@@ -5196,10 +5620,9 @@ var docxHtml = (function(exports, docx, docx_math) {
 		}
 		/** @protected */
 		_resetInsertionModeForSelect(selectIdx) {
-			if (selectIdx > 0) for (let i = selectIdx - 1; i > 0; i--) {
-				const tn = this.openElements.tagIDs[i];
-				if (tn === TAG_ID.TEMPLATE) break;
-				else if (tn === TAG_ID.TABLE) {
+			if (selectIdx > 0) {
+				const tableIdx = this.openElements.indexOfTopmost(TAG_ID.TABLE);
+				if (tableIdx > 0 && tableIdx > this.openElements.indexOfTopmost(TAG_ID.TEMPLATE)) {
 					this.insertionMode = InsertionMode.IN_SELECT_IN_TABLE;
 					return;
 				}
@@ -5216,30 +5639,27 @@ var docxHtml = (function(exports, docx, docx_math) {
 		}
 		/** @protected */
 		_findFosterParentingLocation() {
-			for (let i = this.openElements.stackTop; i >= 0; i--) {
-				const openElement = this.openElements.items[i];
-				switch (this.openElements.tagIDs[i]) {
-					case TAG_ID.TEMPLATE:
-						if (this.treeAdapter.getNamespaceURI(openElement) === NS.HTML) return {
-							parent: this.treeAdapter.getTemplateContent(openElement),
-							beforeElement: null
-						};
-						break;
-					case TAG_ID.TABLE: {
-						const parent = this.treeAdapter.getParentNode(openElement);
-						if (parent) return {
-							parent,
-							beforeElement: openElement
-						};
-						return {
-							parent: this.openElements.items[i - 1],
-							beforeElement: null
-						};
-					}
-				}
+			const { openElements } = this;
+			const tableIdx = openElements.indexOfTopmost(TAG_ID.TABLE);
+			const templateIdx = openElements.indexOfTopmost(TAG_ID.TEMPLATE);
+			if (templateIdx > tableIdx) return {
+				parent: this.treeAdapter.getTemplateContent(openElements.items[templateIdx]),
+				beforeElement: null
+			};
+			if (tableIdx !== -1) {
+				const table = openElements.items[tableIdx];
+				const parent = this.treeAdapter.getParentNode(table);
+				if (parent) return {
+					parent,
+					beforeElement: table
+				};
+				return {
+					parent: openElements.items[openElements.slotBelow(tableIdx)],
+					beforeElement: null
+				};
 			}
 			return {
-				parent: this.openElements.items[0],
+				parent: openElements.items[0],
 				beforeElement: null
 			};
 		}
@@ -5668,35 +6088,31 @@ var docxHtml = (function(exports, docx, docx_math) {
 			if (!p.openElements.contains(formattingElementEntry.element)) {
 				p.activeFormattingElements.removeEntry(formattingElementEntry);
 				formattingElementEntry = null;
-			} else if (!p.openElements.hasInScope(token.tagID)) formattingElementEntry = null;
+			} else if (!p.openElements.hasInScope(token.tagID, formattingElementEntry.element)) formattingElementEntry = null;
 		} else genericEndTagInBody(p, token);
 		return formattingElementEntry;
 	}
 	function aaObtainFurthestBlock(p, formattingElementEntry) {
-		let furthestBlock = null;
-		let idx = p.openElements.stackTop;
-		for (; idx >= 0; idx--) {
-			const element = p.openElements.items[idx];
-			if (element === formattingElementEntry.element) break;
-			if (p._isSpecialElement(element, p.openElements.tagIDs[idx])) furthestBlock = element;
-		}
-		if (!furthestBlock) {
-			p.openElements.shortenToLength(Math.max(idx, 0));
-			p.activeFormattingElements.removeEntry(formattingElementEntry);
-		}
-		return furthestBlock;
+		const { openElements } = p;
+		const formattingIdx = openElements._indexOf(formattingElementEntry.element);
+		for (let idx = openElements.slotAbove(formattingIdx); idx !== -1; idx = openElements.slotAbove(idx)) if (p._isSpecialElement(openElements.items[idx], openElements.tagIDs[idx])) return idx;
+		openElements.shortenToLength(formattingIdx);
+		p.activeFormattingElements.removeEntry(formattingElementEntry);
+		return -1;
 	}
-	function aaInnerLoop(p, furthestBlock, formattingElement) {
+	function aaInnerLoop(p, furthestBlockIdx, formattingElement) {
+		const furthestBlock = p.openElements.items[furthestBlockIdx];
 		let lastElement = furthestBlock;
-		let nextElement = p.openElements.getCommonAncestor(furthestBlock);
+		let nextIdx = p.openElements.slotBelow(furthestBlockIdx);
 		const intendedParent = p.openElements.getCommonAncestor(formattingElement);
-		for (let i = 0, element = nextElement; element !== formattingElement; i++, element = nextElement) {
-			nextElement = p.openElements.getCommonAncestor(element);
+		for (let i = 0, idx = nextIdx; p.openElements.items[idx] !== formattingElement; i++, idx = nextIdx) {
+			let element = p.openElements.items[idx];
+			nextIdx = p.openElements.slotBelow(idx);
 			const elementEntry = p.activeFormattingElements.getElementEntry(element);
 			const counterOverflow = elementEntry && i >= AA_INNER_LOOP_ITER;
 			if (!elementEntry || counterOverflow) {
 				if (counterOverflow) p.activeFormattingElements.removeEntry(elementEntry);
-				p.openElements.remove(element);
+				p.openElements.removeAt(idx);
 			} else {
 				element = aaRecreateElementFromEntry(p, elementEntry, intendedParent);
 				if (lastElement === furthestBlock) p.activeFormattingElements.bookmark = elementEntry;
@@ -5711,7 +6127,7 @@ var docxHtml = (function(exports, docx, docx_math) {
 		const ns = p.treeAdapter.getNamespaceURI(elementEntry.element);
 		const newElement = p._createElement(elementEntry.token.tagName, ns, elementEntry.token.attrs, intendedParent);
 		p.openElements.replace(elementEntry.element, newElement);
-		elementEntry.element = newElement;
+		p.activeFormattingElements.replaceElement(elementEntry, newElement);
 		return newElement;
 	}
 	function aaInsertLastNodeInCommonAncestor(p, commonAncestor, lastElement) {
@@ -5731,17 +6147,25 @@ var docxHtml = (function(exports, docx, docx_math) {
 		p.treeAdapter.appendChild(furthestBlock, newElement);
 		p.activeFormattingElements.insertElementAfterBookmark(newElement, token);
 		p.activeFormattingElements.removeEntry(formattingElementEntry);
-		p.openElements.remove(formattingElementEntry.element);
-		p.openElements.insertAfter(furthestBlock, newElement, token.tagID);
+		const formattingIdx = p.openElements._indexOf(formattingElementEntry.element);
+		let furthestBlockIdx = p.openElements.slotAbove(formattingIdx);
+		while (p.openElements.items[furthestBlockIdx] !== furthestBlock) furthestBlockIdx = p.openElements.slotAbove(furthestBlockIdx);
+		p.openElements.replaceFormattingElement(formattingIdx, furthestBlockIdx, newElement, token.tagID);
 	}
 	function callAdoptionAgency(p, token) {
+		const { current, currentTagId } = p.openElements;
+		if (currentTagId === token.tagID && p.treeAdapter.getNamespaceURI(current) === NS.HTML && !p.activeFormattingElements.getElementEntry(current)) {
+			p.openElements.pop();
+			return;
+		}
 		for (let i = 0; i < AA_OUTER_LOOP_ITER; i++) {
 			const formattingElementEntry = aaObtainFormattingElementEntry(p, token);
 			if (!formattingElementEntry) break;
-			const furthestBlock = aaObtainFurthestBlock(p, formattingElementEntry);
-			if (!furthestBlock) break;
+			const furthestBlockIdx = aaObtainFurthestBlock(p, formattingElementEntry);
+			if (furthestBlockIdx === -1) break;
+			const furthestBlock = p.openElements.items[furthestBlockIdx];
 			p.activeFormattingElements.bookmark = formattingElementEntry;
-			const lastElement = aaInnerLoop(p, furthestBlock, formattingElementEntry.element);
+			const lastElement = aaInnerLoop(p, furthestBlockIdx, formattingElementEntry.element);
 			const commonAncestor = p.openElements.getCommonAncestor(formattingElementEntry.element);
 			p.treeAdapter.detachNode(lastElement);
 			if (commonAncestor) aaInsertLastNodeInCommonAncestor(p, commonAncestor, lastElement);
@@ -5761,7 +6185,7 @@ var docxHtml = (function(exports, docx, docx_math) {
 		p.stopped = true;
 		if (token.location) {
 			const target = p.fragmentContext ? 0 : 2;
-			for (let i = p.openElements.stackTop; i >= target; i--) p._setEndLocation(p.openElements.items[i], token);
+			for (let i = p.openElements.stackTop; i >= target; i = p.openElements.slotBelow(i)) p._setEndLocation(p.openElements.items[i], token);
 			if (!p.fragmentContext && p.openElements.stackTop >= 0) {
 				const htmlElement = p.openElements.items[0];
 				const htmlLocation = p.treeAdapter.getNodeSourceCodeLocation(htmlElement);
@@ -5863,7 +6287,7 @@ var docxHtml = (function(exports, docx, docx_math) {
 				p.activeFormattingElements.insertMarker();
 				p.framesetOk = false;
 				p.insertionMode = InsertionMode.IN_TEMPLATE;
-				p.tmplInsertionModeStack.unshift(InsertionMode.IN_TEMPLATE);
+				p.tmplInsertionModeStack.push(InsertionMode.IN_TEMPLATE);
 				break;
 			case TAG_ID.HEAD:
 				p._err(token, ERR.misplacedStartTagForHeadElement);
@@ -5894,7 +6318,7 @@ var docxHtml = (function(exports, docx, docx_math) {
 			if (p.openElements.currentTagId !== TAG_ID.TEMPLATE) p._err(token, ERR.closingOfElementWithOpenChildElements);
 			p.openElements.popUntilTagNamePopped(TAG_ID.TEMPLATE);
 			p.activeFormattingElements.clearToLastMarker();
-			p.tmplInsertionModeStack.shift();
+			p.tmplInsertionModeStack.pop();
 			p._resetInsertionMode();
 		} else p._err(token, ERR.endTagWithoutMatchingOpenElement);
 	}
@@ -6049,7 +6473,7 @@ var docxHtml = (function(exports, docx, docx_math) {
 	}
 	function numberedHeaderStartTagInBody(p, token) {
 		if (p.openElements.hasInButtonScope(TAG_ID.P)) p._closePElement();
-		if (p.openElements.currentTagId !== void 0 && NUMBERED_HEADERS.has(p.openElements.currentTagId)) p.openElements.pop();
+		if (p.openElements.currentTagId !== void 0 && NUMBERED_HEADERS$1.has(p.openElements.currentTagId)) p.openElements.pop();
 		p._insertElement(token, NS.HTML);
 	}
 	function preStartTagInBody(p, token) {
@@ -6068,15 +6492,11 @@ var docxHtml = (function(exports, docx, docx_math) {
 	}
 	function listItemStartTagInBody(p, token) {
 		p.framesetOk = false;
-		const tn = token.tagID;
-		for (let i = p.openElements.stackTop; i >= 0; i--) {
-			const elementId = p.openElements.tagIDs[i];
-			if (tn === TAG_ID.LI && elementId === TAG_ID.LI || (tn === TAG_ID.DD || tn === TAG_ID.DT) && (elementId === TAG_ID.DD || elementId === TAG_ID.DT)) {
-				p.openElements.generateImpliedEndTagsWithExclusion(elementId);
-				p.openElements.popUntilTagNamePopped(elementId);
-				break;
-			}
-			if (elementId !== TAG_ID.ADDRESS && elementId !== TAG_ID.DIV && elementId !== TAG_ID.P && p._isSpecialElement(p.openElements.items[i], elementId)) break;
+		const idx = token.tagID === TAG_ID.LI ? p.openElements.indexOfTopmost(TAG_ID.LI) : Math.max(p.openElements.indexOfTopmost(TAG_ID.DD), p.openElements.indexOfTopmost(TAG_ID.DT));
+		if (idx !== -1 && !p.openElements.hasListItemBoundaryAbove(idx)) {
+			const elementId = p.openElements.tagIDs[idx];
+			p.openElements.generateImpliedEndTagsWithExclusion(elementId);
+			p.openElements.popUntilTagNamePopped(elementId);
 		}
 		if (p.openElements.hasInButtonScope(TAG_ID.P)) p._closePElement();
 		p._insertElement(token, NS.HTML);
@@ -6470,17 +6890,11 @@ var docxHtml = (function(exports, docx, docx_math) {
 		p.framesetOk = false;
 	}
 	function genericEndTagInBody(p, token) {
-		const tn = token.tagName;
 		const tid = token.tagID;
-		for (let i = p.openElements.stackTop; i > 0; i--) {
-			const element = p.openElements.items[i];
-			const elementId = p.openElements.tagIDs[i];
-			if (tid === elementId && p.treeAdapter.getNamespaceURI(element) === NS.HTML && (tid !== TAG_ID.UNKNOWN || p.treeAdapter.getTagName(element) === tn)) {
-				p.openElements.generateImpliedEndTagsWithExclusion(tid);
-				if (p.openElements.stackTop >= i) p.openElements.shortenToLength(i);
-				break;
-			}
-			if (p._isSpecialElement(element, elementId)) break;
+		const i = tid === TAG_ID.UNKNOWN ? p.openElements.indexOfTopmostByName(NS.HTML, token.tagName) : p.openElements.indexOfTopmost(tid);
+		if (i > 0 && !p.openElements.hasSpecialElementAbove(i)) {
+			p.openElements.generateImpliedEndTagsWithExclusion(tid);
+			if (p.openElements.stackTop >= i) p.openElements.shortenToLength(i);
 		}
 	}
 	function endTagInBody(p, token) {
@@ -7017,7 +7431,7 @@ var docxHtml = (function(exports, docx, docx_math) {
 	function endTagInSelect(p, token) {
 		switch (token.tagID) {
 			case TAG_ID.OPTGROUP:
-				if (p.openElements.stackTop > 0 && p.openElements.currentTagId === TAG_ID.OPTION && p.openElements.tagIDs[p.openElements.stackTop - 1] === TAG_ID.OPTGROUP) p.openElements.pop();
+				if (p.openElements.stackTop > 0 && p.openElements.currentTagId === TAG_ID.OPTION && p.openElements.tagIDs[p.openElements.slotBelow(p.openElements.stackTop)] === TAG_ID.OPTGROUP) p.openElements.pop();
 				if (p.openElements.currentTagId === TAG_ID.OPTGROUP) p.openElements.pop();
 				break;
 			case TAG_ID.OPTION:
@@ -7069,28 +7483,28 @@ var docxHtml = (function(exports, docx, docx_math) {
 			case TAG_ID.TBODY:
 			case TAG_ID.TFOOT:
 			case TAG_ID.THEAD:
-				p.tmplInsertionModeStack[0] = InsertionMode.IN_TABLE;
+				p.tmplInsertionModeStack[p.tmplInsertionModeStack.length - 1] = InsertionMode.IN_TABLE;
 				p.insertionMode = InsertionMode.IN_TABLE;
 				startTagInTable(p, token);
 				break;
 			case TAG_ID.COL:
-				p.tmplInsertionModeStack[0] = InsertionMode.IN_COLUMN_GROUP;
+				p.tmplInsertionModeStack[p.tmplInsertionModeStack.length - 1] = InsertionMode.IN_COLUMN_GROUP;
 				p.insertionMode = InsertionMode.IN_COLUMN_GROUP;
 				startTagInColumnGroup(p, token);
 				break;
 			case TAG_ID.TR:
-				p.tmplInsertionModeStack[0] = InsertionMode.IN_TABLE_BODY;
+				p.tmplInsertionModeStack[p.tmplInsertionModeStack.length - 1] = InsertionMode.IN_TABLE_BODY;
 				p.insertionMode = InsertionMode.IN_TABLE_BODY;
 				startTagInTableBody(p, token);
 				break;
 			case TAG_ID.TD:
 			case TAG_ID.TH:
-				p.tmplInsertionModeStack[0] = InsertionMode.IN_ROW;
+				p.tmplInsertionModeStack[p.tmplInsertionModeStack.length - 1] = InsertionMode.IN_ROW;
 				p.insertionMode = InsertionMode.IN_ROW;
 				startTagInRow(p, token);
 				break;
 			default:
-				p.tmplInsertionModeStack[0] = InsertionMode.IN_BODY;
+				p.tmplInsertionModeStack[p.tmplInsertionModeStack.length - 1] = InsertionMode.IN_BODY;
 				p.insertionMode = InsertionMode.IN_BODY;
 				startTagInBody(p, token);
 		}
@@ -7100,9 +7514,11 @@ var docxHtml = (function(exports, docx, docx_math) {
 	}
 	function eofInTemplate(p, token) {
 		if (p.openElements.tmplCount > 0) {
-			p.openElements.popUntilTagNamePopped(TAG_ID.TEMPLATE);
-			p.activeFormattingElements.clearToLastMarker();
-			p.tmplInsertionModeStack.shift();
+			do {
+				p.openElements.popUntilTagNamePopped(TAG_ID.TEMPLATE);
+				p.activeFormattingElements.clearToLastMarker();
+				p.tmplInsertionModeStack.pop();
+			} while (p.openElements.tmplCount > 0);
 			p._resetInsertionMode();
 			p.onEof(token);
 		} else stopParsing(p, token);
@@ -7209,19 +7625,15 @@ var docxHtml = (function(exports, docx, docx_math) {
 			p._endTagOutsideForeignContent(token);
 			return;
 		}
-		for (let i = p.openElements.stackTop; i > 0; i--) {
-			const element = p.openElements.items[i];
-			if (p.treeAdapter.getNamespaceURI(element) === NS.HTML) {
-				p._endTagOutsideForeignContent(token);
-				break;
-			}
-			const tagName = p.treeAdapter.getTagName(element);
-			if (tagName.toLowerCase() === token.tagName) {
-				token.tagName = tagName;
-				p.openElements.shortenToLength(i);
-				break;
-			}
-		}
+		if (p.openElements.stackTop === 0) return;
+		const { tagName } = token;
+		const adjustedTagName = SVG_TAG_NAMES_ADJUSTMENT_MAP.get(tagName);
+		const contextNs = p.fragmentContext ? p.treeAdapter.getNamespaceURI(p.fragmentContext) : NS.HTML;
+		const i = Math.max(p.openElements.indexOfTopmostByName(NS.SVG, tagName), p.openElements.indexOfTopmostByName(NS.MATHML, tagName), adjustedTagName === void 0 ? -1 : p.openElements.indexOfTopmostByName(NS.SVG, adjustedTagName), contextNs === NS.HTML || contextNs === NS.SVG || contextNs === NS.MATHML ? -1 : p.openElements.indexOfTopmostByName(contextNs, tagName));
+		if (i > p.openElements.indexOfTopmostHtmlElement()) {
+			token.tagName = p.treeAdapter.getTagName(p.openElements.items[i]);
+			p.openElements.shortenToLength(i);
+		} else p._endTagOutsideForeignContent(token);
 	}
 	TAG_NAMES.AREA, TAG_NAMES.BASE, TAG_NAMES.BASEFONT, TAG_NAMES.BGSOUND, TAG_NAMES.BR, TAG_NAMES.COL, TAG_NAMES.EMBED, TAG_NAMES.FRAME, TAG_NAMES.HR, TAG_NAMES.IMG, TAG_NAMES.INPUT, TAG_NAMES.KEYGEN, TAG_NAMES.LINK, TAG_NAMES.META, TAG_NAMES.PARAM, TAG_NAMES.SOURCE, TAG_NAMES.TRACK, TAG_NAMES.WBR;
 	// node_modules/parse5/dist/index.js
