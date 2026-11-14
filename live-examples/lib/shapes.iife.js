@@ -218,6 +218,1063 @@ var docxShapes = (function(exports, docx) {
 			children: [...children]
 		})]
 	});
+	// \0@oxc-project+runtime@0.156.0/helpers/esm/typeof.js
+	function _typeof(o) {
+		"@babel/helpers - typeof";
+		return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o) {
+			return typeof o;
+		} : function(o) {
+			return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o;
+		}, _typeof(o);
+	}
+	// \0@oxc-project+runtime@0.156.0/helpers/esm/toPrimitive.js
+	function toPrimitive(t, r) {
+		if ("object" != _typeof(t) || !t) return t;
+		var e = t[Symbol.toPrimitive];
+		if (void 0 !== e) {
+			var i = e.call(t, r || "default");
+			if ("object" != _typeof(i)) return i;
+			throw new TypeError("@@toPrimitive must return a primitive value.");
+		}
+		return ("string" === r ? String : Number)(t);
+	}
+	// \0@oxc-project+runtime@0.156.0/helpers/esm/toPropertyKey.js
+	function toPropertyKey(t) {
+		var i = toPrimitive(t, "string");
+		return "symbol" == _typeof(i) ? i : i + "";
+	}
+	// \0@oxc-project+runtime@0.156.0/helpers/esm/defineProperty.js
+	function _defineProperty(e, r, t) {
+		return (r = toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
+			value: t,
+			enumerable: !0,
+			configurable: !0,
+			writable: !0
+		}) : e[r] = t, e;
+	}
+	// src/shapes/drawing/text-flow.ts
+	/**
+	* Text that flows from one shape to the next (`wps:txbx` with an `id`, and `wps:linkedTxbx`), as in a newsletter whose
+	* article continues in another text box.
+	*
+	* Reference: ECMA-376 Part 1, 20.4.2.37 txbx (Textual Contents of Shape) and 20.4.2.18 linkedTxbx (Linked Textbox)
+	*
+	* @module
+	*/
+	var NO_DOCUMENT = {};
+	var flows = /* @__PURE__ */ new WeakMap();
+	/**
+	* The text box of a shape in a text flow. The first shape of the flow written in a document has the text, and the
+	* shapes after it continue it, in the order they are written. A document numbers its flows from 1, in the order they
+	* are first written, so writing a document twice writes the same flows.
+	*/
+	var TextFlowBox = class extends docx.XmlComponent {
+		constructor(flow, children) {
+			super("wps:txbx");
+			_defineProperty(this, "flow", void 0);
+			_defineProperty(this, "children", void 0);
+			this.flow = flow;
+			this.children = children;
+		}
+		prepForXml(context) {
+			var _context$file, _flows$get, _byName$get;
+			const document = (_context$file = context.file) !== null && _context$file !== void 0 ? _context$file : NO_DOCUMENT;
+			const byName = (_flows$get = flows.get(document)) !== null && _flows$get !== void 0 ? _flows$get : /* @__PURE__ */ new Map();
+			const shapes = (_byName$get = byName.get(this.flow)) !== null && _byName$get !== void 0 ? _byName$get : [];
+			const written = shapes.includes(this) ? byName : new Map([...byName, [this.flow, [...shapes, this]]]);
+			flows.set(document, written);
+			const id = [...written.keys()].indexOf(this.flow) + 1;
+			const sequence = written.get(this.flow).indexOf(this);
+			return (sequence === 0 ? new docx.BuilderElement({
+				name: "wps:txbx",
+				attributes: { id: {
+					key: "id",
+					value: id
+				} },
+				children: [new docx.BuilderElement({
+					name: "w:txbxContent",
+					children: this.children.length > 0 ? [...this.children] : [new docx.Paragraph({})]
+				})]
+			}) : new docx.BuilderElement({
+				name: "wps:linkedTxbx",
+				attributes: {
+					id: {
+						key: "id",
+						value: id
+					},
+					sequence: {
+						key: "seq",
+						value: sequence
+					}
+				}
+			})).prepForXml(context);
+		}
+	};
+	/**
+	* Creates the text box of a shape in a text flow: the flow's text in the first shape of the flow in the document, and
+	* a link to it in the shapes after it.
+	*
+	* @param flow - The flow's name
+	* @param children - The flow's paragraphs, which the first shape of the flow writes, or an empty paragraph if there are none
+	*/
+	var createTextFlowBox = (flow, children) => new TextFlowBox(flow, children);
+	// \0@oxc-project+runtime@0.156.0/helpers/esm/objectSpread2.js
+	function ownKeys(e, r) {
+		var t = Object.keys(e);
+		if (Object.getOwnPropertySymbols) {
+			var o = Object.getOwnPropertySymbols(e);
+			r && (o = o.filter(function(r) {
+				return Object.getOwnPropertyDescriptor(e, r).enumerable;
+			})), t.push.apply(t, o);
+		}
+		return t;
+	}
+	function _objectSpread2(e) {
+		for (var r = 1; r < arguments.length; r++) {
+			var t = null != arguments[r] ? arguments[r] : {};
+			r % 2 ? ownKeys(Object(t), !0).forEach(function(r) {
+				_defineProperty(e, r, t[r]);
+			}) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function(r) {
+				Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r));
+			});
+		}
+		return e;
+	}
+	// src/shapes/custom-geometry/svg-path.ts
+	var ARGUMENT_COUNTS = {
+		m: 2,
+		l: 2,
+		h: 1,
+		v: 1,
+		c: 6,
+		s: 4,
+		q: 4,
+		t: 2,
+		a: 7,
+		z: 0
+	};
+	var NUMBER = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/;
+	/**
+	* Splits SVG path data into commands and their arguments.
+	*
+	* @throws If the path doesn't start with a move, has an unknown command, or a command has the wrong number of arguments
+	*/
+	var tokenize$1 = (path) => {
+		const commands = [];
+		let index = 0;
+		let letter;
+		const skipSeparators = () => {
+			while (index < path.length && /[\s,]/.test(path[index])) index++;
+		};
+		const readNumber = () => {
+			skipSeparators();
+			const match = NUMBER.exec(path.slice(index));
+			if (!match) throw new Error(`Invalid path "${path}". Expected a number at position ${index}`);
+			index += match[0].length;
+			return Number(match[0]);
+		};
+		const readFlag = () => {
+			skipSeparators();
+			const flag = path[index];
+			if (flag !== "0" && flag !== "1") throw new Error(`Invalid path "${path}". Expected an arc flag of 0 or 1 at position ${index}`);
+			index++;
+			return Number(flag);
+		};
+		skipSeparators();
+		while (index < path.length) {
+			const character = path[index];
+			if (/[a-z]/i.test(character)) {
+				if (ARGUMENT_COUNTS[character.toLowerCase()] === void 0) throw new Error(`Invalid path "${path}". Unsupported command "${character}"`);
+				if (letter === void 0 && character.toLowerCase() !== "m") throw new Error(`Invalid path "${path}". A path must start with a move (M)`);
+				letter = character;
+				index++;
+			} else if (letter === void 0) throw new Error(`Invalid path "${path}". A path must start with a move (M)`);
+			else if (letter.toLowerCase() === "z") throw new Error(`Invalid path "${path}". Expected a command at position ${index}`);
+			const command = letter.toLowerCase();
+			const args = command === "a" ? [
+				readNumber(),
+				readNumber(),
+				readNumber(),
+				readFlag(),
+				readFlag(),
+				readNumber(),
+				readNumber()
+			] : Array.from({ length: ARGUMENT_COUNTS[command] }, readNumber);
+			commands.push({
+				letter,
+				args
+			});
+			if (command === "m") letter = letter === "m" ? "l" : "L";
+			skipSeparators();
+		}
+		return commands;
+	};
+	var angleBetween$1 = (ux, uy, vx, vy) => Math.atan2(ux * vy - uy * vx, ux * vx + uy * vy);
+	/**
+	* Converts an SVG arc, given by its end points, to centre form.
+	*
+	* Reference: https://www.w3.org/TR/SVG11/implnote.html#ArcConversionEndpointToCenter
+	*
+	* @returns Nothing when the arc is a straight line (a radius is 0) or has no length
+	*/
+	var toEllipticalArc = (from, to, radiusX, radiusY, rotationDegrees, largeArc, sweep) => {
+		if (radiusX === 0 || radiusY === 0 || from.x === to.x && from.y === to.y) return;
+		const rotation = rotationDegrees * Math.PI / 180;
+		const cos = Math.cos(rotation);
+		const sin = Math.sin(rotation);
+		const dx = (from.x - to.x) / 2;
+		const dy = (from.y - to.y) / 2;
+		const x1 = cos * dx + sin * dy;
+		const y1 = -sin * dx + cos * dy;
+		const lambda = x1 * x1 / (radiusX * radiusX) + y1 * y1 / (radiusY * radiusY);
+		const scale = lambda > 1 ? Math.sqrt(lambda) : 1;
+		const rx = Math.abs(radiusX) * scale;
+		const ry = Math.abs(radiusY) * scale;
+		const numerator = rx * rx * ry * ry - rx * rx * y1 * y1 - ry * ry * x1 * x1;
+		const denominator = rx * rx * y1 * y1 + ry * ry * x1 * x1;
+		const coefficient = (largeArc === sweep ? -1 : 1) * Math.sqrt(Math.max(0, numerator / denominator));
+		const cx1 = coefficient * rx * y1 / ry;
+		const cy1 = -coefficient * ry * x1 / rx;
+		const startAngle = angleBetween$1(1, 0, (x1 - cx1) / rx, (y1 - cy1) / ry);
+		const turn = angleBetween$1((x1 - cx1) / rx, (y1 - cy1) / ry, (-x1 - cx1) / rx, (-y1 - cy1) / ry);
+		const sweepAngle = sweep && turn < 0 ? turn + 2 * Math.PI : !sweep && turn > 0 ? turn - 2 * Math.PI : turn;
+		return {
+			centre: {
+				x: cos * cx1 - sin * cy1 + (from.x + to.x) / 2,
+				y: sin * cx1 + cos * cy1 + (from.y + to.y) / 2
+			},
+			radiusX: rx,
+			radiusY: ry,
+			rotation,
+			startAngle,
+			sweepAngle
+		};
+	};
+	/**
+	* The point on an arc's ellipse at an angle along it, measured as for `startAngle`.
+	*/
+	var pointOnArc = ({ centre, radiusX, radiusY, rotation }, angle) => ({
+		x: centre.x + radiusX * Math.cos(angle) * Math.cos(rotation) - radiusY * Math.sin(angle) * Math.sin(rotation),
+		y: centre.y + radiusX * Math.cos(angle) * Math.sin(rotation) + radiusY * Math.sin(angle) * Math.cos(rotation)
+	});
+	var readCommand = (state, { letter, args }) => {
+		const { current } = state;
+		const relative = letter === letter.toLowerCase();
+		const point = (x, y) => relative ? {
+			x: current.x + x,
+			y: current.y + y
+		} : {
+			x,
+			y
+		};
+		const reflect = (control) => control ? {
+			x: 2 * current.x - control.x,
+			y: 2 * current.y - control.y
+		} : current;
+		const add = (segment, to, controls = {}) => _objectSpread2({
+			segments: [...state.segments, segment],
+			current: to,
+			subpathStart: state.subpathStart
+		}, controls);
+		switch (letter.toLowerCase()) {
+			case "m": {
+				const to = point(args[0], args[1]);
+				return _objectSpread2(_objectSpread2({}, add({
+					type: "move",
+					to
+				}, to)), {}, { subpathStart: to });
+			}
+			case "l": {
+				const to = point(args[0], args[1]);
+				return add({
+					type: "line",
+					to
+				}, to);
+			}
+			case "h": {
+				const to = {
+					x: relative ? current.x + args[0] : args[0],
+					y: current.y
+				};
+				return add({
+					type: "line",
+					to
+				}, to);
+			}
+			case "v": {
+				const to = {
+					x: current.x,
+					y: relative ? current.y + args[0] : args[0]
+				};
+				return add({
+					type: "line",
+					to
+				}, to);
+			}
+			case "c":
+			case "s": {
+				const smooth = letter.toLowerCase() === "s";
+				const control1 = smooth ? reflect(state.lastCubicControl) : point(args[0], args[1]);
+				const [x2, y2, x, y] = smooth ? args : args.slice(2);
+				const control2 = point(x2, y2);
+				const to = point(x, y);
+				return add({
+					type: "cubic",
+					control1,
+					control2,
+					to
+				}, to, { lastCubicControl: control2 });
+			}
+			case "q":
+			case "t": {
+				const smooth = letter.toLowerCase() === "t";
+				const control = smooth ? reflect(state.lastQuadraticControl) : point(args[0], args[1]);
+				const to = smooth ? point(args[0], args[1]) : point(args[2], args[3]);
+				return add({
+					type: "quadratic",
+					control,
+					to
+				}, to, { lastQuadraticControl: control });
+			}
+			case "a": {
+				const to = point(args[5], args[6]);
+				const arc = toEllipticalArc(current, to, args[0], args[1], args[2], args[3] === 1, args[4] === 1);
+				return add(arc ? {
+					type: "arc",
+					from: current,
+					to,
+					arc
+				} : {
+					type: "line",
+					to
+				}, to);
+			}
+			default: return add({ type: "close" }, state.subpathStart);
+		}
+	};
+	/**
+	* Reads SVG path data into segments with absolute coordinates. Horizontal and vertical lines become lines,
+	* smooth curves become curves with both control points, and arcs are given in centre form.
+	*
+	* @throws If the path is empty or not valid path data
+	*/
+	var parseSvgPath = (path) => {
+		const commands = tokenize$1(path);
+		if (commands.length === 0) throw new Error("Invalid path. Expected at least a move (M)");
+		const origin = {
+			x: 0,
+			y: 0
+		};
+		return commands.reduce(readCommand, {
+			segments: [],
+			current: origin,
+			subpathStart: origin
+		}).segments;
+	};
+	var bezierTurningPoints = (coefficients) => {
+		const [a, b, c] = coefficients;
+		if (Math.abs(a) < 1e-12) return Math.abs(b) < 1e-12 ? [] : [-c / b];
+		const discriminant = b * b - 4 * a * c;
+		if (discriminant < 0) return [];
+		const root = Math.sqrt(discriminant);
+		return [(-b + root) / (2 * a), (-b - root) / (2 * a)];
+	};
+	/**
+	* A cubic Bézier curve's position along one axis at `t`, from 0 to 1.
+	*/
+	var cubicAt = (p0, p1, p2, p3, t) => Math.pow(1 - t, 3) * p0 + 3 * Math.pow(1 - t, 2) * t * p1 + 3 * (1 - t) * t * t * p2 + Math.pow(t, 3) * p3;
+	/**
+	* A quadratic Bézier curve's position along one axis at `t`, from 0 to 1.
+	*/
+	var quadraticAt = (p0, p1, p2, t) => Math.pow(1 - t, 2) * p0 + 2 * (1 - t) * t * p1 + t * t * p2;
+	var isWithin = (t) => t > 0 && t < 1;
+	var isOnArc = ({ startAngle, sweepAngle }, angle) => {
+		const fullTurn = 2 * Math.PI;
+		return ((sweepAngle >= 0 ? angle - startAngle : startAngle - angle) % fullTurn + fullTurn) % fullTurn <= Math.abs(sweepAngle);
+	};
+	/**
+	* The points on a segment furthest left, right, up and down, other than where it starts.
+	*/
+	var extremePoints = (segment, from) => {
+		switch (segment.type) {
+			case "cubic": {
+				const { control1: c1, control2: c2, to } = segment;
+				const turning = (p0, p1, p2, p3) => bezierTurningPoints([
+					3 * (-p0 + 3 * p1 - 3 * p2 + p3),
+					6 * (p0 - 2 * p1 + p2),
+					3 * (p1 - p0)
+				]);
+				return [...turning(from.x, c1.x, c2.x, to.x), ...turning(from.y, c1.y, c2.y, to.y)].filter(isWithin).map((t) => ({
+					x: cubicAt(from.x, c1.x, c2.x, to.x, t),
+					y: cubicAt(from.y, c1.y, c2.y, to.y, t)
+				})).concat([to]);
+			}
+			case "quadratic": {
+				const { control, to } = segment;
+				const turning = (p0, p1, p2) => bezierTurningPoints([
+					0,
+					2 * (p0 - 2 * p1 + p2),
+					2 * (p1 - p0)
+				]);
+				return [...turning(from.x, control.x, to.x), ...turning(from.y, control.y, to.y)].filter(isWithin).map((t) => ({
+					x: quadraticAt(from.x, control.x, to.x, t),
+					y: quadraticAt(from.y, control.y, to.y, t)
+				})).concat([to]);
+			}
+			case "arc": {
+				const { arc, to } = segment;
+				const { radiusX, radiusY, rotation } = arc;
+				const xAngle = Math.atan2(-radiusY * Math.sin(rotation), radiusX * Math.cos(rotation));
+				const yAngle = Math.atan2(radiusY * Math.cos(rotation), radiusX * Math.sin(rotation));
+				return [
+					xAngle,
+					xAngle + Math.PI,
+					yAngle,
+					yAngle + Math.PI
+				].filter((angle) => isOnArc(arc, angle)).map((angle) => pointOnArc(arc, angle)).concat([to]);
+			}
+			case "close": return [];
+			default: return [segment.to];
+		}
+	};
+	/**
+	* The box around a path, reaching the furthest points of its curves rather than their control points.
+	*/
+	var getPathBounds = (segments) => {
+		let current = {
+			x: 0,
+			y: 0
+		};
+		let subpathStart = current;
+		const points = segments.flatMap((segment) => {
+			const extremes = extremePoints(segment, current);
+			if (segment.type === "close") current = subpathStart;
+			else {
+				current = segment.to;
+				if (segment.type === "move") subpathStart = current;
+			}
+			return extremes;
+		});
+		return {
+			left: Math.min(...points.map(({ x }) => x)),
+			top: Math.min(...points.map(({ y }) => y)),
+			right: Math.max(...points.map(({ x }) => x)),
+			bottom: Math.max(...points.map(({ y }) => y))
+		};
+	};
+	// src/shapes/custom-geometry/path-holes.ts
+	/**
+	* Holes in custom shapes: a closed part of a path inside another part is a hole in it, and a part inside a hole is
+	* filled again.
+	*
+	* Applications fill a path by one of two rules. By the even-odd rule, as LibreOffice fills, a part inside another is
+	* always a hole. By the non-zero rule, it is a hole only if it goes round the other way. So each closed part is turned
+	* round, where it needs to be, to go the other way to the part it is in, and the rules agree.
+	*
+	* @module
+	*/
+	var CURVE_STEPS = 8;
+	var steps = (point) => Array.from({ length: CURVE_STEPS }, (_, index) => point((index + 1) / CURVE_STEPS));
+	/**
+	* The points a segment passes through, after where it starts. A close goes back to the start of the part.
+	*/
+	var outlineOf = (segment, from, start) => {
+		switch (segment.type) {
+			case "cubic": {
+				const { control1: c1, control2: c2, to } = segment;
+				return steps((t) => ({
+					x: cubicAt(from.x, c1.x, c2.x, to.x, t),
+					y: cubicAt(from.y, c1.y, c2.y, to.y, t)
+				}));
+			}
+			case "quadratic": {
+				const { control, to } = segment;
+				return steps((t) => ({
+					x: quadraticAt(from.x, control.x, to.x, t),
+					y: quadraticAt(from.y, control.y, to.y, t)
+				}));
+			}
+			case "arc": {
+				const { arc } = segment;
+				return steps((t) => pointOnArc(arc, arc.startAngle + arc.sweepAngle * t));
+			}
+			case "close": return [start];
+			default: return [segment.to];
+		}
+	};
+	var signedArea = (outline) => outline.reduce((total, point, index) => {
+		const next = outline[(index + 1) % outline.length];
+		return total + point.x * next.y - next.x * point.y;
+	}, 0);
+	var measurePart = (part) => {
+		const { start, segments } = part;
+		const outline = segments.reduce((points, segment) => [...points, ...outlineOf(segment, points[points.length - 1], start)], [start]);
+		const area = signedArea(outline);
+		return _objectSpread2(_objectSpread2({}, part), {}, {
+			outline,
+			turn: Math.abs(area) < 1e-9 ? 0 : Math.sign(area),
+			closed: segments.filter(({ type }) => type === "close").length === 1 && segments[segments.length - 1].type === "close"
+		});
+	};
+	/**
+	* Splits a path into its parts. A path starts with a move, and each move starts a part.
+	*/
+	var splitParts = (segments) => segments.reduce((parts, segment) => {
+		if (segment.type === "move") return [...parts, {
+			start: segment.to,
+			segments: []
+		}];
+		const last = parts[parts.length - 1];
+		return [...parts.slice(0, -1), _objectSpread2(_objectSpread2({}, last), {}, { segments: [...last.segments, segment] })];
+	}, []);
+	var isPointInside = ({ x, y }, outline) => outline.reduce((inside, point, index) => {
+		const previous = outline[(index + outline.length - 1) % outline.length];
+		return point.y > y !== previous.y > y && x < (previous.x - point.x) * (y - point.y) / (previous.y - point.y) + point.x ? !inside : inside;
+	}, false);
+	var isInside$1 = (part, other) => part.outline.filter((point) => isPointInside(point, other.outline)).length > part.outline.length / 2;
+	var hasEnd = (segment) => segment.type !== "close";
+	var reverseSegment = (segment, from) => {
+		switch (segment.type) {
+			case "cubic": return {
+				type: "cubic",
+				control1: segment.control2,
+				control2: segment.control1,
+				to: from
+			};
+			case "quadratic": return {
+				type: "quadratic",
+				control: segment.control,
+				to: from
+			};
+			case "arc": {
+				const { arc } = segment;
+				return {
+					type: "arc",
+					from: segment.to,
+					to: from,
+					arc: _objectSpread2(_objectSpread2({}, arc), {}, {
+						startAngle: arc.startAngle + arc.sweepAngle,
+						sweepAngle: -arc.sweepAngle
+					})
+				};
+			}
+			default: return {
+				type: "line",
+				to: from
+			};
+		}
+	};
+	/**
+	* A closed part drawn the other way round. It starts where it did, and each segment is drawn backwards.
+	*/
+	var reversePart = ({ start, segments }) => {
+		const drawn = segments.filter(hasEnd);
+		const starts = [start, ...drawn.map(({ to }) => to)];
+		const end = starts[starts.length - 1];
+		const closing = end.x === start.x && end.y === start.y ? [] : [{
+			type: "line",
+			to: end
+		}];
+		const backwards = drawn.reduceRight((result, segment, index) => [...result, reverseSegment(segment, starts[index])], []);
+		const ending = drawn[0].type === "line" ? backwards.slice(0, -1) : backwards;
+		return [
+			{
+				type: "move",
+				to: start
+			},
+			...closing,
+			...ending,
+			{ type: "close" }
+		];
+	};
+	/**
+	* Turns round the closed parts of a path that go the same way as the part they are directly inside, so that a part
+	* inside another is a hole in it whichever rule an application fills paths by. Parts that aren't inside another, and
+	* parts that aren't closed, are left as they are.
+	*
+	* @param segments - A path, starting with a move
+	*/
+	var orientParts = (segments) => {
+		const parts = splitParts(segments).map(measurePart);
+		const containers = parts.map((part, index) => parts.flatMap((other, otherIndex) => otherIndex !== index && other.turn !== 0 && isInside$1(part, other) ? [otherIndex] : []));
+		const depths = containers.map(({ length }) => length);
+		const turnOf = (index) => {
+			const parent = containers[index].filter((container) => depths[container] < depths[index]).reduce((deepest, container) => deepest === void 0 || depths[container] > depths[deepest] ? container : deepest, void 0);
+			return parent === void 0 || !parts[index].closed ? parts[index].turn : -turnOf(parent);
+		};
+		return parts.flatMap((part, index) => part.turn !== 0 && turnOf(index) !== part.turn ? reversePart(part) : [{
+			type: "move",
+			to: part.start
+		}, ...part.segments]);
+	};
+	// src/shapes/custom-geometry/custom-geometry.ts
+	/**
+	* Custom shapes (`a:custGeom`): polygons and freeform paths drawn from SVG path data.
+	*
+	* A shape has one path or several, each filled and outlined on its own. The box around all the paths is scaled to fill
+	* the shape, and they are written as DrawingML path commands. Every corner and end of the paths is a connection site,
+	* unless the shape gives its own connection points, so connectors can attach to custom shapes.
+	*
+	* Reference: ECMA-376 Part 1, 20.1.9.8 custGeom (Custom Geometry)
+	*
+	* @module
+	*/
+	var ANGLE_UNITS_PER_DEGREE$1 = 6e4;
+	var QUARTER_TURN = Math.PI / 2;
+	var toShape = ({ left, top, x, y }, point) => ({
+		x: (point.x - left) * x,
+		y: (point.y - top) * y
+	});
+	var round = ({ x, y }) => ({
+		x: Math.round(x),
+		y: Math.round(y)
+	});
+	var degrees$1 = (radians) => radians * 180 / Math.PI;
+	var isMultipleOf = (value, step) => {
+		const remainder = Math.abs(value % step);
+		return remainder < 1e-9 || step - remainder < 1e-9;
+	};
+	/**
+	* Splits an arc into cubic Bézier curves of at most a quarter turn each, for arcs DrawingML can't draw directly.
+	*/
+	var arcToCubics = (arc, scale) => {
+		const { radiusX, radiusY, rotation, startAngle, sweepAngle } = arc;
+		const count = Math.ceil(Math.abs(sweepAngle) / QUARTER_TURN - 1e-9);
+		const step = sweepAngle / count;
+		const handle = 4 / 3 * Math.tan(step / 4);
+		const tangent = (angle) => ({
+			x: -radiusX * Math.sin(angle) * Math.cos(rotation) - radiusY * Math.cos(angle) * Math.sin(rotation),
+			y: -radiusX * Math.sin(angle) * Math.sin(rotation) + radiusY * Math.cos(angle) * Math.cos(rotation)
+		});
+		return Array.from({ length: count }, (_, index) => {
+			const from = startAngle + step * index;
+			const to = from + step;
+			const start = pointOnArc(arc, from);
+			const end = pointOnArc(arc, to);
+			const startTangent = tangent(from);
+			const endTangent = tangent(to);
+			return {
+				type: "cubic",
+				points: [
+					round(toShape(scale, {
+						x: start.x + handle * startTangent.x,
+						y: start.y + handle * startTangent.y
+					})),
+					round(toShape(scale, {
+						x: end.x - handle * endTangent.x,
+						y: end.y - handle * endTangent.y
+					})),
+					round(toShape(scale, end))
+				]
+			};
+		});
+	};
+	/**
+	* Converts an arc to DrawingML. An arc of an ellipse that is upright once scaled to the shape is written as an `arcTo`,
+	* whose angles are the directions of its ends from the ellipse's centre. Other arcs are drawn with Bézier curves.
+	*/
+	var convertArc = (to, arc, scale) => {
+		if (scale.x === 0 || scale.y === 0) return [{
+			type: "line",
+			to: round(toShape(scale, to))
+		}];
+		const isCircle = Math.abs(arc.radiusX - arc.radiusY) < 1e-9 && Math.abs(scale.x - scale.y) < 1e-9;
+		if (!isCircle && !isMultipleOf(arc.rotation, QUARTER_TURN)) return arcToCubics(arc, scale);
+		const turned = !isCircle && !isMultipleOf(arc.rotation, Math.PI);
+		const widthRadius = (turned ? arc.radiusY : arc.radiusX) * scale.x;
+		const heightRadius = (turned ? arc.radiusX : arc.radiusY) * scale.y;
+		const direction = (angle) => {
+			const difference = Math.atan2(heightRadius * Math.sin(angle), widthRadius * Math.cos(angle)) - angle;
+			return angle + difference - 2 * Math.PI * Math.round(difference / (2 * Math.PI));
+		};
+		const start = direction(arc.startAngle + arc.rotation);
+		const end = direction(arc.startAngle + arc.rotation + arc.sweepAngle);
+		return [{
+			type: "arc",
+			widthRadius: Math.round(widthRadius),
+			heightRadius: Math.round(heightRadius),
+			startAngle: Math.round((degrees$1(start) % 360 + 360) % 360 * ANGLE_UNITS_PER_DEGREE$1),
+			swingAngle: Math.round(degrees$1(end - start) * ANGLE_UNITS_PER_DEGREE$1)
+		}];
+	};
+	var convertSegment = (segment, scale) => {
+		switch (segment.type) {
+			case "move":
+			case "line": return [{
+				type: segment.type,
+				to: round(toShape(scale, segment.to))
+			}];
+			case "cubic": return [{
+				type: "cubic",
+				points: [
+					round(toShape(scale, segment.control1)),
+					round(toShape(scale, segment.control2)),
+					round(toShape(scale, segment.to))
+				]
+			}];
+			case "quadratic": return [{
+				type: "quadratic",
+				points: [round(toShape(scale, segment.control)), round(toShape(scale, segment.to))]
+			}];
+			case "arc": return convertArc(segment.to, segment.arc, scale);
+			default: return [segment];
+		}
+	};
+	/**
+	* The direction, right (0), down (90), left (180) or up (270), a point is furthest from the middle of a box in,
+	* measured as a share of the box's width and height. A point as far across as up or down is taken to be up or down.
+	*/
+	var outwardAngle = (x, y, width, height) => {
+		const across = width === 0 ? 0 : (x - width / 2) / width;
+		const down = height === 0 ? 0 : (y - height / 2) / height;
+		if (Math.abs(across) > Math.abs(down)) return across > 0 ? 0 : 180;
+		return down < 0 ? 270 : across === 0 && down === 0 ? 0 : 90;
+	};
+	/**
+	* The corners and ends of the paths: where each of their segments ends. A connector leaves each one in the direction,
+	* right, down, left or up, that it is furthest from the middle of the shape in.
+	*/
+	var findSites = (segments, scale, width, height) => {
+		const ends = segments.flatMap((segment) => segment.type === "close" ? [] : [round(toShape(scale, segment.to))]);
+		return ends.filter((point, index) => ends.findIndex(({ x, y }) => x === point.x && y === point.y) === index).map(({ x, y }) => ({
+			x,
+			y,
+			angle: outwardAngle(x, y, width, height)
+		}));
+	};
+	var SIDE_ANGLES$1 = {
+		right: 0,
+		bottom: 90,
+		left: 180,
+		top: 270
+	};
+	/**
+	* The shape's own connection points, scaled to the shape.
+	*
+	* @throws If a point isn't a pair of numbers, or its side isn't one of the four
+	*/
+	var connectionSites = (points, scale, width, height) => points.map((point) => {
+		const { x, y, side } = point;
+		if (!Number.isFinite(x) || !Number.isFinite(y) || side !== void 0 && SIDE_ANGLES$1[side] === void 0) throw new Error(`Invalid connection point ${JSON.stringify(point)}. Expected numbers x and y, and a side of top, right, bottom or left`);
+		const site = round(toShape(scale, {
+			x,
+			y
+		}));
+		return _objectSpread2(_objectSpread2({}, site), {}, { angle: side === void 0 ? outwardAngle(site.x, site.y, width, height) : SIDE_ANGLES$1[side] });
+	});
+	var PATH_FILLS = /* @__PURE__ */ new Map([
+		[true, "norm"],
+		[false, "none"],
+		["lighter", "lighten"],
+		["slightlyLighter", "lightenLess"],
+		["darker", "darken"],
+		["slightlyDarker", "darkenLess"]
+	]);
+	/**
+	* Reads a custom shape's paths. Parts of a path inside other parts are turned round to go the other way, so they are
+	* holes whichever way applications fill paths.
+	*
+	* @throws If there is no path, both `path` and `paths`, a path isn't valid SVG path data, or a fill isn't one of the choices
+	*/
+	var readPaths = ({ path, paths }) => {
+		if (path !== void 0 && paths !== void 0) throw new Error("Invalid custom shape. Expected path or paths, not both");
+		const options = paths !== null && paths !== void 0 ? paths : path === void 0 ? [] : [{ path }];
+		if (options.length === 0) throw new Error("Invalid custom shape. Expected a path, or at least one of paths");
+		return options.map(({ path: data, fill = true, line }) => {
+			const mode = PATH_FILLS.get(fill);
+			if (mode === void 0) throw new Error(`Invalid custom shape path fill "${fill}". Expected true, false, "lighter", "slightlyLighter", "darker" or "slightlyDarker"`);
+			return {
+				segments: orientParts(parseSvgPath(data)),
+				fill: mode,
+				stroke: line !== false
+			};
+		});
+	};
+	var unionOf = (bounds) => ({
+		left: Math.min(...bounds.map(({ left }) => left)),
+		top: Math.min(...bounds.map(({ top }) => top)),
+		right: Math.max(...bounds.map(({ right }) => right)),
+		bottom: Math.max(...bounds.map(({ bottom }) => bottom))
+	});
+	/**
+	* Where the text goes, scaled to the shape.
+	*
+	* @throws If the box's sides aren't numbers, or it is turned inside out
+	*/
+	var scaleTextArea = (textArea, scale) => {
+		const { left, top, right, bottom } = textArea;
+		if (![
+			left,
+			top,
+			right,
+			bottom
+		].every(Number.isFinite) || right < left || bottom < top) throw new Error(`Invalid text area ${JSON.stringify(textArea)}. Expected numbers left, top, right and bottom, with right at least left and bottom at least top`);
+		const topLeft = round(toShape(scale, {
+			x: left,
+			y: top
+		}));
+		const bottomRight = round(toShape(scale, {
+			x: right,
+			y: bottom
+		}));
+		return {
+			left: topLeft.x,
+			top: topLeft.y,
+			right: bottomRight.x,
+			bottom: bottomRight.y
+		};
+	};
+	/**
+	* Reads a custom shape's paths and scales them to the shape: the box around them is stretched to fill the shape's box.
+	* The text area and connection points are scaled with them.
+	*
+	* @param width - The shape's width in EMUs
+	* @param height - The shape's height in EMUs
+	* @throws If the paths, text area or connection points aren't valid
+	*/
+	var createCustomGeometryData = (options, width, height) => {
+		const paths = readPaths(options);
+		const bounds = unionOf(paths.map(({ segments }) => getPathBounds(segments)));
+		const pathWidth = bounds.right - bounds.left;
+		const pathHeight = bounds.bottom - bounds.top;
+		const x = pathWidth > 0 ? width / pathWidth : 0;
+		const y = pathHeight > 0 ? height / pathHeight : 0;
+		const scale = {
+			left: bounds.left,
+			top: bounds.top,
+			x,
+			y
+		};
+		return {
+			width,
+			height,
+			paths: paths.map(({ segments, fill, stroke }) => ({
+				segments: segments.flatMap((segment) => convertSegment(segment, scale)),
+				fill,
+				stroke
+			})),
+			sites: options.connectionPoints === void 0 ? findSites(paths.flatMap(({ segments }) => segments), scale, width, height) : connectionSites(options.connectionPoints, scale, width, height),
+			textArea: options.textArea && scaleTextArea(options.textArea, scale)
+		};
+	};
+	/**
+	* The box a custom shape of the given size writes its text in: its text area, or the whole shape.
+	*
+	* @param width - The shape's width in EMUs
+	* @param height - The shape's height in EMUs
+	*/
+	var getCustomTextRectangle = (options, width, height) => {
+		var _ref;
+		return (_ref = options.textArea && createCustomGeometryData(options, width, height).textArea) !== null && _ref !== void 0 ? _ref : {
+			left: 0,
+			top: 0,
+			right: width,
+			bottom: height
+		};
+	};
+	var createPoint = ({ x, y }) => new docx.BuilderElement({
+		name: "a:pt",
+		attributes: {
+			x: {
+				key: "x",
+				value: x
+			},
+			y: {
+				key: "y",
+				value: y
+			}
+		}
+	});
+	var createPathSegment = (segment) => {
+		switch (segment.type) {
+			case "move": return new docx.BuilderElement({
+				name: "a:moveTo",
+				children: [createPoint(segment.to)]
+			});
+			case "line": return new docx.BuilderElement({
+				name: "a:lnTo",
+				children: [createPoint(segment.to)]
+			});
+			case "cubic": return new docx.BuilderElement({
+				name: "a:cubicBezTo",
+				children: segment.points.map(createPoint)
+			});
+			case "quadratic": return new docx.BuilderElement({
+				name: "a:quadBezTo",
+				children: segment.points.map(createPoint)
+			});
+			case "arc": return new docx.BuilderElement({
+				name: "a:arcTo",
+				attributes: {
+					widthRadius: {
+						key: "wR",
+						value: segment.widthRadius
+					},
+					heightRadius: {
+						key: "hR",
+						value: segment.heightRadius
+					},
+					startAngle: {
+						key: "stAng",
+						value: segment.startAngle
+					},
+					swingAngle: {
+						key: "swAng",
+						value: segment.swingAngle
+					}
+				}
+			});
+			default: return new docx.BuilderElement({ name: "a:close" });
+		}
+	};
+	/**
+	* A guide for a length across or down the shape that keeps its share of the shape's width or height when the shape is
+	* resized, as PowerPoint writes the points of freeforms: the length times `w` (or `h`), divided by the width (or height)
+	* it was worked out for.
+	*/
+	var shareGuide = (name, value, size, length) => ({
+		name,
+		formula: length === 0 ? `val ${value}` : `*/ ${value} ${size} ${length}`
+	});
+	var createGuide = ({ name, formula }) => new docx.BuilderElement({
+		name: "a:gd",
+		attributes: {
+			name: {
+				key: "name",
+				value: name
+			},
+			formula: {
+				key: "fmla",
+				value: formula
+			}
+		}
+	});
+	var siteGuides = (sites, width, height) => sites.flatMap(({ x, y }, index) => [shareGuide(`connsiteX${index}`, x, "w", width), shareGuide(`connsiteY${index}`, y, "h", height)]);
+	var createConnectionSite = ({ angle }, index) => new docx.BuilderElement({
+		name: "a:cxn",
+		attributes: { angle: {
+			key: "ang",
+			value: Math.round(angle * ANGLE_UNITS_PER_DEGREE$1)
+		} },
+		children: [new docx.BuilderElement({
+			name: "a:pos",
+			attributes: {
+				x: {
+					key: "x",
+					value: `connsiteX${index}`
+				},
+				y: {
+					key: "y",
+					value: `connsiteY${index}`
+				}
+			}
+		})]
+	});
+	var textAreaGuides = (textArea, width, height) => textArea === void 0 ? [] : [
+		shareGuide("textAreaLeft", textArea.left, "w", width),
+		shareGuide("textAreaTop", textArea.top, "h", height),
+		shareGuide("textAreaRight", textArea.right, "w", width),
+		shareGuide("textAreaBottom", textArea.bottom, "h", height)
+	];
+	var createPath = (path, width, height) => new docx.BuilderElement({
+		name: "a:path",
+		attributes: {
+			width: {
+				key: "w",
+				value: width
+			},
+			height: {
+				key: "h",
+				value: height
+			},
+			fill: {
+				key: "fill",
+				value: path.fill === "norm" ? void 0 : path.fill
+			},
+			stroke: {
+				key: "stroke",
+				value: path.stroke ? void 0 : false
+			}
+		},
+		children: path.segments.map(createPathSegment)
+	});
+	/**
+	* Creates an `a:custGeom` element for a custom shape.
+	*
+	* The connection sites and text area are guides that keep their share of the shape's width and height, so they stay
+	* in place when the shape is resized. Without a text area, the text uses the whole of the shape's box.
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:complexType name="CT_CustomGeometry2D">
+	*   <xsd:sequence>
+	*     <xsd:element name="avLst" type="CT_GeomGuideList" minOccurs="0" maxOccurs="1"/>
+	*     <xsd:element name="gdLst" type="CT_GeomGuideList" minOccurs="0" maxOccurs="1"/>
+	*     <xsd:element name="ahLst" type="CT_AdjustHandleList" minOccurs="0" maxOccurs="1"/>
+	*     <xsd:element name="cxnLst" type="CT_ConnectionSiteList" minOccurs="0" maxOccurs="1"/>
+	*     <xsd:element name="rect" type="CT_GeomRect" minOccurs="0" maxOccurs="1"/>
+	*     <xsd:element name="pathLst" type="CT_Path2DList" minOccurs="1" maxOccurs="1"/>
+	*   </xsd:sequence>
+	* </xsd:complexType>
+	* ```
+	*/
+	var createCustomGeometry = ({ width, height, paths, sites, textArea }) => new docx.BuilderElement({
+		name: "a:custGeom",
+		children: [
+			new docx.BuilderElement({ name: "a:avLst" }),
+			new docx.BuilderElement({
+				name: "a:gdLst",
+				children: [...siteGuides(sites, width, height), ...textAreaGuides(textArea, width, height)].map(createGuide)
+			}),
+			new docx.BuilderElement({ name: "a:ahLst" }),
+			new docx.BuilderElement({
+				name: "a:cxnLst",
+				children: sites.map(createConnectionSite)
+			}),
+			new docx.BuilderElement({
+				name: "a:rect",
+				attributes: textArea ? {
+					left: {
+						key: "l",
+						value: "textAreaLeft"
+					},
+					top: {
+						key: "t",
+						value: "textAreaTop"
+					},
+					right: {
+						key: "r",
+						value: "textAreaRight"
+					},
+					bottom: {
+						key: "b",
+						value: "textAreaBottom"
+					}
+				} : {
+					left: {
+						key: "l",
+						value: "l"
+					},
+					top: {
+						key: "t",
+						value: "t"
+					},
+					right: {
+						key: "r",
+						value: "r"
+					},
+					bottom: {
+						key: "b",
+						value: "b"
+					}
+				}
+			}),
+			new docx.BuilderElement({
+				name: "a:pathLst",
+				children: paths.map((path) => createPath(path, width, height))
+			})
+		]
+	});
 	// src/shapes/preset-shape/preset-shape-type.ts
 	/**
 	* Preset shape types for DrawingML shapes.
@@ -458,7 +1515,7 @@ var docxShapes = (function(exports, docx) {
 		guide,
 		factor: 1e3 * scale
 	});
-	var degrees$1 = (guide) => ({
+	var degrees = (guide) => ({
 		guide,
 		factor: 6e4
 	});
@@ -469,8 +1526,8 @@ var docxShapes = (function(exports, docx) {
 	});
 	var PRESET_SHAPE_ADJUSTMENTS = {
 		arc: {
-			startAngle: degrees$1("adj1"),
-			endAngle: degrees$1("adj2")
+			startAngle: degrees("adj1"),
+			endAngle: degrees("adj2")
 		},
 		bentArrow: {
 			shaftThickness: percent("adj1"),
@@ -517,22 +1574,22 @@ var docxShapes = (function(exports, docx) {
 		},
 		beveledRectangle: { bevelWidth: percent("adj") },
 		blockArc: {
-			startAngle: degrees$1("adj1"),
-			endAngle: degrees$1("adj2"),
+			startAngle: degrees("adj1"),
+			endAngle: degrees("adj2"),
 			thickness: percent("adj3")
 		},
 		bracePair: { curveRadius: percent("adj") },
 		bracketPair: { cornerRadius: percent("adj") },
 		chevron: { pointLength: percent("adj") },
 		chord: {
-			startAngle: degrees$1("adj1"),
-			endAngle: degrees$1("adj2")
+			startAngle: degrees("adj1"),
+			endAngle: degrees("adj2")
 		},
 		circularArrow: {
 			shaftThickness: percent("adj1"),
-			headAngle: degrees$1("adj2"),
-			endAngle: degrees$1("adj3"),
-			startAngle: degrees$1("adj4"),
+			headAngle: degrees("adj2"),
+			endAngle: degrees("adj3"),
+			startAngle: degrees("adj4"),
 			headWidth: percent("adj5", .5)
 		},
 		cloudCallout: {
@@ -693,9 +1750,9 @@ var docxShapes = (function(exports, docx) {
 		leftBracket: { cornerHeight: percent("adj") },
 		leftCircularArrow: {
 			shaftThickness: percent("adj1"),
-			headAngle: degrees$1("adj2"),
-			endAngle: degrees$1("adj3"),
-			startAngle: degrees$1("adj4"),
+			headAngle: degrees("adj2"),
+			endAngle: degrees("adj3"),
+			startAngle: degrees("adj4"),
 			headWidth: percent("adj5", .5)
 		},
 		leftRightArrow: {
@@ -710,9 +1767,9 @@ var docxShapes = (function(exports, docx) {
 		},
 		leftRightCircularArrow: {
 			shaftThickness: percent("adj1"),
-			headAngle: degrees$1("adj2"),
-			endAngle: degrees$1("adj3"),
-			startAngle: degrees$1("adj4"),
+			headAngle: degrees("adj2"),
+			endAngle: degrees("adj3"),
+			startAngle: degrees("adj4"),
 			headWidth: percent("adj5", .5)
 		},
 		leftRightRibbon: {
@@ -771,7 +1828,7 @@ var docxShapes = (function(exports, docx) {
 		mathMultiply: { thickness: percent("adj1") },
 		mathNotEqual: {
 			thickness: percent("adj1"),
-			slashAngle: degrees$1("adj2"),
+			slashAngle: degrees("adj2"),
 			gap: percent("adj3")
 		},
 		mathPlus: { thickness: percent("adj1") },
@@ -789,8 +1846,8 @@ var docxShapes = (function(exports, docx) {
 		parallelogram: { slant: percent("adj") },
 		pentagonArrow: { pointLength: percent("adj") },
 		pie: {
-			startAngle: degrees$1("adj1"),
-			endAngle: degrees$1("adj2")
+			startAngle: degrees("adj1"),
+			endAngle: degrees("adj2")
 		},
 		plaque: { cornerRadius: percent("adj") },
 		quadArrow: {
@@ -936,7 +1993,7 @@ var docxShapes = (function(exports, docx) {
 	*/
 	var EMUS_PER_POINT = 12700;
 	var MAX_POINTS = 1584;
-	var ANGLE_UNITS_PER_DEGREE$1 = 6e4;
+	var ANGLE_UNITS_PER_DEGREE = 6e4;
 	/**
 	* Checks that a percentage option is between 0 and 100 and returns it.
 	*
@@ -959,7 +2016,7 @@ var docxShapes = (function(exports, docx) {
 	* Converts an angle in degrees to an `ST_PositiveFixedAngle`: 60,000ths of a degree, from 0 up to (not including) 360 degrees.
 	* Negative angles and angles of a full turn or more are brought into that range.
 	*/
-	var positiveFixedAngle = (degrees) => Math.round((degrees % 360 + 360) % 360 * ANGLE_UNITS_PER_DEGREE$1) % (360 * ANGLE_UNITS_PER_DEGREE$1);
+	var positiveFixedAngle = (degrees) => Math.round((degrees % 360 + 360) % 360 * ANGLE_UNITS_PER_DEGREE) % (360 * ANGLE_UNITS_PER_DEGREE);
 	// src/shapes/preset-shape/shape-color.ts
 	/**
 	* Colours for shape fills and lines.
@@ -1340,62 +2397,6 @@ var docxShapes = (function(exports, docx) {
 			transformation
 		};
 	};
-	// \0@oxc-project+runtime@0.156.0/helpers/esm/typeof.js
-	function _typeof(o) {
-		"@babel/helpers - typeof";
-		return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o) {
-			return typeof o;
-		} : function(o) {
-			return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o;
-		}, _typeof(o);
-	}
-	// \0@oxc-project+runtime@0.156.0/helpers/esm/toPrimitive.js
-	function toPrimitive(t, r) {
-		if ("object" != _typeof(t) || !t) return t;
-		var e = t[Symbol.toPrimitive];
-		if (void 0 !== e) {
-			var i = e.call(t, r || "default");
-			if ("object" != _typeof(i)) return i;
-			throw new TypeError("@@toPrimitive must return a primitive value.");
-		}
-		return ("string" === r ? String : Number)(t);
-	}
-	// \0@oxc-project+runtime@0.156.0/helpers/esm/toPropertyKey.js
-	function toPropertyKey(t) {
-		var i = toPrimitive(t, "string");
-		return "symbol" == _typeof(i) ? i : i + "";
-	}
-	// \0@oxc-project+runtime@0.156.0/helpers/esm/defineProperty.js
-	function _defineProperty(e, r, t) {
-		return (r = toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
-			value: t,
-			enumerable: !0,
-			configurable: !0,
-			writable: !0
-		}) : e[r] = t, e;
-	}
-	// \0@oxc-project+runtime@0.156.0/helpers/esm/objectSpread2.js
-	function ownKeys(e, r) {
-		var t = Object.keys(e);
-		if (Object.getOwnPropertySymbols) {
-			var o = Object.getOwnPropertySymbols(e);
-			r && (o = o.filter(function(r) {
-				return Object.getOwnPropertyDescriptor(e, r).enumerable;
-			})), t.push.apply(t, o);
-		}
-		return t;
-	}
-	function _objectSpread2(e) {
-		for (var r = 1; r < arguments.length; r++) {
-			var t = null != arguments[r] ? arguments[r] : {};
-			r % 2 ? ownKeys(Object(t), !0).forEach(function(r) {
-				_defineProperty(e, r, t[r]);
-			}) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function(r) {
-				Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r));
-			});
-		}
-		return e;
-	}
 	// src/shapes/preset-shape/shape-fill.ts
 	/**
 	* Fills for preset shapes: none, solid, gradient, pattern or picture.
@@ -1886,941 +2887,6 @@ var docxShapes = (function(exports, docx) {
 		const factor = Math.max(arrowheadFactor(options.startArrow), arrowheadFactor(options.endArrow));
 		return Math.ceil(lineWidthEmus(options) * factor / 2);
 	};
-	// src/shapes/custom-geometry/svg-path.ts
-	var ARGUMENT_COUNTS = {
-		m: 2,
-		l: 2,
-		h: 1,
-		v: 1,
-		c: 6,
-		s: 4,
-		q: 4,
-		t: 2,
-		a: 7,
-		z: 0
-	};
-	var NUMBER = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/;
-	/**
-	* Splits SVG path data into commands and their arguments.
-	*
-	* @throws If the path doesn't start with a move, has an unknown command, or a command has the wrong number of arguments
-	*/
-	var tokenize$1 = (path) => {
-		const commands = [];
-		let index = 0;
-		let letter;
-		const skipSeparators = () => {
-			while (index < path.length && /[\s,]/.test(path[index])) index++;
-		};
-		const readNumber = () => {
-			skipSeparators();
-			const match = NUMBER.exec(path.slice(index));
-			if (!match) throw new Error(`Invalid path "${path}". Expected a number at position ${index}`);
-			index += match[0].length;
-			return Number(match[0]);
-		};
-		const readFlag = () => {
-			skipSeparators();
-			const flag = path[index];
-			if (flag !== "0" && flag !== "1") throw new Error(`Invalid path "${path}". Expected an arc flag of 0 or 1 at position ${index}`);
-			index++;
-			return Number(flag);
-		};
-		skipSeparators();
-		while (index < path.length) {
-			const character = path[index];
-			if (/[a-z]/i.test(character)) {
-				if (ARGUMENT_COUNTS[character.toLowerCase()] === void 0) throw new Error(`Invalid path "${path}". Unsupported command "${character}"`);
-				if (letter === void 0 && character.toLowerCase() !== "m") throw new Error(`Invalid path "${path}". A path must start with a move (M)`);
-				letter = character;
-				index++;
-			} else if (letter === void 0) throw new Error(`Invalid path "${path}". A path must start with a move (M)`);
-			else if (letter.toLowerCase() === "z") throw new Error(`Invalid path "${path}". Expected a command at position ${index}`);
-			const command = letter.toLowerCase();
-			const args = command === "a" ? [
-				readNumber(),
-				readNumber(),
-				readNumber(),
-				readFlag(),
-				readFlag(),
-				readNumber(),
-				readNumber()
-			] : Array.from({ length: ARGUMENT_COUNTS[command] }, readNumber);
-			commands.push({
-				letter,
-				args
-			});
-			if (command === "m") letter = letter === "m" ? "l" : "L";
-			skipSeparators();
-		}
-		return commands;
-	};
-	var angleBetween$1 = (ux, uy, vx, vy) => Math.atan2(ux * vy - uy * vx, ux * vx + uy * vy);
-	/**
-	* Converts an SVG arc, given by its end points, to centre form.
-	*
-	* Reference: https://www.w3.org/TR/SVG11/implnote.html#ArcConversionEndpointToCenter
-	*
-	* @returns Nothing when the arc is a straight line (a radius is 0) or has no length
-	*/
-	var toEllipticalArc = (from, to, radiusX, radiusY, rotationDegrees, largeArc, sweep) => {
-		if (radiusX === 0 || radiusY === 0 || from.x === to.x && from.y === to.y) return;
-		const rotation = rotationDegrees * Math.PI / 180;
-		const cos = Math.cos(rotation);
-		const sin = Math.sin(rotation);
-		const dx = (from.x - to.x) / 2;
-		const dy = (from.y - to.y) / 2;
-		const x1 = cos * dx + sin * dy;
-		const y1 = -sin * dx + cos * dy;
-		const lambda = x1 * x1 / (radiusX * radiusX) + y1 * y1 / (radiusY * radiusY);
-		const scale = lambda > 1 ? Math.sqrt(lambda) : 1;
-		const rx = Math.abs(radiusX) * scale;
-		const ry = Math.abs(radiusY) * scale;
-		const numerator = rx * rx * ry * ry - rx * rx * y1 * y1 - ry * ry * x1 * x1;
-		const denominator = rx * rx * y1 * y1 + ry * ry * x1 * x1;
-		const coefficient = (largeArc === sweep ? -1 : 1) * Math.sqrt(Math.max(0, numerator / denominator));
-		const cx1 = coefficient * rx * y1 / ry;
-		const cy1 = -coefficient * ry * x1 / rx;
-		const startAngle = angleBetween$1(1, 0, (x1 - cx1) / rx, (y1 - cy1) / ry);
-		const turn = angleBetween$1((x1 - cx1) / rx, (y1 - cy1) / ry, (-x1 - cx1) / rx, (-y1 - cy1) / ry);
-		const sweepAngle = sweep && turn < 0 ? turn + 2 * Math.PI : !sweep && turn > 0 ? turn - 2 * Math.PI : turn;
-		return {
-			centre: {
-				x: cos * cx1 - sin * cy1 + (from.x + to.x) / 2,
-				y: sin * cx1 + cos * cy1 + (from.y + to.y) / 2
-			},
-			radiusX: rx,
-			radiusY: ry,
-			rotation,
-			startAngle,
-			sweepAngle
-		};
-	};
-	/**
-	* The point on an arc's ellipse at an angle along it, measured as for `startAngle`.
-	*/
-	var pointOnArc = ({ centre, radiusX, radiusY, rotation }, angle) => ({
-		x: centre.x + radiusX * Math.cos(angle) * Math.cos(rotation) - radiusY * Math.sin(angle) * Math.sin(rotation),
-		y: centre.y + radiusX * Math.cos(angle) * Math.sin(rotation) + radiusY * Math.sin(angle) * Math.cos(rotation)
-	});
-	var readCommand = (state, { letter, args }) => {
-		const { current } = state;
-		const relative = letter === letter.toLowerCase();
-		const point = (x, y) => relative ? {
-			x: current.x + x,
-			y: current.y + y
-		} : {
-			x,
-			y
-		};
-		const reflect = (control) => control ? {
-			x: 2 * current.x - control.x,
-			y: 2 * current.y - control.y
-		} : current;
-		const add = (segment, to, controls = {}) => _objectSpread2({
-			segments: [...state.segments, segment],
-			current: to,
-			subpathStart: state.subpathStart
-		}, controls);
-		switch (letter.toLowerCase()) {
-			case "m": {
-				const to = point(args[0], args[1]);
-				return _objectSpread2(_objectSpread2({}, add({
-					type: "move",
-					to
-				}, to)), {}, { subpathStart: to });
-			}
-			case "l": {
-				const to = point(args[0], args[1]);
-				return add({
-					type: "line",
-					to
-				}, to);
-			}
-			case "h": {
-				const to = {
-					x: relative ? current.x + args[0] : args[0],
-					y: current.y
-				};
-				return add({
-					type: "line",
-					to
-				}, to);
-			}
-			case "v": {
-				const to = {
-					x: current.x,
-					y: relative ? current.y + args[0] : args[0]
-				};
-				return add({
-					type: "line",
-					to
-				}, to);
-			}
-			case "c":
-			case "s": {
-				const smooth = letter.toLowerCase() === "s";
-				const control1 = smooth ? reflect(state.lastCubicControl) : point(args[0], args[1]);
-				const [x2, y2, x, y] = smooth ? args : args.slice(2);
-				const control2 = point(x2, y2);
-				const to = point(x, y);
-				return add({
-					type: "cubic",
-					control1,
-					control2,
-					to
-				}, to, { lastCubicControl: control2 });
-			}
-			case "q":
-			case "t": {
-				const smooth = letter.toLowerCase() === "t";
-				const control = smooth ? reflect(state.lastQuadraticControl) : point(args[0], args[1]);
-				const to = smooth ? point(args[0], args[1]) : point(args[2], args[3]);
-				return add({
-					type: "quadratic",
-					control,
-					to
-				}, to, { lastQuadraticControl: control });
-			}
-			case "a": {
-				const to = point(args[5], args[6]);
-				const arc = toEllipticalArc(current, to, args[0], args[1], args[2], args[3] === 1, args[4] === 1);
-				return add(arc ? {
-					type: "arc",
-					from: current,
-					to,
-					arc
-				} : {
-					type: "line",
-					to
-				}, to);
-			}
-			default: return add({ type: "close" }, state.subpathStart);
-		}
-	};
-	/**
-	* Reads SVG path data into segments with absolute coordinates. Horizontal and vertical lines become lines,
-	* smooth curves become curves with both control points, and arcs are given in centre form.
-	*
-	* @throws If the path is empty or not valid path data
-	*/
-	var parseSvgPath = (path) => {
-		const commands = tokenize$1(path);
-		if (commands.length === 0) throw new Error("Invalid path. Expected at least a move (M)");
-		const origin = {
-			x: 0,
-			y: 0
-		};
-		return commands.reduce(readCommand, {
-			segments: [],
-			current: origin,
-			subpathStart: origin
-		}).segments;
-	};
-	var bezierTurningPoints = (coefficients) => {
-		const [a, b, c] = coefficients;
-		if (Math.abs(a) < 1e-12) return Math.abs(b) < 1e-12 ? [] : [-c / b];
-		const discriminant = b * b - 4 * a * c;
-		if (discriminant < 0) return [];
-		const root = Math.sqrt(discriminant);
-		return [(-b + root) / (2 * a), (-b - root) / (2 * a)];
-	};
-	/**
-	* A cubic Bézier curve's position along one axis at `t`, from 0 to 1.
-	*/
-	var cubicAt = (p0, p1, p2, p3, t) => Math.pow(1 - t, 3) * p0 + 3 * Math.pow(1 - t, 2) * t * p1 + 3 * (1 - t) * t * t * p2 + Math.pow(t, 3) * p3;
-	/**
-	* A quadratic Bézier curve's position along one axis at `t`, from 0 to 1.
-	*/
-	var quadraticAt = (p0, p1, p2, t) => Math.pow(1 - t, 2) * p0 + 2 * (1 - t) * t * p1 + t * t * p2;
-	var isWithin = (t) => t > 0 && t < 1;
-	var isOnArc = ({ startAngle, sweepAngle }, angle) => {
-		const fullTurn = 2 * Math.PI;
-		return ((sweepAngle >= 0 ? angle - startAngle : startAngle - angle) % fullTurn + fullTurn) % fullTurn <= Math.abs(sweepAngle);
-	};
-	/**
-	* The points on a segment furthest left, right, up and down, other than where it starts.
-	*/
-	var extremePoints = (segment, from) => {
-		switch (segment.type) {
-			case "cubic": {
-				const { control1: c1, control2: c2, to } = segment;
-				const turning = (p0, p1, p2, p3) => bezierTurningPoints([
-					3 * (-p0 + 3 * p1 - 3 * p2 + p3),
-					6 * (p0 - 2 * p1 + p2),
-					3 * (p1 - p0)
-				]);
-				return [...turning(from.x, c1.x, c2.x, to.x), ...turning(from.y, c1.y, c2.y, to.y)].filter(isWithin).map((t) => ({
-					x: cubicAt(from.x, c1.x, c2.x, to.x, t),
-					y: cubicAt(from.y, c1.y, c2.y, to.y, t)
-				})).concat([to]);
-			}
-			case "quadratic": {
-				const { control, to } = segment;
-				const turning = (p0, p1, p2) => bezierTurningPoints([
-					0,
-					2 * (p0 - 2 * p1 + p2),
-					2 * (p1 - p0)
-				]);
-				return [...turning(from.x, control.x, to.x), ...turning(from.y, control.y, to.y)].filter(isWithin).map((t) => ({
-					x: quadraticAt(from.x, control.x, to.x, t),
-					y: quadraticAt(from.y, control.y, to.y, t)
-				})).concat([to]);
-			}
-			case "arc": {
-				const { arc, to } = segment;
-				const { radiusX, radiusY, rotation } = arc;
-				const xAngle = Math.atan2(-radiusY * Math.sin(rotation), radiusX * Math.cos(rotation));
-				const yAngle = Math.atan2(radiusY * Math.cos(rotation), radiusX * Math.sin(rotation));
-				return [
-					xAngle,
-					xAngle + Math.PI,
-					yAngle,
-					yAngle + Math.PI
-				].filter((angle) => isOnArc(arc, angle)).map((angle) => pointOnArc(arc, angle)).concat([to]);
-			}
-			case "close": return [];
-			default: return [segment.to];
-		}
-	};
-	/**
-	* The box around a path, reaching the furthest points of its curves rather than their control points.
-	*/
-	var getPathBounds = (segments) => {
-		let current = {
-			x: 0,
-			y: 0
-		};
-		let subpathStart = current;
-		const points = segments.flatMap((segment) => {
-			const extremes = extremePoints(segment, current);
-			if (segment.type === "close") current = subpathStart;
-			else {
-				current = segment.to;
-				if (segment.type === "move") subpathStart = current;
-			}
-			return extremes;
-		});
-		return {
-			left: Math.min(...points.map(({ x }) => x)),
-			top: Math.min(...points.map(({ y }) => y)),
-			right: Math.max(...points.map(({ x }) => x)),
-			bottom: Math.max(...points.map(({ y }) => y))
-		};
-	};
-	// src/shapes/custom-geometry/path-holes.ts
-	/**
-	* Holes in custom shapes: a closed part of a path inside another part is a hole in it, and a part inside a hole is
-	* filled again.
-	*
-	* Applications fill a path by one of two rules. By the even-odd rule, as LibreOffice fills, a part inside another is
-	* always a hole. By the non-zero rule, it is a hole only if it goes round the other way. So each closed part is turned
-	* round, where it needs to be, to go the other way to the part it is in, and the rules agree.
-	*
-	* @module
-	*/
-	var CURVE_STEPS = 8;
-	var steps = (point) => Array.from({ length: CURVE_STEPS }, (_, index) => point((index + 1) / CURVE_STEPS));
-	/**
-	* The points a segment passes through, after where it starts. A close goes back to the start of the part.
-	*/
-	var outlineOf = (segment, from, start) => {
-		switch (segment.type) {
-			case "cubic": {
-				const { control1: c1, control2: c2, to } = segment;
-				return steps((t) => ({
-					x: cubicAt(from.x, c1.x, c2.x, to.x, t),
-					y: cubicAt(from.y, c1.y, c2.y, to.y, t)
-				}));
-			}
-			case "quadratic": {
-				const { control, to } = segment;
-				return steps((t) => ({
-					x: quadraticAt(from.x, control.x, to.x, t),
-					y: quadraticAt(from.y, control.y, to.y, t)
-				}));
-			}
-			case "arc": {
-				const { arc } = segment;
-				return steps((t) => pointOnArc(arc, arc.startAngle + arc.sweepAngle * t));
-			}
-			case "close": return [start];
-			default: return [segment.to];
-		}
-	};
-	var signedArea = (outline) => outline.reduce((total, point, index) => {
-		const next = outline[(index + 1) % outline.length];
-		return total + point.x * next.y - next.x * point.y;
-	}, 0);
-	var measurePart = (part) => {
-		const { start, segments } = part;
-		const outline = segments.reduce((points, segment) => [...points, ...outlineOf(segment, points[points.length - 1], start)], [start]);
-		const area = signedArea(outline);
-		return _objectSpread2(_objectSpread2({}, part), {}, {
-			outline,
-			turn: Math.abs(area) < 1e-9 ? 0 : Math.sign(area),
-			closed: segments.filter(({ type }) => type === "close").length === 1 && segments[segments.length - 1].type === "close"
-		});
-	};
-	/**
-	* Splits a path into its parts. A path starts with a move, and each move starts a part.
-	*/
-	var splitParts = (segments) => segments.reduce((parts, segment) => {
-		if (segment.type === "move") return [...parts, {
-			start: segment.to,
-			segments: []
-		}];
-		const last = parts[parts.length - 1];
-		return [...parts.slice(0, -1), _objectSpread2(_objectSpread2({}, last), {}, { segments: [...last.segments, segment] })];
-	}, []);
-	var isPointInside = ({ x, y }, outline) => outline.reduce((inside, point, index) => {
-		const previous = outline[(index + outline.length - 1) % outline.length];
-		return point.y > y !== previous.y > y && x < (previous.x - point.x) * (y - point.y) / (previous.y - point.y) + point.x ? !inside : inside;
-	}, false);
-	var isInside$1 = (part, other) => part.outline.filter((point) => isPointInside(point, other.outline)).length > part.outline.length / 2;
-	var hasEnd = (segment) => segment.type !== "close";
-	var reverseSegment = (segment, from) => {
-		switch (segment.type) {
-			case "cubic": return {
-				type: "cubic",
-				control1: segment.control2,
-				control2: segment.control1,
-				to: from
-			};
-			case "quadratic": return {
-				type: "quadratic",
-				control: segment.control,
-				to: from
-			};
-			case "arc": {
-				const { arc } = segment;
-				return {
-					type: "arc",
-					from: segment.to,
-					to: from,
-					arc: _objectSpread2(_objectSpread2({}, arc), {}, {
-						startAngle: arc.startAngle + arc.sweepAngle,
-						sweepAngle: -arc.sweepAngle
-					})
-				};
-			}
-			default: return {
-				type: "line",
-				to: from
-			};
-		}
-	};
-	/**
-	* A closed part drawn the other way round. It starts where it did, and each segment is drawn backwards.
-	*/
-	var reversePart = ({ start, segments }) => {
-		const drawn = segments.filter(hasEnd);
-		const starts = [start, ...drawn.map(({ to }) => to)];
-		const end = starts[starts.length - 1];
-		const closing = end.x === start.x && end.y === start.y ? [] : [{
-			type: "line",
-			to: end
-		}];
-		const backwards = drawn.reduceRight((result, segment, index) => [...result, reverseSegment(segment, starts[index])], []);
-		const ending = drawn[0].type === "line" ? backwards.slice(0, -1) : backwards;
-		return [
-			{
-				type: "move",
-				to: start
-			},
-			...closing,
-			...ending,
-			{ type: "close" }
-		];
-	};
-	/**
-	* Turns round the closed parts of a path that go the same way as the part they are directly inside, so that a part
-	* inside another is a hole in it whichever rule an application fills paths by. Parts that aren't inside another, and
-	* parts that aren't closed, are left as they are.
-	*
-	* @param segments - A path, starting with a move
-	*/
-	var orientParts = (segments) => {
-		const parts = splitParts(segments).map(measurePart);
-		const containers = parts.map((part, index) => parts.flatMap((other, otherIndex) => otherIndex !== index && other.turn !== 0 && isInside$1(part, other) ? [otherIndex] : []));
-		const depths = containers.map(({ length }) => length);
-		const turnOf = (index) => {
-			const parent = containers[index].filter((container) => depths[container] < depths[index]).reduce((deepest, container) => deepest === void 0 || depths[container] > depths[deepest] ? container : deepest, void 0);
-			return parent === void 0 || !parts[index].closed ? parts[index].turn : -turnOf(parent);
-		};
-		return parts.flatMap((part, index) => part.turn !== 0 && turnOf(index) !== part.turn ? reversePart(part) : [{
-			type: "move",
-			to: part.start
-		}, ...part.segments]);
-	};
-	// src/shapes/custom-geometry/custom-geometry.ts
-	/**
-	* Custom shapes (`a:custGeom`): polygons and freeform paths drawn from SVG path data.
-	*
-	* A shape has one path or several, each filled and outlined on its own. The box around all the paths is scaled to fill
-	* the shape, and they are written as DrawingML path commands. Every corner and end of the paths is a connection site,
-	* unless the shape gives its own connection points, so connectors can attach to custom shapes.
-	*
-	* Reference: ECMA-376 Part 1, 20.1.9.8 custGeom (Custom Geometry)
-	*
-	* @module
-	*/
-	var ANGLE_UNITS_PER_DEGREE = 6e4;
-	var QUARTER_TURN = Math.PI / 2;
-	var toShape = ({ left, top, x, y }, point) => ({
-		x: (point.x - left) * x,
-		y: (point.y - top) * y
-	});
-	var round = ({ x, y }) => ({
-		x: Math.round(x),
-		y: Math.round(y)
-	});
-	var degrees = (radians) => radians * 180 / Math.PI;
-	var isMultipleOf = (value, step) => {
-		const remainder = Math.abs(value % step);
-		return remainder < 1e-9 || step - remainder < 1e-9;
-	};
-	/**
-	* Splits an arc into cubic Bézier curves of at most a quarter turn each, for arcs DrawingML can't draw directly.
-	*/
-	var arcToCubics = (arc, scale) => {
-		const { radiusX, radiusY, rotation, startAngle, sweepAngle } = arc;
-		const count = Math.ceil(Math.abs(sweepAngle) / QUARTER_TURN - 1e-9);
-		const step = sweepAngle / count;
-		const handle = 4 / 3 * Math.tan(step / 4);
-		const tangent = (angle) => ({
-			x: -radiusX * Math.sin(angle) * Math.cos(rotation) - radiusY * Math.cos(angle) * Math.sin(rotation),
-			y: -radiusX * Math.sin(angle) * Math.sin(rotation) + radiusY * Math.cos(angle) * Math.cos(rotation)
-		});
-		return Array.from({ length: count }, (_, index) => {
-			const from = startAngle + step * index;
-			const to = from + step;
-			const start = pointOnArc(arc, from);
-			const end = pointOnArc(arc, to);
-			const startTangent = tangent(from);
-			const endTangent = tangent(to);
-			return {
-				type: "cubic",
-				points: [
-					round(toShape(scale, {
-						x: start.x + handle * startTangent.x,
-						y: start.y + handle * startTangent.y
-					})),
-					round(toShape(scale, {
-						x: end.x - handle * endTangent.x,
-						y: end.y - handle * endTangent.y
-					})),
-					round(toShape(scale, end))
-				]
-			};
-		});
-	};
-	/**
-	* Converts an arc to DrawingML. An arc of an ellipse that is upright once scaled to the shape is written as an `arcTo`,
-	* whose angles are the directions of its ends from the ellipse's centre. Other arcs are drawn with Bézier curves.
-	*/
-	var convertArc = (to, arc, scale) => {
-		if (scale.x === 0 || scale.y === 0) return [{
-			type: "line",
-			to: round(toShape(scale, to))
-		}];
-		const isCircle = Math.abs(arc.radiusX - arc.radiusY) < 1e-9 && Math.abs(scale.x - scale.y) < 1e-9;
-		if (!isCircle && !isMultipleOf(arc.rotation, QUARTER_TURN)) return arcToCubics(arc, scale);
-		const turned = !isCircle && !isMultipleOf(arc.rotation, Math.PI);
-		const widthRadius = (turned ? arc.radiusY : arc.radiusX) * scale.x;
-		const heightRadius = (turned ? arc.radiusX : arc.radiusY) * scale.y;
-		const direction = (angle) => {
-			const difference = Math.atan2(heightRadius * Math.sin(angle), widthRadius * Math.cos(angle)) - angle;
-			return angle + difference - 2 * Math.PI * Math.round(difference / (2 * Math.PI));
-		};
-		const start = direction(arc.startAngle + arc.rotation);
-		const end = direction(arc.startAngle + arc.rotation + arc.sweepAngle);
-		return [{
-			type: "arc",
-			widthRadius: Math.round(widthRadius),
-			heightRadius: Math.round(heightRadius),
-			startAngle: Math.round((degrees(start) % 360 + 360) % 360 * ANGLE_UNITS_PER_DEGREE),
-			swingAngle: Math.round(degrees(end - start) * ANGLE_UNITS_PER_DEGREE)
-		}];
-	};
-	var convertSegment = (segment, scale) => {
-		switch (segment.type) {
-			case "move":
-			case "line": return [{
-				type: segment.type,
-				to: round(toShape(scale, segment.to))
-			}];
-			case "cubic": return [{
-				type: "cubic",
-				points: [
-					round(toShape(scale, segment.control1)),
-					round(toShape(scale, segment.control2)),
-					round(toShape(scale, segment.to))
-				]
-			}];
-			case "quadratic": return [{
-				type: "quadratic",
-				points: [round(toShape(scale, segment.control)), round(toShape(scale, segment.to))]
-			}];
-			case "arc": return convertArc(segment.to, segment.arc, scale);
-			default: return [segment];
-		}
-	};
-	/**
-	* The direction, right (0), down (90), left (180) or up (270), a point is furthest from the middle of a box in,
-	* measured as a share of the box's width and height. A point as far across as up or down is taken to be up or down.
-	*/
-	var outwardAngle = (x, y, width, height) => {
-		const across = width === 0 ? 0 : (x - width / 2) / width;
-		const down = height === 0 ? 0 : (y - height / 2) / height;
-		if (Math.abs(across) > Math.abs(down)) return across > 0 ? 0 : 180;
-		return down < 0 ? 270 : across === 0 && down === 0 ? 0 : 90;
-	};
-	/**
-	* The corners and ends of the paths: where each of their segments ends. A connector leaves each one in the direction,
-	* right, down, left or up, that it is furthest from the middle of the shape in.
-	*/
-	var findSites = (segments, scale, width, height) => {
-		const ends = segments.flatMap((segment) => segment.type === "close" ? [] : [round(toShape(scale, segment.to))]);
-		return ends.filter((point, index) => ends.findIndex(({ x, y }) => x === point.x && y === point.y) === index).map(({ x, y }) => ({
-			x,
-			y,
-			angle: outwardAngle(x, y, width, height)
-		}));
-	};
-	var SIDE_ANGLES$1 = {
-		right: 0,
-		bottom: 90,
-		left: 180,
-		top: 270
-	};
-	/**
-	* The shape's own connection points, scaled to the shape.
-	*
-	* @throws If a point isn't a pair of numbers, or its side isn't one of the four
-	*/
-	var connectionSites = (points, scale, width, height) => points.map((point) => {
-		const { x, y, side } = point;
-		if (!Number.isFinite(x) || !Number.isFinite(y) || side !== void 0 && SIDE_ANGLES$1[side] === void 0) throw new Error(`Invalid connection point ${JSON.stringify(point)}. Expected numbers x and y, and a side of top, right, bottom or left`);
-		const site = round(toShape(scale, {
-			x,
-			y
-		}));
-		return _objectSpread2(_objectSpread2({}, site), {}, { angle: side === void 0 ? outwardAngle(site.x, site.y, width, height) : SIDE_ANGLES$1[side] });
-	});
-	var PATH_FILLS = /* @__PURE__ */ new Map([
-		[true, "norm"],
-		[false, "none"],
-		["lighter", "lighten"],
-		["slightlyLighter", "lightenLess"],
-		["darker", "darken"],
-		["slightlyDarker", "darkenLess"]
-	]);
-	/**
-	* Reads a custom shape's paths. Parts of a path inside other parts are turned round to go the other way, so they are
-	* holes whichever way applications fill paths.
-	*
-	* @throws If there is no path, both `path` and `paths`, a path isn't valid SVG path data, or a fill isn't one of the choices
-	*/
-	var readPaths = ({ path, paths }) => {
-		if (path !== void 0 && paths !== void 0) throw new Error("Invalid custom shape. Expected path or paths, not both");
-		const options = paths !== null && paths !== void 0 ? paths : path === void 0 ? [] : [{ path }];
-		if (options.length === 0) throw new Error("Invalid custom shape. Expected a path, or at least one of paths");
-		return options.map(({ path: data, fill = true, line }) => {
-			const mode = PATH_FILLS.get(fill);
-			if (mode === void 0) throw new Error(`Invalid custom shape path fill "${fill}". Expected true, false, "lighter", "slightlyLighter", "darker" or "slightlyDarker"`);
-			return {
-				segments: orientParts(parseSvgPath(data)),
-				fill: mode,
-				stroke: line !== false
-			};
-		});
-	};
-	var unionOf = (bounds) => ({
-		left: Math.min(...bounds.map(({ left }) => left)),
-		top: Math.min(...bounds.map(({ top }) => top)),
-		right: Math.max(...bounds.map(({ right }) => right)),
-		bottom: Math.max(...bounds.map(({ bottom }) => bottom))
-	});
-	/**
-	* Where the text goes, scaled to the shape.
-	*
-	* @throws If the box's sides aren't numbers, or it is turned inside out
-	*/
-	var scaleTextArea = (textArea, scale) => {
-		const { left, top, right, bottom } = textArea;
-		if (![
-			left,
-			top,
-			right,
-			bottom
-		].every(Number.isFinite) || right < left || bottom < top) throw new Error(`Invalid text area ${JSON.stringify(textArea)}. Expected numbers left, top, right and bottom, with right at least left and bottom at least top`);
-		const topLeft = round(toShape(scale, {
-			x: left,
-			y: top
-		}));
-		const bottomRight = round(toShape(scale, {
-			x: right,
-			y: bottom
-		}));
-		return {
-			left: topLeft.x,
-			top: topLeft.y,
-			right: bottomRight.x,
-			bottom: bottomRight.y
-		};
-	};
-	/**
-	* Reads a custom shape's paths and scales them to the shape: the box around them is stretched to fill the shape's box.
-	* The text area and connection points are scaled with them.
-	*
-	* @param width - The shape's width in EMUs
-	* @param height - The shape's height in EMUs
-	* @throws If the paths, text area or connection points aren't valid
-	*/
-	var createCustomGeometryData = (options, width, height) => {
-		const paths = readPaths(options);
-		const bounds = unionOf(paths.map(({ segments }) => getPathBounds(segments)));
-		const pathWidth = bounds.right - bounds.left;
-		const pathHeight = bounds.bottom - bounds.top;
-		const x = pathWidth > 0 ? width / pathWidth : 0;
-		const y = pathHeight > 0 ? height / pathHeight : 0;
-		const scale = {
-			left: bounds.left,
-			top: bounds.top,
-			x,
-			y
-		};
-		return {
-			width,
-			height,
-			paths: paths.map(({ segments, fill, stroke }) => ({
-				segments: segments.flatMap((segment) => convertSegment(segment, scale)),
-				fill,
-				stroke
-			})),
-			sites: options.connectionPoints === void 0 ? findSites(paths.flatMap(({ segments }) => segments), scale, width, height) : connectionSites(options.connectionPoints, scale, width, height),
-			textArea: options.textArea && scaleTextArea(options.textArea, scale)
-		};
-	};
-	/**
-	* The box a custom shape of the given size writes its text in: its text area, or the whole shape.
-	*
-	* @param width - The shape's width in EMUs
-	* @param height - The shape's height in EMUs
-	*/
-	var getCustomTextRectangle = (options, width, height) => {
-		var _ref;
-		return (_ref = options.textArea && createCustomGeometryData(options, width, height).textArea) !== null && _ref !== void 0 ? _ref : {
-			left: 0,
-			top: 0,
-			right: width,
-			bottom: height
-		};
-	};
-	var createPoint = ({ x, y }) => new docx.BuilderElement({
-		name: "a:pt",
-		attributes: {
-			x: {
-				key: "x",
-				value: x
-			},
-			y: {
-				key: "y",
-				value: y
-			}
-		}
-	});
-	var createPathSegment = (segment) => {
-		switch (segment.type) {
-			case "move": return new docx.BuilderElement({
-				name: "a:moveTo",
-				children: [createPoint(segment.to)]
-			});
-			case "line": return new docx.BuilderElement({
-				name: "a:lnTo",
-				children: [createPoint(segment.to)]
-			});
-			case "cubic": return new docx.BuilderElement({
-				name: "a:cubicBezTo",
-				children: segment.points.map(createPoint)
-			});
-			case "quadratic": return new docx.BuilderElement({
-				name: "a:quadBezTo",
-				children: segment.points.map(createPoint)
-			});
-			case "arc": return new docx.BuilderElement({
-				name: "a:arcTo",
-				attributes: {
-					widthRadius: {
-						key: "wR",
-						value: segment.widthRadius
-					},
-					heightRadius: {
-						key: "hR",
-						value: segment.heightRadius
-					},
-					startAngle: {
-						key: "stAng",
-						value: segment.startAngle
-					},
-					swingAngle: {
-						key: "swAng",
-						value: segment.swingAngle
-					}
-				}
-			});
-			default: return new docx.BuilderElement({ name: "a:close" });
-		}
-	};
-	/**
-	* A guide for a length across or down the shape that keeps its share of the shape's width or height when the shape is
-	* resized, as PowerPoint writes the points of freeforms: the length times `w` (or `h`), divided by the width (or height)
-	* it was worked out for.
-	*/
-	var shareGuide = (name, value, size, length) => ({
-		name,
-		formula: length === 0 ? `val ${value}` : `*/ ${value} ${size} ${length}`
-	});
-	var createGuide = ({ name, formula }) => new docx.BuilderElement({
-		name: "a:gd",
-		attributes: {
-			name: {
-				key: "name",
-				value: name
-			},
-			formula: {
-				key: "fmla",
-				value: formula
-			}
-		}
-	});
-	var siteGuides = (sites, width, height) => sites.flatMap(({ x, y }, index) => [shareGuide(`connsiteX${index}`, x, "w", width), shareGuide(`connsiteY${index}`, y, "h", height)]);
-	var createConnectionSite = ({ angle }, index) => new docx.BuilderElement({
-		name: "a:cxn",
-		attributes: { angle: {
-			key: "ang",
-			value: Math.round(angle * ANGLE_UNITS_PER_DEGREE)
-		} },
-		children: [new docx.BuilderElement({
-			name: "a:pos",
-			attributes: {
-				x: {
-					key: "x",
-					value: `connsiteX${index}`
-				},
-				y: {
-					key: "y",
-					value: `connsiteY${index}`
-				}
-			}
-		})]
-	});
-	var textAreaGuides = (textArea, width, height) => textArea === void 0 ? [] : [
-		shareGuide("textAreaLeft", textArea.left, "w", width),
-		shareGuide("textAreaTop", textArea.top, "h", height),
-		shareGuide("textAreaRight", textArea.right, "w", width),
-		shareGuide("textAreaBottom", textArea.bottom, "h", height)
-	];
-	var createPath = (path, width, height) => new docx.BuilderElement({
-		name: "a:path",
-		attributes: {
-			width: {
-				key: "w",
-				value: width
-			},
-			height: {
-				key: "h",
-				value: height
-			},
-			fill: {
-				key: "fill",
-				value: path.fill === "norm" ? void 0 : path.fill
-			},
-			stroke: {
-				key: "stroke",
-				value: path.stroke ? void 0 : false
-			}
-		},
-		children: path.segments.map(createPathSegment)
-	});
-	/**
-	* Creates an `a:custGeom` element for a custom shape.
-	*
-	* The connection sites and text area are guides that keep their share of the shape's width and height, so they stay
-	* in place when the shape is resized. Without a text area, the text uses the whole of the shape's box.
-	*
-	* ## XSD Schema
-	* ```xml
-	* <xsd:complexType name="CT_CustomGeometry2D">
-	*   <xsd:sequence>
-	*     <xsd:element name="avLst" type="CT_GeomGuideList" minOccurs="0" maxOccurs="1"/>
-	*     <xsd:element name="gdLst" type="CT_GeomGuideList" minOccurs="0" maxOccurs="1"/>
-	*     <xsd:element name="ahLst" type="CT_AdjustHandleList" minOccurs="0" maxOccurs="1"/>
-	*     <xsd:element name="cxnLst" type="CT_ConnectionSiteList" minOccurs="0" maxOccurs="1"/>
-	*     <xsd:element name="rect" type="CT_GeomRect" minOccurs="0" maxOccurs="1"/>
-	*     <xsd:element name="pathLst" type="CT_Path2DList" minOccurs="1" maxOccurs="1"/>
-	*   </xsd:sequence>
-	* </xsd:complexType>
-	* ```
-	*/
-	var createCustomGeometry = ({ width, height, paths, sites, textArea }) => new docx.BuilderElement({
-		name: "a:custGeom",
-		children: [
-			new docx.BuilderElement({ name: "a:avLst" }),
-			new docx.BuilderElement({
-				name: "a:gdLst",
-				children: [...siteGuides(sites, width, height), ...textAreaGuides(textArea, width, height)].map(createGuide)
-			}),
-			new docx.BuilderElement({ name: "a:ahLst" }),
-			new docx.BuilderElement({
-				name: "a:cxnLst",
-				children: sites.map(createConnectionSite)
-			}),
-			new docx.BuilderElement({
-				name: "a:rect",
-				attributes: textArea ? {
-					left: {
-						key: "l",
-						value: "textAreaLeft"
-					},
-					top: {
-						key: "t",
-						value: "textAreaTop"
-					},
-					right: {
-						key: "r",
-						value: "textAreaRight"
-					},
-					bottom: {
-						key: "b",
-						value: "textAreaBottom"
-					}
-				} : {
-					left: {
-						key: "l",
-						value: "l"
-					},
-					top: {
-						key: "t",
-						value: "t"
-					},
-					right: {
-						key: "r",
-						value: "r"
-					},
-					bottom: {
-						key: "b",
-						value: "b"
-					}
-				}
-			}),
-			new docx.BuilderElement({
-				name: "a:pathLst",
-				children: paths.map((path) => createPath(path, width, height))
-			})
-		]
-	});
 	// src/shapes/preset-shape/preset-shape-properties.ts
 	/**
 	* Shape properties (`wps:spPr`) for preset shapes.
@@ -3015,72 +3081,6 @@ var docxShapes = (function(exports, docx) {
 			children: [...options.warp ? [createWarp(options.warp)] : [], ...createAutofit(options)]
 		});
 	};
-	// src/shapes/drawing/text-flow.ts
-	/**
-	* Text that flows from one shape to the next (`wps:txbx` with an `id`, and `wps:linkedTxbx`), as in a newsletter whose
-	* article continues in another text box.
-	*
-	* Reference: ECMA-376 Part 1, 20.4.2.37 txbx (Textual Contents of Shape) and 20.4.2.18 linkedTxbx (Linked Textbox)
-	*
-	* @module
-	*/
-	var NO_DOCUMENT = {};
-	var flows = /* @__PURE__ */ new WeakMap();
-	/**
-	* The text box of a shape in a text flow. The first shape of the flow written in a document has the text, and the
-	* shapes after it continue it, in the order they are written. A document numbers its flows from 1, in the order they
-	* are first written, so writing a document twice writes the same flows.
-	*/
-	var TextFlowBox = class extends docx.XmlComponent {
-		constructor(flow, children) {
-			super("wps:txbx");
-			_defineProperty(this, "flow", void 0);
-			_defineProperty(this, "children", void 0);
-			this.flow = flow;
-			this.children = children;
-		}
-		prepForXml(context) {
-			var _context$file, _flows$get, _byName$get;
-			const document = (_context$file = context.file) !== null && _context$file !== void 0 ? _context$file : NO_DOCUMENT;
-			const byName = (_flows$get = flows.get(document)) !== null && _flows$get !== void 0 ? _flows$get : /* @__PURE__ */ new Map();
-			const shapes = (_byName$get = byName.get(this.flow)) !== null && _byName$get !== void 0 ? _byName$get : [];
-			const written = shapes.includes(this) ? byName : new Map([...byName, [this.flow, [...shapes, this]]]);
-			flows.set(document, written);
-			const id = [...written.keys()].indexOf(this.flow) + 1;
-			const sequence = written.get(this.flow).indexOf(this);
-			return (sequence === 0 ? new docx.BuilderElement({
-				name: "wps:txbx",
-				attributes: { id: {
-					key: "id",
-					value: id
-				} },
-				children: [new docx.BuilderElement({
-					name: "w:txbxContent",
-					children: this.children.length > 0 ? [...this.children] : [new docx.Paragraph({})]
-				})]
-			}) : new docx.BuilderElement({
-				name: "wps:linkedTxbx",
-				attributes: {
-					id: {
-						key: "id",
-						value: id
-					},
-					sequence: {
-						key: "seq",
-						value: sequence
-					}
-				}
-			})).prepForXml(context);
-		}
-	};
-	/**
-	* Creates the text box of a shape in a text flow: the flow's text in the first shape of the flow in the document, and
-	* a link to it in the shapes after it.
-	*
-	* @param flow - The flow's name
-	* @param children - The flow's paragraphs, which the first shape of the flow writes, or an empty paragraph if there are none
-	*/
-	var createTextFlowBox = (flow, children) => new TextFlowBox(flow, children);
 	// src/shapes/preset-shape/preset-shape.ts
 	/**
 	* Preset shapes (`wps:wsp`): rectangles, ellipses, lines, arrows and the other DrawingML presets.
@@ -3155,6 +3155,57 @@ var docxShapes = (function(exports, docx) {
 			createShapeTextProperties(textFlow === void 0 && (children === null || children === void 0 ? void 0 : children.length) ? _objectSpread2({ verticalAlignment: "center" }, textOptions) : textOptions)
 		]
 	});
+	// src/shapes/picture/shape-picture.ts
+	/**
+	* Pictures in groups and on drawing canvases (`pic:pic`).
+	*
+	* Reference: ECMA-376 Part 1, 20.2.2.5 pic (Picture)
+	*
+	* @module
+	*/
+	/**
+	* Creates a `pic:pic` element for a picture in a group or on a canvas. On a canvas, the schema calls it `dpct:pic`,
+	* which is the same element in the same namespace.
+	*
+	* The picture is added to the document's media when it is written.
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:complexType name="CT_Picture">
+	*   <xsd:sequence minOccurs="1" maxOccurs="1">
+	*     <xsd:element name="nvPicPr" type="CT_PictureNonVisual" minOccurs="1" maxOccurs="1"/>
+	*     <xsd:element name="blipFill" type="a:CT_BlipFillProperties" minOccurs="1" maxOccurs="1"/>
+	*     <xsd:element name="spPr" type="a:CT_ShapeProperties" minOccurs="1" maxOccurs="1"/>
+	*   </xsd:sequence>
+	* </xsd:complexType>
+	* ```
+	*/
+	var createShapePicture = ({ image, crop, line, effects, nonVisualDrawingProperties, transformation }) => new docx.BuilderElement({
+		name: "pic:pic",
+		attributes: { namespace: {
+			key: "xmlns:pic",
+			value: "http://schemas.openxmlformats.org/drawingml/2006/picture"
+		} },
+		children: [
+			new docx.BuilderElement({
+				name: "pic:nvPicPr",
+				children: [createNonVisualDrawingProperties$1(nonVisualDrawingProperties, "pic:cNvPr"), createPictureLocks()]
+			}),
+			createPictureFill({
+				image,
+				crop
+			}, "pic:blipFill"),
+			new docx.BuilderElement({
+				name: "pic:spPr",
+				children: [
+					createTransform(transformation),
+					createPresetGeometry(),
+					...line ? [createShapeLine(line)] : [],
+					...effects ? [createShapeEffects(effects)] : []
+				]
+			})
+		]
+	});
 	// src/shapes/drawing/shape-group.ts
 	/**
 	* Groups of shapes (`wpg:wgp` and `wpg:grpSp`): shapes, pictures and groups that are moved and resized together.
@@ -3208,57 +3259,6 @@ var docxShapes = (function(exports, docx) {
 			]
 		});
 	};
-	// src/shapes/picture/shape-picture.ts
-	/**
-	* Pictures in groups and on drawing canvases (`pic:pic`).
-	*
-	* Reference: ECMA-376 Part 1, 20.2.2.5 pic (Picture)
-	*
-	* @module
-	*/
-	/**
-	* Creates a `pic:pic` element for a picture in a group or on a canvas. On a canvas, the schema calls it `dpct:pic`,
-	* which is the same element in the same namespace.
-	*
-	* The picture is added to the document's media when it is written.
-	*
-	* ## XSD Schema
-	* ```xml
-	* <xsd:complexType name="CT_Picture">
-	*   <xsd:sequence minOccurs="1" maxOccurs="1">
-	*     <xsd:element name="nvPicPr" type="CT_PictureNonVisual" minOccurs="1" maxOccurs="1"/>
-	*     <xsd:element name="blipFill" type="a:CT_BlipFillProperties" minOccurs="1" maxOccurs="1"/>
-	*     <xsd:element name="spPr" type="a:CT_ShapeProperties" minOccurs="1" maxOccurs="1"/>
-	*   </xsd:sequence>
-	* </xsd:complexType>
-	* ```
-	*/
-	var createShapePicture = ({ image, crop, line, effects, nonVisualDrawingProperties, transformation }) => new docx.BuilderElement({
-		name: "pic:pic",
-		attributes: { namespace: {
-			key: "xmlns:pic",
-			value: "http://schemas.openxmlformats.org/drawingml/2006/picture"
-		} },
-		children: [
-			new docx.BuilderElement({
-				name: "pic:nvPicPr",
-				children: [createNonVisualDrawingProperties$1(nonVisualDrawingProperties, "pic:cNvPr"), createPictureLocks()]
-			}),
-			createPictureFill({
-				image,
-				crop
-			}, "pic:blipFill"),
-			new docx.BuilderElement({
-				name: "pic:spPr",
-				children: [
-					createTransform(transformation),
-					createPresetGeometry(),
-					...line ? [createShapeLine(line)] : [],
-					...effects ? [createShapeEffects(effects)] : []
-				]
-			})
-		]
-	});
 	// src/shapes/drawing/shape-drawing-child.ts
 	/** The `a:graphicData` URI of a shape (`wps:wsp`) */
 	var SHAPE_URI = "http://schemas.microsoft.com/office/word/2010/wordprocessingShape";
@@ -7245,19 +7245,6 @@ var docxShapes = (function(exports, docx) {
 		});
 	};
 	// src/shapes/connector/connector-route.ts
-	/**
-	* Routes a connector between two points on two shapes, as Word does: it picks the connector preset,
-	* the box the connector is drawn in, the rotation and flips that point it the right way, and where it bends.
-	*
-	* Every connector preset runs from the top-left corner of its box to the bottom-right corner, so the box is
-	* spanned by the two ends. An elbow connector's bends are adjustments, measured along the box. A bend can be
-	* outside the box, which is how a connector loops around a shape.
-	*
-	* When an elbow or curved connector's usual route would cross other shapes, the router looks for a route
-	* with up to four bends that goes around them. An elbow connector that needs more bends is drawn as a freeform line.
-	*
-	* @module
-	*/
 	var DIRECTIONS = [
 		{
 			x: 1,

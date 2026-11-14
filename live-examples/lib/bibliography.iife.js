@@ -1397,15 +1397,6 @@ var docxBibliography = (function(exports, docx) {
 		}
 	};
 	// src/bibliography/styles/xsl.ts
-	/**
-	* The templates Word's styles of citation share, written in TypeScript: names and their initials, dates, formats such
-	* as "Retrieved %1, from %2", lists of fields and their separators, and the order of a bibliography.
-	*
-	* Each follows its XSL template, including where that doesn't do what it looks like it should, so the styles write what
-	* Word writes. Each XSL template's name is in its description.
-	*
-	* @module
-	*/
 	/** The last character of the text, or "" when it is empty, as `substring($text, string-length($text))` */
 	var lastCharOf = (text) => text.slice(-1);
 	/**

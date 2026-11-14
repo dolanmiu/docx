@@ -4528,59 +4528,6 @@ DOT: "dot" };
 			this.root.push(typeof options === "string" ? new Symbol$1(options) : new Symbol$1(options.char, options.symbolfont));
 		}
 	};
-	// src/file/paragraph/run/image-data.ts
-	var convertDataURIToBinary = (dataURI) => {
-		const base64Index = dataURI.indexOf(";base64,");
-		const base64IndexWithOffset = base64Index === -1 ? 0 : base64Index + 8;
-		return new Uint8Array(atob(dataURI.substring(base64IndexWithOffset)).split("").map((c) => c.charCodeAt(0)));
-	};
-	var standardizeData = (data) => typeof data === "string" ? convertDataURIToBinary(data) : data;
-	var SIGNATURES = [
-		["png", [
-			137,
-			80,
-			78,
-			71,
-			13,
-			10,
-			26,
-			10
-		]],
-		["jpg", [
-			255,
-			216,
-			255
-		]],
-		["gif", [
-			71,
-			73,
-			70,
-			56,
-			55,
-			97
-		]],
-		["gif", [
-			71,
-			73,
-			70,
-			56,
-			57,
-			97
-		]],
-		["bmp", [66, 77]]
-	];
-	/**
-	* The format of an image given without a `type`, read from the bytes its file starts with. Without one, its file in the
-	* package would be named `.undefined`, which has no content type, so Word reports the document as unreadable.
-	*/
-	var imageTypeOf = ({ type, data }, name) => {
-		if (type !== void 0) return type;
-		const standardized = standardizeData(data);
-		const bytes = ArrayBuffer.isView(standardized) ? new Uint8Array(standardized.buffer, standardized.byteOffset, standardized.byteLength) : new Uint8Array(standardized);
-		const signature = SIGNATURES.find(([, start]) => start.every((byte, index) => bytes[index] === byte));
-		if (signature === void 0) throw new Error(`${name}: type isn't given, and data isn't a PNG, JPEG, GIF or BMP file to read it from. Give its type`);
-		return signature[0];
-	};
 	// src/file/drawing/floating/floating-position.ts
 	/**
 	* Horizontal Relative Positioning.
@@ -4912,63 +4859,6 @@ DOT: "dot" };
 			else if (offset !== void 0) return createPositionOffset(offset);
 			else throw new Error("There is no configuration provided for floating position (Align or offset)");
 		})()]
-	});
-	// src/file/drawing/inline/graphic/graphic-data/wps/body-properties.ts
-	/**
-	* @publicApi
-	*/
-	var VerticalAnchor = /* @__PURE__ */ function(VerticalAnchor) {
-		VerticalAnchor["CENTER"] = "ctr";
-		VerticalAnchor["TOP"] = "t";
-		VerticalAnchor["BOTTOM"] = "b";
-		return VerticalAnchor;
-	}({});
-	var createBodyProperties = (options = {}) => {
-		var _options$margins, _options$margins2, _options$margins3, _options$margins4;
-		return new BuilderElement({
-			name: "wps:bodyPr",
-			attributes: {
-				lIns: {
-					key: "lIns",
-					value: (_options$margins = options.margins) === null || _options$margins === void 0 ? void 0 : _options$margins.left
-				},
-				rIns: {
-					key: "rIns",
-					value: (_options$margins2 = options.margins) === null || _options$margins2 === void 0 ? void 0 : _options$margins2.right
-				},
-				tIns: {
-					key: "tIns",
-					value: (_options$margins3 = options.margins) === null || _options$margins3 === void 0 ? void 0 : _options$margins3.top
-				},
-				bIns: {
-					key: "bIns",
-					value: (_options$margins4 = options.margins) === null || _options$margins4 === void 0 ? void 0 : _options$margins4.bottom
-				},
-				anchor: {
-					key: "anchor",
-					value: options.verticalAnchor
-				}
-			},
-			children: [...options.noAutoFit ? [new OnOffElement("a:noAutofit", options.noAutoFit)] : []]
-		});
-	};
-	// src/file/drawing/inline/graphic/graphic-data/wps/non-visual-shape-properties.ts
-	var createNonVisualShapeProperties = (options = { txBox: "1" }) => new BuilderElement({
-		name: "wps:cNvSpPr",
-		attributes: { txBox: {
-			key: "txBox",
-			value: options.txBox
-		} }
-	});
-	// src/file/drawing/inline/graphic/graphic-data/wps/text-box-content.ts
-	var createTextBoxContent = (children) => new BuilderElement({
-		name: "w:txbxContent",
-		children: [...children]
-	});
-	// src/file/drawing/inline/graphic/graphic-data/wps/wps-text-box.ts
-	var createWpsTextBox = (children) => new BuilderElement({
-		name: "wps:txbx",
-		children: [createTextBoxContent(children)]
 	});
 	// src/file/drawing/inline/graphic/graphic-data/pic/shape-properties/form/extents/extents-attributes.ts
 	/**
@@ -5661,6 +5551,63 @@ DOT: "dot" };
 			if (outline) this.root.push(createOutline(outline));
 		}
 	};
+	// src/file/drawing/inline/graphic/graphic-data/wps/body-properties.ts
+	/**
+	* @publicApi
+	*/
+	var VerticalAnchor = /* @__PURE__ */ function(VerticalAnchor) {
+		VerticalAnchor["CENTER"] = "ctr";
+		VerticalAnchor["TOP"] = "t";
+		VerticalAnchor["BOTTOM"] = "b";
+		return VerticalAnchor;
+	}({});
+	var createBodyProperties = (options = {}) => {
+		var _options$margins, _options$margins2, _options$margins3, _options$margins4;
+		return new BuilderElement({
+			name: "wps:bodyPr",
+			attributes: {
+				lIns: {
+					key: "lIns",
+					value: (_options$margins = options.margins) === null || _options$margins === void 0 ? void 0 : _options$margins.left
+				},
+				rIns: {
+					key: "rIns",
+					value: (_options$margins2 = options.margins) === null || _options$margins2 === void 0 ? void 0 : _options$margins2.right
+				},
+				tIns: {
+					key: "tIns",
+					value: (_options$margins3 = options.margins) === null || _options$margins3 === void 0 ? void 0 : _options$margins3.top
+				},
+				bIns: {
+					key: "bIns",
+					value: (_options$margins4 = options.margins) === null || _options$margins4 === void 0 ? void 0 : _options$margins4.bottom
+				},
+				anchor: {
+					key: "anchor",
+					value: options.verticalAnchor
+				}
+			},
+			children: [...options.noAutoFit ? [new OnOffElement("a:noAutofit", options.noAutoFit)] : []]
+		});
+	};
+	// src/file/drawing/inline/graphic/graphic-data/wps/non-visual-shape-properties.ts
+	var createNonVisualShapeProperties = (options = { txBox: "1" }) => new BuilderElement({
+		name: "wps:cNvSpPr",
+		attributes: { txBox: {
+			key: "txBox",
+			value: options.txBox
+		} }
+	});
+	// src/file/drawing/inline/graphic/graphic-data/wps/text-box-content.ts
+	var createTextBoxContent = (children) => new BuilderElement({
+		name: "w:txbxContent",
+		children: [...children]
+	});
+	// src/file/drawing/inline/graphic/graphic-data/wps/wps-text-box.ts
+	var createWpsTextBox = (children) => new BuilderElement({
+		name: "wps:txbx",
+		children: [createTextBoxContent(children)]
+	});
 	// src/file/drawing/inline/graphic/graphic-data/wps/wps-shape.ts
 	var createWpsShape = (options) => new BuilderElement({
 		name: "wps:wsp",
@@ -7529,6 +7476,59 @@ EXTERNAL: "External" };
 				drawingOptions
 			}));
 		}
+	};
+	// src/file/paragraph/run/image-data.ts
+	var convertDataURIToBinary = (dataURI) => {
+		const base64Index = dataURI.indexOf(";base64,");
+		const base64IndexWithOffset = base64Index === -1 ? 0 : base64Index + 8;
+		return new Uint8Array(atob(dataURI.substring(base64IndexWithOffset)).split("").map((c) => c.charCodeAt(0)));
+	};
+	var standardizeData = (data) => typeof data === "string" ? convertDataURIToBinary(data) : data;
+	var SIGNATURES = [
+		["png", [
+			137,
+			80,
+			78,
+			71,
+			13,
+			10,
+			26,
+			10
+		]],
+		["jpg", [
+			255,
+			216,
+			255
+		]],
+		["gif", [
+			71,
+			73,
+			70,
+			56,
+			55,
+			97
+		]],
+		["gif", [
+			71,
+			73,
+			70,
+			56,
+			57,
+			97
+		]],
+		["bmp", [66, 77]]
+	];
+	/**
+	* The format of an image given without a `type`, read from the bytes its file starts with. Without one, its file in the
+	* package would be named `.undefined`, which has no content type, so Word reports the document as unreadable.
+	*/
+	var imageTypeOf = ({ type, data }, name) => {
+		if (type !== void 0) return type;
+		const standardized = standardizeData(data);
+		const bytes = ArrayBuffer.isView(standardized) ? new Uint8Array(standardized.buffer, standardized.byteOffset, standardized.byteLength) : new Uint8Array(standardized);
+		const signature = SIGNATURES.find(([, start]) => start.every((byte, index) => bytes[index] === byte));
+		if (signature === void 0) throw new Error(`${name}: type isn't given, and data isn't a PNG, JPEG, GIF or BMP file to read it from. Give its type`);
+		return signature[0];
 	};
 	// src/file/paragraph/run/image-run.ts
 	var createImageData = (options, key) => ({
@@ -16368,6 +16368,69 @@ MAX: 9026 };
 	* @internal
 	*/
 	var createOnOffOnlyElement = (name, value) => value ? new OnOffElement(name) : new StringValueElement(name, "off");
+	// src/file/table/table-cell-spacing.ts
+	/**
+	* Table cell spacing module for WordprocessingML documents.
+	*
+	* This module provides cell spacing settings for tables, controlling
+	* the space between cells in a table.
+	*
+	* Reference: http://officeopenxml.com/WPtableCellSpacing.php
+	*
+	* @module
+	*/
+	/**
+	* Cell spacing measurement types.
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:simpleType name="ST_TblCellSpacing">
+	*   <xsd:restriction base="xsd:string">
+	*     <xsd:enumeration value="nil"/>
+	*     <xsd:enumeration value="dxa"/>
+	*   </xsd:restriction>
+	* </xsd:simpleType>
+	* ```
+	*/
+	var CellSpacingType = {
+		/** Value is in twentieths of a point */
+		DXA: "dxa",
+		/** No (empty) value. */
+		NIL: "nil"
+	};
+	/**
+	* Creates table cell spacing in a WordprocessingML document.
+	*
+	* The tblCellSpacing element specifies the spacing between cells in a table.
+	*
+	* Reference: http://officeopenxml.com/WPtableCellSpacing.php
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:complexType name="CT_TblCellSpacing">
+	*   <xsd:attribute name="w" type="ST_MeasurementOrPercent"/>
+	*   <xsd:attribute name="type" type="ST_TblCellSpacing"/>
+	* </xsd:complexType>
+	* ```
+	*
+	* @example
+	* ```typescript
+	* createTableCellSpacing({ value: 100, type: CellSpacingType.DXA });
+	* ```
+	*/
+	var createTableCellSpacing = ({ type = CellSpacingType.DXA, value }) => new BuilderElement({
+		name: "w:tblCellSpacing",
+		attributes: {
+			type: {
+				key: "w:type",
+				value: type
+			},
+			value: {
+				key: "w:w",
+				value: measurementOrPercentValue(value)
+			}
+		}
+	});
 	// src/file/table/table-properties/table-borders.ts
 	/**
 	* Table borders module for WordprocessingML documents.
@@ -16631,69 +16694,6 @@ MAX: 9026 };
 			key: "w:type",
 			value: type
 		} }
-	});
-	// src/file/table/table-cell-spacing.ts
-	/**
-	* Table cell spacing module for WordprocessingML documents.
-	*
-	* This module provides cell spacing settings for tables, controlling
-	* the space between cells in a table.
-	*
-	* Reference: http://officeopenxml.com/WPtableCellSpacing.php
-	*
-	* @module
-	*/
-	/**
-	* Cell spacing measurement types.
-	*
-	* ## XSD Schema
-	* ```xml
-	* <xsd:simpleType name="ST_TblCellSpacing">
-	*   <xsd:restriction base="xsd:string">
-	*     <xsd:enumeration value="nil"/>
-	*     <xsd:enumeration value="dxa"/>
-	*   </xsd:restriction>
-	* </xsd:simpleType>
-	* ```
-	*/
-	var CellSpacingType = {
-		/** Value is in twentieths of a point */
-		DXA: "dxa",
-		/** No (empty) value. */
-		NIL: "nil"
-	};
-	/**
-	* Creates table cell spacing in a WordprocessingML document.
-	*
-	* The tblCellSpacing element specifies the spacing between cells in a table.
-	*
-	* Reference: http://officeopenxml.com/WPtableCellSpacing.php
-	*
-	* ## XSD Schema
-	* ```xml
-	* <xsd:complexType name="CT_TblCellSpacing">
-	*   <xsd:attribute name="w" type="ST_MeasurementOrPercent"/>
-	*   <xsd:attribute name="type" type="ST_TblCellSpacing"/>
-	* </xsd:complexType>
-	* ```
-	*
-	* @example
-	* ```typescript
-	* createTableCellSpacing({ value: 100, type: CellSpacingType.DXA });
-	* ```
-	*/
-	var createTableCellSpacing = ({ type = CellSpacingType.DXA, value }) => new BuilderElement({
-		name: "w:tblCellSpacing",
-		attributes: {
-			type: {
-				key: "w:type",
-				value: type
-			},
-			value: {
-				key: "w:w",
-				value: measurementOrPercentValue(value)
-			}
-		}
 	});
 	// src/file/table/table-properties/table-look.ts
 	/**
@@ -18367,91 +18367,6 @@ MAX: 9026 };
 			return this.relationships;
 		}
 	};
-	// src/file/endnotes/endnotes-attributes.ts
-	var EndnotesAttributes = class extends XmlAttributeComponent {
-		constructor(..._args) {
-			super(..._args);
-			_defineProperty(this, "xmlKeys", {
-				wpc: "xmlns:wpc",
-				mc: "xmlns:mc",
-				o: "xmlns:o",
-				r: "xmlns:r",
-				m: "xmlns:m",
-				v: "xmlns:v",
-				wp14: "xmlns:wp14",
-				wp: "xmlns:wp",
-				w10: "xmlns:w10",
-				w: "xmlns:w",
-				w14: "xmlns:w14",
-				w15: "xmlns:w15",
-				wpg: "xmlns:wpg",
-				wpi: "xmlns:wpi",
-				wne: "xmlns:wne",
-				wps: "xmlns:wps",
-				Ignorable: "mc:Ignorable"
-			});
-		}
-	};
-	// src/file/footnotes/footnote/note-paragraph.ts
-	/**
-	* The first paragraph of a footnote or endnote, written with the run that shows the note's number before its content.
-	*
-	* The run is added to what the paragraph is written as, rather than to the paragraph, so a paragraph in more than one
-	* note, such as the notes of two documents, or two notes with the same content, has one number in each.
-	*
-	* @internal
-	*/
-	var FirstNoteParagraph = class extends XmlComponent {
-		constructor(paragraph, mark) {
-			super("w:p");
-			_defineProperty(this, "paragraph", void 0);
-			_defineProperty(this, "mark", void 0);
-			this.paragraph = paragraph;
-			this.mark = mark;
-		}
-		prepForXml(context) {
-			const content = this.paragraph.prepForXml(context)["w:p"];
-			const children = Array.isArray(content) ? content : [];
-			const index = children.length > 0 && "w:pPr" in children[0] ? 1 : 0;
-			return { "w:p": [
-				...children.slice(0, index),
-				this.mark.prepForXml(context),
-				...children.slice(index)
-			] };
-		}
-	};
-	// src/file/endnotes/endnote/endnote-attributes.ts
-	var EndnoteAttributes = class extends XmlAttributeComponent {
-		constructor(..._args) {
-			super(..._args);
-			_defineProperty(this, "xmlKeys", {
-				type: "w:type",
-				id: "w:id"
-			});
-		}
-	};
-	// src/file/endnotes/endnote/run/endnote-ref-run.ts
-	var EndnoteRefRun = class extends Run {
-		constructor() {
-			super({ style: "EndnoteReference" });
-			this.root.push(new EndnoteReference());
-		}
-	};
-	// src/file/endnotes/endnote/endnote.ts
-	var EndnoteType = {
-		SEPARATOR: "separator",
-		CONTINUATION_SEPARATOR: "continuationSeparator"
-	};
-	var Endnote = class extends XmlComponent {
-		constructor(options) {
-			super("w:endnote");
-			this.root.push(new EndnoteAttributes({
-				type: options.type,
-				id: options.id
-			}));
-			for (const [index, child] of options.children.entries()) this.root.push(index === 0 ? new FirstNoteParagraph(child, new EndnoteRefRun()) : child);
-		}
-	};
 	// src/file/footnotes/footnote/run/continuation-seperator.ts
 	/**
 	* Footnote continuation separator module for WordprocessingML documents.
@@ -18557,6 +18472,91 @@ MAX: 9026 };
 		constructor() {
 			super({});
 			this.root.push(new Seperator());
+		}
+	};
+	// src/file/footnotes/footnote/note-paragraph.ts
+	/**
+	* The first paragraph of a footnote or endnote, written with the run that shows the note's number before its content.
+	*
+	* The run is added to what the paragraph is written as, rather than to the paragraph, so a paragraph in more than one
+	* note, such as the notes of two documents, or two notes with the same content, has one number in each.
+	*
+	* @internal
+	*/
+	var FirstNoteParagraph = class extends XmlComponent {
+		constructor(paragraph, mark) {
+			super("w:p");
+			_defineProperty(this, "paragraph", void 0);
+			_defineProperty(this, "mark", void 0);
+			this.paragraph = paragraph;
+			this.mark = mark;
+		}
+		prepForXml(context) {
+			const content = this.paragraph.prepForXml(context)["w:p"];
+			const children = Array.isArray(content) ? content : [];
+			const index = children.length > 0 && "w:pPr" in children[0] ? 1 : 0;
+			return { "w:p": [
+				...children.slice(0, index),
+				this.mark.prepForXml(context),
+				...children.slice(index)
+			] };
+		}
+	};
+	// src/file/endnotes/endnote/endnote-attributes.ts
+	var EndnoteAttributes = class extends XmlAttributeComponent {
+		constructor(..._args) {
+			super(..._args);
+			_defineProperty(this, "xmlKeys", {
+				type: "w:type",
+				id: "w:id"
+			});
+		}
+	};
+	// src/file/endnotes/endnote/run/endnote-ref-run.ts
+	var EndnoteRefRun = class extends Run {
+		constructor() {
+			super({ style: "EndnoteReference" });
+			this.root.push(new EndnoteReference());
+		}
+	};
+	// src/file/endnotes/endnote/endnote.ts
+	var EndnoteType = {
+		SEPARATOR: "separator",
+		CONTINUATION_SEPARATOR: "continuationSeparator"
+	};
+	var Endnote = class extends XmlComponent {
+		constructor(options) {
+			super("w:endnote");
+			this.root.push(new EndnoteAttributes({
+				type: options.type,
+				id: options.id
+			}));
+			for (const [index, child] of options.children.entries()) this.root.push(index === 0 ? new FirstNoteParagraph(child, new EndnoteRefRun()) : child);
+		}
+	};
+	// src/file/endnotes/endnotes-attributes.ts
+	var EndnotesAttributes = class extends XmlAttributeComponent {
+		constructor(..._args) {
+			super(..._args);
+			_defineProperty(this, "xmlKeys", {
+				wpc: "xmlns:wpc",
+				mc: "xmlns:mc",
+				o: "xmlns:o",
+				r: "xmlns:r",
+				m: "xmlns:m",
+				v: "xmlns:v",
+				wp14: "xmlns:wp14",
+				wp: "xmlns:wp",
+				w10: "xmlns:w10",
+				w: "xmlns:w",
+				w14: "xmlns:w14",
+				w15: "xmlns:w15",
+				wpg: "xmlns:wpg",
+				wpi: "xmlns:wpi",
+				wne: "xmlns:wne",
+				wps: "xmlns:wps",
+				Ignorable: "mc:Ignorable"
+			});
 		}
 	};
 	// src/file/endnotes/endnotes.ts

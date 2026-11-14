@@ -1,127 +1,5 @@
 var docxMacros = (function(exports) {
 	Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
-	// src/macros/code-page.ts
-	/**
-	* The code page the VBA project's text is written in: its code, and the names of the project and its modules.
-	*
-	* @module
-	*/
-	/**
-	* Windows-1252, the code page of VBA in Word set to English and the other Western European languages. Its number goes in
-	* the project, which is how VBA knows it.
-	*/
-	var CODE_PAGE = 1252;
-	var BYTES = new Map([..."€_‚ƒ„…†‡ˆ‰Š‹Œ_Ž__‘’“”•–—˜™š›œ_žŸ"].flatMap((character, index) => character === "_" ? [] : [[character, 128 + index]]));
-	/**
-	* Encodes text in Windows-1252.
-	*
-	* @param what - What the text is, for the error, such as `The code of module "Greetings"`
-	* @throws If the text has a character Windows-1252 doesn't
-	*/
-	var encodeWindows1252 = (text, what) => Uint8Array.from([...text], (character) => {
-		const code = character.codePointAt(0);
-		const byte = code < 128 || code >= 160 && code <= 255 ? code : BYTES.get(character);
-		if (byte === void 0) {
-			const chrW = Array.from({ length: character.length }, (_, index) => `ChrW(&H${character.charCodeAt(index).toString(16).toUpperCase()})`);
-			throw new Error(`${what} has "${character}", which VBA can't keep in its code page, Windows-1252. Write it with ChrW instead, such as ${chrW.join(" & ")} in a string`);
-		}
-		return byte;
-	});
-	// src/macros/compression.ts
-	/**
-	* The compression VBA uses for a project's module information and for each module's code, a run length encoding.
-	*
-	* Reference: [MS-OVBA] 2.4.1 Compression and Decompression
-	*
-	* @module
-	*/
-	var CHUNK_SIZE = 4096;
-	/**
-	* The bits of a copy token that hold the copy's length, the rest holding its offset. The further into its chunk a copy
-	* is, the more bits its offset can need.
-	*
-	* Reference: [MS-OVBA] 2.4.1.3.19.1 CopyToken Help
-	*
-	* @param position - How far into its chunk the copy is, at least 1
-	*/
-	var lengthBitsAt = (position) => 16 - Math.max(32 - Math.clz32(position - 1), 4);
-	/**
-	* The longest earlier run of bytes in the chunk that the bytes from `current` repeat, the nearest of the longest.
-	*
-	* Reference: [MS-OVBA] 2.4.1.3.19.4 Matching
-	*
-	* @returns How far back the run starts and how long it is, or `undefined` for none of at least 3 bytes
-	*/
-	var findMatch = (data, chunkStart, current, chunkEnd) => {
-		let bestLength = 0;
-		let bestCandidate = 0;
-		for (let candidate = current - 1; candidate >= chunkStart; candidate--) {
-			let length = 0;
-			while (current + length < chunkEnd && data[current + length] === data[candidate + length]) length++;
-			if (length > bestLength) {
-				bestLength = length;
-				bestCandidate = candidate;
-			}
-		}
-		if (bestLength < 3) return;
-		const maximumLength = (1 << lengthBitsAt(current - chunkStart)) - 1 + 3;
-		return {
-			offset: current - bestCandidate,
-			length: Math.min(bestLength, maximumLength)
-		};
-	};
-	/**
-	* Compresses a chunk: groups of up to eight tokens, each group after a byte whose bits say which of its tokens are a
-	* byte as it is and which copy earlier bytes.
-	*
-	* Reference: [MS-OVBA] 2.4.1.3.7 Compressing a DecompressedChunk
-	*/
-	var compressChunk = (data, chunkStart, chunkEnd) => {
-		const tokens = [];
-		let current = chunkStart;
-		while (current < chunkEnd) {
-			const flagIndex = tokens.length;
-			tokens.push(0);
-			for (let index = 0; index < 8 && current < chunkEnd; index++) {
-				const match = findMatch(data, chunkStart, current, chunkEnd);
-				if (match === void 0) {
-					tokens.push(data[current]);
-					current++;
-				} else {
-					const lengthBits = lengthBitsAt(current - chunkStart);
-					const token = match.offset - 1 << lengthBits | match.length - 3;
-					tokens.push(token & 255, token >> 8);
-					tokens[flagIndex] |= 1 << index;
-					current += match.length;
-				}
-			}
-		}
-		if (tokens.length <= CHUNK_SIZE) {
-			const compressedHeader = 45056 | tokens.length + 2 - 3;
-			return [
-				compressedHeader & 255,
-				compressedHeader >> 8,
-				...tokens
-			];
-		}
-		const raw = new Uint8Array(CHUNK_SIZE);
-		raw.set(data.subarray(chunkStart, chunkEnd));
-		return [
-			255,
-			63,
-			...raw
-		];
-	};
-	/**
-	* Compresses data as VBA does.
-	*
-	* Reference: [MS-OVBA] 2.4.1.3.6 Compression algorithm
-	*/
-	var compress = (data) => {
-		const output = [1];
-		for (let chunkStart = 0; chunkStart < data.length; chunkStart += CHUNK_SIZE) output.push(...compressChunk(data, chunkStart, Math.min(chunkStart + CHUNK_SIZE, data.length)));
-		return Uint8Array.from(output);
-	};
 	// src/compound-file/compound-file.ts
 	var SECTOR_SIZE = 512;
 	var MINI_SECTOR_SIZE = 64;
@@ -327,6 +205,128 @@ var docxMacros = (function(exports) {
 			view.setUint32(sectorOffset(fatStart) + index * 4, (_fat$index = fat[index]) !== null && _fat$index !== void 0 ? _fat$index : FREE_SECTOR, true);
 		}
 		return file;
+	};
+	// src/macros/code-page.ts
+	/**
+	* The code page the VBA project's text is written in: its code, and the names of the project and its modules.
+	*
+	* @module
+	*/
+	/**
+	* Windows-1252, the code page of VBA in Word set to English and the other Western European languages. Its number goes in
+	* the project, which is how VBA knows it.
+	*/
+	var CODE_PAGE = 1252;
+	var BYTES = new Map([..."€_‚ƒ„…†‡ˆ‰Š‹Œ_Ž__‘’“”•–—˜™š›œ_žŸ"].flatMap((character, index) => character === "_" ? [] : [[character, 128 + index]]));
+	/**
+	* Encodes text in Windows-1252.
+	*
+	* @param what - What the text is, for the error, such as `The code of module "Greetings"`
+	* @throws If the text has a character Windows-1252 doesn't
+	*/
+	var encodeWindows1252 = (text, what) => Uint8Array.from([...text], (character) => {
+		const code = character.codePointAt(0);
+		const byte = code < 128 || code >= 160 && code <= 255 ? code : BYTES.get(character);
+		if (byte === void 0) {
+			const chrW = Array.from({ length: character.length }, (_, index) => `ChrW(&H${character.charCodeAt(index).toString(16).toUpperCase()})`);
+			throw new Error(`${what} has "${character}", which VBA can't keep in its code page, Windows-1252. Write it with ChrW instead, such as ${chrW.join(" & ")} in a string`);
+		}
+		return byte;
+	});
+	// src/macros/compression.ts
+	/**
+	* The compression VBA uses for a project's module information and for each module's code, a run length encoding.
+	*
+	* Reference: [MS-OVBA] 2.4.1 Compression and Decompression
+	*
+	* @module
+	*/
+	var CHUNK_SIZE = 4096;
+	/**
+	* The bits of a copy token that hold the copy's length, the rest holding its offset. The further into its chunk a copy
+	* is, the more bits its offset can need.
+	*
+	* Reference: [MS-OVBA] 2.4.1.3.19.1 CopyToken Help
+	*
+	* @param position - How far into its chunk the copy is, at least 1
+	*/
+	var lengthBitsAt = (position) => 16 - Math.max(32 - Math.clz32(position - 1), 4);
+	/**
+	* The longest earlier run of bytes in the chunk that the bytes from `current` repeat, the nearest of the longest.
+	*
+	* Reference: [MS-OVBA] 2.4.1.3.19.4 Matching
+	*
+	* @returns How far back the run starts and how long it is, or `undefined` for none of at least 3 bytes
+	*/
+	var findMatch = (data, chunkStart, current, chunkEnd) => {
+		let bestLength = 0;
+		let bestCandidate = 0;
+		for (let candidate = current - 1; candidate >= chunkStart; candidate--) {
+			let length = 0;
+			while (current + length < chunkEnd && data[current + length] === data[candidate + length]) length++;
+			if (length > bestLength) {
+				bestLength = length;
+				bestCandidate = candidate;
+			}
+		}
+		if (bestLength < 3) return;
+		const maximumLength = (1 << lengthBitsAt(current - chunkStart)) - 1 + 3;
+		return {
+			offset: current - bestCandidate,
+			length: Math.min(bestLength, maximumLength)
+		};
+	};
+	/**
+	* Compresses a chunk: groups of up to eight tokens, each group after a byte whose bits say which of its tokens are a
+	* byte as it is and which copy earlier bytes.
+	*
+	* Reference: [MS-OVBA] 2.4.1.3.7 Compressing a DecompressedChunk
+	*/
+	var compressChunk = (data, chunkStart, chunkEnd) => {
+		const tokens = [];
+		let current = chunkStart;
+		while (current < chunkEnd) {
+			const flagIndex = tokens.length;
+			tokens.push(0);
+			for (let index = 0; index < 8 && current < chunkEnd; index++) {
+				const match = findMatch(data, chunkStart, current, chunkEnd);
+				if (match === void 0) {
+					tokens.push(data[current]);
+					current++;
+				} else {
+					const lengthBits = lengthBitsAt(current - chunkStart);
+					const token = match.offset - 1 << lengthBits | match.length - 3;
+					tokens.push(token & 255, token >> 8);
+					tokens[flagIndex] |= 1 << index;
+					current += match.length;
+				}
+			}
+		}
+		if (tokens.length <= CHUNK_SIZE) {
+			const compressedHeader = 45056 | tokens.length + 2 - 3;
+			return [
+				compressedHeader & 255,
+				compressedHeader >> 8,
+				...tokens
+			];
+		}
+		const raw = new Uint8Array(CHUNK_SIZE);
+		raw.set(data.subarray(chunkStart, chunkEnd));
+		return [
+			255,
+			63,
+			...raw
+		];
+	};
+	/**
+	* Compresses data as VBA does.
+	*
+	* Reference: [MS-OVBA] 2.4.1.3.6 Compression algorithm
+	*/
+	var compress = (data) => {
+		const output = [1];
+		for (let chunkStart = 0; chunkStart < data.length; chunkStart += CHUNK_SIZE) output.push(...compressChunk(data, chunkStart, Math.min(chunkStart + CHUNK_SIZE, data.length)));
+		return Uint8Array.from(output);
 	};
 	// \0@oxc-project+runtime@0.156.0/helpers/esm/typeof.js
 	function _typeof(o) {
