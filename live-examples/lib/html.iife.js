@@ -8149,7 +8149,8 @@ var docxHtml = (function(exports, docx, docx_math) {
 			newNode.parent = parentNode;
 		},
 		insertBefore(parentNode, newNode, referenceNode) {
-			const insertionIdx = parentNode.children.indexOf(referenceNode);
+			const { children } = parentNode;
+			const insertionIdx = children[children.length - 1] === referenceNode ? children.length - 1 : children.indexOf(referenceNode);
 			const { prev } = referenceNode;
 			if (prev) {
 				prev.next = newNode;
@@ -8186,13 +8187,14 @@ var docxHtml = (function(exports, docx, docx_math) {
 		},
 		detachNode(node) {
 			if (node.parent) {
-				const idx = node.parent.children.indexOf(node);
+				const { children } = node.parent;
+				const idx = children[children.length - 1] === node ? children.length - 1 : children.indexOf(node);
 				const { prev, next } = node;
 				node.prev = null;
 				node.next = null;
 				if (prev) prev.next = next;
 				if (next) next.prev = prev;
-				node.parent.children.splice(idx, 1);
+				children.splice(idx, 1);
 				node.parent = null;
 			}
 		},
@@ -8202,7 +8204,7 @@ var docxHtml = (function(exports, docx, docx_math) {
 			else adapter.appendChild(parentNode, adapter.createTextNode(text));
 		},
 		insertTextBefore(parentNode, text, referenceNode) {
-			const prevNode = parentNode.children[parentNode.children.indexOf(referenceNode) - 1];
+			const prevNode = referenceNode.prev;
 			if (prevNode && isText(prevNode)) prevNode.data += text;
 			else adapter.insertBefore(parentNode, adapter.createTextNode(text), referenceNode);
 		},
