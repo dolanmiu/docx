@@ -2,7 +2,7 @@ var docx = (function(exports) {
 	Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
 	// \0rolldown/runtime.js
 	var __commonJSMin = (cb, mod) => () => (mod || (cb((mod = { exports: {} }).exports, mod, mod.exports), cb = null), mod.exports);
-	// \0@oxc-project+runtime@0.155.0/helpers/esm/typeof.js
+	// \0@oxc-project+runtime@0.156.0/helpers/esm/typeof.js
 	function _typeof(o) {
 		"@babel/helpers - typeof";
 		return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o) {
@@ -11,7 +11,7 @@ var docx = (function(exports) {
 			return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o;
 		}, _typeof(o);
 	}
-	// \0@oxc-project+runtime@0.155.0/helpers/esm/toPrimitive.js
+	// \0@oxc-project+runtime@0.156.0/helpers/esm/toPrimitive.js
 	function toPrimitive(t, r) {
 		if ("object" != _typeof(t) || !t) return t;
 		var e = t[Symbol.toPrimitive];
@@ -22,12 +22,12 @@ var docx = (function(exports) {
 		}
 		return ("string" === r ? String : Number)(t);
 	}
-	// \0@oxc-project+runtime@0.155.0/helpers/esm/toPropertyKey.js
+	// \0@oxc-project+runtime@0.156.0/helpers/esm/toPropertyKey.js
 	function toPropertyKey(t) {
 		var i = toPrimitive(t, "string");
 		return "symbol" == _typeof(i) ? i : i + "";
 	}
-	// \0@oxc-project+runtime@0.155.0/helpers/esm/defineProperty.js
+	// \0@oxc-project+runtime@0.156.0/helpers/esm/defineProperty.js
 	function _defineProperty(e, r, t) {
 		return (r = toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
 			value: t,
@@ -265,7 +265,7 @@ var docx = (function(exports) {
 			return result && (typeof result[this.rootKey] !== "object" || Object.keys(result[this.rootKey]).length) ? result : void 0;
 		}
 	};
-	// \0@oxc-project+runtime@0.155.0/helpers/esm/objectSpread2.js
+	// \0@oxc-project+runtime@0.156.0/helpers/esm/objectSpread2.js
 	function ownKeys(e, r) {
 		var t = Object.keys(e);
 		if (Object.getOwnPropertySymbols) {
@@ -444,7 +444,7 @@ var docx = (function(exports) {
 			});
 		}
 	};
-	// \0@oxc-project+runtime@0.155.0/helpers/esm/objectWithoutPropertiesLoose.js
+	// \0@oxc-project+runtime@0.156.0/helpers/esm/objectWithoutPropertiesLoose.js
 	function _objectWithoutPropertiesLoose(r, e) {
 		if (null == r) return {};
 		var t = {};
@@ -454,7 +454,7 @@ var docx = (function(exports) {
 		}
 		return t;
 	}
-	// \0@oxc-project+runtime@0.155.0/helpers/esm/objectWithoutProperties.js
+	// \0@oxc-project+runtime@0.156.0/helpers/esm/objectWithoutProperties.js
 	function _objectWithoutProperties(e, t) {
 		if (null == e) return {};
 		var o, r, i = _objectWithoutPropertiesLoose(e, t);
@@ -26844,7 +26844,7 @@ MAX: 9026 };
 			return dest;
 		}
 	};
-	// \0@oxc-project+runtime@0.155.0/helpers/esm/asyncToGenerator.js
+	// \0@oxc-project+runtime@0.156.0/helpers/esm/asyncToGenerator.js
 	function asyncGeneratorStep(n, t, e, r, o, a, c) {
 		try {
 			var i = n[a](c), u = i.value;

@@ -41,7 +41,7 @@ var docxLayout = (function(exports) {
 			bold: "1tN!*021tN1tN!!1tN1tN!!1tN1tN!!1tN1tN!!1tN*021tO1tN1tN!!1tN*021tO1tN1tN!!1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN1tN!!1tN1tN!!1tN1tN!!1tN1tN!!1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN1tN!!1tN*021tO1tN*021tO1tN*021tO1tN*021tO1tN1tN!!1tN*021tO1tN*021tO1tN*021tO1tN*08"
 		}
 	];
-	// \0@oxc-project+runtime@0.155.0/helpers/esm/typeof.js
+	// \0@oxc-project+runtime@0.156.0/helpers/esm/typeof.js
 	function _typeof(o) {
 		"@babel/helpers - typeof";
 		return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o) {
@@ -50,7 +50,7 @@ var docxLayout = (function(exports) {
 			return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o;
 		}, _typeof(o);
 	}
-	// \0@oxc-project+runtime@0.155.0/helpers/esm/toPrimitive.js
+	// \0@oxc-project+runtime@0.156.0/helpers/esm/toPrimitive.js
 	function toPrimitive(t, r) {
 		if ("object" != _typeof(t) || !t) return t;
 		var e = t[Symbol.toPrimitive];
@@ -61,12 +61,12 @@ var docxLayout = (function(exports) {
 		}
 		return ("string" === r ? String : Number)(t);
 	}
-	// \0@oxc-project+runtime@0.155.0/helpers/esm/toPropertyKey.js
+	// \0@oxc-project+runtime@0.156.0/helpers/esm/toPropertyKey.js
 	function toPropertyKey(t) {
 		var i = toPrimitive(t, "string");
 		return "symbol" == _typeof(i) ? i : i + "";
 	}
-	// \0@oxc-project+runtime@0.155.0/helpers/esm/defineProperty.js
+	// \0@oxc-project+runtime@0.156.0/helpers/esm/defineProperty.js
 	function _defineProperty(e, r, t) {
 		return (r = toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
 			value: t,
@@ -75,7 +75,7 @@ var docxLayout = (function(exports) {
 			writable: !0
 		}) : e[r] = t, e;
 	}
-	// \0@oxc-project+runtime@0.155.0/helpers/esm/objectSpread2.js
+	// \0@oxc-project+runtime@0.156.0/helpers/esm/objectSpread2.js
 	function ownKeys(e, r) {
 		var t = Object.keys(e);
 		if (Object.getOwnPropertySymbols) {
@@ -7966,7 +7966,7 @@ var docxLayout = (function(exports) {
 	* Word breaks them.
 	*/
 	var isEastAsianRun = ({ eastAsiaFont, eastAsianLanguage }) => isEastAsianFont(eastAsiaFont) || kinsokuLanguageOf(eastAsianLanguage) !== void 0;
-	// \0@oxc-project+runtime@0.155.0/helpers/esm/objectWithoutPropertiesLoose.js
+	// \0@oxc-project+runtime@0.156.0/helpers/esm/objectWithoutPropertiesLoose.js
 	function _objectWithoutPropertiesLoose(r, e) {
 		if (null == r) return {};
 		var t = {};
@@ -7976,7 +7976,7 @@ var docxLayout = (function(exports) {
 		}
 		return t;
 	}
-	// \0@oxc-project+runtime@0.155.0/helpers/esm/objectWithoutProperties.js
+	// \0@oxc-project+runtime@0.156.0/helpers/esm/objectWithoutProperties.js
 	function _objectWithoutProperties(e, t) {
 		if (null == e) return {};
 		var o, r, i = _objectWithoutPropertiesLoose(e, t);

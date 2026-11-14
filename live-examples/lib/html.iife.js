@@ -519,7 +519,7 @@ var docxHtml = (function(exports, docx, docx_math) {
 			middles: new Uint32Array(middles)
 		};
 	}
-	// \0@oxc-project+runtime@0.155.0/helpers/esm/typeof.js
+	// \0@oxc-project+runtime@0.156.0/helpers/esm/typeof.js
 	function _typeof(o) {
 		"@babel/helpers - typeof";
 		return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o) {
@@ -528,7 +528,7 @@ var docxHtml = (function(exports, docx, docx_math) {
 			return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o;
 		}, _typeof(o);
 	}
-	// \0@oxc-project+runtime@0.155.0/helpers/esm/toPrimitive.js
+	// \0@oxc-project+runtime@0.156.0/helpers/esm/toPrimitive.js
 	function toPrimitive(t, r) {
 		if ("object" != _typeof(t) || !t) return t;
 		var e = t[Symbol.toPrimitive];
@@ -539,12 +539,12 @@ var docxHtml = (function(exports, docx, docx_math) {
 		}
 		return ("string" === r ? String : Number)(t);
 	}
-	// \0@oxc-project+runtime@0.155.0/helpers/esm/toPropertyKey.js
+	// \0@oxc-project+runtime@0.156.0/helpers/esm/toPropertyKey.js
 	function toPropertyKey(t) {
 		var i = toPrimitive(t, "string");
 		return "symbol" == _typeof(i) ? i : i + "";
 	}
-	// \0@oxc-project+runtime@0.155.0/helpers/esm/defineProperty.js
+	// \0@oxc-project+runtime@0.156.0/helpers/esm/defineProperty.js
 	function _defineProperty(e, r, t) {
 		return (r = toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
 			value: t,
@@ -4200,7 +4200,7 @@ var docxHtml = (function(exports, docx, docx_math) {
 			return this.entries.find((entry) => entry.type === EntryType.Element && entry.element === element);
 		}
 	};
-	// \0@oxc-project+runtime@0.155.0/helpers/esm/objectSpread2.js
+	// \0@oxc-project+runtime@0.156.0/helpers/esm/objectSpread2.js
 	function ownKeys(e, r) {
 		var t = Object.keys(e);
 		if (Object.getOwnPropertySymbols) {
@@ -10873,7 +10873,7 @@ var docxHtml = (function(exports, docx, docx_math) {
 			return resultCache.get(node) ? addResultToCache(element) : false;
 		};
 	}
-	// \0@oxc-project+runtime@0.155.0/helpers/esm/objectWithoutPropertiesLoose.js
+	// \0@oxc-project+runtime@0.156.0/helpers/esm/objectWithoutPropertiesLoose.js
 	function _objectWithoutPropertiesLoose(r, e) {
 		if (null == r) return {};
 		var t = {};
@@ -10883,7 +10883,7 @@ var docxHtml = (function(exports, docx, docx_math) {
 		}
 		return t;
 	}
-	// \0@oxc-project+runtime@0.155.0/helpers/esm/objectWithoutProperties.js
+	// \0@oxc-project+runtime@0.156.0/helpers/esm/objectWithoutProperties.js
 	function _objectWithoutProperties(e, t) {
 		if (null == e) return {};
 		var o, r, i = _objectWithoutPropertiesLoose(e, t);
