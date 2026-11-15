@@ -77,21 +77,16 @@ Here is an example of `docx` working in `Vue.js`:
 
 ## Node
 
-Press `endpoint` on the `RunKit` website:
+Runnable examples live in [`demo/`](https://github.com/dolanmiu/docx/tree/master/demo), grouped by topic. In a clone of this repository, after `npm install`, run one with `npm run run-ts -- ./demo/<topic>/<demo>.ts`; it writes `My Document.docx` to the current directory.
 
-![RunKit Instructions](https://user-images.githubusercontent.com/2917613/38582539-f84311b6-3d07-11e8-90db-5885ae02c3c4.png)
-
--   https://runkit.com/dolanmiu/docx-demo1 - Simple paragraph and text
--   https://runkit.com/dolanmiu/docx-demo2 - Advanced Paragraphs and text
--   https://runkit.com/dolanmiu/docx-demo3 - Bullet points
--   https://runkit.com/dolanmiu/docx-demo4 - Simple table
--   https://runkit.com/dolanmiu/docx-demo5 - Images
--   https://runkit.com/dolanmiu/docx-demo6 - Margins
--   https://runkit.com/dolanmiu/docx-demo7 - Landscape
--   https://runkit.com/dolanmiu/docx-demo8 - Header and Footer
--   https://runkit.com/dolanmiu/docx-demo10 - **My CV generated with docx**
-
-More [here](https://github.com/dolanmiu/docx/tree/master/demo)
+-   [`demo/getting-started/basic-document.ts`](https://github.com/dolanmiu/docx/blob/master/demo/getting-started/basic-document.ts) - Simple paragraph and text
+-   [`demo/paragraphs/paragraph-spacing.ts`](https://github.com/dolanmiu/docx/blob/master/demo/paragraphs/paragraph-spacing.ts) - Paragraph spacing
+-   [`demo/lists/numbering-and-bullet-points.ts`](https://github.com/dolanmiu/docx/blob/master/demo/lists/numbering-and-bullet-points.ts) - Bullet points and numbering
+-   [`demo/tables/basic-table.ts`](https://github.com/dolanmiu/docx/blob/master/demo/tables/basic-table.ts) - Simple table
+-   [`demo/images/images.ts`](https://github.com/dolanmiu/docx/blob/master/demo/images/images.ts) - Images
+-   [`demo/page-layout/landscape.ts`](https://github.com/dolanmiu/docx/blob/master/demo/page-layout/landscape.ts) - Landscape
+-   [`demo/headers-and-footers/header-and-footer.ts`](https://github.com/dolanmiu/docx/blob/master/demo/headers-and-footers/header-and-footer.ts) - Header and Footer
+-   [`demo/getting-started/cv.ts`](https://github.com/dolanmiu/docx/blob/master/demo/getting-started/cv.ts) - **My CV generated with docx**
 
 # How to use & Documentation
 
