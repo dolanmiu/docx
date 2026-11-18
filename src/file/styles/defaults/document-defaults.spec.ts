@@ -45,6 +45,28 @@ describe("DocumentDefaults", () => {
         });
     });
 
+    it("should turn off the space between East Asian text and the Latin letters and numbers beside it for the whole document", () => {
+        const defaults = new DocumentDefaults({
+            paragraph: { autoSpaceLatinAndEastAsianText: false, autoSpaceEastAsianText: false },
+        });
+        const tree = new Formatter().format(defaults);
+        expect(tree).to.deep.equal({
+            "w:docDefaults": [
+                { "w:rPrDefault": {} },
+                {
+                    "w:pPrDefault": [
+                        {
+                            "w:pPr": [
+                                { "w:autoSpaceDE": { _attr: { "w:val": false } } },
+                                { "w:autoSpaceDN": { _attr: { "w:val": false } } },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        });
+    });
+
     it("should not add the ListParagraph style when the paragraph defaults define numbering", () => {
         const defaults = new DocumentDefaults({
             paragraph: { numbering: { reference: "test-reference", level: 0 } },

@@ -49,6 +49,19 @@ describe("Level", () => {
         ]);
     });
 
+    it("should turn off the space between East Asian text and the Latin letters and numbers beside it in a level", () => {
+        const tree = new Formatter().format(
+            new Level({
+                level: 0,
+                style: { paragraph: { autoSpaceLatinAndEastAsianText: false, autoSpaceEastAsianText: false } },
+            }),
+        );
+
+        expect(tree["w:lvl"].find((child: object) => "w:pPr" in child)).to.deep.equal({
+            "w:pPr": [{ "w:autoSpaceDE": { _attr: { "w:val": false } } }, { "w:autoSpaceDN": { _attr: { "w:val": false } } }],
+        });
+    });
+
     it("leaves highlight, math and revision out of its run properties, since Office doesn't allow them for a number", () => {
         const tree = new Formatter().format(
             new Level({

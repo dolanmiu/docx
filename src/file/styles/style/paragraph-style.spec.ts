@@ -107,6 +107,22 @@ describe("ParagraphStyle", () => {
             });
         });
 
+        it("should turn off the space between East Asian text and the Latin letters and numbers beside it in a style", () => {
+            const style = new StyleForParagraph({
+                id: "myStyleId",
+                paragraph: { autoSpaceLatinAndEastAsianText: false, autoSpaceEastAsianText: false },
+            });
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
+                    {
+                        "w:pPr": [{ "w:autoSpaceDE": { _attr: { "w:val": false } } }, { "w:autoSpaceDN": { _attr: { "w:val": false } } }],
+                    },
+                ],
+            });
+        });
+
         it("#spacing", () => {
             const style = new StyleForParagraph({ id: "myStyleId", paragraph: { spacing: { before: 50, after: 150 } } });
             const tree = new Formatter().format(style);
