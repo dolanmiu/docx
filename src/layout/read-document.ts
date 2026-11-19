@@ -3205,6 +3205,12 @@ const FOLLOWED_STYLE_CELL_PROPERTIES = new Set(["w:tcMar"]);
 // cells as the table's (TS4)
 const FOLLOWED_ROW_TABLE_PROPERTIES = new Set(["w:tblBorders", "w:tblCellMar"]);
 
+/** An element's content as text, with each element's attributes in one order, as XML gives their order no meaning */
+const orderFree = (content: unknown): string =>
+    JSON.stringify(content, (_, value: unknown) =>
+        isObject(value) ? Object.fromEntries(Object.entries(value).sort(([one], [other]) => one.localeCompare(other))) : value,
+    );
+
 /** The last of a property given among properties, each over those before: those of a table's styles, then its own */
 const lastOf = (properties: readonly (readonly XmlObject[])[], name: string): unknown =>
     properties.reduce<unknown>((found, given) => find(given, name) ?? found, undefined);
@@ -3474,6 +3480,11 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
             // The row's table properties of its own (`w:tblPrEx`): its borders and cell margins, which its cells have as the
             // table's (TS4). Most rows have none, so nothing is read for them
             const exceptions = childrenOf(find(rowChildren, "w:tblPrEx"));
+            // Those that are the same as the table's own, as some templates repeat them on each row, change nothing
+            const ownExceptions = exceptions.filter((exception) => {
+                const own = find(properties, nameOf(exception));
+                return own === undefined || orderFree(own) !== orderFree(exception[nameOf(exception)]);
+            });
             const rowBorderSet = exceptions.length > 0 ? readBorderSet(find(exceptions, "w:tblBorders")) : {};
             const rowMargins = exceptions.length > 0 ? readCellMargins(find(exceptions, "w:tblCellMar")) : {};
             // A row is as tall as the parts of its table's style for it say, when it doesn't say itself (TS1a)
@@ -3640,11 +3651,12 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
             // A row of a division of a web page (`w:divId`) Word moves across by the division's left margin, as wide and
             // as tall as it is without, with the division's borders beside it but not above or below
             // (`word-stops-pages.docx` DV1b), so its lines are as they are. One with table properties of its own
-            // (`w:tblPrEx`) other than borders and cell margins, such as a width, isn't followed. Its own borders are its
-            // cells', with space between them too (word-stops-table-borders2.docx BT6a to BT6c)
+            // (`w:tblPrEx`) other than borders and cell margins, such as a width, isn't followed, unless they are the
+            // table's own. Its own borders are its cells', with space between them too (word-stops-table-borders2.docx
+            // BT6a to BT6c)
             const rowUnsupported = rowParts.some((part) => "w:sdt" in part)
                 ? BOUND_CONTROL
-                : changesLines(exceptions, FOLLOWED_ROW_TABLE_PROPERTIES)
+                : changesLines(ownExceptions, FOLLOWED_ROW_TABLE_PROPERTIES)
                   ? "a table row with table properties of its own"
                   : rowReferences.some(hasOwnMark)
                     ? DELETED_OWN_MARK

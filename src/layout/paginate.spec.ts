@@ -1013,12 +1013,22 @@ describe("paginate", () => {
             expect(pagesOf(keptAtEnd)).to.include({ e: "1", f: "2" });
         });
 
-        it("should stop where Word hasn't shown whether the spacing below a line goes past the bottom", () => {
-            // In a table row across pages, at 40 points down, where the third line of the cell ends at 85
+        it("should move a cell's line to the next page when only the spacing below its text fits at the end of a row's part, as Word does", () => {
+            // A row across pages at 40 points down, whose cell's third line ends at 85, its text at 80, the bottom: Word puts it
+            // on the next page, unlike in the body (`word-split-rows-and-boxes.docx` SR1 to SR3), so 2 lines are on the first
+            // and 4 on the next, with b below them
             const rowAcross = document([paragraph("a", 3), table([row([[paragraph("cell", 6, spaced)]])]), paragraph("b", 1)]);
-            expect(paginate(rowAcross, { measurer: MEASURER }).stoppedAt).to.equal(
-                "a table row across pages whose line's multiple spacing goes below the page",
-            );
+            const { pages, stoppedAt } = paginate(rowAcross, { measurer: MEASURER });
+            expect(stoppedAt).to.equal(undefined);
+            expect(
+                pages.map(({ body }) =>
+                    body.flatMap((block) => (block.type === "table" ? block.rows.map(({ y, height }) => [y, height]) : [])),
+                ),
+            ).to.deep.equal([[[40, 30]], [[10, 60]]]);
+            expect(pagesOf(rowAcross)).to.include({ a: "1", b: "2" });
+        });
+
+        it("should stop where Word hasn't shown whether the spacing below a line goes past the bottom", () => {
             // Above a paragraph's border below: e's line ends at 70, and its border at 73, but at 68 without the spacing
             const borders = { top: 0, bottom: 3, between: 0, betweenSpace: 0, box: "box", outline: "box" };
             const bordered = document([paragraph("a", 3), ...lines("b"), paragraph("c", 1), { ...paragraph("e", 1, spaced), borders }]);
@@ -8260,7 +8270,7 @@ describe("paginate", () => {
                 ).to.deep.equal([[[10, 26]], [[36, 10]]]);
             });
 
-            it("should break a text box's lines in the room for its text, and make one Word doesn't size to its text as tall as it is (TX1, VM25a)", () => {
+            it("should break a text box's lines in the room for its text, and make one Word doesn't size to its text as tall as it is (TX1, VM25a, OB1)", () => {
                 // "ab ab" is 50 wide, so it fits the room of 50: one line of 10, and 6 (`word-stops-floats2.docx` TX1a to TX1k), and
                 // "ab abc" is two lines
                 const heightOf = (block: ParagraphBlock): number => (laidOut([block]).pages[0].body[0] as ParagraphLayout).lines[0].height;
@@ -8276,7 +8286,10 @@ describe("paginate", () => {
                     ],
                 });
                 expect(heightOf(fixed("ab ab", 40, 30))).to.equal(40);
-                expect(stopOf([fixed("ab abc", 25, 15)])).to.equal("a text box whose text is taller than it");
+                // And when it doesn't: Word cuts off its text, and the box is as tall as it says (`word-split-rows-and-boxes.docx`
+                // OB1)
+                expect(heightOf(fixed("ab abc", 25, 15))).to.equal(25);
+                expect(stopOf([fixed("ab abc", 25, 15)])).to.equal(undefined);
             });
         });
 
@@ -8631,16 +8644,6 @@ describe("paginate with automatic hyphenation", () => {
                 c: "2",
             });
             expect(keptBefore({ ...rows, unsupported: "an imported document", noGuess: true })).to.deep.equal({ a: "1", b: "1" });
-        });
-
-        it("should still stop where it has no guess, such as at the multiple spacing of a line in a table row across pages", () => {
-            // Letting it go below the page, as in the text, would leave the row's lines below the page as it is cut for them
-            const spaced = { lineSpacing: { rule: "multiple", multiple: 1.5 } } as const;
-            const rowAcross = document([paragraph("a", 3), table([row([[paragraph("cell", 6, spaced)]])]), paragraph("b", 1)]);
-            expect(guessed(rowAcross)).to.deep.include({
-                stoppedAt: "a table row across pages whose line's multiple spacing goes below the page",
-                bookmarks: { a: "1" },
-            });
         });
     });
 });
