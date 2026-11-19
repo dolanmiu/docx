@@ -4426,6 +4426,32 @@ describe("readDocument", () => {
                     },
                 ]).blocks[0].block as TableBlock;
                 expect(indented.unsupported).to.equal("a table row with table properties of its own");
+                // Unless they are the same as the table's own, as some templates write them on every row, which changes
+                // nothing; one that isn't, or that the table doesn't have, still stops
+                const tableProperties = [
+                    { "w:tblW": { _attr: { "w:w": 4000, "w:type": "dxa" } } },
+                    { "w:tblInd": { _attr: { "w:w": 100, "w:type": "dxa" } } },
+                    { "w:tblLayout": { _attr: { "w:type": "fixed" } } },
+                    { "w:tblLook": { _attr: { "w:val": "0000" } } },
+                ];
+                const repeating = (rowExceptions: readonly object[]): TableBlock =>
+                    readBody([
+                        {
+                            "w:tbl": [
+                                { "w:tblPr": tableProperties },
+                                { "w:tblGrid": [2000, 2000].map((width) => ({ "w:gridCol": { _attr: { "w:w": width } } })) },
+                                { "w:tr": [cell([], p()), cell([], p())] },
+                                { "w:tr": [{ "w:tblPrEx": rowExceptions }, cell([], p()), cell([], p())] },
+                            ],
+                        },
+                    ]).blocks[0].block as TableBlock;
+                expect(repeating(tableProperties).unsupported).to.equal(undefined);
+                expect(repeating([{ "w:tblW": { _attr: { "w:w": 5000, "w:type": "dxa" } } }]).unsupported).to.equal(
+                    "a table row with table properties of its own",
+                );
+                expect(repeating([{ "w:tblCellSpacing": { _attr: { "w:w": 40, "w:type": "dxa" } } }]).unsupported).to.equal(
+                    "a table row with table properties of its own",
+                );
                 // With space between its cells, the table's borders go around the space (word-stops-table-borders.docx TB5),
                 // and a row's own are its cells', as its margins are (word-stops-table-borders2.docx BT6b: an inside border of a
                 // double line of 0.75 points between them keeps the second cell's text 2.25 points further in)

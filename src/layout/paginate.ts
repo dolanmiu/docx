@@ -1027,19 +1027,13 @@ export const paginate = (
     /**
      * How tall a text box in the line is: its paragraphs, broken in the room for its text, which is its width less its
      * insets and its outline (`word-stops-floats2.docx` TX1a to TX1k), and the room above and below them; or its own
-     * height, when Word doesn't size it to its text, which its text must fit in (`word-stops-vml-text-boxes.docx` VM25a)
+     * height, when Word doesn't size it to its text (`word-stops-vml-text-boxes.docx` VM25a), whether its text fits in it
+     * or not: Word cuts off what doesn't, and the line below a box of 30 points with 5 lines in it is where it is below
+     * the same box with 1 (`word-split-rows-and-boxes.docx` OB1)
      */
     const textBoxHeight = (box: Extract<LayoutItem, { readonly type: "textBox" }>): number => {
         const { room, textWidth: inside, blocks: inBox, fixed } = box;
-        const ofText = stackHeight(inBox, inside, true);
-        if (fixed === undefined) {
-            return room + ofText;
-        }
-        if (ofText > fixed.inner + TOLERANCE) {
-            // Where its text goes past its bottom hasn't been seen
-            throw new Unsupported("a text box whose text is taller than it");
-        }
-        return fixed.height;
+        return fixed === undefined ? room + stackHeight(inBox, inside, true) : fixed.height;
     };
 
     /**
@@ -4667,16 +4661,12 @@ export const paginate = (
             // Widow control and keepLines hold lines back in a row that breaks across pages, as in Word, where LibreOffice
             // lets them go (`word-rules.docx` P8, `word-rules2.docx` Q3). A paragraph that ends in the cell's part on the
             // page needs room for its space after there too, as in Word (`word-line-heights.docx` T2), and for its border.
-            // Whether a line's multiple spacing can go below the bottom of the page at the end of a row's part isn't known
-            const { fits, count: kept } = linesThatFit(
-                remaining,
-                room - used - space,
-                paragraph,
-                from === 0,
-                (upTo) => (upTo === remaining.length ? paragraph.borderBelow + paragraph.spaceAfter : 0),
-                () => {
-                    throw new Unsupported("a table row across pages whose line's multiple spacing goes below the page");
-                },
+            // A line needs room for the space its multiple spacing adds below its text too, which Word doesn't let go below
+            // the page at the end of a row's part, as it does in the body: a line at 1.15 lines goes on to the next page
+            // unless all of it fits, with or without borders, and above a cell's margin below
+            // (`word-split-rows-and-boxes.docx` SR1 to SR3)
+            const { fits, count: kept } = linesThatFit(remaining, room - used - space, paragraph, from === 0, (upTo) =>
+                upTo === remaining.length ? paragraph.borderBelow + paragraph.spaceAfter : 0,
             );
             const upToLimit = limit - placed.length;
             const count = fits <= upToLimit ? kept : upToLimit > 0 ? linesKept(remaining.length, upToLimit, paragraph, from === 0) : 0;
