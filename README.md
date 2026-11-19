@@ -77,7 +77,7 @@ Here is an example of `docx` working in `Vue.js`:
 
 ## Node
 
-Runnable examples live in [`demo/`](https://github.com/dolanmiu/docx/tree/master/demo), grouped by topic. In a clone of this repository, after `npm install`, run one with `npm run run-ts -- ./demo/<topic>/<demo>.ts`; it writes `My Document.docx` to the current directory.
+Runnable examples live in [`demo/`](https://github.com/dolanmiu/docx/tree/master/demo), grouped by topic. In a clone of this repository, after `npm install` and `npm run build`, run one with `npm run run-ts -- ./demo/<topic>/<demo>.ts`; it writes `My Document.docx` to the root of the repository.
 
 -   [`demo/getting-started/basic-document.ts`](https://github.com/dolanmiu/docx/blob/master/demo/getting-started/basic-document.ts) - Simple paragraph and text
 -   [`demo/paragraphs/paragraph-spacing.ts`](https://github.com/dolanmiu/docx/blob/master/demo/paragraphs/paragraph-spacing.ts) - Paragraph spacing
