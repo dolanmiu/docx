@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
+import { BorderStyle } from "@file/border";
+import { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared";
 
+// @ts-expect-error -- Vite reads the schema as text, which TypeScript has no type for
+import wmlSchema from "../../../ooxml-schemas/ISO-IEC29500-4_2016/wml.xsd?raw";
 import { SectionProperties } from "../document/body/section-properties/section-properties";
 import { DocumentWrapper } from "../document-wrapper";
 import type { File } from "../file";
 import { FontWrapper } from "../fonts/font-wrapper";
-import { AlignmentType } from "./formatting";
+import { AlignmentType, TabStopType } from "./formatting";
+import { FrameAnchorType } from "./frame";
 import { ParagraphProperties } from "./properties";
 
 describe("ParagraphProperties", () => {
@@ -169,6 +174,81 @@ describe("ParagraphProperties", () => {
                     },
                 ],
             });
+        });
+
+        it("should create with the autoSpaceLatinAndEastAsianText property", () => {
+            const properties = new ParagraphProperties({
+                autoSpaceLatinAndEastAsianText: true,
+            });
+            const tree = new Formatter().format(properties);
+
+            expect(tree).to.deep.equal({
+                "w:pPr": [
+                    {
+                        "w:autoSpaceDE": {},
+                    },
+                ],
+            });
+        });
+
+        it("should turn off the space between East Asian text and the Latin letters and numbers beside it", () => {
+            const properties = new ParagraphProperties({
+                autoSpaceLatinAndEastAsianText: false,
+                autoSpaceEastAsianText: false,
+            });
+            const tree = new Formatter().format(properties);
+
+            expect(tree).to.deep.equal({
+                "w:pPr": [{ "w:autoSpaceDE": { _attr: { "w:val": false } } }, { "w:autoSpaceDN": { _attr: { "w:val": false } } }],
+            });
+        });
+
+        it("should write each element it has an option for in the order CT_PPrBase and CT_PPr give them", () => {
+            const elementsOf = (type: string): readonly string[] =>
+                [
+                    ...new RegExp(`<xsd:complexType name="${type}">([\\s\\S]*?)</xsd:complexType>`)
+                        .exec(wmlSchema)![1]
+                        .matchAll(/<xsd:element name="(\w+)"/g),
+                ].map(([, name]) => `w:${name}`);
+            // CT_PPr is CT_PPrBase's elements, then rPr, sectPr and pPrChange
+            const order = [...elementsOf("CT_PPrBase"), ...elementsOf("CT_PPr")];
+
+            const properties = new ParagraphProperties({
+                style: "MyStyle",
+                keepNext: true,
+                keepLines: true,
+                pageBreakBefore: true,
+                frame: {
+                    type: "alignment",
+                    width: 4000,
+                    height: 1000,
+                    anchor: { horizontal: FrameAnchorType.MARGIN, vertical: FrameAnchorType.MARGIN },
+                    alignment: { x: HorizontalPositionAlign.CENTER, y: VerticalPositionAlign.TOP },
+                },
+                widowControl: true,
+                numbering: false,
+                suppressLineNumbers: true,
+                border: { top: { style: BorderStyle.SINGLE, size: 6, color: "000000" } },
+                shading: { fill: "EEEEEE" },
+                tabStops: [{ type: TabStopType.LEFT, position: 100 }],
+                wordWrap: true,
+                overflowPunctuation: true,
+                autoSpaceLatinAndEastAsianText: false,
+                autoSpaceEastAsianText: false,
+                bidirectional: true,
+                spacing: { before: 100 },
+                indent: { left: 100 },
+                contextualSpacing: true,
+                alignment: AlignmentType.CENTER,
+                outlineLevel: 0,
+                run: { bold: true },
+                revision: { id: 1, author: "Firstname Lastname", date: "123", alignment: AlignmentType.LEFT },
+            });
+            const tree = new Formatter().format(properties) as { readonly "w:pPr": readonly object[] };
+            const names = tree["w:pPr"].map((child) => Object.keys(child)[0]);
+
+            expect(names).to.have.length(23);
+            expect(names).to.deep.equal(order.filter((name) => names.includes(name)));
         });
 
         it("should create with the wordWrap property", () => {

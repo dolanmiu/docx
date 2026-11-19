@@ -150,6 +150,8 @@ This is the list of options for a paragraph. A detailed explanation is below:
 | [numbering](usage/numbering)   | `{ num: ConcreteNumbering; level: number; custom?: boolean }`                                                       | Optional   |                                                                                                                                                             |
 | [widowControl](#widow-control) | `boolean`                                                                                                           | Optional   |                                                                                                                                                             |
 | [frame](usage/text-frames.md)  | `IFrameOptions`                                                                                                     | Optional   |                                                                                                                                                             |
+| autoSpaceLatinAndEastAsianText | `boolean`                                                                                                           | Optional   | Space between East Asian text and Latin letters. See [East Asian text beside Latin letters and numbers](#east-asian-text-beside-latin-letters-and-numbers)  |
+| autoSpaceEastAsianText         | `boolean`                                                                                                           | Optional   | Space between East Asian text and numbers. See [East Asian text beside Latin letters and numbers](#east-asian-text-beside-latin-letters-and-numbers)        |
 
 ## Text
 
@@ -573,6 +575,35 @@ const doc = new Document({
 ```
 
 !> Word reads `left` and `right` in the XML as the start and end of the paragraph. So docx writes `AlignmentType.RIGHT` as `left` in a `bidirectional` paragraph, which Word puts on the right. This only happens when `alignment` and `bidirectional` are set on the same paragraph. If either one comes from a style or a template, `LEFT` and `RIGHT` act like `START` and `END`.
+
+## East Asian Text Beside Latin Letters and Numbers
+
+Word can put a small space between Chinese, Japanese or Korean text and a Latin letter or a digit beside it. `autoSpaceLatinAndEastAsianText` turns the space beside Latin letters on or off (`w:autoSpaceDE`), and `autoSpaceEastAsianText` the space beside numbers (`w:autoSpaceDN`). Both are on unless the paragraph, or the formatting it takes from elsewhere such as its style or the document defaults, turns them off. Where they are on, whether the space appears depends on the Word that opens the document: Word for Mac on a Mac set to Korean adds it, other setups may not, and the [`useFELayout`](usage/document.md#compatibility-options) compatibility option has Word add it as well.
+
+Set them to `false` in the [document defaults](usage/styling-with-js.md#document-defaults) to turn the space off in every Word, wherever nothing closer to the paragraph, such as its style, turns it back on. They can also be set on a paragraph, a paragraph style or a numbering level, for just those paragraphs. With `externalStyles`, document defaults given here take the place of all of the template's, such as its default fonts, language and paragraph spacing. To keep those, set the options on the paragraphs instead.
+
+```ts live
+import { Document, Paragraph } from "docx";
+
+const doc = new Document({
+    styles: {
+        default: {
+            document: {
+                paragraph: {
+                    autoSpaceLatinAndEastAsianText: false,
+                    autoSpaceEastAsianText: false,
+                },
+            },
+        },
+    },
+    sections: [
+        {
+            // No space added between "docx" and "로", or between "2" and "쪽"
+            children: [new Paragraph("docx로 만든 2쪽짜리 문서")],
+        },
+    ],
+});
+```
 
 ## Thematic Break
 
