@@ -43356,6 +43356,8 @@ var docxLayout = (function(exports) {
 	var READ_STYLE_ROW_PROPERTIES = /* @__PURE__ */ new Set(["w:trHeight", "w:cantSplit"]);
 	var FOLLOWED_STYLE_CELL_PROPERTIES = /* @__PURE__ */ new Set(["w:tcMar"]);
 	var FOLLOWED_ROW_TABLE_PROPERTIES = /* @__PURE__ */ new Set(["w:tblBorders", "w:tblCellMar"]);
+	/** An element's content as text, with each element's attributes in one order, as XML gives their order no meaning */
+	var orderFree = (content) => JSON.stringify(content, (_, value) => isObject(value) ? Object.fromEntries(Object.entries(value).sort(([one], [other]) => one.localeCompare(other))) : value);
 	/** The last of a property given among properties, each over those before: those of a table's styles, then its own */
 	var lastOf = (properties, name) => properties.reduce((found, given) => {
 		var _find3;
@@ -43535,6 +43537,10 @@ var docxLayout = (function(exports) {
 			const rowParts = unwrap(rowChildren);
 			const rowCells = mergedAcross(withBookmarks(rowParts, "w:tc"));
 			const exceptions = childrenOf(find(rowChildren, "w:tblPrEx"));
+			const ownExceptions = exceptions.filter((exception) => {
+				const own = find(properties, nameOf$1(exception));
+				return own === void 0 || orderFree(own) !== orderFree(exception[nameOf$1(exception)]);
+			});
 			const rowBorderSet = exceptions.length > 0 ? readBorderSet(find(exceptions, "w:tblBorders")) : {};
 			const rowMargins = exceptions.length > 0 ? readCellMargins(find(exceptions, "w:tblCellMar")) : {};
 			const ownHeight = find(rowProperties, "w:trHeight");
@@ -43633,7 +43639,7 @@ var docxLayout = (function(exports) {
 				edges: /* @__PURE__ */ new Map([[skipped, widthBefore !== null && widthBefore !== void 0 ? widthBefore : gridWidth(0, skipped)]])
 			});
 			if (deleted) for (const [definition, count] of rowReader.counters) cellReader.counters.set(definition, count);
-			const rowUnsupported = rowParts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : changesLines(exceptions, FOLLOWED_ROW_TABLE_PROPERTIES) ? "a table row with table properties of its own" : rowReferences.some(hasOwnMark) ? DELETED_OWN_MARK : unseenHeaderCount ? "a deleted row in a table's header of several rows, whose style formats some of its rows" : cellsUnsupported !== null && cellsUnsupported !== void 0 ? cellsUnsupported : unsupportedVerticalRowOf(cells.filter(({ verticalMerge }) => verticalMerge === void 0));
+			const rowUnsupported = rowParts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : changesLines(ownExceptions, FOLLOWED_ROW_TABLE_PROPERTIES) ? "a table row with table properties of its own" : rowReferences.some(hasOwnMark) ? DELETED_OWN_MARK : unseenHeaderCount ? "a deleted row in a table's header of several rows, whose style formats some of its rows" : cellsUnsupported !== null && cellsUnsupported !== void 0 ? cellsUnsupported : unsupportedVerticalRowOf(cells.filter(({ verticalMerge }) => verticalMerge === void 0));
 			return _objectSpread2(_objectSpread2({
 				cells,
 				deleted,
@@ -46098,14 +46104,13 @@ var docxLayout = (function(exports) {
 		/**
 		* How tall a text box in the line is: its paragraphs, broken in the room for its text, which is its width less its
 		* insets and its outline (`word-stops-floats2.docx` TX1a to TX1k), and the room above and below them; or its own
-		* height, when Word doesn't size it to its text, which its text must fit in (`word-stops-vml-text-boxes.docx` VM25a)
+		* height, when Word doesn't size it to its text (`word-stops-vml-text-boxes.docx` VM25a), whether its text fits in it
+		* or not: Word cuts off what doesn't, and the line below a box of 30 points with 5 lines in it is where it is below
+		* the same box with 1 (`word-split-rows-and-boxes.docx` OB1)
 		*/
 		const textBoxHeight = (box) => {
 			const { room, textWidth: inside, blocks: inBox, fixed } = box;
-			const ofText = stackHeight(inBox, inside, true);
-			if (fixed === void 0) return room + ofText;
-			if (ofText > fixed.inner + TOLERANCE) throw new Unsupported("a text box whose text is taller than it");
-			return fixed.height;
+			return fixed === void 0 ? room + stackHeight(inBox, inside, true) : fixed.height;
 		};
 		/**
 		* A paragraph's content, as it is measured, which stops the layout at a character whose width the measurer doesn't
@@ -48708,9 +48713,7 @@ var docxLayout = (function(exports) {
 				if (from === 0 && previousAfter === void 0 && !isFirstPart && paragraph.joinedUnlike === true) stopAt("a paragraph at the top of a page in one box with the one before, whose between border is another");
 				const space = from > 0 ? 0 : (previousAfter === void 0 ? isFirstPart ? paragraph.spaceBefore : 0 : between(previousAfter, paragraph.spaceBefore)) + paragraph.borderAbove;
 				const remaining = paragraph.lines.slice(from);
-				const { fits, count: kept } = linesThatFit(remaining, room - used - space, paragraph, from === 0, (upTo) => upTo === remaining.length ? paragraph.borderBelow + paragraph.spaceAfter : 0, () => {
-					throw new Unsupported("a table row across pages whose line's multiple spacing goes below the page");
-				});
+				const { fits, count: kept } = linesThatFit(remaining, room - used - space, paragraph, from === 0, (upTo) => upTo === remaining.length ? paragraph.borderBelow + paragraph.spaceAfter : 0);
 				const upToLimit = limit - placed.length;
 				const count = fits <= upToLimit ? kept : upToLimit > 0 ? linesKept(remaining.length, upToLimit, paragraph, from === 0) : 0;
 				const before = placed.length;
