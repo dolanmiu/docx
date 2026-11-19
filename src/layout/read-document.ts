@@ -3205,6 +3205,12 @@ const FOLLOWED_STYLE_CELL_PROPERTIES = new Set(["w:tcMar"]);
 // cells as the table's (TS4)
 const FOLLOWED_ROW_TABLE_PROPERTIES = new Set(["w:tblBorders", "w:tblCellMar"]);
 
+/** An element's content as text, with each element's attributes in one order, as XML gives their order no meaning */
+const orderFree = (content: unknown): string =>
+    JSON.stringify(content, (_, value: unknown) =>
+        isObject(value) ? Object.fromEntries(Object.entries(value).sort(([one], [other]) => one.localeCompare(other))) : value,
+    );
+
 /** The last of a property given among properties, each over those before: those of a table's styles, then its own */
 const lastOf = (properties: readonly (readonly XmlObject[])[], name: string): unknown =>
     properties.reduce<unknown>((found, given) => find(given, name) ?? found, undefined);
@@ -3477,7 +3483,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
             // Those that are the same as the table's own, as some templates repeat them on each row, change nothing
             const ownExceptions = exceptions.filter((exception) => {
                 const own = find(properties, nameOf(exception));
-                return own === undefined || JSON.stringify(own) !== JSON.stringify(exception[nameOf(exception)]);
+                return own === undefined || orderFree(own) !== orderFree(exception[nameOf(exception)]);
             });
             const rowBorderSet = exceptions.length > 0 ? readBorderSet(find(exceptions, "w:tblBorders")) : {};
             const rowMargins = exceptions.length > 0 ? readCellMargins(find(exceptions, "w:tblCellMar")) : {};

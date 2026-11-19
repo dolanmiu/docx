@@ -4446,6 +4446,8 @@ describe("readDocument", () => {
                         },
                     ]).blocks[0].block as TableBlock;
                 expect(repeating(tableProperties).unsupported).to.equal(undefined);
+                // With their attributes in another order, which XML gives no meaning
+                expect(repeating([{ "w:tblW": { _attr: { "w:type": "dxa", "w:w": 4000 } } }]).unsupported).to.equal(undefined);
                 expect(repeating([{ "w:tblW": { _attr: { "w:w": 5000, "w:type": "dxa" } } }]).unsupported).to.equal(
                     "a table row with table properties of its own",
                 );
