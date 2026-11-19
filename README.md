@@ -80,10 +80,11 @@ Here is an example of `docx` working in `Vue.js`:
 Runnable examples live in [`demo/`](https://github.com/dolanmiu/docx/tree/master/demo), grouped by topic. In a clone of this repository, after `npm install` and `npm run build`, run one with `npm run run-ts -- ./demo/<topic>/<demo>.ts`; it writes `My Document.docx` to the root of the repository.
 
 -   [`demo/getting-started/basic-document.ts`](https://github.com/dolanmiu/docx/blob/master/demo/getting-started/basic-document.ts) - Simple paragraph and text
--   [`demo/paragraphs/paragraph-spacing.ts`](https://github.com/dolanmiu/docx/blob/master/demo/paragraphs/paragraph-spacing.ts) - Paragraph spacing
+-   [`demo/styles/default-styles.ts`](https://github.com/dolanmiu/docx/blob/master/demo/styles/default-styles.ts) - Advanced paragraphs and text
 -   [`demo/lists/numbering-and-bullet-points.ts`](https://github.com/dolanmiu/docx/blob/master/demo/lists/numbering-and-bullet-points.ts) - Bullet points and numbering
 -   [`demo/tables/basic-table.ts`](https://github.com/dolanmiu/docx/blob/master/demo/tables/basic-table.ts) - Simple table
 -   [`demo/images/images.ts`](https://github.com/dolanmiu/docx/blob/master/demo/images/images.ts) - Images
+-   [`demo/page-layout/page-borders.ts`](https://github.com/dolanmiu/docx/blob/master/demo/page-layout/page-borders.ts) - Margins
 -   [`demo/page-layout/landscape.ts`](https://github.com/dolanmiu/docx/blob/master/demo/page-layout/landscape.ts) - Landscape
 -   [`demo/headers-and-footers/header-and-footer.ts`](https://github.com/dolanmiu/docx/blob/master/demo/headers-and-footers/header-and-footer.ts) - Header and Footer
 -   [`demo/getting-started/cv.ts`](https://github.com/dolanmiu/docx/blob/master/demo/getting-started/cv.ts) - **My CV generated with docx**
