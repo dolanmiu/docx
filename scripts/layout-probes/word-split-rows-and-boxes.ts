@@ -29,7 +29,7 @@
  */
 import { LineRuleType, Paragraph, Table, TableBorders, TableCell, TableRow, WidthType } from "docx";
 
-import { ALL_BORDERS, type Child, TEXT_WIDTH, line, marker, probe, replaceMarkerRun, write } from "./stops2/kit";
+import { ALL_BORDERS, type Child, TEXT_WIDTH, line, marker, probe, replaceMarkerRun, replaceText, write } from "./stops2/kit";
 
 const STEPS = 23;
 const LETTERS = "abcdefghijklmnopqrstuvwxyz";
@@ -100,10 +100,9 @@ const children: Child[] = [
 await write({
     name: "word-split-rows-and-boxes",
     children,
-    injections: BOXES.map(([name, count, framed], index) =>
-        replaceMarkerRun(
-            name,
-            index === 0 ? box(name, count, framed).replace("<w:pict>", `<w:pict>${SHAPE_TYPE}`) : box(name, count, framed),
-        ),
-    ),
+    injections: [
+        ...BOXES.map(([name, count, framed]) => replaceMarkerRun(name, box(name, count, framed))),
+        // The shape type goes before the first box in the document, whichever boxes ONLY leaves in it
+        replaceText(/<w:pict>(?=<v:shape id="OB1)/, `<w:pict>${SHAPE_TYPE}`),
+    ],
 });
