@@ -11867,11 +11867,10 @@ MAX: 9026 };
 				this.numberProperties = numberProperties;
 				this.push(numberProperties);
 			} else if (options.numbering === false) this.push(new NumberProperties(0, 0));
+			if (options.suppressLineNumbers !== void 0) this.push(new OnOffElement("w:suppressLineNumbers", options.suppressLineNumbers));
 			if (options.border) this.push(new Border(options.border));
 			if (options.thematicBreak) this.push(new ThematicBreak());
 			if (options.shading) this.push(createShading(options.shading));
-			if (options.wordWrap) this.push(createWordWrap());
-			if (options.overflowPunctuation) this.push(new OnOffElement("w:overflowPunct", options.overflowPunctuation));
 			/**
 			* FIX: Multitab support for Libre Writer
 			* Ensure there is only one w:tabs tag with multiple w:tab
@@ -11891,14 +11890,16 @@ MAX: 9026 };
 			/**
 			*  FIX - END
 			*/
+			if (options.wordWrap) this.push(createWordWrap());
+			if (options.overflowPunctuation) this.push(new OnOffElement("w:overflowPunct", options.overflowPunctuation));
+			if (options.autoSpaceLatinAndEastAsianText !== void 0) this.push(new OnOffElement("w:autoSpaceDE", options.autoSpaceLatinAndEastAsianText));
+			if (options.autoSpaceEastAsianText !== void 0) this.push(new OnOffElement("w:autoSpaceDN", options.autoSpaceEastAsianText));
 			if (options.bidirectional !== void 0) this.push(new OnOffElement("w:bidi", options.bidirectional));
 			if (options.spacing) this.push(createSpacing(options.spacing));
 			if (options.indent) this.push(createIndent(options.indent));
 			if (options.contextualSpacing !== void 0) this.push(new OnOffElement("w:contextualSpacing", options.contextualSpacing));
 			if (options.alignment) this.push(createAlignment(options.bidirectional && RIGHT_TO_LEFT_ALIGNMENTS[options.alignment] || options.alignment));
 			if (options.outlineLevel !== void 0) this.push(createOutlineLevel(options.outlineLevel));
-			if (options.suppressLineNumbers !== void 0) this.push(new OnOffElement("w:suppressLineNumbers", options.suppressLineNumbers));
-			if (options.autoSpaceEastAsianText !== void 0) this.push(new OnOffElement("w:autoSpaceDN", options.autoSpaceEastAsianText));
 			if (options.run) this.push(new ParagraphRunProperties(options.run));
 			if (options.revision) this.push(new ParagraphPropertiesChange(options.revision));
 		}

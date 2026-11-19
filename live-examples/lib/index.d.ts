@@ -6362,6 +6362,28 @@ export declare type ILevelParagraphStylePropertiesOptions = {
     readonly keepLines?: boolean;
     /** Outline level for table of contents and document outline (0-9) */
     readonly outlineLevel?: number;
+    /**
+     * Whether Word may add a small space between East Asian text and the Latin letters beside it (`w:autoSpaceDE`).
+     * `autoSpaceEastAsianText` is the same for numbers.
+     *
+     * This element specifies whether inter-character spacing shall automatically be adjusted between regions of Latin text and regions of East Asian text in the current paragraph. These regions shall be determined by the Unicode character values of the text content within the paragraph.
+     *
+     * It is on unless the paragraph, or the formatting it takes from elsewhere such as its style or the document
+     * defaults, turns it off. Where it is on, whether the space appears depends on the Word that opens the document.
+     * Set it to `false` to turn the space off in every Word.
+     */
+    readonly autoSpaceLatinAndEastAsianText?: boolean;
+    /**
+     * Whether Word may add a small space between East Asian text and the numbers beside it (`w:autoSpaceDN`).
+     * `autoSpaceLatinAndEastAsianText` is the same for Latin letters.
+     *
+     * This element specifies whether inter-character spacing shall automatically be adjusted between regions of numbers and regions of East Asian text in the current paragraph. These regions shall be determined by the Unicode character values of the text content within the paragraph.
+     *
+     * It is on unless the paragraph, or the formatting it takes from elsewhere such as its style or the document
+     * defaults, turns it off. Where it is on, whether the space appears depends on the Word that opens the document.
+     * Set it to `false` to turn the space off in every Word.
+     */
+    readonly autoSpaceEastAsianText?: boolean;
 };
 
 /**
@@ -7397,11 +7419,6 @@ export declare type IParagraphPropertiesOptionsBase = {
     readonly overflowPunctuation?: boolean;
     /** Character scaling percentage (e.g., 200 for 200%) */
     readonly scale?: number;
-    /**
-     * This element specifies whether inter-character spacing shall automatically be adjusted between regions of numbers and regions of East Asian text in the current paragraph. These regions shall be determined by the Unicode character values of the text content within the paragraph.
-     * This only works in Microsoft Word. It is not part of the ECMA-376 OOXML standard.
-     */
-    readonly autoSpaceEastAsianText?: boolean;
     /**
      * Run properties to apply to all runs in the paragraph.
      * Reference: ECMA-376, 3rd Edition (June, 2011), Fundamentals and Markup Language Reference § 17.3.1.29.
