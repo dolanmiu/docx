@@ -123,7 +123,14 @@ export class NextAttributeComponent<T extends AttributeData> extends BaseXmlComp
         // Built in place, rather than copied for each attribute
         const attrs: Record<string, string | boolean | number> = {};
         for (const { key, value } of Object.values<{ readonly key: string; readonly value: string | boolean | number }>(this.root)) {
-            if (value !== undefined) {
+            if (value === undefined) {
+                continue;
+            }
+            if (key === "__proto__") {
+                // Assigning would call the inherited setter and drop the attribute
+                // eslint-disable-next-line functional/immutable-data
+                Object.defineProperty(attrs, key, { value, enumerable: true, writable: true, configurable: true });
+            } else {
                 // eslint-disable-next-line functional/immutable-data
                 attrs[key] = value;
             }

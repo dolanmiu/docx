@@ -37,6 +37,21 @@ describe("BuilderElement", () => {
                 },
             });
         });
+
+        it("should keep an attribute with the key __proto__", () => {
+            const element = new BuilderElement<{ readonly testAttr: string }>({
+                name: "test",
+                attributes: {
+                    testAttr: {
+                        key: "__proto__",
+                        value: "test",
+                    },
+                },
+            });
+
+            const tree = new Formatter().format(element) as { readonly test: { readonly _attr: object } };
+            expect(Object.entries(tree.test._attr)).to.deep.equal([["__proto__", "test"]]);
+        });
     });
 });
 
