@@ -381,7 +381,7 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (implicitListParagraphStyle) {
-            if (options.bullet) {
+            if (options.bullet && !options.style && !options.heading) {
                 this.push(createParagraphStyle("ListParagraph"));
             }
 

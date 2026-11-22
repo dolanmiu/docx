@@ -693,6 +693,34 @@ describe("Paragraph", () => {
             });
         });
 
+        it("should use the paragraph's own style instead of the list paragraph style", () => {
+            const paragraph = new Paragraph({
+                bullet: {
+                    level: 0,
+                },
+                style: "myFancyStyle",
+            });
+            const tree = new Formatter().format(paragraph);
+            expect(tree["w:p"][0]["w:pPr"]).to.deep.equal([
+                { "w:pStyle": { _attr: { "w:val": "myFancyStyle" } } },
+                { "w:numPr": [{ "w:ilvl": { _attr: { "w:val": 0 } } }, { "w:numId": { _attr: { "w:val": 1 } } }] },
+            ]);
+        });
+
+        it("should use the heading style instead of the list paragraph style", () => {
+            const paragraph = new Paragraph({
+                bullet: {
+                    level: 0,
+                },
+                heading: HeadingLevel.HEADING_2,
+            });
+            const tree = new Formatter().format(paragraph);
+            expect(tree["w:p"][0]["w:pPr"]).to.deep.equal([
+                { "w:pStyle": { _attr: { "w:val": "Heading2" } } },
+                { "w:numPr": [{ "w:ilvl": { _attr: { "w:val": 0 } } }, { "w:numId": { _attr: { "w:val": 1 } } }] },
+            ]);
+        });
+
         it("it should add numbered properties", () => {
             const paragraph = new Paragraph({
                 bullet: {
