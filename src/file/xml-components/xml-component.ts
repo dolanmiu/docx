@@ -21,6 +21,17 @@ import type { IXmlableObject } from "./xmlable-object";
 export const EMPTY_OBJECT = Object.seal({});
 
 /**
+ * Adds what a child wrote to an element's children, leaving it out when it is undefined.
+ */
+// eslint-disable-next-line functional/prefer-readonly-type
+const addChild = (children: IXmlableObject[], written: unknown): void => {
+    if (written !== undefined) {
+        // eslint-disable-next-line functional/immutable-data
+        children.push(written as IXmlableObject);
+    }
+};
+
+/**
  * Base class for all XML components in WordprocessingML documents.
  *
  * XmlComponent provides the infrastructure for building XML element trees
@@ -92,20 +103,31 @@ export abstract class XmlComponent extends BaseXmlComponent {
         context.stack.push(this);
 
         // Recursively prepare all children for serialization. A child written as several components, such as a run with
-        // a run in its children, is written as each of them in turn
-        const children = this.root
-            .flatMap((comp) => {
-                // A component from another copy of docx, such as one a plugin was bundled with, isn't an instance of
-                // this copy's classes. Taken for an object to write as XML, its fields, such as `rootKey`, are written
-                // as elements, and Word can't open the document. So components are known by the method that writes
-                // them, and that method is given this document's context, so it adds its relationships and media here
-                if (isXmlComponent(comp)) {
-                    const parts = comp.writtenAs;
-                    return parts ? parts.map((part) => part.prepForXml(context)) : comp.prepForXml(context);
+        // a run in its children, is written as each of them in turn. Built in place, as an element of a document's body
+        // can have thousands of children
+        // eslint-disable-next-line functional/prefer-readonly-type
+        const children: IXmlableObject[] = [];
+        for (const comp of this.root) {
+            // A component from another copy of docx, such as one a plugin was bundled with, isn't an instance of
+            // this copy's classes. Taken for an object to write as XML, its fields, such as `rootKey`, are written
+            // as elements, and Word can't open the document. So components are known by the method that writes
+            // them, and that method is given this document's context, so it adds its relationships and media here
+            const parts = isXmlComponent(comp) ? comp.writtenAs : undefined;
+            // What a child writes as an array, such as the parts it is written as, is written as each of its items, as
+            // with flatMap
+            const written: unknown = parts
+                ? parts.map((part) => part.prepForXml(context))
+                : isXmlComponent(comp)
+                  ? comp.prepForXml(context)
+                  : comp;
+            if (Array.isArray(written)) {
+                for (const item of written) {
+                    addChild(children, item);
                 }
-                return comp;
-            })
-            .filter((comp) => comp !== undefined); // Exclude undefined
+            } else {
+                addChild(children, written);
+            }
+        }
 
         // Pop this component from the stack
         // eslint-disable-next-line functional/immutable-data
