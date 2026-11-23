@@ -167,13 +167,27 @@ export type IParagraphPropertiesOptionsBase = {
     /** Character scaling percentage (e.g., 200 for 200%) */
     readonly scale?: number;
     /**
-     * Run properties to apply to all runs in the paragraph.
+     * Run properties of the paragraph mark, the ¶ that Word shows at the end of the paragraph with formatting marks on.
+     * They format the mark, not the paragraph's runs. Give them a `revision` to track a change to them.
      * Reference: ECMA-376, 3rd Edition (June, 2011), Fundamentals and Markup Language Reference § 17.3.1.29.
      */
     readonly run?: IParagraphRunOptions;
 } & IParagraphStylePropertiesOptions;
 
-export type IParagraphPropertiesChangeOptions = IChangedAttributesProperties & IParagraphPropertiesOptionsBase;
+/**
+ * Options for a paragraph properties revision (`w:pPrChange`): who made the change, when, and the paragraph's
+ * properties before it.
+ */
+export type IParagraphPropertiesChangeOptions = IChangedAttributesProperties &
+    Omit<IParagraphPropertiesOptionsBase, "run"> & {
+        /**
+         * @deprecated Has no effect. The properties a revision keeps (`w:pPr` in `w:pPrChange`, a `CT_PPrBase`) have no
+         * run properties. To keep the earlier run properties of the paragraph mark, give the paragraph's own `run` a
+         * `revision`, which writes them as `w:rPrChange`. docx used to write them as `w:rPr` inside `w:pPrChange`, where
+         * the schema doesn't allow it.
+         */
+        readonly run?: IParagraphRunOptions;
+    };
 
 /**
  * Options for configuring paragraph properties.
@@ -600,6 +614,26 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
     }
 }
 
+/**
+ * Represents a paragraph properties revision (`w:pPrChange`): the paragraph's properties before a tracked change.
+ *
+ * The properties it keeps are a `CT_PPrBase`, which, unlike the paragraph's own `CT_PPr`, has no run properties, so
+ * `run` is left out of them. The earlier run properties of the paragraph mark are kept with its current ones, as the
+ * `w:rPrChange` that `revision` of the paragraph's `run` writes.
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_PPrChange">
+ *   <xsd:complexContent>
+ *     <xsd:extension base="CT_TrackChange">
+ *       <xsd:sequence>
+ *         <xsd:element name="pPr" type="CT_PPrBase" minOccurs="1"/>
+ *       </xsd:sequence>
+ *     </xsd:extension>
+ *   </xsd:complexContent>
+ * </xsd:complexType>
+ * ```
+ */
 export class ParagraphPropertiesChange extends XmlComponent {
     public constructor(options: IParagraphPropertiesChangeOptions) {
         super("w:pPrChange");
@@ -611,6 +645,6 @@ export class ParagraphPropertiesChange extends XmlComponent {
             }),
         );
         // pPr is required (minOccurs="1") even if empty
-        this.root.push(new ParagraphProperties({ ...options, includeIfEmpty: true }, { inListOrder: false }));
+        this.root.push(new ParagraphProperties({ ...options, run: undefined, includeIfEmpty: true }, { inListOrder: false }));
     }
 }
