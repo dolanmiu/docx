@@ -8,7 +8,7 @@
  * @module
  */
 import { BorderStyle, type IBorderOptions, createBorderElement } from "@file/border";
-import { IgnoreIfEmptyXmlComponent, XmlComponent } from "@file/xml-components";
+import { IgnoreIfEmptyXmlComponent } from "@file/xml-components";
 
 /**
  * Options for configuring paragraph borders.
@@ -96,7 +96,8 @@ export class Border extends IgnoreIfEmptyXmlComponent {
 /**
  * Represents a thematic break (horizontal rule) in a WordprocessingML document.
  *
- * Creates a horizontal line across the paragraph using a bottom border.
+ * Creates a horizontal line across the paragraph using a bottom border. A paragraph has one `w:pBdr`, so the
+ * paragraph's other borders are written in the same element, with the line in place of their bottom border.
  *
  * Reference: http://officeopenxml.com/WPborders.php
  *
@@ -104,7 +105,12 @@ export class Border extends IgnoreIfEmptyXmlComponent {
  * ```xml
  * <xsd:complexType name="CT_PBdr">
  *   <xsd:sequence>
+ *     <xsd:element name="top" type="CT_Border" minOccurs="0"/>
+ *     <xsd:element name="left" type="CT_Border" minOccurs="0"/>
  *     <xsd:element name="bottom" type="CT_Border" minOccurs="0"/>
+ *     <xsd:element name="right" type="CT_Border" minOccurs="0"/>
+ *     <xsd:element name="between" type="CT_Border" minOccurs="0"/>
+ *     <xsd:element name="bar" type="CT_Border" minOccurs="0"/>
  *   </xsd:sequence>
  * </xsd:complexType>
  * ```
@@ -117,15 +123,20 @@ export class Border extends IgnoreIfEmptyXmlComponent {
  * });
  * ```
  */
-export class ThematicBreak extends XmlComponent {
-    public constructor() {
-        super("w:pBdr");
-        const bottom = createBorderElement("w:bottom", {
-            color: "auto",
-            space: 1,
-            style: BorderStyle.SINGLE,
-            size: 6,
+export class ThematicBreak extends Border {
+    /**
+     * @param borders - The paragraph's other borders. A `bottom` among them, as in a paragraph's `border`, gives way to
+     * the line
+     */
+    public constructor(borders: Omit<IBordersOptions, "bottom"> = {}) {
+        super({
+            ...borders,
+            bottom: {
+                color: "auto",
+                space: 1,
+                style: BorderStyle.SINGLE,
+                size: 6,
+            },
         });
-        this.root.push(bottom);
     }
 }

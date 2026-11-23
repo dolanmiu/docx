@@ -629,6 +629,8 @@ const doc = new Document({
 
 The above example will create a heading with a horizontal line directly under it.
 
+The line is the paragraph's bottom border. With a [border](#border), it's drawn with the paragraph's other borders, in place of `border.bottom`.
+
 ## Page Break
 
 To move to a new page (insert a page break):

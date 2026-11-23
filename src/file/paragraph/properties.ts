@@ -40,7 +40,7 @@ import { createOutlineLevel } from "./links";
 export type ILevelParagraphStylePropertiesOptions = {
     /** Paragraph text alignment (left, right, center, justified, etc.) */
     readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
-    /** Whether to display a horizontal line (thematic break) below the paragraph */
+    /** Whether to display a horizontal line (thematic break) below the paragraph, as its bottom border */
     readonly thematicBreak?: boolean;
     /** Whether to ignore spacing before/after when adjacent paragraphs have the same style */
     readonly contextualSpacing?: boolean;
@@ -93,7 +93,10 @@ export type ILevelParagraphStylePropertiesOptions = {
  * border, shading, and numbering options in addition to level properties.
  */
 export type IParagraphStylePropertiesOptions = {
-    /** Border settings for the paragraph */
+    /**
+     * Border settings for the paragraph. With `thematicBreak` in the same options, the thematic break's line is drawn in
+     * place of `bottom`
+     */
     readonly border?: IBordersOptions;
     /** Background shading/fill color for the paragraph */
     readonly shading?: IShadingAttributesProperties;
@@ -440,12 +443,12 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
             this.push(new OnOffElement("w:suppressLineNumbers", options.suppressLineNumbers));
         }
 
-        if (options.border) {
-            this.push(new Border(options.border));
-        }
-
+        // A paragraph has one w:pBdr, and the thematic break's line is its bottom border, so with `border` it's written
+        // with `border`'s other sides, in place of `border.bottom`
         if (options.thematicBreak) {
-            this.push(new ThematicBreak());
+            this.push(new ThematicBreak(options.border));
+        } else if (options.border) {
+            this.push(new Border(options.border));
         }
 
         if (options.shading) {
