@@ -442,17 +442,33 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
     }
 }
 
+/**
+ * Represents the run properties of a paragraph mark (rPr inside pPr).
+ *
+ * They format the paragraph mark, and can mark it as inserted or deleted.
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_ParaRPr">
+ *   <xsd:sequence>
+ *     <xsd:group ref="EG_ParaRPrTrackChanges" minOccurs="0"/>
+ *     <xsd:group ref="EG_RPrBase" minOccurs="0" maxOccurs="unbounded"/>
+ *     <xsd:element name="rPrChange" type="CT_ParaRPrChange" minOccurs="0"/>
+ *   </xsd:sequence>
+ * </xsd:complexType>
+ * ```
+ *
+ * The EG_ParaRPrTrackChanges group holds ins, del, moveFrom and moveTo.
+ */
 export class ParagraphRunProperties extends RunProperties {
     public constructor(options?: IParagraphRunPropertiesOptions) {
         super(options);
 
-        if (options?.insertion) {
-            this.push(new InsertionTrackChange(options.insertion));
-        }
-
-        if (options?.deletion) {
-            this.push(new DeletionTrackChange(options.deletion));
-        }
+        // w:ins and w:del come before the formatting and w:rPrChange that RunProperties has written
+        this.root.unshift(
+            ...(options?.insertion ? [new InsertionTrackChange(options.insertion)] : []),
+            ...(options?.deletion ? [new DeletionTrackChange(options.deletion)] : []),
+        );
     }
 }
 

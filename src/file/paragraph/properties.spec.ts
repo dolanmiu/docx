@@ -371,6 +371,37 @@ describe("ParagraphProperties", () => {
             });
         });
 
+        it("should write the run property insertion and deletion before the paragraph mark's formatting and its revision", () => {
+            const properties = new ParagraphProperties({
+                run: {
+                    bold: true,
+                    insertion: { id: 1, author: "Firstname Lastname", date: "123" },
+                    deletion: { id: 2, author: "Firstname Lastname", date: "123" },
+                    revision: { id: 3, author: "Firstname Lastname", date: "123", bold: false },
+                },
+            });
+            const tree = new Formatter().format(properties);
+
+            expect(tree).to.deep.equal({
+                "w:pPr": [
+                    {
+                        "w:rPr": [
+                            { "w:ins": { _attr: { "w:author": "Firstname Lastname", "w:date": "123", "w:id": 1 } } },
+                            { "w:del": { _attr: { "w:author": "Firstname Lastname", "w:date": "123", "w:id": 2 } } },
+                            { "w:b": {} },
+                            { "w:bCs": {} },
+                            {
+                                "w:rPrChange": [
+                                    { _attr: { "w:author": "Firstname Lastname", "w:date": "123", "w:id": 3 } },
+                                    { "w:rPr": [{ "w:b": { _attr: { "w:val": false } } }, { "w:bCs": { _attr: { "w:val": false } } }] },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
         it("should not add the ListParagraph style to numbered paragraphs when implicitListParagraphStyle is false", () => {
             const properties = new ParagraphProperties(
                 {
