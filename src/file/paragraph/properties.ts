@@ -160,7 +160,10 @@ export type IParagraphPropertiesOptionsBase = {
     readonly frame?: IFrameOptions;
     /** Whether to suppress line numbers for this paragraph */
     readonly suppressLineNumbers?: boolean;
-    /** Whether to allow word wrapping */
+    /**
+     * Word's "Allow Latin text to wrap in the middle of a word". `true` writes `<w:wordWrap w:val="0"/>`, which lets lines
+     * break inside words, including Korean words that Word otherwise keeps together. Leave it unset to break lines between words.
+     */
     readonly wordWrap?: boolean;
     /** Whether to allow punctuation to extend beyond text margins */
     readonly overflowPunctuation?: boolean;
