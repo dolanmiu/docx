@@ -163,7 +163,7 @@ export type IParagraphPropertiesOptionsBase = {
     /**
      * Word's "Allow Latin text to wrap in the middle of a word". `true` writes `<w:wordWrap w:val="0"/>`, which lets lines
      * break inside words, including Korean words that Word otherwise keeps together. When it is unset, the paragraph keeps its
-     * style's setting, so lines break between words unless a style sets `w:wordWrap` to `0`.
+     * style's setting, so Latin and Korean text breaks at the spaces between words unless a style sets `w:wordWrap` to `0`.
      */
     readonly wordWrap?: boolean;
     /** Whether to allow punctuation to extend beyond text margins */
