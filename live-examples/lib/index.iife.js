@@ -11902,12 +11902,9 @@ MAX: 9026 };
 				void 0
 			);
 			if (!options) return this;
-			if (options.heading) this.push(createParagraphStyle(options.heading));
-			if (implicitListParagraphStyle) {
-				if (options.bullet && !options.style && !options.heading) this.push(createParagraphStyle("ListParagraph"));
-				if (options.numbering && !options.numbering.custom && !options.style && !options.heading) this.push(createParagraphStyle("ListParagraph"));
-			}
 			if (options.style) this.push(createParagraphStyle(options.style));
+			else if (options.heading) this.push(createParagraphStyle(options.heading));
+			else if (implicitListParagraphStyle && (options.bullet || options.numbering && !options.numbering.custom)) this.push(createParagraphStyle("ListParagraph"));
 			if (options.keepNext !== void 0) this.push(new OnOffElement("w:keepNext", options.keepNext));
 			if (options.keepLines !== void 0) this.push(new OnOffElement("w:keepLines", options.keepLines));
 			if (options.pageBreakBefore) this.push(new PageBreakBefore());

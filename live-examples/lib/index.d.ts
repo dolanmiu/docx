@@ -7400,7 +7400,10 @@ export declare type IParagraphPropertiesOptions = {
 } & IParagraphPropertiesOptionsBase;
 
 export declare type IParagraphPropertiesOptionsBase = {
-    /** Heading level (Heading1, Heading2, etc.) - applies predefined heading style */
+    /**
+     * Heading level (Heading1, Heading2, etc.) - applies predefined heading style. A paragraph has one style, so with a
+     * `style` too, the paragraph is in `style`
+     */
     readonly heading?: (typeof HeadingLevel)[keyof typeof HeadingLevel];
     /**
      * Whether to lay the paragraph out right-to-left, for languages such as Arabic and Hebrew.
@@ -7412,7 +7415,7 @@ export declare type IParagraphPropertiesOptionsBase = {
     readonly pageBreakBefore?: boolean;
     /** Custom tab stop positions and alignments */
     readonly tabStops?: readonly TabStopDefinition[];
-    /** Style ID to apply to this paragraph */
+    /** Style ID to apply to this paragraph. A paragraph has one style, so this takes the place of `heading` */
     readonly style?: string;
     /**
      * Bullet list configuration. The paragraph is given Word's built-in `ListParagraph` style, unless it has a `style` or a

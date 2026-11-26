@@ -37,7 +37,8 @@ A right-to-left paragraph starts on the right of the page, so it is right-aligne
 </div></li>
 <li class="tsd-parameter">
 <h5><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span class="tsd-kind-property">heading</span><span class="tsd-signature-symbol">?: </span><span class="tsd-signature-keyword">typeof</span> <a href="../variables/index.HeadingLevel.html" class="tsd-signature-type tsd-kind-variable">HeadingLevel</a><span class="tsd-signature-symbol">[</span><span class="tsd-signature-keyword">keyof</span> <span class="tsd-signature-keyword">typeof</span> <a href="../variables/index.HeadingLevel.html" class="tsd-signature-type tsd-kind-variable">HeadingLevel</a><span class="tsd-signature-symbol">]</span></h5>
-<div class="tsd-comment tsd-typography"><p>Heading level (Heading1, Heading2, etc.) - applies predefined heading style</p>
+<div class="tsd-comment tsd-typography"><p>Heading level (Heading1, Heading2, etc.) - applies predefined heading style. A paragraph has one style, so with a
+<code>style</code> too, the paragraph is in <code>style</code></p>
 </div></li>
 <li class="tsd-parameter">
 <h5><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span class="tsd-kind-property">overflowPunctuation</span><span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span></h5>
@@ -59,7 +60,7 @@ Reference: ECMA-376, 3rd Edition (June, 2011), Fundamentals and Markup Language 
 </div></li>
 <li class="tsd-parameter">
 <h5><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span class="tsd-kind-property">style</span><span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span></h5>
-<div class="tsd-comment tsd-typography"><p>Style ID to apply to this paragraph</p>
+<div class="tsd-comment tsd-typography"><p>Style ID to apply to this paragraph. A paragraph has one style, so this takes the place of <code>heading</code></p>
 </div></li>
 <li class="tsd-parameter">
 <h5><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span class="tsd-kind-property">suppressLineNumbers</span><span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span></h5>
@@ -82,7 +83,7 @@ paragraph keeps its style's setting, so Latin and Korean text breaks at the spac
 <code>w:wordWrap</code> to <code>0</code>.</p>
 </div></li></ul></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/48eca6f39a4c5ffe557e41f6f094d2030d7ad559/src/file/paragraph/properties.ts#L140">file/paragraph/properties.ts:140</a></li></ul></aside></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/2243d74c225c5e004c3fea9235756639718e4e1a/src/file/paragraph/properties.ts#L140">file/paragraph/properties.ts:140</a></li></ul></aside></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
