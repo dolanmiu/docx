@@ -11,9 +11,24 @@
 <li><a href="../modules/index.html">index</a></li>
 <li><a href="" aria-current="page">IParagraphRunPropertiesOptions</a></li></ul>
 <h1>Type Alias IParagraphRunPropertiesOptions</h1></div>
-<div class="tsd-signature"><span class="tsd-kind-type-alias">IParagraphRunPropertiesOptions</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{</span><br/>    <span class="tsd-kind-property">deletion</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">IChangedAttributesProperties</span><span class="tsd-signature-symbol">;</span><br/>    <span class="tsd-kind-property">insertion</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">IChangedAttributesProperties</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span> <span class="tsd-signature-symbol">&amp;</span> <a href="index.IRunPropertiesOptions.html" class="tsd-signature-type tsd-kind-type-alias">IRunPropertiesOptions</a></div><aside class="tsd-sources">
+<div class="tsd-signature"><span class="tsd-kind-type-alias">IParagraphRunPropertiesOptions</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{</span><br/>    <span class="tsd-kind-property">deletion</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">IChangedAttributesProperties</span><span class="tsd-signature-symbol">;</span><br/>    <span class="tsd-kind-property">insertion</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">IChangedAttributesProperties</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span> <span class="tsd-signature-symbol">&amp;</span> <a href="index.IRunPropertiesOptions.html" class="tsd-signature-type tsd-kind-type-alias">IRunPropertiesOptions</a></div>
+<div class="tsd-comment tsd-typography"><p>Options for the run properties of a paragraph mark: its formatting, and whether it was inserted or deleted.</p>
+</div>
+<div class="tsd-type-declaration">
+<h4>Type Declaration</h4>
+<ul class="tsd-parameters">
+<li class="tsd-parameter">
+<h5><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span class="tsd-kind-property">deletion</span><span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">IChangedAttributesProperties</span></h5>
+<div class="tsd-comment tsd-typography"><p>Marks the paragraph mark as deleted, so that accepting the deletion joins the paragraph to the next. Writes <code>w:del</code>
+in the mark's <code>w:rPr</code>, after any <code>w:ins</code> and before the formatting</p>
+</div></li>
+<li class="tsd-parameter">
+<h5><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span class="tsd-kind-property">insertion</span><span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">IChangedAttributesProperties</span></h5>
+<div class="tsd-comment tsd-typography"><p>Marks the paragraph mark as inserted, as Word marks a paragraph break typed with track changes on. Writes <code>w:ins</code>
+first in the mark's <code>w:rPr</code></p>
+</div></li></ul></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/484e1778079620a6e757f11cf170a5bfee90c0f3/src/file/paragraph/run/properties.ts#L247">file/paragraph/run/properties.ts:247</a></li></ul></aside></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/00abfed62665b7e815a4fde85715a774f2f6a8c8/src/file/paragraph/run/properties.ts#L250">file/paragraph/run/properties.ts:250</a></li></ul></aside></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

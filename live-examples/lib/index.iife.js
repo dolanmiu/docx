@@ -4274,11 +4274,28 @@ DOT: "dot" };
 			this.root.push(item);
 		}
 	};
+	/**
+	* Represents the run properties of a paragraph mark (rPr inside pPr).
+	*
+	* They format the paragraph mark, and can mark it as inserted or deleted.
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:complexType name="CT_ParaRPr">
+	*   <xsd:sequence>
+	*     <xsd:group ref="EG_ParaRPrTrackChanges" minOccurs="0"/>
+	*     <xsd:group ref="EG_RPrBase" minOccurs="0" maxOccurs="unbounded"/>
+	*     <xsd:element name="rPrChange" type="CT_ParaRPrChange" minOccurs="0"/>
+	*   </xsd:sequence>
+	* </xsd:complexType>
+	* ```
+	*
+	* The EG_ParaRPrTrackChanges group holds ins, del, moveFrom and moveTo.
+	*/
 	var ParagraphRunProperties = class extends RunProperties {
 		constructor(options) {
 			super(options);
-			if (options === null || options === void 0 ? void 0 : options.insertion) this.push(new InsertionTrackChange(options.insertion));
-			if (options === null || options === void 0 ? void 0 : options.deletion) this.push(new DeletionTrackChange(options.deletion));
+			this.root.unshift(...(options === null || options === void 0 ? void 0 : options.insertion) ? [new InsertionTrackChange(options.insertion)] : [], ...(options === null || options === void 0 ? void 0 : options.deletion) ? [new DeletionTrackChange(options.deletion)] : []);
 		}
 	};
 	/**
