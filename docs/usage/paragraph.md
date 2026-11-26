@@ -198,6 +198,8 @@ const doc = new Document({
 });
 ```
 
+A paragraph has one style, so a paragraph with a `style` too is in that style, not the heading's, as Word shows it.
+
 ## Border
 
 Add borders to a `Paragraph`. Good for making the `Paragraph` stand out. Border top and border bottom can be used as a horizontal rule (also known as horizontal line).

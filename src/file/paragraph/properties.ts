@@ -138,7 +138,10 @@ export type IParagraphStylePropertiesOptions = {
 } & ILevelParagraphStylePropertiesOptions;
 
 export type IParagraphPropertiesOptionsBase = {
-    /** Heading level (Heading1, Heading2, etc.) - applies predefined heading style */
+    /**
+     * Heading level (Heading1, Heading2, etc.) - applies predefined heading style. A paragraph has one style, so with a
+     * `style` too, the paragraph is in `style`
+     */
     readonly heading?: (typeof HeadingLevel)[keyof typeof HeadingLevel];
     /**
      * Whether to lay the paragraph out right-to-left, for languages such as Arabic and Hebrew.
@@ -150,7 +153,7 @@ export type IParagraphPropertiesOptionsBase = {
     readonly pageBreakBefore?: boolean;
     /** Custom tab stop positions and alignments */
     readonly tabStops?: readonly TabStopDefinition[];
-    /** Style ID to apply to this paragraph */
+    /** Style ID to apply to this paragraph. A paragraph has one style, so this takes the place of `heading` */
     readonly style?: string;
     /**
      * Bullet list configuration. The paragraph is given Word's built-in `ListParagraph` style, unless it has a `style` or a
@@ -402,22 +405,15 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
             return this;
         }
 
-        if (options.heading) {
-            this.push(createParagraphStyle(options.heading));
-        }
-
-        if (implicitListParagraphStyle) {
-            if (options.bullet && !options.style && !options.heading) {
-                this.push(createParagraphStyle("ListParagraph"));
-            }
-
-            if (options.numbering && !options.numbering.custom && !options.style && !options.heading) {
-                this.push(createParagraphStyle("ListParagraph"));
-            }
-        }
-
+        // A paragraph has one style: CT_PPrBase has one w:pStyle. With both `style` and `heading`, Word applied the last of
+        // the two docx wrote, `style`, so `style` takes the place of `heading`. A list paragraph with neither is given
+        // ListParagraph
         if (options.style) {
             this.push(createParagraphStyle(options.style));
+        } else if (options.heading) {
+            this.push(createParagraphStyle(options.heading));
+        } else if (implicitListParagraphStyle && (options.bullet || (options.numbering && !options.numbering.custom))) {
+            this.push(createParagraphStyle("ListParagraph"));
         }
 
         if (options.keepNext !== undefined) {

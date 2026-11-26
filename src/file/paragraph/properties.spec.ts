@@ -10,7 +10,7 @@ import { SectionProperties } from "../document/body/section-properties/section-p
 import { DocumentWrapper } from "../document-wrapper";
 import type { File } from "../file";
 import { FontWrapper } from "../fonts/font-wrapper";
-import { AlignmentType, TabStopType } from "./formatting";
+import { AlignmentType, HeadingLevel, TabStopType } from "./formatting";
 import { FrameAnchorType } from "./frame";
 import { ParagraphProperties } from "./properties";
 
@@ -583,6 +583,31 @@ describe("ParagraphProperties", () => {
                         "w:pPrChange": [
                             { _attr: { "w:author": "Firstname Lastname", "w:date": "123", "w:id": 1 } },
                             { "w:pPr": [{ "w:jc": { _attr: { "w:val": "left" } } }] },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("should write one style in the properties a revision keeps, with both a heading and a style", () => {
+            const properties = new ParagraphProperties({
+                heading: HeadingLevel.HEADING_2,
+                revision: {
+                    id: 1,
+                    author: "Firstname Lastname",
+                    date: "123",
+                    heading: HeadingLevel.HEADING_1,
+                    style: "myFancyStyle",
+                },
+            });
+            const tree = new Formatter().format(properties);
+            expect(tree).to.deep.equal({
+                "w:pPr": [
+                    { "w:pStyle": { _attr: { "w:val": "Heading2" } } },
+                    {
+                        "w:pPrChange": [
+                            { _attr: { "w:author": "Firstname Lastname", "w:date": "123", "w:id": 1 } },
+                            { "w:pPr": [{ "w:pStyle": { _attr: { "w:val": "myFancyStyle" } } }] },
                         ],
                     },
                 ],
