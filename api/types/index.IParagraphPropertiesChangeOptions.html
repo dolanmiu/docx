@@ -11,9 +11,24 @@
 <li><a href="../modules/index.html">index</a></li>
 <li><a href="" aria-current="page">IParagraphPropertiesChangeOptions</a></li></ul>
 <h1>Type Alias IParagraphPropertiesChangeOptions</h1></div>
-<div class="tsd-signature"><span class="tsd-kind-type-alias">IParagraphPropertiesChangeOptions</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">IChangedAttributesProperties</span> <span class="tsd-signature-symbol">&amp;</span> <a href="index.IParagraphPropertiesOptionsBase.html" class="tsd-signature-type tsd-kind-type-alias">IParagraphPropertiesOptionsBase</a></div><aside class="tsd-sources">
+<div class="tsd-signature"><span class="tsd-kind-type-alias">IParagraphPropertiesChangeOptions</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">IChangedAttributesProperties</span> <span class="tsd-signature-symbol">&amp;</span> <span class="tsd-signature-type">Omit</span><span class="tsd-signature-symbol">&lt;</span><br/>    <a href="index.IParagraphPropertiesOptionsBase.html" class="tsd-signature-type tsd-kind-type-alias">IParagraphPropertiesOptionsBase</a><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-signature-type">&quot;run&quot;</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">&gt;</span> <span class="tsd-signature-symbol">&amp;</span> <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">run</span><span class="tsd-signature-symbol">?:</span> <a href="index.IParagraphRunOptions.html" class="tsd-signature-type tsd-kind-type-alias">IParagraphRunOptions</a> <span class="tsd-signature-symbol">}</span></div>
+<div class="tsd-comment tsd-typography"><p>Options for a paragraph properties revision (<code>w:pPrChange</code>): who made the change, when, and the paragraph's
+properties before it.</p>
+</div>
+<div class="tsd-type-declaration">
+<h4>Type Declaration</h4>
+<ul class="tsd-parameters">
+<li class="tsd-parameter">
+<h5><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span class="tsd-kind-property">run</span><span class="tsd-signature-symbol">?: </span><a href="index.IParagraphRunOptions.html" class="tsd-signature-type tsd-kind-type-alias">IParagraphRunOptions</a></h5>
+<div class="tsd-comment tsd-typography">
+<div class="tsd-tag-deprecated">
+<h4 class="tsd-anchor-link" id="deprecated">Deprecated<a href="#deprecated" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>Has no effect. The properties a revision keeps (<code>w:pPr</code> in <code>w:pPrChange</code>, a <code>CT_PPrBase</code>) have no
+run properties. To keep the earlier run properties of the paragraph mark, give the paragraph's own <code>run</code> a
+<code>revision</code>, which writes them as <code>w:rPrChange</code>. docx used to write them as <code>w:rPr</code> inside <code>w:pPrChange</code>, where
+the schema doesn't allow it.</p>
+</div></div></li></ul></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/00abfed62665b7e815a4fde85715a774f2f6a8c8/src/file/paragraph/properties.ts#L176">file/paragraph/properties.ts:176</a></li></ul></aside></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/882c5aedef2b3ab0bb2ac7217e7a93965b570dcf/src/file/paragraph/properties.ts#L181">file/paragraph/properties.ts:181</a></li></ul></aside></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

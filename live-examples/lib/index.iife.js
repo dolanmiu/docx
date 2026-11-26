@@ -12017,6 +12017,26 @@ MAX: 9026 };
 			return result;
 		}
 	};
+	/**
+	* Represents a paragraph properties revision (`w:pPrChange`): the paragraph's properties before a tracked change.
+	*
+	* The properties it keeps are a `CT_PPrBase`, which, unlike the paragraph's own `CT_PPr`, has no run properties, so
+	* `run` is left out of them. The earlier run properties of the paragraph mark are kept with its current ones, as the
+	* `w:rPrChange` that `revision` of the paragraph's `run` writes.
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:complexType name="CT_PPrChange">
+	*   <xsd:complexContent>
+	*     <xsd:extension base="CT_TrackChange">
+	*       <xsd:sequence>
+	*         <xsd:element name="pPr" type="CT_PPrBase" minOccurs="1"/>
+	*       </xsd:sequence>
+	*     </xsd:extension>
+	*   </xsd:complexContent>
+	* </xsd:complexType>
+	* ```
+	*/
 	var ParagraphPropertiesChange = class extends XmlComponent {
 		constructor(options) {
 			super("w:pPrChange");
@@ -12025,7 +12045,10 @@ MAX: 9026 };
 				author: options.author,
 				date: options.date
 			}));
-			this.root.push(new ParagraphProperties(_objectSpread2(_objectSpread2({}, options), {}, { includeIfEmpty: true }), { inListOrder: false }));
+			this.root.push(new ParagraphProperties(_objectSpread2(_objectSpread2({}, options), {}, {
+				run: void 0,
+				includeIfEmpty: true
+			}), { inListOrder: false }));
 		}
 	};
 	// src/file/paragraph/paragraph.ts
