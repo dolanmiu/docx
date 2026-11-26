@@ -244,8 +244,19 @@ export type IRunPropertiesOptions = {
  */
 export type IRunPropertiesChangeOptions = {} & IRunPropertiesOptions & IChangedAttributesProperties;
 
+/**
+ * Options for the run properties of a paragraph mark: its formatting, and whether it was inserted or deleted.
+ */
 export type IParagraphRunPropertiesOptions = {
+    /**
+     * Marks the paragraph mark as inserted, as Word marks a paragraph break typed with track changes on. Writes `w:ins`
+     * first in the mark's `w:rPr`
+     */
     readonly insertion?: IChangedAttributesProperties;
+    /**
+     * Marks the paragraph mark as deleted, so that accepting the deletion joins the paragraph to the next. Writes `w:del`
+     * in the mark's `w:rPr`, after any `w:ins` and before the formatting
+     */
     readonly deletion?: IChangedAttributesProperties;
 } & IRunPropertiesOptions;
 
