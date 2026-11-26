@@ -1117,6 +1117,34 @@ describe("Paragraph", () => {
                 ],
             });
         });
+
+        it("should write only the style for a paragraph with a heading too, as Word applied the last of the two", () => {
+            const paragraph = new Paragraph({
+                heading: HeadingLevel.HEADING_1,
+                style: "myFancyStyle",
+            });
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [{ "w:pStyle": { _attr: { "w:val": "myFancyStyle" } } }],
+                    },
+                ],
+            });
+        });
+
+        it("should write only the style for a bullet paragraph with a heading too", () => {
+            const paragraph = new Paragraph({
+                heading: HeadingLevel.HEADING_1,
+                style: "myFancyStyle",
+                bullet: { level: 0 },
+            });
+            const tree = new Formatter().format(paragraph);
+            expect(tree["w:p"][0]["w:pPr"]).to.deep.equal([
+                { "w:pStyle": { _attr: { "w:val": "myFancyStyle" } } },
+                { "w:numPr": [{ "w:ilvl": { _attr: { "w:val": 0 } } }, { "w:numId": { _attr: { "w:val": 1 } } }] },
+            ]);
+        });
     });
 
     describe("#indent", () => {
