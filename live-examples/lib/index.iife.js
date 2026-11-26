@@ -131,6 +131,12 @@ var docx = (function(exports) {
 	*/
 	var EMPTY_OBJECT = Object.seal({});
 	/**
+	* Adds what a child wrote to an element's children, leaving it out when it is undefined.
+	*/
+	var addChild = (children, written) => {
+		if (written !== void 0) children.push(written);
+	};
+	/**
 	* Base class for all XML components in WordprocessingML documents.
 	*
 	* XmlComponent provides the infrastructure for building XML element trees
@@ -199,13 +205,13 @@ var docx = (function(exports) {
 		prepForXml(context) {
 			var _children$;
 			context.stack.push(this);
-			const children = this.root.flatMap((comp) => {
-				if (isXmlComponent(comp)) {
-					const parts = comp.writtenAs;
-					return parts ? parts.map((part) => part.prepForXml(context)) : comp.prepForXml(context);
-				}
-				return comp;
-			}).filter((comp) => comp !== void 0);
+			const children = [];
+			for (const comp of this.root) {
+				const parts = isXmlComponent(comp) ? comp.writtenAs : void 0;
+				const written = parts ? parts.map((part) => part.prepForXml(context)) : isXmlComponent(comp) ? comp.prepForXml(context) : comp;
+				if (Array.isArray(written)) for (const item of written) addChild(children, item);
+				else addChild(children, written);
+			}
 			context.stack.pop();
 			return { [this.rootKey]: children.length ? children.length === 1 && ((_children$ = children[0]) === null || _children$ === void 0 ? void 0 : _children$._attr) ? children[0] : children : EMPTY_OBJECT };
 		}
@@ -265,28 +271,6 @@ var docx = (function(exports) {
 			return result && (typeof result[this.rootKey] !== "object" || Object.keys(result[this.rootKey]).length) ? result : void 0;
 		}
 	};
-	// \0@oxc-project+runtime@0.156.0/helpers/esm/objectSpread2.js
-	function ownKeys(e, r) {
-		var t = Object.keys(e);
-		if (Object.getOwnPropertySymbols) {
-			var o = Object.getOwnPropertySymbols(e);
-			r && (o = o.filter(function(r) {
-				return Object.getOwnPropertyDescriptor(e, r).enumerable;
-			})), t.push.apply(t, o);
-		}
-		return t;
-	}
-	function _objectSpread2(e) {
-		for (var r = 1; r < arguments.length; r++) {
-			var t = null != arguments[r] ? arguments[r] : {};
-			r % 2 ? ownKeys(Object(t), !0).forEach(function(r) {
-				_defineProperty(e, r, t[r]);
-			}) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function(r) {
-				Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r));
-			});
-		}
-		return e;
-	}
 	// src/file/xml-components/default-attributes.ts
 	/**
 	* XML attribute components for the docx library.
@@ -341,12 +325,13 @@ var docx = (function(exports) {
 		*/
 		prepForXml(_) {
 			const attrs = {};
-			Object.entries(this.root).forEach(([key, value]) => {
+			for (const key of Object.keys(this.root)) {
+				const value = this.root[key];
 				if (value !== void 0) {
 					const newKey = this.xmlKeys && this.xmlKeys[key] || key;
 					attrs[newKey] = value;
 				}
-			});
+			}
 			return { _attr: attrs };
 		}
 	};
@@ -387,7 +372,18 @@ var docx = (function(exports) {
 		* @returns Object with _attr key containing the attributes
 		*/
 		prepForXml(_) {
-			return { _attr: Object.values(this.root).filter(({ value }) => value !== void 0).reduce((acc, { key, value }) => _objectSpread2(_objectSpread2({}, acc), {}, { [key]: value }), {}) };
+			const attrs = {};
+			for (const { key, value } of Object.values(this.root)) {
+				if (value === void 0) continue;
+				if (key === "__proto__") Object.defineProperty(attrs, key, {
+					value,
+					enumerable: true,
+					writable: true,
+					configurable: true
+				});
+				else attrs[key] = value;
+			}
+			return { _attr: attrs };
 		}
 	};
 	// src/file/xml-components/attributes.ts
@@ -463,6 +459,28 @@ var docx = (function(exports) {
 			for (r = 0; r < s.length; r++) o = s[r], t.includes(o) || {}.propertyIsEnumerable.call(e, o) && (i[o] = e[o]);
 		}
 		return i;
+	}
+	// \0@oxc-project+runtime@0.156.0/helpers/esm/objectSpread2.js
+	function ownKeys(e, r) {
+		var t = Object.keys(e);
+		if (Object.getOwnPropertySymbols) {
+			var o = Object.getOwnPropertySymbols(e);
+			r && (o = o.filter(function(r) {
+				return Object.getOwnPropertyDescriptor(e, r).enumerable;
+			})), t.push.apply(t, o);
+		}
+		return t;
+	}
+	function _objectSpread2(e) {
+		for (var r = 1; r < arguments.length; r++) {
+			var t = null != arguments[r] ? arguments[r] : {};
+			r % 2 ? ownKeys(Object(t), !0).forEach(function(r) {
+				_defineProperty(e, r, t[r]);
+			}) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function(r) {
+				Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r));
+			});
+		}
+		return e;
 	}
 	// src/util/xml/parse.ts
 	var _excluded$4 = ["elements"];
@@ -655,51 +673,68 @@ var docx = (function(exports) {
 	*/
 	var escapeValue = (value) => typeof value === "string" ? escapeAll(value) : value;
 	/**
-	* Works out an element's tag, attributes and content, as the xml package did, quirks and all, so that docx writes the
-	* same XML byte for byte.
+	* Writes text content, escaped, as the xml package did, writing nothing for undefined.
 	*/
-	var resolve = (data, indent, depth) => {
+	var writeText = (value) => value === void 0 ? "" : String(escapeValue(value));
+	/**
+	* Writes an element as the xml package did, quirks and all, so that docx writes the same XML byte for byte. Its XML
+	* is pushed onto `out` in pieces, which are joined once at the end, rather than built as a string for each element.
+	*
+	* @param data - The object to write, such as `{ "w:b": {} }`
+	* @param indent - What to indent each level with, or an empty string to write one line
+	* @param indents - The indentation of this element
+	* @param isLast - Whether this is the last object written, which isn't followed by a line break
+	* @param out - The pieces of XML written so far
+	*/
+	var write = (data, indent, indents, isLast, out) => {
 		const name = Object.keys(data)[0];
 		const values = name === void 0 ? void 0 : data[name];
-		const attributes = [];
-		const content = [];
+		const start = out.length;
+		out.push("");
+		let attributes = "";
+		let length = 0;
 		const addAttributes = (attr) => {
-			for (const [key, value] of Object.entries(attr)) attributes.push(`${key}="${String(escapeValue(value))}"`);
+			for (const key of Object.keys(attr)) attributes += ` ${key}="${String(escapeValue(attr[key]))}"`;
 		};
 		if (typeof values === "object") {
 			if (values !== null) {
 				const { _attr: attr, _cdata: cdata } = values;
 				if (attr) addAttributes(attr);
-				if (cdata) content.push(`<![CDATA[${cdata.replace(/\]\]>/g, "]]]]><![CDATA[>")}]]>`);
+				if (cdata) {
+					out.push(`<![CDATA[${cdata.replace(/\]\]>/g, "]]]]><![CDATA[>")}]]>`);
+					length++;
+				}
 				if (Array.isArray(values)) {
 					let isStringContent = false;
-					content.push("");
+					const childIndents = indents + indent;
+					let lastStart = out.length;
+					length++;
 					for (const value of values) if (typeof value === "object") {
 						if (Object.keys(value)[0] === "_attr") addAttributes(value._attr);
-						else content.push(resolve(value, indent, depth + 1));
+						else {
+							lastStart = out.length;
+							length++;
+							write(value, indent, childIndents, false, out);
+						}
 					} else {
-						content.pop();
+						out.length = lastStart;
 						isStringContent = true;
-						content.push(escapeValue(value));
+						out.push(writeText(value));
 					}
-					if (!isStringContent) content.push("");
+					if (!isStringContent) length++;
 				}
 			}
-		} else content.push(escapeValue(values));
-		return {
-			name,
-			attributes,
-			content,
-			indents: depth > 1 ? indent.repeat(depth - 1) : ""
-		};
-	};
-	var format = (element, indent, isLast) => {
-		if (typeof element !== "object") return String(element);
-		const { name, attributes, content, indents } = element;
-		const { length } = content;
-		const open = indents + (name ? `<${name}` : "") + (attributes.length > 0 ? ` ${attributes.join(" ")}` : "") + (length > 0 ? name ? ">" : "" : "/>") + (indent && length > 1 ? "\n" : "");
-		if (length === 0) return open + (indent ? "\n" : "");
-		return open + content.map((child) => child === void 0 ? "" : format(child, indent, false)).join("") + (length > 1 ? indents : "") + (name ? `</${name}>` : "") + (indent && !isLast ? "\n" : "");
+		} else {
+			out.push(writeText(values));
+			length++;
+		}
+		const open = indents + (name ? `<${name}` : "") + attributes + (length > 0 ? name ? ">" : "" : "/>") + (indent && length > 1 ? "\n" : "");
+		if (length === 0) {
+			out[start] = open + (indent ? "\n" : "");
+			return;
+		}
+		out[start] = open;
+		out.push((length > 1 ? indents : "") + (name ? `</${name}>` : "") + (indent && !isLast ? "\n" : ""));
 	};
 	/**
 	* Writes the XML of an object from docx's `Formatter`, such as `{ "w:b": { _attr: { "w:val": false } } }`,
@@ -711,9 +746,10 @@ var docx = (function(exports) {
 	*/
 	var stringifyXmlable = (input, { indent = "", declaration } = {}) => {
 		const items = Array.isArray(input) ? input : [input];
-		const startDepth = indent ? 1 : 0;
 		const standalone = (declaration === null || declaration === void 0 ? void 0 : declaration.standalone) ? ` standalone="${escapeAll(declaration.standalone)}"` : "";
-		return (declaration === void 0 ? "" : `<?xml version="1.0" encoding="${escapeAll(declaration.encoding || "UTF-8")}"${standalone}?>${indent ? "\n" : ""}`) + items.map((item, i) => format(resolve(item, indent, startDepth), indent, i === items.length - 1)).join("");
+		const out = [declaration === void 0 ? "" : `<?xml version="1.0" encoding="${escapeAll(declaration.encoding || "UTF-8")}"${standalone}?>${indent ? "\n" : ""}`];
+		items.forEach((item, i) => write(item, indent, "", i === items.length - 1, out));
+		return out.join("");
 	};
 	var stringifyAttributes = (attributes) => Object.entries(attributes !== null && attributes !== void 0 ? attributes : {}).flatMap(([key, value]) => value === void 0 || value === null ? [] : [` ${key}="${escapeAll(String(value))}"`]).join("");
 	var stringifyNode = (node) => {
