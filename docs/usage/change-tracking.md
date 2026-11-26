@@ -145,6 +145,33 @@ const doc = new Document({
 });
 ```
 
+The formatting of the paragraph mark, the pilcrow (¶) Word shows at the end of a paragraph with formatting marks on, isn't one of the properties a paragraph's `revision` keeps. You set it with the `run` option of `Paragraph`, which formats only the mark, not the paragraph's text, and a `run` inside the paragraph's `revision` has no effect. To track a change to the mark's formatting, give `run` a `revision` of its own, with all its previous attributes, as for a `TextRun`.
+
+```ts live
+import { Document, Paragraph } from "docx";
+
+const paragraph = new Paragraph({
+    text: "Only the paragraph mark at the end of this text is now bold and was previously not",
+    run: {
+        bold: true,
+        revision: {
+            id: 9,
+            author: "Firstname Lastname",
+            date: "2020-10-06T09:00:00Z",
+            bold: false,
+        },
+    },
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [paragraph],
+        },
+    ],
+});
+```
+
 ## Section Properties Revisions
 
 You can track changes to section properties (such as page size, margins, text direction, columns, vertical alignment, title page, etc.) by adding a `revision` property to the section `properties` object. The revision must include all previous property values.

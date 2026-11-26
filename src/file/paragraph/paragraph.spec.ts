@@ -1464,5 +1464,49 @@ describe("Paragraph", () => {
                 ],
             });
         });
+
+        it("should keep the earlier formatting of the paragraph mark in its own run properties, before the revision", () => {
+            const paragraph = new Paragraph({
+                alignment: AlignmentType.RIGHT,
+                run: {
+                    bold: true,
+                    revision: { id: 2, author: "Firstname Lastname", date: "123", bold: false },
+                },
+                revision: { id: 1, author: "Firstname Lastname", date: "123", alignment: AlignmentType.LEFT },
+            });
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [
+                            { "w:jc": { _attr: { "w:val": "right" } } },
+                            {
+                                "w:rPr": [
+                                    { "w:b": {} },
+                                    { "w:bCs": {} },
+                                    {
+                                        "w:rPrChange": [
+                                            { _attr: { "w:author": "Firstname Lastname", "w:date": "123", "w:id": 2 } },
+                                            {
+                                                "w:rPr": [
+                                                    { "w:b": { _attr: { "w:val": false } } },
+                                                    { "w:bCs": { _attr: { "w:val": false } } },
+                                                ],
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                            {
+                                "w:pPrChange": [
+                                    { _attr: { "w:author": "Firstname Lastname", "w:date": "123", "w:id": 1 } },
+                                    { "w:pPr": [{ "w:jc": { _attr: { "w:val": "left" } } }] },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
     });
 });

@@ -565,6 +565,29 @@ describe("ParagraphProperties", () => {
                 ],
             });
         });
+
+        it("should leave run out of the properties a revision keeps, as CT_PPrBase has no rPr", () => {
+            const properties = new ParagraphProperties({
+                revision: {
+                    id: 1,
+                    author: "Firstname Lastname",
+                    date: "123",
+                    alignment: AlignmentType.LEFT,
+                    run: { bold: true },
+                },
+            });
+            const tree = new Formatter().format(properties);
+            expect(tree).to.deep.equal({
+                "w:pPr": [
+                    {
+                        "w:pPrChange": [
+                            { _attr: { "w:author": "Firstname Lastname", "w:date": "123", "w:id": 1 } },
+                            { "w:pPr": [{ "w:jc": { _attr: { "w:val": "left" } } }] },
+                        ],
+                    },
+                ],
+            });
+        });
     });
 
     describe("#removeSectionProperties()", () => {
