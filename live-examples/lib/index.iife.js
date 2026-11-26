@@ -25022,11 +25022,10 @@ MAX: 9026 };
 	var CheckBoxSymbolElement = class extends XmlComponent {
 		constructor(name, val, font) {
 			super(name);
-			if (font) this.root.push(new CheckboxSymbolAttributes({
+			this.root.push(font ? new CheckboxSymbolAttributes({
 				val: shortHexNumber(val),
 				symbolfont: font
-			}));
-			else this.root.push(new CheckboxSymbolAttributes({ val }));
+			}) : new CheckboxSymbolAttributes({ val }));
 		}
 	};
 	// src/file/checkbox/checkbox-util.ts
