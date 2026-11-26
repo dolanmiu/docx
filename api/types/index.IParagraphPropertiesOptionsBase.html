@@ -75,10 +75,14 @@ Reference: ECMA-376, 3rd Edition (June, 2011), Fundamentals and Markup Language 
 </div></li>
 <li class="tsd-parameter">
 <h5><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span class="tsd-kind-property">wordWrap</span><span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span></h5>
-<div class="tsd-comment tsd-typography"><p>Whether to allow word wrapping</p>
+<div class="tsd-comment tsd-typography"><p>Word's &quot;Allow Latin text to wrap in the middle of a word&quot;. <code>true</code> writes <code>&lt;w:wordWrap w:val=&quot;0&quot;/&gt;</code>, which lets lines
+break inside the words of runs in an East Asian font or language, Latin and Korean words alike, where Word otherwise
+keeps words together. Words in other runs, such as English in Calibri, still break at their spaces. When it is unset, the
+paragraph keeps its style's setting, so Latin and Korean text breaks at the spaces between words unless a style sets
+<code>w:wordWrap</code> to <code>0</code>.</p>
 </div></li></ul></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/688588a3628479db5f5c8e1ed03c4f91e7750f6a/src/file/paragraph/properties.ts#L140">file/paragraph/properties.ts:140</a></li></ul></aside></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/48eca6f39a4c5ffe557e41f6f094d2030d7ad559/src/file/paragraph/properties.ts#L140">file/paragraph/properties.ts:140</a></li></ul></aside></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
