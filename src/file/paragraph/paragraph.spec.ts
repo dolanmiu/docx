@@ -572,6 +572,31 @@ describe("Paragraph", () => {
                 ],
             });
         });
+
+        it("should write one w:pBdr with a border, the line in place of its bottom", () => {
+            const paragraph = new Paragraph({
+                border: {
+                    top: { style: BorderStyle.SINGLE, size: 12, color: "FF0000", space: 1 },
+                    bottom: { style: BorderStyle.DOUBLE, size: 18, color: "0000FF", space: 1 },
+                },
+                thematicBreak: true,
+            });
+            const tree = new Formatter().format(paragraph);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [
+                            {
+                                "w:pBdr": [
+                                    { "w:top": { _attr: { "w:val": "single", "w:color": "FF0000", "w:sz": 12, "w:space": 1 } } },
+                                    { "w:bottom": { _attr: { "w:val": "single", "w:color": "auto", "w:sz": 6, "w:space": 1 } } },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
     });
 
     describe("#paragraphBorders()", () => {

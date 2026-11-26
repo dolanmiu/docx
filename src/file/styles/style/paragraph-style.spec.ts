@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
+import { BorderStyle } from "@file/border";
 import { DocumentWrapper } from "@file/document-wrapper";
 import type { File } from "@file/file";
 import { AlignmentType, EmphasisMarkType, TabStopPosition } from "@file/paragraph";
@@ -288,6 +289,32 @@ describe("ParagraphStyle", () => {
                                             },
                                         },
                                     },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("#thematicBreak with a border", () => {
+            const style = new StyleForParagraph({
+                id: "myStyleId",
+                paragraph: {
+                    border: { top: { style: BorderStyle.SINGLE, size: 12, color: "FF0000", space: 1 } },
+                    thematicBreak: true,
+                },
+            });
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "paragraph", "w:styleId": "myStyleId" } },
+                    {
+                        "w:pPr": [
+                            {
+                                "w:pBdr": [
+                                    { "w:top": { _attr: { "w:val": "single", "w:color": "FF0000", "w:sz": 12, "w:space": 1 } } },
+                                    { "w:bottom": { _attr: { "w:val": "single", "w:color": "auto", "w:sz": 6, "w:space": 1 } } },
                                 ],
                             },
                         ],

@@ -445,13 +445,14 @@ describe("layoutDocument", () => {
                 expect(first).to.have.length(48);
                 expect(first[2] - first[0]).to.be.closeTo(572.1, 0.1);
             }
-            // Top and bottom borders: 45 lines, every two 607.1 apart, the first below its top border
-            const both = topsOf(
-                fill((text, index) => new Paragraph({ ...(index % 2 === 0 ? { border: { top: thin, bottom: thin } } : {}), text })),
-            );
-            expect(both[0]).to.have.length(45);
-            expect(both[0][0]).to.be.closeTo(35, 0.01);
-            expect(both[0][2] - both[0][0]).to.be.closeTo(607.1, 0.1);
+            // Top and bottom borders: 45 lines, every two 607.1 apart, the first below its top border, as a top border with
+            // thematicBreak writes them too
+            for (const options of [{ border: { top: thin, bottom: thin } }, { border: { top: thin }, thematicBreak: true }]) {
+                const both = topsOf(fill((text, index) => new Paragraph({ ...(index % 2 === 0 ? options : {}), text })));
+                expect(both[0]).to.have.length(45);
+                expect(both[0][0]).to.be.closeTo(35, 0.01);
+                expect(both[0][2] - both[0][0]).to.be.closeTo(607.1, 0.1);
+            }
             // 3-point borders 4 points from the text: 34 lines, every two 817.1 apart, and the next page starts below the
             // top border of its first paragraph, as Word draws it (Word: 139.2 on its grid of 4.8 twips)
             const thick = { ...thin, size: 24, space: 4 };

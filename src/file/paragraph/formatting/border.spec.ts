@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { Formatter } from "@export/formatter";
 import { BorderStyle } from "@file/border";
 
-import { Border, ThematicBreak } from "./border";
+import { Border, type IBordersOptions, ThematicBreak } from "./border";
 
 describe("Border", () => {
     describe("#constructor", () => {
@@ -128,6 +128,29 @@ describe("ThematicBreak", () => {
                             },
                         },
                     },
+                ],
+            });
+        });
+
+        it("should write the paragraph's other borders in the same element, in the schema's order, in place of their bottom", () => {
+            const red = { style: BorderStyle.SINGLE, size: 12, color: "FF0000", space: 1 } as const;
+            // A paragraph's border, with a bottom of its own
+            const border: IBordersOptions = {
+                between: red,
+                right: red,
+                bottom: { style: BorderStyle.DOUBLE, size: 18, color: "0000FF", space: 1 },
+                left: red,
+                top: red,
+            };
+            const tree = new Formatter().format(new ThematicBreak(border));
+            const redSide = { _attr: { "w:val": "single", "w:color": "FF0000", "w:sz": 12, "w:space": 1 } };
+            expect(tree).to.deep.equal({
+                "w:pBdr": [
+                    { "w:top": redSide },
+                    { "w:left": redSide },
+                    { "w:bottom": { _attr: { "w:val": "single", "w:color": "auto", "w:sz": 6, "w:space": 1 } } },
+                    { "w:right": redSide },
+                    { "w:between": redSide },
                 ],
             });
         });
