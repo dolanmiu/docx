@@ -166,7 +166,13 @@ export type IParagraphPropertiesOptionsBase = {
     readonly frame?: IFrameOptions;
     /** Whether to suppress line numbers for this paragraph */
     readonly suppressLineNumbers?: boolean;
-    /** Whether to allow word wrapping */
+    /**
+     * Word's "Allow Latin text to wrap in the middle of a word". `true` writes `<w:wordWrap w:val="0"/>`, which lets lines
+     * break inside the words of runs in an East Asian font or language, Latin and Korean words alike, where Word otherwise
+     * keeps words together. Words in other runs, such as English in Calibri, still break at their spaces. When it is unset, the
+     * paragraph keeps its style's setting, so Latin and Korean text breaks at the spaces between words unless a style sets
+     * `w:wordWrap` to `0`.
+     */
     readonly wordWrap?: boolean;
     /** Whether to allow punctuation to extend beyond text margins */
     readonly overflowPunctuation?: boolean;

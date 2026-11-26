@@ -1,4 +1,6 @@
-// Example on how to preserve word wrap text. Works with all languages.
+// Example of `wordWrap`, Word's "Allow Latin text to wrap in the middle of a word", which lets lines break inside the words
+// of runs in an East Asian font or language, Korean words too, which Word otherwise keeps together. Words in other runs still
+// break at their spaces. Leave it unset to keep Korean words whole, unless the paragraph's style sets it.
 
 import * as fs from "fs";
 import { Document, Packer, Paragraph, TextRun } from "docx";
