@@ -6340,7 +6340,7 @@ declare type ILanguageOptions = {
 export declare type ILevelParagraphStylePropertiesOptions = {
     /** Paragraph text alignment (left, right, center, justified, etc.) */
     readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
-    /** Whether to display a horizontal line (thematic break) below the paragraph */
+    /** Whether to display a horizontal line (thematic break) below the paragraph, as its bottom border */
     readonly thematicBreak?: boolean;
     /** Whether to ignore spacing before/after when adjacent paragraphs have the same style */
     readonly contextualSpacing?: boolean;
@@ -7474,7 +7474,10 @@ export declare type IParagraphStyleOptions = {
  * border, shading, and numbering options in addition to level properties.
  */
 export declare type IParagraphStylePropertiesOptions = {
-    /** Border settings for the paragraph */
+    /**
+     * Border settings for the paragraph. With `thematicBreak` in the same options, the thematic break's line is drawn in
+     * place of `bottom`
+     */
     readonly border?: IBordersOptions;
     /** Background shading/fill color for the paragraph */
     readonly shading?: IShadingAttributesProperties;
@@ -14184,7 +14187,8 @@ export declare const TextWrappingType: {
 /**
  * Represents a thematic break (horizontal rule) in a WordprocessingML document.
  *
- * Creates a horizontal line across the paragraph using a bottom border.
+ * Creates a horizontal line across the paragraph using a bottom border. A paragraph has one `w:pBdr`, so the
+ * paragraph's other borders are written in the same element, with the line in place of their bottom border.
  *
  * Reference: http://officeopenxml.com/WPborders.php
  *
@@ -14192,7 +14196,12 @@ export declare const TextWrappingType: {
  * ```xml
  * <xsd:complexType name="CT_PBdr">
  *   <xsd:sequence>
+ *     <xsd:element name="top" type="CT_Border" minOccurs="0"/>
+ *     <xsd:element name="left" type="CT_Border" minOccurs="0"/>
  *     <xsd:element name="bottom" type="CT_Border" minOccurs="0"/>
+ *     <xsd:element name="right" type="CT_Border" minOccurs="0"/>
+ *     <xsd:element name="between" type="CT_Border" minOccurs="0"/>
+ *     <xsd:element name="bar" type="CT_Border" minOccurs="0"/>
  *   </xsd:sequence>
  * </xsd:complexType>
  * ```
@@ -14205,8 +14214,12 @@ export declare const TextWrappingType: {
  * });
  * ```
  */
-export declare class ThematicBreak extends XmlComponent {
-    constructor();
+export declare class ThematicBreak extends Border {
+    /**
+     * @param borders - The paragraph's other borders. A `bottom` among them, as in a paragraph's `border`, gives way to
+     * the line
+     */
+    constructor(borders?: Omit<IBordersOptions, "bottom">);
 }
 
 /**

@@ -2276,7 +2276,8 @@ var docx = (function(exports) {
 	/**
 	* Represents a thematic break (horizontal rule) in a WordprocessingML document.
 	*
-	* Creates a horizontal line across the paragraph using a bottom border.
+	* Creates a horizontal line across the paragraph using a bottom border. A paragraph has one `w:pBdr`, so the
+	* paragraph's other borders are written in the same element, with the line in place of their bottom border.
 	*
 	* Reference: http://officeopenxml.com/WPborders.php
 	*
@@ -2284,7 +2285,12 @@ var docx = (function(exports) {
 	* ```xml
 	* <xsd:complexType name="CT_PBdr">
 	*   <xsd:sequence>
+	*     <xsd:element name="top" type="CT_Border" minOccurs="0"/>
+	*     <xsd:element name="left" type="CT_Border" minOccurs="0"/>
 	*     <xsd:element name="bottom" type="CT_Border" minOccurs="0"/>
+	*     <xsd:element name="right" type="CT_Border" minOccurs="0"/>
+	*     <xsd:element name="between" type="CT_Border" minOccurs="0"/>
+	*     <xsd:element name="bar" type="CT_Border" minOccurs="0"/>
 	*   </xsd:sequence>
 	* </xsd:complexType>
 	* ```
@@ -2297,16 +2303,18 @@ var docx = (function(exports) {
 	* });
 	* ```
 	*/
-	var ThematicBreak = class extends XmlComponent {
-		constructor() {
-			super("w:pBdr");
-			const bottom = createBorderElement("w:bottom", {
+	var ThematicBreak = class extends Border {
+		/**
+		* @param borders - The paragraph's other borders. A `bottom` among them, as in a paragraph's `border`, gives way to
+		* the line
+		*/
+		constructor(borders = {}) {
+			super(_objectSpread2(_objectSpread2({}, borders), {}, { bottom: {
 				color: "auto",
 				space: 1,
 				style: BorderStyle.SINGLE,
 				size: 6
-			});
-			this.root.push(bottom);
+			} }));
 		}
 	};
 	// src/file/paragraph/formatting/indent.ts
@@ -11921,8 +11929,8 @@ MAX: 9026 };
 				this.push(numberProperties);
 			} else if (options.numbering === false) this.push(new NumberProperties(0, 0));
 			if (options.suppressLineNumbers !== void 0) this.push(new OnOffElement("w:suppressLineNumbers", options.suppressLineNumbers));
-			if (options.border) this.push(new Border(options.border));
-			if (options.thematicBreak) this.push(new ThematicBreak());
+			if (options.thematicBreak) this.push(new ThematicBreak(options.border));
+			else if (options.border) this.push(new Border(options.border));
 			if (options.shading) this.push(createShading(options.shading));
 			/**
 			* FIX: Multitab support for Libre Writer
