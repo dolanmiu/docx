@@ -57,10 +57,8 @@ class CheckboxSymbolAttributes extends XmlAttributeComponent<{
 export class CheckBoxSymbolElement extends XmlComponent {
     public constructor(name: string, val: string, font?: string) {
         super(name);
-        if (font) {
-            this.root.push(new CheckboxSymbolAttributes({ val: shortHexNumber(val), symbolfont: font }));
-        } else {
-            this.root.push(new CheckboxSymbolAttributes({ val }));
-        }
+        this.root.push(
+            font ? new CheckboxSymbolAttributes({ val: shortHexNumber(val), symbolfont: font }) : new CheckboxSymbolAttributes({ val }),
+        );
     }
 }
