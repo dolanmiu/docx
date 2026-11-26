@@ -33,6 +33,11 @@ const escapeText = (value: string): string =>
 const escapeValue = <T>(value: T): T | string => (typeof value === "string" ? escapeAll(value) : value);
 
 /**
+ * Writes text content, escaped, as the xml package did, writing nothing for undefined.
+ */
+const writeText = (value: unknown): string => (value === undefined ? "" : String(escapeValue(value)));
+
+/**
  * Options for {@link stringifyXmlable}.
  */
 export type StringifyXmlableOptions = {
@@ -42,33 +47,32 @@ export type StringifyXmlableOptions = {
     readonly declaration?: { readonly encoding?: string; readonly standalone?: string };
 };
 
-type ResolvedContent = ResolvedElement | string | number | boolean | undefined;
-
-type ResolvedElement = {
-    readonly name: string | undefined;
-    readonly attributes: readonly string[];
-    readonly content: readonly ResolvedContent[];
-    readonly indents: string;
-};
-
 /**
- * Works out an element's tag, attributes and content, as the xml package did, quirks and all, so that docx writes the
- * same XML byte for byte.
+ * Writes an element as the xml package did, quirks and all, so that docx writes the same XML byte for byte. Its XML
+ * is pushed onto `out` in pieces, which are joined once at the end, rather than built as a string for each element.
+ *
+ * @param data - The object to write, such as `{ "w:b": {} }`
+ * @param indent - What to indent each level with, or an empty string to write one line
+ * @param indents - The indentation of this element
+ * @param isLast - Whether this is the last object written, which isn't followed by a line break
+ * @param out - The pieces of XML written so far
  */
-const resolve = (data: object, indent: string, depth: number): ResolvedElement => {
+// eslint-disable-next-line functional/prefer-readonly-type
+const write = (data: object, indent: string, indents: string, isLast: boolean, out: string[]): void => {
     // An empty object has no name, and writes nothing
     const name = Object.keys(data)[0] as string | undefined;
     const values: unknown = name === undefined ? undefined : (data as Record<string, unknown>)[name];
 
-    // Built in place, as an element of a document's body can have thousands of children
-    // eslint-disable-next-line functional/prefer-readonly-type
-    const attributes: string[] = [];
-    // eslint-disable-next-line functional/prefer-readonly-type
-    const content: ResolvedContent[] = [];
+    // The open tag is written once the attributes and the content are known, as an attribute can come after content
+    const start = out.length;
+    // eslint-disable-next-line functional/immutable-data
+    out.push("");
+    let attributes = "";
+    // How many items of content the element has, which decides how it is indented
+    let length = 0;
     const addAttributes = (attr: Readonly<Record<string, unknown>>): void => {
-        for (const [key, value] of Object.entries(attr)) {
-            // eslint-disable-next-line functional/immutable-data
-            attributes.push(`${key}="${String(escapeValue(value))}"`);
+        for (const key of Object.keys(attr)) {
+            attributes += ` ${key}="${String(escapeValue(attr[key]))}"`;
         }
     };
 
@@ -80,60 +84,55 @@ const resolve = (data: object, indent: string, depth: number): ResolvedElement =
             }
             if (cdata) {
                 // eslint-disable-next-line functional/immutable-data
-                content.push(`<![CDATA[${cdata.replace(/\]\]>/g, "]]]]><![CDATA[>")}]]>`);
+                out.push(`<![CDATA[${cdata.replace(/\]\]>/g, "]]]]><![CDATA[>")}]]>`);
+                length++;
             }
             if (Array.isArray(values)) {
                 let isStringContent = false;
-                // eslint-disable-next-line functional/immutable-data
-                content.push("");
+                const childIndents = indents + indent;
+                // Where the last item of content starts, so that text can take its place
+                let lastStart = out.length;
+                length++;
                 for (const value of values) {
                     if (typeof value === "object") {
                         if (Object.keys(value)[0] === "_attr") {
                             addAttributes((value as { readonly _attr: Record<string, unknown> })._attr);
                         } else {
-                            // eslint-disable-next-line functional/immutable-data
-                            content.push(resolve(value as object, indent, depth + 1));
+                            lastStart = out.length;
+                            length++;
+                            write(value as object, indent, childIndents, false, out);
                         }
                     } else {
                         // Text takes the place of whatever came before it, as it did in the xml package
                         // eslint-disable-next-line functional/immutable-data
-                        content.pop();
+                        out.length = lastStart;
                         isStringContent = true;
                         // eslint-disable-next-line functional/immutable-data
-                        content.push(escapeValue(value as string));
+                        out.push(writeText(value));
                     }
                 }
                 if (!isStringContent) {
-                    // eslint-disable-next-line functional/immutable-data
-                    content.push("");
+                    length++;
                 }
             }
         }
     } else {
         // eslint-disable-next-line functional/immutable-data
-        content.push(escapeValue(values as string | number | boolean | undefined));
+        out.push(writeText(values));
+        length++;
     }
 
-    return { name, attributes, content, indents: depth > 1 ? indent.repeat(depth - 1) : "" };
-};
-
-const format = (element: ResolvedElement | string | number | boolean, indent: string, isLast: boolean): string => {
-    if (typeof element !== "object") {
-        return String(element);
-    }
-    const { name, attributes, content, indents } = element;
-    const { length } = content;
     const open =
-        indents +
-        (name ? `<${name}` : "") +
-        (attributes.length > 0 ? ` ${attributes.join(" ")}` : "") +
-        (length > 0 ? (name ? ">" : "") : "/>") +
-        (indent && length > 1 ? "\n" : "");
+        indents + (name ? `<${name}` : "") + attributes + (length > 0 ? (name ? ">" : "") : "/>") + (indent && length > 1 ? "\n" : "");
     if (length === 0) {
-        return open + (indent ? "\n" : "");
+        // eslint-disable-next-line functional/immutable-data
+        out[start] = open + (indent ? "\n" : "");
+        return;
     }
-    const children = content.map((child) => (child === undefined ? "" : format(child, indent, false))).join("");
-    return open + children + (length > 1 ? indents : "") + (name ? `</${name}>` : "") + (indent && !isLast ? "\n" : "");
+    // eslint-disable-next-line functional/immutable-data
+    out[start] = open;
+    // eslint-disable-next-line functional/immutable-data
+    out.push((length > 1 ? indents : "") + (name ? `</${name}>` : "") + (indent && !isLast ? "\n" : ""));
 };
 
 /**
@@ -149,13 +148,15 @@ export const stringifyXmlable = (
     { indent = "", declaration }: StringifyXmlableOptions = {},
 ): string => {
     const items = Array.isArray(input) ? input : [input];
-    const startDepth = indent ? 1 : 0;
     const standalone = declaration?.standalone ? ` standalone="${escapeAll(declaration.standalone)}"` : "";
     const declarationXml =
         declaration === undefined
             ? ""
             : `<?xml version="1.0" encoding="${escapeAll(declaration.encoding || "UTF-8")}"${standalone}?>${indent ? "\n" : ""}`;
-    return declarationXml + items.map((item, i) => format(resolve(item, indent, startDepth), indent, i === items.length - 1)).join("");
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const out: string[] = [declarationXml];
+    items.forEach((item, i) => write(item, indent, "", i === items.length - 1, out));
+    return out.join("");
 };
 
 const stringifyAttributes = (attributes: XmlElement["attributes"]): string =>

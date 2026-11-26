@@ -7,7 +7,7 @@
  * @module
  */
 import { BaseXmlComponent, type IContext } from "./base";
-import type { IXmlAttribute, IXmlableObject } from "./xmlable-object";
+import type { IXmlableObject } from "./xmlable-object";
 
 /**
  * Maps TypeScript property names to their XML attribute names.
@@ -72,13 +72,14 @@ export abstract class XmlAttributeComponent<T extends Record<string, any>> exten
      */
     public prepForXml(_: IContext): IXmlableObject {
         const attrs: Record<string, string> = {};
-        Object.entries(this.root).forEach(([key, value]) => {
+        for (const key of Object.keys(this.root)) {
+            const value = this.root[key];
             if (value !== undefined) {
                 const newKey = (this.xmlKeys && this.xmlKeys[key]) || key;
                 // eslint-disable-next-line functional/immutable-data
                 attrs[newKey] = value;
             }
-        });
+        }
         return { _attr: attrs };
     }
 }
@@ -119,9 +120,21 @@ export class NextAttributeComponent<T extends AttributeData> extends BaseXmlComp
      * @returns Object with _attr key containing the attributes
      */
     public prepForXml(_: IContext): IXmlableObject {
-        const attrs = Object.values<{ readonly key: string; readonly value: string | boolean | number }>(this.root)
-            .filter(({ value }) => value !== undefined)
-            .reduce((acc, { key, value }) => ({ ...acc, [key]: value }), {} as IXmlAttribute);
+        // Built in place, rather than copied for each attribute
+        const attrs: Record<string, string | boolean | number> = {};
+        for (const { key, value } of Object.values<{ readonly key: string; readonly value: string | boolean | number }>(this.root)) {
+            if (value === undefined) {
+                continue;
+            }
+            if (key === "__proto__") {
+                // Assigning would call the inherited setter and drop the attribute
+                // eslint-disable-next-line functional/immutable-data
+                Object.defineProperty(attrs, key, { value, enumerable: true, writable: true, configurable: true });
+            } else {
+                // eslint-disable-next-line functional/immutable-data
+                attrs[key] = value;
+            }
+        }
         return { _attr: attrs };
     }
 }
