@@ -11904,7 +11904,7 @@ MAX: 9026 };
 			if (!options) return this;
 			if (options.heading) this.push(createParagraphStyle(options.heading));
 			if (implicitListParagraphStyle) {
-				if (options.bullet) this.push(createParagraphStyle("ListParagraph"));
+				if (options.bullet && !options.style && !options.heading) this.push(createParagraphStyle("ListParagraph"));
 				if (options.numbering && !options.numbering.custom && !options.style && !options.heading) this.push(createParagraphStyle("ListParagraph"));
 			}
 			if (options.style) this.push(createParagraphStyle(options.style));

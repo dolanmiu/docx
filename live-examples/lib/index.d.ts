@@ -7414,7 +7414,10 @@ export declare type IParagraphPropertiesOptionsBase = {
     readonly tabStops?: readonly TabStopDefinition[];
     /** Style ID to apply to this paragraph */
     readonly style?: string;
-    /** Bullet list configuration */
+    /**
+     * Bullet list configuration. The paragraph is given Word's built-in `ListParagraph` style, unless it has a `style` or a
+     * `heading` of its own, which it keeps, as a paragraph in a numbered list does
+     */
     readonly bullet?: {
         /** Indentation level for the bullet (0-8) */
         readonly level: number;
