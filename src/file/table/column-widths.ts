@@ -125,9 +125,7 @@ export const resolveColumnWidths = ({
     }
 
     const tableWidth = resolveTableWidth(width, availableWidth);
-    // eslint-disable-next-line functional/prefer-readonly-type
     const widths: (number | undefined)[] = Array.from({ length: columnCount }, () => undefined);
-    // eslint-disable-next-line functional/prefer-readonly-type
     const spanningCells: { readonly start: number; readonly span: number; readonly width: number }[] = [];
 
     for (const row of rows) {

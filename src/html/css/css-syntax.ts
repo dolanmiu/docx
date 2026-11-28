@@ -71,7 +71,6 @@ const endOfString = (css: string, start: number): number => {
  */
 export const indexOfTopLevel = (css: string, start: number, characters: string): number => {
     // The brackets that are open, the innermost last
-    // eslint-disable-next-line functional/prefer-readonly-type
     const closing: string[] = [];
     let index = start;
     while (index < css.length) {
@@ -105,7 +104,6 @@ export const indexOfTopLevel = (css: string, start: number, characters: string):
  * bracket without an opening one is skipped over, as is anything after a backslash.
  */
 export const splitTopLevel = (css: string, separators: string): readonly string[] => {
-    // eslint-disable-next-line functional/prefer-readonly-type
     const parts: string[] = [];
     let start = 0;
     let end = indexOfTopLevel(css, start, separators);
@@ -167,7 +165,6 @@ const GROUPING_RULES: ReadonlySet<string> = new Set(["media", "supports", "layer
 export const parseStyleSheet = (css: string): readonly StyleRule[] => rulesOf(withoutComments(css));
 
 const rulesOf = (css: string): readonly StyleRule[] => {
-    // eslint-disable-next-line functional/prefer-readonly-type
     const rules: StyleRule[] = [];
     let index = 0;
     while (index < css.length) {

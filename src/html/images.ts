@@ -222,7 +222,6 @@ const escapeXml = (text: string): string => text.replace(/[&<>"]/g, (character) 
  */
 const svgFileOf = (svg: Element): string => {
     let markup = "";
-    // eslint-disable-next-line functional/prefer-readonly-type
     const stack: (ChildNode | string)[] = [svg];
     while (stack.length > 0) {
         // eslint-disable-next-line functional/immutable-data

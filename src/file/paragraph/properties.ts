@@ -386,7 +386,6 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
         readonly definition?: NumberingDefinition;
     };
     /** The paragraph's `w:numPr`, which is written again with its list's id each time the paragraph is written */
-    // eslint-disable-next-line functional/prefer-readonly-type
     private numberProperties?: NumberProperties;
 
     /**

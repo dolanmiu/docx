@@ -55,17 +55,11 @@ type DirectoryEntry = {
     readonly name: string;
     readonly type: typeof STORAGE | typeof STREAM | typeof ROOT_STORAGE;
     readonly data?: Uint8Array;
-    // eslint-disable-next-line functional/prefer-readonly-type
     left: number;
-    // eslint-disable-next-line functional/prefer-readonly-type
     right: number;
-    // eslint-disable-next-line functional/prefer-readonly-type
     child: number;
-    // eslint-disable-next-line functional/prefer-readonly-type
     color: typeof RED | typeof BLACK;
-    // eslint-disable-next-line functional/prefer-readonly-type
     start: number;
-    // eslint-disable-next-line functional/prefer-readonly-type
     size: number;
 };
 
@@ -88,7 +82,6 @@ const compareNames = (a: string, b: string): number => {
  * @returns The id of the tree's root
  */
 const linkTree = (entries: readonly DirectoryEntry[], ids: readonly number[]): number => {
-    // eslint-disable-next-line functional/prefer-readonly-type
     const depths: number[] = [];
     const link = (from: number, to: number, depth: number): number => {
         if (from > to) {
@@ -124,7 +117,6 @@ const createDirectory = (children: readonly CompoundFileEntry[]): readonly Direc
         }
         return { name, type, data, left: NO_STREAM, right: NO_STREAM, child: NO_STREAM, color: BLACK, start: 0, size: 0 };
     };
-    // eslint-disable-next-line functional/prefer-readonly-type
     const entries: DirectoryEntry[] = [entry("Root Entry", ROOT_STORAGE)];
     const addChildren = (parent: DirectoryEntry, storageChildren: readonly CompoundFileEntry[]): void => {
         const sorted = [...storageChildren].sort((a, b) => compareNames(a.name, b.name));
@@ -155,7 +147,6 @@ const createDirectory = (children: readonly CompoundFileEntry[]): readonly Direc
  *
  * @returns The chain's first sector, or END_OF_CHAIN for none
  */
-// eslint-disable-next-line functional/prefer-readonly-type
 const addChain = (table: number[], count: number, value?: number): number => {
     if (count === 0) {
         return END_OF_CHAIN;
@@ -201,7 +192,6 @@ export const createCompoundFile = (children: readonly CompoundFileEntry[], { cla
     const largeStreams = streams.filter((entry) => entry.data!.length >= MINI_STREAM_CUTOFF);
 
     // The mini stream, with its own table of mini sectors, the mini FAT
-    // eslint-disable-next-line functional/prefer-readonly-type
     const miniFat: number[] = [];
     for (const stream of miniStreams) {
         // eslint-disable-next-line functional/immutable-data
@@ -212,7 +202,6 @@ export const createCompoundFile = (children: readonly CompoundFileEntry[], { cla
     const miniStreamSize = miniFat.length * MINI_SECTOR_SIZE;
 
     // The sectors: the directory, the mini FAT, the mini stream, the large streams, then the FAT, which counts itself
-    // eslint-disable-next-line functional/prefer-readonly-type
     const fat: number[] = [];
     const directoryStart = addChain(fat, Math.ceil(entries.length / (SECTOR_SIZE / DIRECTORY_ENTRY_SIZE)));
     const miniFatSectors = Math.ceil(miniFat.length / SECTOR_NUMBERS_PER_SECTOR);

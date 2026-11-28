@@ -140,7 +140,6 @@ const CONTENT_TYPES = "[Content_Types].xml";
 /**
  * A relationships part's relationships, which can be added to. A part without the `Relationships` element is given one.
  */
-// eslint-disable-next-line functional/prefer-readonly-type
 const relationshipsIn = (relationships: Element): Element[] => {
     if (!relationships.elements?.some((element) => element.name === "Relationships")) {
         // eslint-disable-next-line functional/immutable-data
@@ -200,12 +199,7 @@ type TemplateContents = {
  * @param parts - The template's XML parts, parsed, by their paths, which are changed in place
  * @param binaryParts - The template's other parts, by their paths
  */
-const contentsOf = (
-    // eslint-disable-next-line functional/prefer-readonly-type
-    parts: Map<string, Element>,
-    // eslint-disable-next-line functional/prefer-readonly-type
-    binaryParts: Map<string, Uint8Array>,
-): TemplateContents => {
+const contentsOf = (parts: Map<string, Element>, binaryParts: Map<string, Uint8Array>): TemplateContents => {
     const has = (path: string): boolean => parts.has(path) || binaryParts.has(path);
 
     // The path the package has a part at: as given, with its escapes decoded, or in other capitals, since part names
@@ -299,7 +293,6 @@ const contentsOf = (
  * @param context - The context to format XML with
  */
 const createTemplatePackage = (
-    // eslint-disable-next-line functional/prefer-readonly-type
     parts: Map<string, Element>,
     { findRelationship, pathOf, removeIfUnreferenced }: TemplateContents,
     file: File,
@@ -368,9 +361,7 @@ export const patchDrawings = (
         patches,
         delimiters,
     }: {
-        // eslint-disable-next-line functional/prefer-readonly-type
         readonly parts: Map<string, Element>;
-        // eslint-disable-next-line functional/prefer-readonly-type
         readonly binaryParts: Map<string, Uint8Array>;
         readonly file: File;
         readonly patches: readonly (readonly [key: string, patch: DrawingPatch])[];

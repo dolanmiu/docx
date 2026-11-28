@@ -30,10 +30,8 @@ export const createDrawingNumbering = (): ((xml: string) => string) => {
         // The new id of each tag that has one, by where the tag starts
         const newIds = new Map<number, number>();
         // The new ids of the shapes in each drawing the tags are in, by their old ids
-        // eslint-disable-next-line functional/prefer-readonly-type
         const drawings: Map<number, number>[] = [];
         // A connector can come before the shapes it joins, so its ends are numbered once every shape has been
-        // eslint-disable-next-line functional/prefer-readonly-type
         const ends: { readonly offset: number; readonly shapes: ReadonlyMap<number, number>; readonly id: number }[] = [];
 
         for (const { 0: tag, 1: closing, 2: name, index: offset } of xml.matchAll(TAG)) {

@@ -591,7 +591,6 @@ describe("ChartDataPatch", () => {
         it("should keep its own copy of the data, so changing the options afterwards changes nothing", async () => {
             const categories = ["A", "B"];
             const date = new Date("2025-01-01");
-            // eslint-disable-next-line functional/prefer-readonly-type
             const values: (number | null)[] = [1, 2];
             const data = { categories, series: [{ name: "S", values }] };
             const chartPatch = new ChartDataPatch(data);
@@ -2425,12 +2424,11 @@ describe("ChartDataPatch with the newer chart types and options", () => {
         });
 
         it("should keep the groups it was made with, whatever happens to them after", async () => {
-            // eslint-disable-next-line functional/prefer-readonly-type -- Changed after the patch is made
             const categories = [{ name: "2025", categories: ["Q1", "Q2"] as string[] }];
             const chartPatch = new ChartDataPatch({ categories, series: [{ name: "S", values: [1, 2] }] });
             // eslint-disable-next-line functional/immutable-data
             categories[0].categories.push("Q3");
-            // eslint-disable-next-line functional/immutable-data, functional/prefer-readonly-type -- Changed after the patch is made
+            // eslint-disable-next-line functional/immutable-data -- Changed after the patch is made
             (categories[0] as { name: string }).name = "Changed";
             const zip = await patch(await templateOf({ chart: TEMPLATES.column }), { chart: chartPatch });
             const [chart] = chartsIn(zip);
@@ -2575,7 +2573,7 @@ describe("ChartDataPatch with the newer chart types and options", () => {
             const chartPatch = new ChartDataPatch({ ...prices, high, names });
             // eslint-disable-next-line functional/immutable-data
             high[0] = 99;
-            // eslint-disable-next-line functional/immutable-data, functional/prefer-readonly-type -- Changed after the patch is made
+            // eslint-disable-next-line functional/immutable-data -- Changed after the patch is made
             (names as { close: string }).close = "Changed";
             const zip = await patch(await templateOf({ chart: HIGH_LOW_CLOSE }), { chart: chartPatch });
             const [chart] = chartsIn(zip);

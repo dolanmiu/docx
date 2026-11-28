@@ -17,7 +17,6 @@ export const elementsOf = (element: Element): readonly Element[] => element.chil
  * @param skipped - Elements in it whose text is left out
  */
 export const textOf = (node: ChildNode, skipped: ReadonlySet<ChildNode> = new Set()): string => {
-    // eslint-disable-next-line functional/prefer-readonly-type
     const stack: ChildNode[] = [node];
     let text = "";
     while (stack.length > 0) {
@@ -40,9 +39,7 @@ export const textOf = (node: ChildNode, skipped: ReadonlySet<ChildNode> = new Se
 
 /** An element and the elements in it, in order, read without recursion, so no depth of elements is too deep */
 export const descendantsOf = (element: Element): readonly Element[] => {
-    // eslint-disable-next-line functional/prefer-readonly-type
     const elements: Element[] = [];
-    // eslint-disable-next-line functional/prefer-readonly-type
     const stack: Element[] = [element];
     while (stack.length > 0) {
         // eslint-disable-next-line functional/immutable-data

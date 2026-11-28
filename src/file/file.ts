@@ -179,13 +179,10 @@ type FileBibliography = {
  * ```
  */
 export class File {
-    // eslint-disable-next-line functional/prefer-readonly-type
     private currentRelationshipId: number = 1;
 
     private readonly documentWrapper: DocumentWrapper;
-    // eslint-disable-next-line functional/prefer-readonly-type
     private readonly headers: IDocumentHeader[] = [];
-    // eslint-disable-next-line functional/prefer-readonly-type
     private readonly footers: IDocumentFooter[] = [];
     private readonly coreProperties: CoreProperties;
     private readonly numbering: Numbering;

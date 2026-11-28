@@ -12,7 +12,6 @@ export class Endnotes extends XmlComponent {
     // The endnotes that reference runs bring with them, by their runs, with the ids they are given
     private readonly ownNotes = new Map<object, number>();
     // The highest id of the endnotes, so the one after it is free
-    // eslint-disable-next-line functional/prefer-readonly-type
     private highestId = 0;
 
     public constructor() {

@@ -673,12 +673,9 @@ type NoteReader = {
 
 /** A complex field being read */
 type OpenField = {
-    // eslint-disable-next-line functional/prefer-readonly-type
     instruction: string;
-    // eslint-disable-next-line functional/prefer-readonly-type
     inResult: boolean;
     /** Whether its result depends on the pages, so it is worked out rather than read */
-    // eslint-disable-next-line functional/prefer-readonly-type
     replaced: boolean;
     /** Whether its start is deleted in a tracked change, or moved elsewhere, as all of it then is */
     readonly deleted?: boolean;
@@ -689,9 +686,7 @@ type OpenField = {
  * page references with `\p`, by the bookmarks they refer to
  */
 type FieldMarkers = {
-    // eslint-disable-next-line functional/prefer-readonly-type
     count: number;
-    // eslint-disable-next-line functional/prefer-readonly-type
     readonly relative: Map<string, string[]>;
 };
 
@@ -721,10 +716,8 @@ type Reader = {
     readonly inEndnote?: boolean;
     /** The markers at the fields whose pages are worked out, in the body and its notes */
     readonly markers: FieldMarkers;
-    // eslint-disable-next-line functional/prefer-readonly-type
     readonly fields: OpenField[];
     /** Where the lists made from each definition are in their counting, by the definition's id */
-    // eslint-disable-next-line functional/prefer-readonly-type
     readonly counters: Map<string, ListCount>;
     /** Whether deleted text is read as text, as Word sizes a table's columns by it */
     readonly showDeleted?: boolean;
@@ -748,7 +741,6 @@ type Reader = {
      * The ids of the footnotes whose references are in text boxes, which Word leaves out, reference and note
      * (`word-stops-vml-note.docx` VM26a)
      */
-    // eslint-disable-next-line functional/prefer-readonly-type
     readonly notesInTextBoxes: Set<string>;
     /** Why its equations can't be laid out as Word does for the document's maths settings, when they can't */
     readonly maths?: string;
@@ -940,7 +932,6 @@ const numberSwitchesOf = (switches: string, decimalSymbol = "."): NumberSwitches
     const parts = switches.match(/"[^"]*"|\S+/g) ?? [];
     let numberFormat: string | undefined;
     let picture: string | undefined;
-    // eslint-disable-next-line functional/prefer-readonly-type
     const capitals: string[] = [];
     let relative = false;
     let unsupported: string | undefined;
@@ -2022,7 +2013,6 @@ const withFitted = (read: readonly LayoutItem[] | string): readonly LayoutItem[]
     if (typeof read === "string") {
         return read;
     }
-    // eslint-disable-next-line functional/prefer-readonly-type
     const all: LayoutItem[] = [];
     for (const item of read) {
         const id = FITTED.get(item)?.id;
@@ -2419,7 +2409,6 @@ const readListNumber = (
  * as the schema has it (LR1, LR2).
  */
 const countIn = (
-    // eslint-disable-next-line functional/prefer-readonly-type
     counters: Map<string, ListCount>,
     id: string,
     { levels, starts, definition }: NumberingList,
@@ -2712,7 +2701,6 @@ const readJoinedInline = (
     joined: readonly { readonly element: XmlObject; readonly run: RunFormat; readonly marker?: string }[],
     reader: Reader,
 ): readonly LayoutItem[] | string => {
-    // eslint-disable-next-line functional/prefer-readonly-type
     const parts: (readonly LayoutItem[] | string)[] = [];
     let from = 0;
     let run = paragraphRun;
@@ -3748,7 +3736,6 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
     // them, or in the next with any text when it has none. Those before a deleted row and its cells, and in its cells,
     // start in the next row laid out. Those after the last, as after a table's last row, aren't placed, so a page
     // reference to them is left blank
-    // eslint-disable-next-line functional/prefer-readonly-type
     const tableRows: TableRow[] = [];
     let carried: readonly string[] = [];
     let unmerged: string | undefined;
@@ -4559,7 +4546,6 @@ const joinRemovedMarks = (
 ): readonly XmlObject[] => {
     const opened = openedAtEnds(elements.filter(isObject), styles, showDeleted);
     // The elements after the one being read, as they are joined, from the last: the next is at the end
-    // eslint-disable-next-line functional/prefer-readonly-type
     const after: XmlObject[] = [];
     for (const element of [...opened].reverse()) {
         const name = nameOf(element);
@@ -4657,7 +4643,6 @@ const readBlocks = (
     // Only a table's cells are read in their table's formatting
     part: Part = tableFormats === undefined ? "other" : "cell",
 ): readonly Block[] => {
-    // eslint-disable-next-line functional/prefer-readonly-type
     const blocks: Block[] = [];
     let bookmarks: readonly string[] = [];
     // The paragraphs left out since the last block, which take no room
@@ -4773,7 +4758,6 @@ const anchorFrames = <Entry extends { readonly block: Block; readonly section: n
 ): readonly Entry[] => {
     const isFramed = (block: Block): block is ParagraphBlock & { readonly frame: FrameProperties } =>
         block.type === "paragraph" && block.frame !== undefined && block.unsupported === undefined;
-    // eslint-disable-next-line functional/prefer-readonly-type
     const anchored: Entry[] = [];
     let framed: readonly Entry[] = [];
     for (const entry of entries) {
@@ -6172,10 +6156,8 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
     };
     const footnotes = new Map<string, readonly Block[]>();
     const footnoteNumbers = new Map<string, string>();
-    // eslint-disable-next-line functional/prefer-readonly-type
     const endnotes: Block[] = [];
     // The section of each of the endnotes' blocks' references
-    // eslint-disable-next-line functional/prefer-readonly-type
     const endnoteBlockSections: number[] = [];
     const endnoteNumbers = new Map<Block, string>();
     // Each section's properties, which come after its paragraphs, so its notes are numbered as it says as they are read
@@ -6205,7 +6187,6 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
         readonly section: number;
         readonly inSection: number;
     };
-    // eslint-disable-next-line functional/prefer-readonly-type
     type NoteCounts = Map<NoteKind, NoteCount>;
     const countOf = (counts: NoteCounts, kind: NoteKind): NoteCount =>
         counts.get(kind) ?? { read: 0, counted: 0, section: sections.length, inSection: 0 };
@@ -6320,11 +6301,8 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
         preview: () => previewFrom(noteCounts),
     };
     const reader: Reader = { ...readerOf(false), notes: noteReader };
-    // eslint-disable-next-line functional/prefer-readonly-type
     const sections: Section[] = [];
-    // eslint-disable-next-line functional/prefer-readonly-type
     const blocks: { readonly block: Block; readonly section: number }[] = [];
-    // eslint-disable-next-line functional/prefer-readonly-type
     let bookmarks: string[] = [];
     // The paragraphs left out since the last block, which take no room
     let hidden: readonly ParagraphBlock[] = [];

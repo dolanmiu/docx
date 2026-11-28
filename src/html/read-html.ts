@@ -68,7 +68,6 @@ type Conversion = {
     /** The HTML's notes, which are Word's footnotes or endnotes */
     readonly notes: Notes;
     /** The lists of the paragraphs that Word's HTML puts in lists, by their list and level */
-    // eslint-disable-next-line functional/prefer-readonly-type
     readonly wordLists: Map<string, object>;
 } & {
     readonly warn: (warning: HtmlWarning) => void;
@@ -194,9 +193,7 @@ const hasContent = (content: readonly Inline[]): boolean =>
  * given. Bookmarks in inline content with nothing else go in the next paragraph, or the last if there is none after.
  */
 const toBlocks = (contents: readonly Content[], format: ParagraphFormat): readonly Block[] => {
-    // eslint-disable-next-line functional/prefer-readonly-type
     const blocks: Block[] = [];
-    // eslint-disable-next-line functional/prefer-readonly-type
     let inline: Inline[] = [];
     let bookmarks: readonly Inline[] = [];
     const flush = (): void => {
@@ -961,7 +958,6 @@ const readTable = (element: Element, style: ComputedStyle, state: State, convers
 
     let borders = hasBorders(conversion.cascade(element, style.customProperties));
     // Each cell's place: its row, its column, and how many it spans
-    // eslint-disable-next-line functional/prefer-readonly-type
     const placedCells: {
         readonly row: number;
         readonly column: number;
@@ -970,7 +966,6 @@ const readTable = (element: Element, style: ComputedStyle, state: State, convers
         readonly columns: number;
         readonly rows: number;
     }[] = [];
-    // eslint-disable-next-line functional/prefer-readonly-type
     const rowStates: { readonly state: State; readonly header: boolean; readonly cells: number }[] = [];
     const taken = new Set<string>();
     let width = 0;

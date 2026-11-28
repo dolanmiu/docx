@@ -73,7 +73,6 @@ const parseDeclarationAttributes = (body: string): XmlDeclarationAttributes =>
 export const parseXml = (text: string, { keepWhitespaceText = false }: ParseXmlOptions = {}): XmlElement => {
     // The tree is built in place, as a document's body can have thousands of children
     const document: XmlElement = {};
-    // eslint-disable-next-line functional/prefer-readonly-type
     const open: XmlElement[] = [];
     let position = text.charCodeAt(0) === 0xfeff ? 1 : 0;
 
@@ -213,7 +212,6 @@ const parseStartTag = (text: string, from: number, onElement: (element: XmlEleme
     }
 
     // Entries, not an object, so that an attribute such as __proto__ is one of them rather than the object's prototype
-    // eslint-disable-next-line functional/prefer-readonly-type
     const attributes: (readonly [string, string])[] = [];
     let position = nameEnd;
     for (;;) {

@@ -24,7 +24,6 @@ type Record = { readonly id: number; readonly data: Uint8Array };
 const dirRecordsOf = (streams: ReadonlyMap<string, Uint8Array>): readonly Record[] => {
     const dir = decompress(streams.get("VBA/dir")!);
     const view = new DataView(dir.buffer);
-    // eslint-disable-next-line functional/prefer-readonly-type
     const records: Record[] = [];
     for (let offset = 0; offset < dir.length;) {
         const id = view.getUint16(offset, true);

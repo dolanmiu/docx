@@ -82,11 +82,7 @@ const formatDefaultStyles = (context: IContext, normalSize: number | undefined):
  * @param parts - The document's XML parts, parsed, by their paths, whose styles part the styles are added to
  * @param createContext - Creates a context to format content for a part with
  */
-export const patchStyles = (
-    // eslint-disable-next-line functional/prefer-readonly-type
-    parts: Map<string, Element>,
-    createContext: (path: string) => IContext,
-): StylesPatcher => {
+export const patchStyles = (parts: Map<string, Element>, createContext: (path: string) => IContext): StylesPatcher => {
     const templateElements = getFirstLevelElements(parts.get(STYLES_PATH) ?? {}, "w:styles");
     const templateStyles = templateElements.filter((element) => element.name === "w:style");
     const templateIds = new Set(templateStyles.map(idOf));

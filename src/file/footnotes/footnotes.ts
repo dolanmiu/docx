@@ -64,7 +64,6 @@ export class FootNotes extends XmlComponent {
     // The footnotes that reference runs bring with them, by their runs, with the ids they are given
     private readonly ownNotes = new Map<object, number>();
     // The highest id of the footnotes, so the one after it is free
-    // eslint-disable-next-line functional/prefer-readonly-type
     private highestId = 0;
 
     public constructor() {

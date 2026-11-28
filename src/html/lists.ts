@@ -93,10 +93,8 @@ const sameLevel = (a: ListLevel, b: ListLevel): boolean => a.format === b.format
 
 /** A numbering definition being made, with the lists at each of its levels, and which have had items under the last item above */
 type Definition = {
-    // eslint-disable-next-line functional/prefer-readonly-type
     readonly levels: Map<number, ListLevel>;
     /** The levels that have had items since the last item at the level above them */
-    // eslint-disable-next-line functional/prefer-readonly-type
     readonly used: Set<number>;
 };
 

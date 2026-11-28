@@ -53,7 +53,6 @@ import { removeShapeTypesIn } from "./vml-shape-types";
  * The patcher can accept documents in various formats including buffers,
  * arrays, and streams, such as `fs.createReadStream`'s or `Packer.toStream`'s.
  */
-// eslint-disable-next-line functional/prefer-readonly-type
 export type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob | NodeJS.ReadableStream | Stream | ZipArchive;
 
 export { PatchType } from "./patch-type";
@@ -348,7 +347,6 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     // Theme colors in patches are written with the hex color they come to in the document's theme
     const themeColors = readThemeColors(zipContent);
     // The content types of parts that patches add to the package, such as charts
-    // eslint-disable-next-line functional/prefer-readonly-type
     const contentTypeOverrides: { readonly contentType: string; readonly partName: string }[] = [];
     const parts = new PackageParts(
         {
@@ -376,9 +374,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
 
     const map = new Map<string, Element>();
 
-    // eslint-disable-next-line functional/prefer-readonly-type
     const imageRelationshipAdditions: IImageRelationshipAddition[] = [];
-    // eslint-disable-next-line functional/prefer-readonly-type
     const relationshipAdditions: IRelationshipAddition[] = [];
     let hasMedia = false;
 
@@ -540,7 +536,6 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
             }
 
             // The relationships of the patch's hyperlinks, which the part only gets if the placeholder is in it
-            // eslint-disable-next-line functional/prefer-readonly-type
             const hyperlinkRelationships: IRelationshipAddition[] = [];
 
             // TODO: mutates json. Make it immutable

@@ -57,7 +57,6 @@ const convert = (
     readonly endnotes: readonly string[];
     readonly warnings: readonly HtmlWarningCode[];
 } => {
-    // eslint-disable-next-line functional/prefer-readonly-type
     const warnings: HtmlWarningCode[] = [];
     // eslint-disable-next-line functional/immutable-data
     const written = formattedWithNotes(htmlToContent(html, { ...options, onWarning: (warning) => warnings.push(warning.code) }));

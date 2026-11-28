@@ -237,7 +237,6 @@ const AUTOMATIC_SPACE = 14;
  * The lines of paragraphs without page references, by the measurer and widths they were laid out with. They are the same
  * each time the pages are laid out again with the page numbers worked out before.
  */
-// eslint-disable-next-line functional/prefer-readonly-type
 const laidOutLines = new WeakMap<TextMeasurer, WeakMap<ParagraphBlock, Map<string, readonly LaidOutLine[]>>>();
 
 /** How the rows of a table in a footnote are measured: as a line that can't be broken */
@@ -1054,7 +1053,6 @@ export const paginate = (
     // Text in a font the measurer doesn't know stops the layout where it is measured. Guessing, it is measured as the
     // measurer measures it, as the most similar font it knows, and the lines it is in say so (see `linesOf`)
     const measuring = guess ? measurer : stoppingAtUnknownFonts(measurer);
-    // eslint-disable-next-line functional/prefer-readonly-type
     const byParagraph = laidOutLines.get(measurer) ?? new WeakMap<ParagraphBlock, Map<string, readonly LaidOutLine[]>>();
     laidOutLines.set(measurer, byParagraph);
     /**
@@ -1270,7 +1268,6 @@ export const paginate = (
         );
 
     // Tables sized to their text, or with columns widened for long words, by the width they are in
-    // eslint-disable-next-line functional/prefer-readonly-type
     const fittedTables = new Map<TableBlock, Map<number, TableBlock>>();
     /**
      * A table as it is laid out in a width: with its columns sized to their text, or widened for words longer than its
@@ -1472,7 +1469,6 @@ export const paginate = (
     // Where each bookmark and field was placed
     const places = new Map<string, PagePlace>();
     // The height of each header and footer, by the section it is in, whose number of pages it can show
-    // eslint-disable-next-line functional/prefer-readonly-type
     const headerHeights = new Map<readonly Block[], Map<number, number>>();
     let pageCount = 0;
     let pageNumber = 0;
@@ -1554,7 +1550,6 @@ export const paginate = (
     let pageColumns: number | undefined;
     // What has been placed on the pages, which laying out blocks again takes back, the last page whose footnotes are
     // placed, the index of the block being placed, and the page the layout stopped on, whose lines might not be Word's
-    // eslint-disable-next-line functional/prefer-readonly-type
     const placements: Placement[] = [];
     let finished = 0;
     let blockIndex = 0;
@@ -2402,9 +2397,7 @@ export const paginate = (
     // The parts of the table rows in footnotes filled on the page, by the rooms they were cut at, one after the other, which
     // the search for a row's cut and the notes' heights ask for again and again: filled afresh on each page, as its lines
     // may be measured with its page number
-    // eslint-disable-next-line functional/prefer-readonly-type
     type FilledParts = { readonly parts: readonly CellPart[]; readonly after: Map<number, FilledParts> };
-    // eslint-disable-next-line functional/prefer-readonly-type
     let filledNoteParts = { page: 0, rows: new WeakMap<TableRow, Map<number, FilledParts>>() };
 
     /**
@@ -2696,7 +2689,6 @@ export const paginate = (
                 lines: at.map(({ line, isFirst, left, y, width }) => placedLine(line, block.format, isFirst, left, width, y)),
             };
         };
-        // eslint-disable-next-line functional/prefer-readonly-type
         const placed: PlacedLine[][] = stack.pieces.map(() => []);
         if (stack.fillColumns !== undefined) {
             const noteSection = sections[notesInColumns!];
@@ -4114,7 +4106,6 @@ export const paginate = (
             const all = [...beside, ...around.map(({ drawing }) => drawing)];
             const end = from + linesToBreak(lines, from).length;
             const rooms = new Map(earlier);
-            // eslint-disable-next-line functional/prefer-readonly-type
             const rows: Row[] = [];
             let y = rowsTop;
             let line = from;

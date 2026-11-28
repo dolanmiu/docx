@@ -69,7 +69,6 @@ const highestOf = (ids: readonly number[]): number => ids.reduce((highest, id) =
  */
 export const patchNumbering = (
     numbering: Numbering,
-    // eslint-disable-next-line functional/prefer-readonly-type
     parts: Map<string, Element>,
     { createContext, addContentTypeOverride }: NumberingHelpers,
 ): NumberingPatcher => {

@@ -515,7 +515,6 @@ const ligatureAt = (glyphs: readonly number[], at: number, ligatures: ReadonlyMa
 
 /** Joins glyphs with the ligatures of a lookup: at each glyph, its ligature, and the next glyph after the ligature's */
 const joinWith = (glyphs: readonly number[], ligatures: ReadonlyMap<number, readonly Ligature[]>): readonly number[] => {
-    // eslint-disable-next-line functional/prefer-readonly-type
     const joined: number[] = [];
     let at = 0;
     while (at < glyphs.length) {
@@ -723,7 +722,6 @@ export const createFontFileMeasurer = (faces: readonly FontFace[], fallback: Tex
         const em = (size * scale) / 100;
         const kerned = isKerned(font) && (face.kernsWithLigatures || !hasLigatures(font));
         let width = 0;
-        // eslint-disable-next-line functional/prefer-readonly-type
         let run: number[] = [];
         const measureRun = (): void => {
             const { glyphs } = hasLigatures(font) ? face.join(run, font.ligatures!) : { glyphs: run };
@@ -803,7 +801,6 @@ export const createFontFileMeasurer = (faces: readonly FontFace[], fallback: Tex
             }
             // The glyphs as they are joined when they are measured: apart either side of a tab, or of a character the face
             // has no glyph for
-            // eslint-disable-next-line functional/prefer-readonly-type
             const runs: number[][] = [[]];
             for (const character of text) {
                 const glyph = character === "\t" ? 0 : face.glyphOf(character.codePointAt(0)!);

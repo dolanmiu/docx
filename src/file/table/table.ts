@@ -113,7 +113,6 @@ export class Table extends FileChild {
      * from the table and cell widths (re-resolved against the actual page or parent
      * cell every time the table is serialized).
      */
-    // eslint-disable-next-line functional/prefer-readonly-type
     private resolvedColumnWidths: readonly number[];
 
     public constructor({

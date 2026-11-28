@@ -101,7 +101,6 @@ const isMark = (link: Element): boolean => /^[[({]?[^\s[\](){}]{1,6}[\])}]?$/u.t
 
 /** The elements an element is in, nearest first, up to the body */
 const ancestorsOf = (element: Element, body: Element): readonly Element[] => {
-    // eslint-disable-next-line functional/prefer-readonly-type
     const ancestors: Element[] = [];
     let { parent } = element;
     while (parent?.type === "tag" && parent !== body) {

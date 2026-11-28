@@ -38,9 +38,7 @@ import { CustomProperty, type ICustomPropertyOptions } from "./custom-property";
  * ```
  */
 export class CustomProperties extends XmlComponent {
-    // eslint-disable-next-line functional/prefer-readonly-type
     private nextId: number;
-    // eslint-disable-next-line functional/prefer-readonly-type
     private readonly properties: CustomProperty[] = [];
 
     public constructor(properties: readonly ICustomPropertyOptions[]) {

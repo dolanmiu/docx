@@ -91,7 +91,6 @@ const tokensOf = (nodes: readonly HtmlNode[], copied = false): readonly Token[] 
 export const readHtml = (paragraphs: readonly (readonly HtmlNode[])[]): readonly FormattedText[] => {
     const marks = { b: 0, i: 0 };
     return paragraphs.map((paragraph) => {
-        // eslint-disable-next-line functional/prefer-readonly-type
         const runs: FormattedRun[] = [];
         let lastNode: "text" | "start" | "end" | undefined;
         let boundary = false;

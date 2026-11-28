@@ -10,7 +10,6 @@
  * Reference: [MS-OVBA] 2.4.1.3.1 Decompression Algorithm
  */
 export const decompress = (data: Uint8Array): Uint8Array => {
-    // eslint-disable-next-line functional/prefer-readonly-type
     const output: number[] = [];
     // After the signature byte, 0x01
     let chunkStart = 1;

@@ -305,7 +305,6 @@ const twoDigitsIn = (encoded: string, at: number): number => DIGITS.indexOf(enco
  * "*" and two digits repeating it that many more times.
  */
 const decodeTokens = <T>(encoded: string, size: number, read: (token: string) => T): readonly (T | undefined)[] => {
-    // eslint-disable-next-line functional/prefer-readonly-type
     const values: (T | undefined)[] = [];
     let last: T | undefined;
     for (let at = 0; at < encoded.length;) {
@@ -358,9 +357,7 @@ const decodeOwnWidths = (encoded: string): FaceWidths => {
         return known;
     }
     const twoDigitsAt = (at: number): number => twoDigitsIn(encoded, at);
-    // eslint-disable-next-line functional/prefer-readonly-type
     const widths: (number | undefined)[] = [];
-    // eslint-disable-next-line functional/prefer-readonly-type
     const fallbacks: (number | undefined)[] = [];
     let token = 0;
     for (let at = 0; at < encoded.length;) {

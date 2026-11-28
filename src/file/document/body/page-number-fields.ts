@@ -27,7 +27,6 @@ export type ElementTree<E> = {
     /** The element's name, such as "w:r", or undefined for text, and for a formatted element's attributes */
     readonly nameOf: (element: E) => string | undefined;
     /** The element's content, which can be changed in place, or undefined when it has none */
-    // eslint-disable-next-line functional/prefer-readonly-type
     readonly contentOf: (element: E) => E[] | undefined;
     readonly attributeOf: (element: E, attribute: string) => unknown;
     /** The text directly in the element, such as an instruction's */
@@ -46,12 +45,9 @@ export type ElementTree<E> = {
 /** A complex field being read: its beginning, its instruction, and whether its result has been reached */
 type OpenField<E> = {
     readonly begin: E;
-    // eslint-disable-next-line functional/prefer-readonly-type
     instruction: string;
-    // eslint-disable-next-line functional/prefer-readonly-type
     inResult: boolean;
     /** The result it is written with */
-    // eslint-disable-next-line functional/prefer-readonly-type
     result?: string;
 };
 
@@ -102,7 +98,6 @@ const numberFieldOf = (instruction: string): NumberField | undefined => {
     const parts = (reference ? reference[3] : field[2]).match(/"[^"]*"|\S+/g) ?? [];
     let numberFormat: string | undefined;
     let picture: string | undefined;
-    // eslint-disable-next-line functional/prefer-readonly-type
     const capitals: string[] = [];
     let relative = false;
     let written = true;
@@ -211,9 +206,7 @@ const placeIn = (name: string, within: SequencePlace): SequencePlace =>
  */
 const fillFields = <E>(
     tree: ElementTree<E>,
-    // eslint-disable-next-line functional/prefer-readonly-type
     elements: E[],
-    // eslint-disable-next-line functional/prefer-readonly-type
     open: OpenField<E>[],
     filling: FieldFilling<E>,
     within: SequencePlace = "counted",

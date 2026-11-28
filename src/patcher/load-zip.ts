@@ -30,7 +30,6 @@ const isBlob = (data: InputDataType): data is Blob => ["[object Blob]", "[object
  */
 const readStream = (stream: TemplateStream): Promise<Uint8Array> =>
     new Promise((resolve, reject) => {
-        // eslint-disable-next-line functional/prefer-readonly-type
         const chunks: (Uint8Array | number)[] = [];
         stream.on("data", (chunk: unknown) => {
             // Not `instanceof Uint8Array`, which is false for a Buffer or Uint8Array from another realm, such as a vm context's

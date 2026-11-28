@@ -82,7 +82,6 @@ export const indexRules = (rules: readonly LigatureRule[]): RuleIndex => {
     return new Map(firsts.map((first) => [first, rules.filter(([letters]) => firstOf(letters) === first).sort(order)]));
 };
 
-// eslint-disable-next-line functional/prefer-readonly-type
 const indexes = new Map<FaceShaping, Map<Ligatures, RuleIndex | undefined>>();
 
 /**
@@ -158,7 +157,6 @@ export const joinLetters = (characters: readonly string[], rules: RuleIndex, gly
                 characters.slice(start, start + length).join("") === letters && (next === undefined || characters[start + length] === next)
             );
         });
-    // eslint-disable-next-line functional/prefer-readonly-type
     const joined: Glyph[] = [];
     let at = 0;
     while (at < characters.length) {

@@ -132,7 +132,6 @@ export class PackagePart<Relationship extends PackagePartRelationshipType = Rela
 export class PackageParts {
     private readonly paths = new Map<PackagePart<PackagePartRelationshipType>, string>();
     // The paths under word/ that are taken: the package's own, and those given out by takePath
-    // eslint-disable-next-line functional/prefer-readonly-type
     private readonly taken: Set<string>;
     // The folders of the parts whose XML is being written, by the relationships the XML is formatted with
     private readonly folders = new WeakMap<Relationships, string>();
