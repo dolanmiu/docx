@@ -8743,20 +8743,32 @@ EXTERNAL: "External" };
 		if (tables.length === 0) return;
 		const styles = stylesOf(context);
 		const followBookmarks = tables.some(([, { properties }]) => Boolean(properties.entriesFromBookmark));
-		const headings = paragraphDetailsOf(blocks.filter((block) => nameOf$4(block) === "w:p"), followBookmarks).map((paragraph) => ({
+		const paragraphs = paragraphDetailsOf(blocks.filter((block) => nameOf$4(block) === "w:p"), followBookmarks);
+		const takenNames = new Set(bookmarkMarksOf(body).flatMap((mark) => mark.start ? [mark.name] : []));
+		let place = 0;
+		const nextName = () => {
+			do
+				place++;
+			while (takenNames.has(`_Toc${place}`));
+			return `_Toc${place}`;
+		};
+		const headings = paragraphs.map((paragraph) => ({
 			paragraph,
 			levels: tables.map(([, { properties }]) => levelIn(properties, paragraph, styles))
-		})).filter(({ levels }) => levels.some((level) => level !== void 0)).map((heading, index) => _objectSpread2(_objectSpread2({}, heading), {}, { id: bookmarkIds.get(index) }));
-		for (const { paragraph, id } of headings) bookmark(paragraph.element, `_Toc${id}`, id, context);
+		})).filter(({ levels }) => levels.some((level) => level !== void 0)).map((heading, index) => _objectSpread2(_objectSpread2({}, heading), {}, {
+			id: bookmarkIds.get(index),
+			name: nextName()
+		}));
+		for (const { paragraph, id, name } of headings) bookmark(paragraph.element, name, id, context);
 		const listNumbers = headings.length > 0 ? listNumbersOf === null || listNumbersOf === void 0 ? void 0 : listNumbersOf(body) : void 0;
 		tables.forEach(([table, options], index) => {
-			const entries = headings.flatMap(({ paragraph, levels, id }) => {
+			const entries = headings.flatMap(({ paragraph, levels, name }) => {
 				const level = levels[index];
-				const listNumber = listNumbers === null || listNumbers === void 0 ? void 0 : listNumbers.get(`_Toc${id}`);
+				const listNumber = listNumbers === null || listNumbers === void 0 ? void 0 : listNumbers.get(name);
 				return level === void 0 ? [] : [_objectSpread2({
 					title: paragraph.text,
 					level,
-					bookmark: `_Toc${id}`
+					bookmark: name
 				}, listNumber ? { listNumber } : {})];
 			});
 			if (entries.length === 0) return;
@@ -25854,14 +25866,53 @@ MAX: 9026 };
 			else throw Error("XMLComponent did not format correctly");
 		}
 	};
+	// src/export/packer/bookmark-ids.ts
+	/**
+	* Numbers the bookmarks of a document as it is packed.
+	*
+	* @module
+	*/
+	var TAG$2 = /<(w:bookmarkStart|w:bookmarkEnd)(?=[\s/>])[^>]*>/g;
+	var ID$2 = /(\sw:id=")(-?\d+)(")/;
+	/**
+	* Creates a function that numbers the bookmarks in the parts of a document from 1, in the order they start.
+	*
+	* Each bookmark is given an id when it is created, from one counter for the whole process, so no two bookmarks share
+	* one. Written as they are, the ids of a document would depend on the bookmarks created before it. Word only needs the
+	* ids to be unique in the document, and a bookmark's start and end to share one, so the parts of a document are
+	* numbered by the same function, one after the other.
+	*
+	* A bookmark's end gets the id of the last start with its id that hasn't ended, so a bookmark written twice is two
+	* bookmarks. An end without such a start gets an id of its own, so it can't end another bookmark.
+	*
+	* @returns A function that returns a part's XML with its bookmarks numbered after those of the parts before it
+	*/
+	var createBookmarkNumbering = () => {
+		let lastId = 0;
+		const open = /* @__PURE__ */ new Map();
+		return (xml) => xml.replace(TAG$2, (tag, name) => {
+			var _open$get;
+			const match = ID$2.exec(tag);
+			if (!match) return tag;
+			const id = Number(match[2]);
+			const started = (_open$get = open.get(id)) !== null && _open$get !== void 0 ? _open$get : [];
+			if (name === "w:bookmarkEnd" && started.length > 0) {
+				open.set(id, started.slice(0, -1));
+				return tag.replace(ID$2, `$1${started[started.length - 1]}$3`);
+			}
+			lastId++;
+			if (name === "w:bookmarkStart") open.set(id, [...started, lastId]);
+			return tag.replace(ID$2, `$1${lastId}$3`);
+		});
+	};
 	// src/export/packer/drawing-ids.ts
 	/**
 	* Numbers the drawings of a document as it is packed.
 	*
 	* @module
 	*/
-	var TAG = /<(\/?)(wp:inline|wp:anchor|wp:docPr|wps:cNvPr|wpg:cNvPr|pic:cNvPr|a:stCxn|a:endCxn)(?=[\s/>])[^>]*>/g;
-	var ID = /(\s)id="(\d+)"/;
+	var TAG$1 = /<(\/?)(wp:inline|wp:anchor|wp:docPr|wps:cNvPr|wpg:cNvPr|pic:cNvPr|a:stCxn|a:endCxn)(?=[\s/>])[^>]*>/g;
+	var ID$1 = /(\s)id="(\d+)"/;
 	/**
 	* Creates a function that numbers the drawings in the parts of a document from 1, in the order they are written.
 	*
@@ -25882,7 +25933,7 @@ MAX: 9026 };
 			const newIds = /* @__PURE__ */ new Map();
 			const drawings = [];
 			const ends = [];
-			for (const { 0: tag, 1: closing, 2: name, index: offset } of xml.matchAll(TAG)) {
+			for (const { 0: tag, 1: closing, 2: name, index: offset } of xml.matchAll(TAG$1)) {
 				var _ID$exec;
 				if (name === "wp:inline" || name === "wp:anchor") {
 					if (closing) drawings.pop();
@@ -25890,7 +25941,7 @@ MAX: 9026 };
 					continue;
 				}
 				const shapes = drawings[drawings.length - 1];
-				const id = Number((_ID$exec = ID.exec(tag)) === null || _ID$exec === void 0 ? void 0 : _ID$exec[2]);
+				const id = Number((_ID$exec = ID$1.exec(tag)) === null || _ID$exec === void 0 ? void 0 : _ID$exec[2]);
 				if (closing || !shapes || !Number.isInteger(id) || name === "pic:cNvPr" && id === 0) continue;
 				if (name === "a:stCxn" || name === "a:endCxn") {
 					ends.push({
@@ -25908,11 +25959,39 @@ MAX: 9026 };
 				const shape = shapes.get(id);
 				if (shape !== void 0) newIds.set(offset, shape);
 			}
-			return newIds.size === 0 ? xml : xml.replace(TAG, (tag, _closing, _name, offset) => {
+			return newIds.size === 0 ? xml : xml.replace(TAG$1, (tag, _closing, _name, offset) => {
 				const id = newIds.get(offset);
-				return id === void 0 ? tag : tag.replace(ID, `$1id="${id}"`);
+				return id === void 0 ? tag : tag.replace(ID$1, `$1id="${id}"`);
 			});
 		};
+	};
+	// src/export/packer/fit-text-ids.ts
+	/**
+	* Numbers the runs of a document that are fitted to a width on their own as it is packed.
+	*
+	* @module
+	*/
+	var TAG = /<w:fitText(?=[\s/>])[^>]*>/g;
+	var ID = /(\sw:id=")(-\d+)(")/;
+	/**
+	* Creates a function that numbers the runs fitted to a width on their own (`w:fitText` without a group) in the parts
+	* of a document, from -1 down, in the order they are written.
+	*
+	* Each such run is given an id when it is created, from one counter for the whole process, so no two runs share one.
+	* Written as they are, the ids of a document would depend on the runs created before it. Word fits runs next to each
+	* other with the same id together, so runs that had the same id still share one, and runs that didn't still don't.
+	* The parts of a document, including its styles and lists, are numbered by the same function, one after the other.
+	*
+	* @returns A function that returns a part's XML with its runs numbered after those of the parts before it
+	*/
+	var createFitTextNumbering = () => {
+		const newIds = /* @__PURE__ */ new Map();
+		return (xml) => xml.replace(TAG, (tag) => tag.replace(ID, (_match, before, id, after) => {
+			var _newIds$get;
+			const newId = (_newIds$get = newIds.get(Number(id))) !== null && _newIds$get !== void 0 ? _newIds$get : -(newIds.size + 1);
+			newIds.set(Number(id), newId);
+			return `${before}${newId}${after}`;
+		}));
 	};
 	// src/export/packer/placeholders.ts
 	/**
@@ -26170,6 +26249,9 @@ MAX: 9026 };
 			const footnoteRelationshipCount = file.FootNotes.Relationships.RelationshipCount + 1;
 			const endnoteRelationshipCount = file.Endnotes.Relationships.RelationshipCount + 1;
 			const numberDrawings = createDrawingNumbering();
+			const numberBookmarks = createBookmarkNumbering();
+			const numberFitText = createFitTextNumbering();
+			const numberIds = (xml) => numberFitText(numberBookmarks(numberDrawings(xml)));
 			const documentMediaDatas = this.imageReplacer.getMediaData(documentXmlData, file.Media);
 			const commentMediaDatas = this.imageReplacer.getMediaData(commentXmlData, file.Media);
 			const footnoteMediaDatas = this.imageReplacer.getMediaData(footnoteXmlData, file.Media);
@@ -26195,7 +26277,7 @@ MAX: 9026 };
 				},
 				Document: {
 					data: (() => {
-						const xmlData = this.imageReplacer.replace(numberDrawings(documentXmlData), documentMediaDatas, documentRelationshipCount);
+						const xmlData = this.imageReplacer.replace(numberIds(documentXmlData), documentMediaDatas, documentRelationshipCount);
 						return this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
 					})(),
 					path: "word/document.xml"
@@ -26213,7 +26295,7 @@ MAX: 9026 };
 								encoding: "UTF-8"
 							}
 						});
-						return this.numberingReplacer.replace(xmlStyles, file.Numbering.ConcreteNumbering);
+						return this.numberingReplacer.replace(numberFitText(xmlStyles), file.Numbering.ConcreteNumbering);
 					})(),
 					path: "word/styles.xml"
 				},
@@ -26304,7 +26386,7 @@ MAX: 9026 };
 						declaration: { encoding: "UTF-8" }
 					});
 					const mediaDatas = this.imageReplacer.getMediaData(tempXmlData, file.Media);
-					const xmlData = this.imageReplacer.replace(numberDrawings(tempXmlData), mediaDatas, 0);
+					const xmlData = this.imageReplacer.replace(numberIds(tempXmlData), mediaDatas, 0);
 					return {
 						data: this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering),
 						path: `word/header${index + 1}.xml`
@@ -26320,7 +26402,7 @@ MAX: 9026 };
 						declaration: { encoding: "UTF-8" }
 					});
 					const mediaDatas = this.imageReplacer.getMediaData(tempXmlData, file.Media);
-					const xmlData = this.imageReplacer.replace(numberDrawings(tempXmlData), mediaDatas, 0);
+					const xmlData = this.imageReplacer.replace(numberIds(tempXmlData), mediaDatas, 0);
 					return {
 						data: this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering),
 						path: `word/footer${index + 1}.xml`
@@ -26356,7 +26438,7 @@ MAX: 9026 };
 				},
 				FootNotes: {
 					data: (() => {
-						const xmlData = this.imageReplacer.replace(numberDrawings(footnoteXmlData), footnoteMediaDatas, footnoteRelationshipCount);
+						const xmlData = this.imageReplacer.replace(numberIds(footnoteXmlData), footnoteMediaDatas, footnoteRelationshipCount);
 						return this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
 					})(),
 					path: "word/footnotes.xml"
@@ -26380,7 +26462,7 @@ MAX: 9026 };
 				},
 				Endnotes: {
 					data: (() => {
-						const xmlData = this.imageReplacer.replace(numberDrawings(endnoteXmlData), endnoteMediaDatas, endnoteRelationshipCount);
+						const xmlData = this.imageReplacer.replace(numberIds(endnoteXmlData), endnoteMediaDatas, endnoteRelationshipCount);
 						return this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
 					})(),
 					path: "word/endnotes.xml"
@@ -26419,7 +26501,7 @@ MAX: 9026 };
 			}, file.Comments.IsEmpty ? {} : {
 				Comments: {
 					data: (() => {
-						const xmlData = this.imageReplacer.replace(numberDrawings(commentXmlData), commentMediaDatas, commentRelationshipCount);
+						const xmlData = this.imageReplacer.replace(numberIds(commentXmlData), commentMediaDatas, commentRelationshipCount);
 						return this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
 					})(),
 					path: "word/comments.xml"
@@ -26588,7 +26670,7 @@ MAX: 9026 };
 			} : {}), {}, {
 				PackageParts: xmlifyPackageParts(file, prettify),
 				Numbering: {
-					data: stringifyXmlable(this.formatter.format(file.Numbering, {
+					data: numberFitText(stringifyXmlable(this.formatter.format(file.Numbering, {
 						viewWrapper: file.Document,
 						file,
 						stack: []
@@ -26598,7 +26680,7 @@ MAX: 9026 };
 							standalone: "yes",
 							encoding: "UTF-8"
 						}
-					}),
+					})),
 					path: "word/numbering.xml"
 				},
 				ContentTypes: {
@@ -27171,24 +27253,22 @@ MAX: 9026 };
 	* already uses. Bookmark ids must be unique within a document, but a bookmark's id is chosen when it is created,
 	* without knowing which ids the template has.
 	*
-	* A bookmark keeps its id if nothing in the document uses it yet, and otherwise gets the next unused one. An id is
-	* renumbered the same way each time, so a bookmark's start and end still share one, even in separate patches.
+	* Each bookmark gets the id after the highest one the document has, in the order the bookmarks are inserted, so the
+	* ids don't depend on the bookmarks created before the patch. An id is renumbered the same way each time, so a
+	* bookmark's start and end still share one, even in separate patches.
 	*
 	* @param idsInDocument - The ids of the bookmarks already in the document
 	* @returns A function that returns the elements with their bookmarks renumbered
 	*/
 	var renumberBookmarksAvoiding = (idsInDocument) => {
-		const usedIds = new Set(idsInDocument);
 		const newIds = /* @__PURE__ */ new Map();
 		let highestId = idsInDocument.reduce((highest, id) => Math.max(highest, id), 0);
 		const newIdFor = (id) => {
 			const knownId = newIds.get(id);
 			if (knownId !== void 0) return knownId;
-			const newId = usedIds.has(id) ? highestId + 1 : id;
-			highestId = Math.max(highestId, newId);
-			usedIds.add(newId);
-			newIds.set(id, newId);
-			return newId;
+			highestId++;
+			newIds.set(id, highestId);
+			return highestId;
 		};
 		const renumber = (element) => {
 			const id = bookmarkIdOf(element);
@@ -27602,14 +27682,15 @@ MAX: 9026 };
 	var ID_ELEMENTS = /* @__PURE__ */ new Set([
 		"wp:docPr",
 		"wps:cNvPr",
-		"wpg:cNvPr"
+		"wpg:cNvPr",
+		"pic:cNvPr"
 	]);
 	var REFERENCE_ELEMENTS = /* @__PURE__ */ new Set(["a:stCxn", "a:endCxn"]);
 	var idOf$1 = (element, names) => {
 		var _element$name, _element$attributes;
 		if (!names.has((_element$name = element.name) !== null && _element$name !== void 0 ? _element$name : "")) return;
 		const id = Number((_element$attributes = element.attributes) === null || _element$attributes === void 0 ? void 0 : _element$attributes.id);
-		return Number.isInteger(id) ? id : void 0;
+		return Number.isInteger(id) && !(element.name === "pic:cNvPr" && id === 0) ? id : void 0;
 	};
 	/**
 	* Finds the id of every drawing in an element, at any depth, and of the shapes in them, such as in a group.
@@ -27639,23 +27720,17 @@ MAX: 9026 };
 	* such as a header and the body. A drawing's id is chosen when it is created, without knowing which ids the template
 	* has, and content inserted more than once would have the same ids each time.
 	*
-	* A drawing keeps its ids if nothing in the document has them yet, and otherwise gets the next unused ones. The
-	* connectors in a drawing then still join the shapes they did.
+	* Each drawing gets the ids after the highest one the document has, in the order the drawings are inserted, so the
+	* ids don't depend on the drawings created before the patch. The connectors in a drawing still join the shapes they
+	* did.
 	*
 	* @param idsInDocument - The ids of the drawings already in the document, and of the shapes in them
 	* @returns A function that returns the elements with their drawings renumbered
 	*/
 	var renumberDrawingsAvoiding = (idsInDocument) => {
-		const usedIds = new Set(idsInDocument);
 		let highestId = idsInDocument.reduce((highest, id) => Math.max(highest, id), 0);
-		const newIdFor = (id) => {
-			const newId = usedIds.has(id) ? highestId + 1 : id;
-			highestId = Math.max(highestId, newId);
-			usedIds.add(newId);
-			return newId;
-		};
 		const renumberDrawing = (drawing) => {
-			const newIds = new Map([...new Set(ownIdsOf(drawing))].map((id) => [id, newIdFor(id)]));
+			const newIds = new Map([...new Set(ownIdsOf(drawing))].map((id) => [id, ++highestId]));
 			const renumberIn = (element) => {
 				var _element$name2, _idOf;
 				if (element !== drawing && DRAWINGS.has((_element$name2 = element.name) !== null && _element$name2 !== void 0 ? _element$name2 : "")) return renumberDrawing(element);
@@ -27936,6 +28011,52 @@ MAX: 9026 };
 			contents.removeRelationships(drawing.part.path, new Set([...referenced].filter((id) => !used.has(id))));
 		}
 	};
+	// src/patcher/fit-text-ids.ts
+	var fitTextIdOf = (element) => {
+		var _element$attributes;
+		if (element.name !== "w:fitText") return;
+		const id = Number((_element$attributes = element.attributes) === null || _element$attributes === void 0 ? void 0 : _element$attributes["w:id"]);
+		return Number.isInteger(id) && id < 0 ? id : void 0;
+	};
+	/**
+	* Finds the negative id of every run fitted to a width (`w:fitText`) in an element, at any depth.
+	*
+	* @param element - The element to search, such as a part's root
+	* @returns The ids, once for each run that has one
+	*/
+	var findFitTextIds = (element) => {
+		var _element$elements;
+		const id = fitTextIdOf(element);
+		return [...id === void 0 ? [] : [id], ...((_element$elements = element.elements) !== null && _element$elements !== void 0 ? _element$elements : []).flatMap(findFitTextIds)];
+	};
+	/**
+	* Creates a function that renumbers the runs fitted to a width on their own in content being inserted. Word fits
+	* runs next to each other with the same id together, but a run's id is chosen when it is created, from one counter
+	* for the whole process, without knowing which ids the template has.
+	*
+	* Each id gets the one below the lowest the document has, in the order the runs are inserted, so the ids don't
+	* depend on the runs created before the patch. An id is renumbered the same way each time, so runs that shared an id
+	* still share one.
+	*
+	* @param idsInDocument - The negative ids of the runs fitted to a width in the document
+	* @returns A function that returns the elements with their runs renumbered
+	*/
+	var renumberFitTextAvoiding = (idsInDocument) => {
+		const newIds = /* @__PURE__ */ new Map();
+		let lowestId = idsInDocument.reduce((lowest, id) => Math.min(lowest, id), 0);
+		const newIdFor = (id) => {
+			const knownId = newIds.get(id);
+			if (knownId !== void 0) return knownId;
+			lowestId--;
+			newIds.set(id, lowestId);
+			return lowestId;
+		};
+		const renumber = (element) => {
+			const id = fitTextIdOf(element);
+			return _objectSpread2(_objectSpread2(_objectSpread2({}, element), id === void 0 ? {} : { attributes: _objectSpread2(_objectSpread2({}, element.attributes), {}, { "w:id": String(newIdFor(id)) }) }), element.elements === void 0 ? {} : { elements: element.elements.map(renumber) });
+		};
+		return (elements) => elements.map(renumber);
+	};
 	// src/patcher/load-zip.ts
 	var isStream = (data) => typeof data === "object" && data !== null && "on" in data && typeof data.on === "function";
 	var isZipArchive = (data) => typeof data === "object" && data !== null && "generateAsync" in data && typeof data.generateAsync === "function";
@@ -28053,7 +28174,7 @@ MAX: 9026 };
 			...elements.slice(index)
 		] });
 	};
-	var patchNotesOfKind = (kind, notes, parts, { createContext, addContentTypeOverride, renumberBookmarks, renumberDrawings, renumberLists, useStyles }) => {
+	var patchNotesOfKind = (kind, notes, parts, { createContext, addContentTypeOverride, renumberBookmarks, renumberDrawings, renumberFitText, renumberLists, useStyles }) => {
 		const givenNotes = new Map(Object.entries(notes).map(([id, note]) => [Number(id), note]));
 		const carriedIds = /* @__PURE__ */ new Map();
 		let highestGivenId = [...givenNotes.keys()].filter(Number.isFinite).reduce((highest, id) => Math.max(highest, Math.floor(id)), 0);
@@ -28094,7 +28215,7 @@ MAX: 9026 };
 			const context = createContext(path);
 			const contentOfNote = new Map([...new Set(noteOfId.values())].map((note) => {
 				const mark = formatElement$1(kind.create.mark(), context);
-				return [note, useStyles(renumberLists(renumberBookmarks(note.children.map((paragraph) => formatElement$1(paragraph, context)).map((paragraph, index) => index === 0 ? withMark(paragraph, mark) : paragraph))))];
+				return [note, useStyles(renumberLists(renumberFitText(renumberBookmarks(note.children.map((paragraph) => formatElement$1(paragraph, context)).map((paragraph, index) => index === 0 ? withMark(paragraph, mark) : paragraph)))))];
 			}));
 			getFirstLevelElements(parts.get(path), kind.rootName).push(...[...noteOfId].map(([id, note]) => ({
 				type: "element",
@@ -29702,6 +29823,7 @@ MAX: 9026 };
 			}
 			const renumberBookmarks = renumberBookmarksAvoiding([...map.values()].flatMap(findBookmarkIds));
 			const renumberDrawings = renumberDrawingsAvoiding([...map.values()].flatMap(findDrawingIds));
+			const renumberFitText = renumberFitTextAvoiding([...map.values()].flatMap(findFitTextIds));
 			const viewWrappers = /* @__PURE__ */ new Map();
 			const viewWrapperOf = (key) => {
 				const existing = viewWrappers.get(key);
@@ -29742,6 +29864,7 @@ MAX: 9026 };
 				addContentTypeOverride,
 				renumberBookmarks,
 				renumberDrawings,
+				renumberFitText,
 				renumberLists: lists.renumber,
 				useStyles: styles.use
 			});
@@ -29812,7 +29935,7 @@ MAX: 9026 };
 						context,
 						keepOriginalStyles,
 						recursive,
-						renumberIds: (elements) => styles.use(lists.renumber(notes.renumber(renumberBookmarks(renumberDrawings(removeShapeTypes(elements))))))
+						renumberIds: (elements) => styles.use(lists.renumber(notes.renumber(renumberFitText(renumberBookmarks(renumberDrawings(removeShapeTypes(elements)))))))
 					});
 					if (didFindOccurrence) relationshipAdditions.push(...hyperlinkRelationships);
 				};
