@@ -1235,6 +1235,36 @@ describe("drawingStyledParagraphs", () => {
 });
 
 describe("createShapeDrawingNodes", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("should name the children after their place in the drawing, however many drawings were made before it", () => {
+        let id = 100;
+        vi.spyOn(convenienceFunctions, "docPropertiesUniqueNumericId").mockImplementation(() => ++id);
+
+        const { children } = layoutShapeDrawing(
+            createShapeDrawingNodes([
+                box("a", 0, 0),
+                { type: "group", children: [box("b", 200, 0)] },
+                connect("a", "b", { route: "elbow", label: "Yes" }),
+            ]),
+        );
+
+        // The ids come from the counter every drawing takes its id from, until the document numbers its drawings
+        const group = children[1];
+        expect(group.type === "group" && group.nonVisualDrawingProperties).to.include({ id: 102, name: "Group 2" });
+        expect(group.type === "group" && dataOf(group.children[0]).nonVisualDrawingProperties).to.include({ id: 103, name: "Rectangle 3" });
+        expect(children.map((child) => child.type !== "group" && dataOf(child).nonVisualDrawingProperties)).to.deep.equal([
+            { id: 101, name: "Rectangle 1", description: undefined, title: undefined, link: undefined, decorative: undefined },
+            false,
+            { id: 104, name: "Elbow Connector 4", description: undefined, title: undefined, link: undefined, decorative: undefined },
+            { id: 105, name: "Text Box 5", description: undefined, title: undefined, link: undefined, decorative: undefined },
+        ]);
+        const { start, end } = dataOf(children[2]).connections!;
+        expect([start?.id, end?.id]).to.deep.equal([101, 103]);
+    });
+
     it("should give the children their ids once, so laying them out again keeps them", () => {
         const nodes = createShapeDrawingNodes([{ type: "rectangle", transformation: { width: 10, height: 10 } }]);
         const ids = (layout: ShapeDrawingLayout): readonly unknown[] =>

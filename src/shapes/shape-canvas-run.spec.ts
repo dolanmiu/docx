@@ -59,7 +59,7 @@ describe("ShapeCanvasRun", () => {
         expect(canvas).to.have.length(5);
 
         const connector = canvas[4]["wps:wsp"];
-        // Shapes are named as Word names them, after what they are and their id
+        // Shapes are named as Word names them, after what they are and their place in the drawing
         expect(canvas[2]["wps:wsp"][0]).to.deep.equal({ "wps:cNvPr": { _attr: { id: 1, name: "Flow Chart Terminator 1" } } });
         expect(connector[0]).to.deep.equal({ "wps:cNvPr": { _attr: { id: 3, name: "Straight Connector 3" } } });
         expect(connector[1]).to.deep.equal({
@@ -107,11 +107,15 @@ describe("ShapeCanvasRun", () => {
         ]);
         // The background is decorative, so screen readers skip it
         const background = group[2]["wps:wsp"][0]["wps:cNvPr"];
-        expect(background[0]).to.deep.equal({ _attr: { id: 8, name: "Canvas 8" } });
+        expect(background[0]).to.deep.equal({ _attr: { id: 8, name: "Canvas" } });
         expect(background[1]).to.have.property("a:extLst");
         expect(JSON.stringify(group[2])).to.include("F2F2F2");
-        // The shapes and connector are laid out again, with ids of their own
-        expect(group.slice(3).map((child: IXmlableObject) => child["wps:wsp"][0]["wps:cNvPr"]._attr.id)).to.deep.equal([5, 6, 7]);
+        // The shapes and connector are laid out again, with ids of their own and the names they have on the canvas
+        expect(group.slice(3).map((child: IXmlableObject) => child["wps:wsp"][0]["wps:cNvPr"]._attr)).to.deep.equal([
+            { id: 5, name: "Rectangle 1" },
+            { id: 6, name: "Rectangle 2" },
+            { id: 7, name: "Straight Connector 3" },
+        ]);
         expect(group[5]["wps:wsp"][1]).to.deep.equal({
             "wps:cNvCnPr": [{ "a:stCxn": { _attr: { id: 5, idx: 3 } } }, { "a:endCxn": { _attr: { id: 6, idx: 1 } } }],
         });

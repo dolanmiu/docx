@@ -164,7 +164,8 @@ export class ShapeCanvasRun extends Run {
             }
 
             // Applications that can't draw canvases, such as Apple Pages, draw the same diagram as a group. Its shapes
-            // have ids of their own, and a rectangle behind them draws the canvas's background and outline
+            // have ids of their own, and the same names, and a rectangle behind them draws the canvas's background and
+            // outline
             const { backgroundId } = fallback;
             const group = layoutShapeDrawing(fallback.nodes, { keepPositive: true, layout: options.layout, styles });
             const background: ShapeDrawingChildMediaData = {
@@ -175,7 +176,7 @@ export class ShapeCanvasRun extends Run {
                     fill: options.fill,
                     line: options.line ?? "none",
                     // Screen readers skip it: it is only the canvas's background
-                    nonVisualDrawingProperties: { id: backgroundId, name: `Canvas ${backgroundId}`, decorative: true },
+                    nonVisualDrawingProperties: { id: backgroundId, name: "Canvas", decorative: true },
                 },
             };
             const groupReach = {

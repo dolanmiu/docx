@@ -368,7 +368,8 @@ const shrink = ({ left, top, right, bottom }: Bounds, by: number): Bounds => ({
 const transformDirection = ({ a, b, c, d }: Matrix, { x, y }: Point): Point => ({ x: a * x + c * y, y: b * x + d * y });
 
 /**
- * A name for a shape, as Word gives them: what it is, then its drawing id, such as "Rounded Rectangle 4".
+ * A name for a shape, as Word gives them: what it is, then a number, such as "Rounded Rectangle 4". The number is the
+ * shape's drawing id within its drawing, which counts from 1, so the same drawing has the same names in any document.
  */
 const defaultName = (kind: string, drawingId: number): string =>
     `${kind.replace(/([a-z\d])([A-Z])/g, "$1 $2").replace(/^./, (first) => first.toUpperCase())} ${drawingId}`;
@@ -452,31 +453,29 @@ const shapeSites = (options: ShapeChildOptions, width: number, height: number): 
 /**
  * Gives the band and header of each lane of a layout drawing ids.
  */
-const assignLaneIds = (layout?: ShapeLayout): readonly LaneIds[] =>
-    layout?.type === "flow"
-        ? (layout.lanes ?? []).map(() => [docPropertiesUniqueNumericId(), docPropertiesUniqueNumericId()] as const)
-        : [];
+const assignLaneIds = (nextId: () => number, layout?: ShapeLayout): readonly LaneIds[] =>
+    layout?.type === "flow" ? (layout.lanes ?? []).map(() => [nextId(), nextId()] as const) : [];
 
 /**
  * Gives every shape, picture, group, connector and label a drawing id, in the order they are written.
  */
-const assignIds = (children: readonly IShapeGroupChildOptions[]): readonly Node[] =>
+const assignIds = (children: readonly IShapeGroupChildOptions[], nextId: () => number): readonly Node[] =>
     children.map((options): Node => {
         switch (options.type) {
             case "connector": {
-                const drawingId = docPropertiesUniqueNumericId();
-                return { kind: "connector", options, drawingId, labelId: options.label ? docPropertiesUniqueNumericId() : undefined };
+                const drawingId = nextId();
+                return { kind: "connector", options, drawingId, labelId: options.label ? nextId() : undefined };
             }
             case "picture":
-                return { kind: "picture", options, drawingId: docPropertiesUniqueNumericId() };
+                return { kind: "picture", options, drawingId: nextId() };
             case "group": {
-                const drawingId = docPropertiesUniqueNumericId();
+                const drawingId = nextId();
                 // A group's lanes are drawn first, behind its children
-                const laneIds = assignLaneIds(options.layout);
-                return { kind: "group", options, drawingId, laneIds, children: assignIds(options.children) };
+                const laneIds = assignLaneIds(nextId, options.layout);
+                return { kind: "group", options, drawingId, laneIds, children: assignIds(options.children, nextId) };
             }
             default:
-                return { kind: "shape", options, drawingId: docPropertiesUniqueNumericId() };
+                return { kind: "shape", options, drawingId: nextId() };
         }
     });
 
@@ -1531,7 +1530,7 @@ const layoutGroup = (
     };
 };
 
-const toMediaData = (child: LaidOutChild, shift: Point): ShapeDrawingChildMediaData => {
+const toMediaData = (child: LaidOutChild, shift: Point, drawingIds: readonly number[]): ShapeDrawingChildMediaData => {
     const x = Math.round(child.box.x + shift.x);
     const y = Math.round(child.box.y + shift.y);
     const width = Math.round(child.box.width);
@@ -1543,19 +1542,39 @@ const toMediaData = (child: LaidOutChild, shift: Point): ShapeDrawingChildMediaD
         flip: child.flip,
         rotation: child.rotation ? child.rotation * 60000 : undefined,
     };
+    const withDrawingId = <T extends { readonly id: number }>(properties: T): T => ({ ...properties, id: drawingIds[properties.id - 1] });
     switch (child.type) {
-        case "wps":
-            return { type: "wps", transformation, data: child.data };
+        case "wps": {
+            const { nonVisualDrawingProperties, connections } = child.data;
+            return {
+                type: "wps",
+                transformation,
+                data: {
+                    ...child.data,
+                    ...(nonVisualDrawingProperties && { nonVisualDrawingProperties: withDrawingId(nonVisualDrawingProperties) }),
+                    ...(connections && {
+                        connections: {
+                            start: connections.start && withDrawingId(connections.start),
+                            end: connections.end && withDrawingId(connections.end),
+                        },
+                    }),
+                },
+            };
+        }
         case "picture":
-            return { type: "picture", transformation, data: child.data };
+            return {
+                type: "picture",
+                transformation,
+                data: { ...child.data, nonVisualDrawingProperties: withDrawingId(child.data.nonVisualDrawingProperties) },
+            };
         default:
             return {
                 type: "group",
                 transformation,
                 childOffset: child.childOffset,
                 childExtent: child.childExtent,
-                children: child.children.map((grandchild) => toMediaData(grandchild, { x: 0, y: 0 })),
-                nonVisualDrawingProperties: child.nonVisualDrawingProperties,
+                children: child.children.map((grandchild) => toMediaData(grandchild, { x: 0, y: 0 }, drawingIds)),
+                nonVisualDrawingProperties: withDrawingId(child.nonVisualDrawingProperties),
             };
     }
 };
@@ -1569,19 +1588,28 @@ export type ShapeDrawingNodes = {
     readonly ids: ReadonlySet<string>;
     /** The drawing ids of the band and header of each lane of the layout */
     readonly laneIds: readonly LaneIds[];
+    /** The ids the drawing ids from 1 are written as, from the counter every drawing takes its id from */
+    readonly drawingIds: readonly number[];
 };
 
 /**
  * Gives the children of a group or canvas their drawing ids. Every shape, picture, group and connector identifies
  * itself with a cNvPr, which needs an id that is unique in the document.
  *
+ * They are numbered from 1 within the drawing, and named after that number, so the same drawing has the same names in
+ * any document. Each is written as an id from the counter every drawing takes its id from, so no two drawings share
+ * one, and the Packer then numbers the drawings of the document from 1.
+ *
  * @throws If two shapes or pictures have the same `id`
  */
 export const createShapeDrawingNodes = (children: readonly IShapeGroupChildOptions[], layout?: ShapeLayout): ShapeDrawingNodes => {
+    let count = 0;
+    const nextId = (): number => ++count;
     // The lanes are drawn first, behind the children
-    const laneIds = assignLaneIds(layout);
-    const nodes = assignIds(children);
-    return { nodes, ids: collectIds(nodes), laneIds };
+    const laneIds = assignLaneIds(nextId, layout);
+    const nodes = assignIds(children, nextId);
+    const drawingIds = Array.from({ length: count }, () => docPropertiesUniqueNumericId());
+    return { nodes, ids: collectIds(nodes), laneIds, drawingIds };
 };
 
 /**
@@ -1602,7 +1630,7 @@ export const layoutShapeDrawing = (
         styles = WORD_DEFAULT_STYLES,
     }: { readonly keepPositive?: boolean; readonly layout?: ShapeLayout; readonly styles?: TextStyles } = {},
 ): ShapeDrawingLayout => {
-    const { nodes, ids, laneIds } = "nodes" in children ? children : createShapeDrawingNodes(children, shapeLayout);
+    const { nodes, ids, laneIds, drawingIds } = "nodes" in children ? children : createShapeDrawingNodes(children, shapeLayout);
     const layout = layoutGroup(nodes, ids, styles, shapeLayout, laneIds);
     const shift = keepPositive ? { x: Math.max(0, -layout.reach.left), y: Math.max(0, -layout.reach.top) } : { x: 0, y: 0 };
     const move = ({ left, top, right, bottom }: Bounds): Bounds => ({
@@ -1613,7 +1641,7 @@ export const layoutShapeDrawing = (
     });
 
     return {
-        children: layout.children.map((child) => toMediaData(child, shift)),
+        children: layout.children.map((child) => toMediaData(child, shift, drawingIds)),
         bounds: move(layout.box),
         reach: move(layout.reach),
     };

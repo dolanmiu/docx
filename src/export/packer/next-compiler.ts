@@ -10,6 +10,7 @@ import { stringifyXmlable } from "@util/xml";
 import type { ZipFileData } from "@util/zip";
 
 import { Formatter } from "../formatter";
+import { createDrawingNumbering } from "./drawing-ids";
 import { ImageReplacer } from "./image-replacer";
 import { NumberingReplacer } from "./numbering-replacer";
 import { type PackagePartFile, xmlifyPackageParts } from "./package-part-writer";
@@ -238,6 +239,10 @@ export class Compiler {
         const footnoteRelationshipCount = file.FootNotes.Relationships.RelationshipCount + 1;
         const endnoteRelationshipCount = file.Endnotes.Relationships.RelationshipCount + 1;
 
+        // The drawings are numbered in the order the parts are written below, so their ids don't depend on the drawings
+        // made before the document
+        const numberDrawings = createDrawingNumbering();
+
         const documentMediaDatas = this.imageReplacer.getMediaData(documentXmlData, file.Media);
         const commentMediaDatas = this.imageReplacer.getMediaData(commentXmlData, file.Media);
         const footnoteMediaDatas = this.imageReplacer.getMediaData(footnoteXmlData, file.Media);
@@ -280,7 +285,11 @@ export class Compiler {
             },
             Document: {
                 data: (() => {
-                    const xmlData = this.imageReplacer.replace(documentXmlData, documentMediaDatas, documentRelationshipCount);
+                    const xmlData = this.imageReplacer.replace(
+                        numberDrawings(documentXmlData),
+                        documentMediaDatas,
+                        documentRelationshipCount,
+                    );
                     const referenedXmlData = this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
                     return referenedXmlData;
                 })(),
@@ -442,7 +451,7 @@ export class Compiler {
                 );
                 const mediaDatas = this.imageReplacer.getMediaData(tempXmlData, file.Media);
                 // TODO: 0 needs to be changed when headers get relationships of their own
-                const xmlData = this.imageReplacer.replace(tempXmlData, mediaDatas, 0);
+                const xmlData = this.imageReplacer.replace(numberDrawings(tempXmlData), mediaDatas, 0);
 
                 const referenedXmlData = this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
 
@@ -467,7 +476,7 @@ export class Compiler {
                 );
                 const mediaDatas = this.imageReplacer.getMediaData(tempXmlData, file.Media);
                 // TODO: 0 needs to be changed when headers get relationships of their own
-                const xmlData = this.imageReplacer.replace(tempXmlData, mediaDatas, 0);
+                const xmlData = this.imageReplacer.replace(numberDrawings(tempXmlData), mediaDatas, 0);
 
                 const referenedXmlData = this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
 
@@ -512,7 +521,11 @@ export class Compiler {
             },
             FootNotes: {
                 data: (() => {
-                    const xmlData = this.imageReplacer.replace(footnoteXmlData, footnoteMediaDatas, footnoteRelationshipCount);
+                    const xmlData = this.imageReplacer.replace(
+                        numberDrawings(footnoteXmlData),
+                        footnoteMediaDatas,
+                        footnoteRelationshipCount,
+                    );
                     const referenedXmlData = this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
                     return referenedXmlData;
                 })(),
@@ -547,7 +560,7 @@ export class Compiler {
             },
             Endnotes: {
                 data: (() => {
-                    const xmlData = this.imageReplacer.replace(endnoteXmlData, endnoteMediaDatas, endnoteRelationshipCount);
+                    const xmlData = this.imageReplacer.replace(numberDrawings(endnoteXmlData), endnoteMediaDatas, endnoteRelationshipCount);
                     const referenedXmlData = this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
                     return referenedXmlData;
                 })(),
@@ -602,7 +615,11 @@ export class Compiler {
                 : {
                       Comments: {
                           data: (() => {
-                              const xmlData = this.imageReplacer.replace(commentXmlData, commentMediaDatas, commentRelationshipCount);
+                              const xmlData = this.imageReplacer.replace(
+                                  numberDrawings(commentXmlData),
+                                  commentMediaDatas,
+                                  commentRelationshipCount,
+                              );
                               const referenedXmlData = this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
                               return referenedXmlData;
                           })(),
