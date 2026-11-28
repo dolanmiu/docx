@@ -12,9 +12,9 @@ export type RenumberDrawings = (elements: readonly Element[]) => readonly Elemen
 
 // The drawings, which each have their own ids, and those of the shapes in them, such as in a group
 const DRAWINGS = new Set(["wp:inline", "wp:anchor"]);
-// The elements whose id must be unique in a document: a drawing's, and those of the shapes in a group or canvas. They
-// share one set of ids, as they do in a Document
-const ID_ELEMENTS = new Set(["wp:docPr", "wps:cNvPr", "wpg:cNvPr"]);
+// The elements whose id must be unique in a document: a drawing's, and those of the shapes, pictures and groups in a
+// group or canvas. They share one set of ids, as they do in a Document
+const ID_ELEMENTS = new Set(["wp:docPr", "wps:cNvPr", "wpg:cNvPr", "pic:cNvPr"]);
 // The elements that refer to a shape in the same drawing by its id: the shapes a connector joins
 const REFERENCE_ELEMENTS = new Set(["a:stCxn", "a:endCxn"]);
 
@@ -23,7 +23,8 @@ const idOf = (element: Element, names: ReadonlySet<string>): number | undefined 
         return undefined;
     }
     const id = Number(element.attributes?.id);
-    return Number.isInteger(id) ? id : undefined;
+    // A picture's own pic:cNvPr has id 0, as Word writes it. Only its drawing's id needs to be unique
+    return Number.isInteger(id) && !(element.name === "pic:cNvPr" && id === 0) ? id : undefined;
 };
 
 /**
@@ -55,28 +56,20 @@ const ownIdsOf = (drawing: Element): readonly number[] => {
  * such as a header and the body. A drawing's id is chosen when it is created, without knowing which ids the template
  * has, and content inserted more than once would have the same ids each time.
  *
- * A drawing keeps its ids if nothing in the document has them yet, and otherwise gets the next unused ones. The
- * connectors in a drawing then still join the shapes they did.
+ * Each drawing gets the ids after the highest one the document has, in the order the drawings are inserted, so the
+ * ids don't depend on the drawings created before the patch. The connectors in a drawing still join the shapes they
+ * did.
  *
  * @param idsInDocument - The ids of the drawings already in the document, and of the shapes in them
  * @returns A function that returns the elements with their drawings renumbered
  */
 export const renumberDrawingsAvoiding = (idsInDocument: readonly number[]): RenumberDrawings => {
-    const usedIds = new Set(idsInDocument);
     // Always the highest id in use, so the one after it is free
     let highestId = idsInDocument.reduce((highest, id) => Math.max(highest, id), 0);
 
-    const newIdFor = (id: number): number => {
-        const newId = usedIds.has(id) ? highestId + 1 : id;
-        highestId = Math.max(highestId, newId);
-        // eslint-disable-next-line functional/immutable-data
-        usedIds.add(newId);
-        return newId;
-    };
-
     const renumberDrawing = (drawing: Element): Element => {
         // A connector may come before the shapes it joins, so each id's new one is chosen before anything is renumbered
-        const newIds = new Map([...new Set(ownIdsOf(drawing))].map((id) => [id, newIdFor(id)]));
+        const newIds = new Map([...new Set(ownIdsOf(drawing))].map((id) => [id, ++highestId]));
 
         const renumberIn = (element: Element): Element => {
             if (element !== drawing && DRAWINGS.has(element.name ?? "")) {

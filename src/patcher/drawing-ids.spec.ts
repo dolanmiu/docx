@@ -31,12 +31,16 @@ describe("drawing-ids", () => {
             expect(findDrawingIds(document)).to.deep.equal([4, 1, 2, 3, 5]);
         });
 
-        it("should ignore other ids, such as a picture's, a connector's ends and a bookmark's", () => {
+        it("should ignore other ids, such as a picture's own id 0, a connector's ends and a bookmark's", () => {
             const document = toJson(
-                `<w:p><w:bookmarkStart w:id="1" w:name="a"/><pic:cNvPr id="2" name="Picture"/><a:stCxn id="3" idx="0"/></w:p>`,
+                `<w:p><w:bookmarkStart w:id="1" w:name="a"/><pic:cNvPr id="0" name="Picture"/><a:stCxn id="3" idx="0"/></w:p>`,
             );
 
             expect(findDrawingIds(document)).to.deep.equal([]);
+        });
+
+        it("should find the id of a picture in a group", () => {
+            expect(findDrawingIds(toJson(`<wpg:wgp><pic:pic><pic:cNvPr id="2" name="Picture"/></pic:pic></wpg:wgp>`))).to.deep.equal([2]);
         });
 
         it("should ignore a drawing whose id is not a number", () => {
@@ -45,10 +49,21 @@ describe("drawing-ids", () => {
     });
 
     describe("renumberDrawingsAvoiding", () => {
-        it("should keep an id the document does not use", () => {
+        it("should give a drawing the id after the document's highest, even one the document doesn't use", () => {
             const renumber = renumberDrawingsAvoiding([1, 2]);
 
-            expect(drawingIdsIn(renumber(elementsOf(image(5))))).to.deep.equal([5]);
+            expect(drawingIdsIn(renumber(elementsOf(image(5))))).to.deep.equal([3]);
+        });
+
+        it("should renumber the pictures in a group, and leave a picture's own id 0", () => {
+            const renumber = renumberDrawingsAvoiding([1]);
+            const pictures =
+                `<w:r><w:drawing><wp:inline><wp:docPr id="7" name=""/><wpg:wgp><pic:pic><pic:cNvPr id="8" name=""/></pic:pic></wpg:wgp>` +
+                `<pic:pic><pic:cNvPr id="0" name=""/></pic:pic></wp:inline></w:drawing></w:r>`;
+
+            expect(renumber(elementsOf(pictures))).to.deep.equal(
+                elementsOf(pictures.replace('id="7"', 'id="2"').replace('id="8"', 'id="3"')),
+            );
         });
 
         it("should give an id the document uses the next unused one", () => {

@@ -33,6 +33,7 @@ import { appendContentType, appendContentTypeOverride } from "./content-types-ma
 import { type PatchDocumentProperties, patchCoreProperties } from "./core-properties";
 import { findDrawingIds, renumberDrawingsAvoiding } from "./drawing-ids";
 import { type DrawingPatch, patchDrawings } from "./drawing-patch";
+import { findFitTextIds, renumberFitTextAvoiding } from "./fit-text-ids";
 import { type ZipArchive, loadZip } from "./load-zip";
 import { patchNotes } from "./notes";
 import { patchNumbering } from "./numbering";
@@ -428,6 +429,8 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     const renumberBookmarks = renumberBookmarksAvoiding([...map.values()].flatMap(findBookmarkIds));
     // So are the ids of drawings, even in different parts, so the drawings patches insert get ids no drawing has
     const renumberDrawings = renumberDrawingsAvoiding([...map.values()].flatMap(findDrawingIds));
+    // Word fits runs next to each other with the same id together, so the runs patches insert are kept clear of the template's
+    const renumberFitText = renumberFitTextAvoiding([...map.values()].flatMap(findFitTextIds));
 
     // Each part has one view wrapper, so content can tell which part it is written in, as notes are only in the body
     const viewWrappers = new Map<string, IViewWrapper>();
@@ -469,6 +472,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
         addContentTypeOverride,
         renumberBookmarks,
         renumberDrawings,
+        renumberFitText,
         renumberLists: lists.renumber,
         useStyles: styles.use,
     });
@@ -586,7 +590,9 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                 keepOriginalStyles,
                 recursive,
                 renumberIds: (elements) =>
-                    styles.use(lists.renumber(notes.renumber(renumberBookmarks(renumberDrawings(removeShapeTypes(elements)))))),
+                    styles.use(
+                        lists.renumber(notes.renumber(renumberFitText(renumberBookmarks(renumberDrawings(removeShapeTypes(elements)))))),
+                    ),
             });
 
             if (didFindOccurrence) {

@@ -90,8 +90,10 @@ describe("Table of contents filled in from the headings", () => {
             ],
         });
 
+        // The bookmark is named after the heading's place, and its id is numbered again when the document is packed
         const name = bookmarksIn(body).Introduction;
-        const id = Number(name.replace("_Toc", ""));
+        expect(name).to.equal("_Toc1");
+        const id = attributesOf(elementsNamed(body[1], "w:bookmarkStart")[0], "w:bookmarkStart")?.["w:id"];
         expect(body[1]).to.deep.equal({
             "w:p": [
                 { "w:pPr": [{ "w:pStyle": { _attr: { "w:val": "Heading1" } } }] },
@@ -135,6 +137,25 @@ describe("Table of contents filled in from the headings", () => {
             },
             { "w:p": [{ "w:r": [{ "w:fldChar": { _attr: { "w:fldCharType": "end" } } }] }] },
         ]);
+    });
+
+    it("names the headings' bookmarks after their places, skipping a name a bookmark in the body already has", () => {
+        const body = bodyOf({
+            sections: [
+                {
+                    children: [
+                        new TableOfContents("Contents", { hyperlink: true, headingStyleRange: "1-1" }),
+                        new Paragraph({ children: [new Bookmark({ id: "_Toc1", children: [new TextRun("Mine")] })] }),
+                        heading("First"),
+                        heading("Second"),
+                    ],
+                },
+            ],
+        });
+
+        expect(bookmarksIn(body)).to.deep.equal({ Mine: "_Toc1", First: "_Toc2", Second: "_Toc3" });
+        const anchors = [...JSON.stringify(tableOfContentsIn(body)).matchAll(/"w:anchor":"(_Toc\d+)"/g)].map(([, anchor]) => anchor);
+        expect(anchors).to.deep.equal(["_Toc2", "_Toc3"]);
     });
 
     it("lists the headings in the range of headingStyleRange (\\o), leaving out empty headings and other paragraphs", () => {

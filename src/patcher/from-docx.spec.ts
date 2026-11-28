@@ -1226,19 +1226,58 @@ describe("from-docx", () => {
                 ]);
             });
 
-            it("should keep an inserted bookmark's id when the template does not use it", async () => {
-                const bookmark = new Bookmark({ id: "inserted", children: [new TextRun("B")] });
-                const id = bookmarkIdOf(bookmark);
-                const read = await patchTemplate(
-                    {
-                        body:
-                            `<w:p><w:bookmarkStart w:id="${id + 100}" w:name="existing"/><w:bookmarkEnd w:id="${id + 100}"/></w:p>` +
-                            `<w:p><w:r><w:t>{{slot}}</w:t></w:r></w:p>`,
-                    },
-                    { slot: { type: PatchType.DOCUMENT, children: [new Paragraph({ children: [bookmark] })] } },
-                );
+            it("should give an inserted bookmark the id after the template's, however many bookmarks were made before it", async () => {
+                const patchWithNewBookmark = async (): Promise<string | undefined> => {
+                    const read = await patchTemplate(
+                        {
+                            body:
+                                `<w:p><w:bookmarkStart w:id="3" w:name="existing"/><w:bookmarkEnd w:id="3"/></w:p>` +
+                                `<w:p><w:r><w:t>{{slot}}</w:t></w:r></w:p>`,
+                        },
+                        {
+                            slot: {
+                                type: PatchType.DOCUMENT,
+                                children: [new Paragraph({ children: [new Bookmark({ id: "inserted", children: [new TextRun("B")] })] })],
+                            },
+                        },
+                    );
+                    return read("word/document.xml");
+                };
 
-                expect(await read("word/document.xml")).to.contain(`<w:bookmarkStart w:name="inserted" w:id="${id}"/>`);
+                const first = await patchWithNewBookmark();
+                new Bookmark({ id: "unused", children: [] });
+                const second = await patchWithNewBookmark();
+
+                expect(first).to.contain(`<w:bookmarkStart w:name="inserted" w:id="4"/>`);
+                expect(second).to.equal(first);
+            });
+        });
+
+        describe("Runs fitted to a width", () => {
+            it("should give a run fitted on its own the id below the template's, however many were made before it", async () => {
+                const patchWithNewRun = async (): Promise<string | undefined> => {
+                    const template = zip({
+                        "[Content_Types].xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`,
+                        "word/document.xml":
+                            `<w:document><w:body><w:p><w:r><w:rPr><w:fitText w:val="720" w:id="-4"/></w:rPr><w:t>A</w:t></w:r></w:p>` +
+                            `<w:p><w:r><w:t>{{slot}}</w:t></w:r></w:p></w:body></w:document>`,
+                    });
+                    const patched = await patchDocument({
+                        outputType: "uint8array",
+                        data: template,
+                        patches: {
+                            slot: { type: PatchType.PARAGRAPH, children: [new TextRun({ text: "B", fitText: { width: 1440 } })] },
+                        },
+                    });
+                    return textOf(unzip(patched), "word/document.xml");
+                };
+
+                const first = await patchWithNewRun();
+                new TextRun({ text: "Unused", fitText: { width: 1440 } });
+                const second = await patchWithNewRun();
+
+                expect([...first!.matchAll(/<w:fitText [^>]*w:id="(-?\d+)"/g)].map(([, id]) => id)).to.deep.equal(["-4", "-5"]);
+                expect(second).to.equal(first);
             });
         });
 
@@ -1284,13 +1323,39 @@ describe("from-docx", () => {
                 expect(drawingIdsIn(await read("word/header1.xml"))).to.deep.equal([2, 4]);
             });
 
-            it("should keep an inserted drawing's id when no drawing in the template has it", async () => {
+            it("should give an inserted drawing the id after the template's, even one no drawing in the template has", async () => {
                 const read = await patchTemplate(
                     { body: `<w:p>${drawing(5)}</w:p><w:p><w:r><w:t>{{image}}</w:t></w:r></w:p>` },
                     { patches: { image: { type: PatchType.DOCUMENT, children: [new Paragraph({ children: [image()] })] } } },
                 );
 
-                expect(drawingIdsIn(await read("word/document.xml"))).to.deep.equal([5, 1]);
+                expect(drawingIdsIn(await read("word/document.xml"))).to.deep.equal([5, 6]);
+            });
+
+            it("should write the same ids however many drawings were made before the patch", async () => {
+                const patchWithNewImage = async (): Promise<string | undefined> => {
+                    const read = await patchTemplate(
+                        { body: `<w:p>${drawing(5)}</w:p><w:p><w:r><w:t>{{image}}</w:t></w:r></w:p>` },
+                        {
+                            patches: {
+                                image: {
+                                    type: PatchType.PARAGRAPH,
+                                    children: [
+                                        new ImageRun({ type: "png", data: Buffer.from(""), transformation: { width: 10, height: 10 } }),
+                                    ],
+                                },
+                            },
+                        },
+                    );
+                    return read("word/document.xml");
+                };
+
+                const first = await patchWithNewImage();
+                new ImageRun({ type: "png", data: Buffer.from(""), transformation: { width: 10, height: 10 } });
+                const second = await patchWithNewImage();
+
+                expect(drawingIdsIn(first)).to.deep.equal([5, 6]);
+                expect(second).to.equal(first);
             });
 
             it("should give a drawing a new id for each occurrence of its placeholder", async () => {

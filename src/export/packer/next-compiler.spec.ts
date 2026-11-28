@@ -4,7 +4,8 @@ import { File } from "@file/file";
 import { obfuscate } from "@file/fonts/obfuscate-ttf-to-odttf";
 import { Footer, Header } from "@file/header";
 import { LevelFormat } from "@file/numbering";
-import { Bookmark, ExternalHyperlink, ImageRun, Paragraph, TextRun, WpsShapeRun } from "@file/paragraph";
+import { Bookmark, ExternalHyperlink, HeadingLevel, ImageRun, Paragraph, TextRun, WpsShapeRun } from "@file/paragraph";
+import { TableOfContents } from "@file/table-of-contents";
 import { BuilderElement } from "@file/xml-components";
 import * as convenienceFunctions from "@util/convenience-functions";
 import { zipFiles } from "@util/zip";
@@ -520,6 +521,62 @@ describe("Compiler", () => {
             expect(second).to.deep.equal(first);
             const ids = first.map((xml) => [...xml.matchAll(/<wp:docPr id="(\d+)"/g)].map(([, id]) => Number(id)));
             expect(ids).to.deep.equal([[1, 2], [3], [4], [5], [6], [7]]);
+        });
+
+        it("should number the bookmarks and runs fitted on their own of a document, however many were made before it", () => {
+            const fitted = (text: string): TextRun => new TextRun({ text, fitText: { width: 1440 } });
+            const createFile = (): File =>
+                new File({
+                    styles: { paragraphStyles: [{ id: "Fitted", name: "Fitted", run: { fitText: { width: 720 } } }] },
+                    numbering: {
+                        config: [
+                            {
+                                reference: "list",
+                                levels: [
+                                    { level: 0, format: LevelFormat.DECIMAL, text: "%1.", style: { run: { fitText: { width: 360 } } } },
+                                ],
+                            },
+                        ],
+                    },
+                    sections: [
+                        {
+                            headers: {
+                                default: new Header({
+                                    children: [new Paragraph({ children: [new Bookmark({ id: "header", children: [fitted("Header")] })] })],
+                                }),
+                            },
+                            children: [
+                                new TableOfContents("Contents", { hyperlink: true, headingStyleRange: "1-1" }),
+                                new Paragraph({ text: "Heading", heading: HeadingLevel.HEADING_1 }),
+                                new Paragraph({ children: [new Bookmark({ id: "body", children: [fitted("Body")] }), fitted("Body")] }),
+                                new Paragraph({ text: "Listed", numbering: { reference: "list", level: 0 } }),
+                            ],
+                        },
+                    ],
+                });
+            const parts = ["word/document.xml", "word/header1.xml", "word/styles.xml", "word/numbering.xml"];
+            const partsOf = (file: File): readonly string[] => {
+                const zipFile = compile(file);
+                return parts.map((path) => textOf(zipFile, path)!);
+            };
+
+            const first = partsOf(createFile());
+            new Bookmark({ id: "unused", children: [fitted("Unused")] });
+            const second = partsOf(createFile());
+
+            expect(second).to.deep.equal(first);
+            const [document, header, styles, numbering] = first;
+            expect([...document.matchAll(/<w:bookmark(?:Start|End) [^>]*>/g)].map(([tag]) => tag)).to.deep.equal([
+                '<w:bookmarkStart w:name="_Toc1" w:id="1"/>',
+                '<w:bookmarkEnd w:id="1"/>',
+                '<w:bookmarkStart w:name="body" w:id="2"/>',
+                '<w:bookmarkEnd w:id="2"/>',
+            ]);
+            expect(document).to.contain('w:anchor="_Toc1"');
+            expect(header).to.contain('<w:bookmarkStart w:name="header" w:id="3"/>');
+            const fitTextIdsOf = (xml: string): readonly number[] =>
+                [...xml.matchAll(/<w:fitText [^>]*w:id="(-?\d+)"/g)].map(([, id]) => Number(id));
+            expect([document, styles, header, numbering].map(fitTextIdsOf)).to.deep.equal([[-1, -2], [-3], [-4], [-5]]);
         });
 
         it("should write the same package when a document is packed again", () => {

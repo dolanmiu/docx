@@ -26,6 +26,7 @@ import { type XmlElement as Element, stringifyXmlable } from "@util/xml";
 
 import type { RenumberBookmarks } from "./bookmark-ids";
 import type { RenumberDrawings } from "./drawing-ids";
+import type { RenumberFitText } from "./fit-text-ids";
 import { getFirstLevelElements, toJson } from "./util";
 
 const formatter = new Formatter();
@@ -98,6 +99,7 @@ type NotesHelpers = {
     readonly addContentTypeOverride: (contentType: string, partName: string) => void;
     readonly renumberBookmarks: RenumberBookmarks;
     readonly renumberDrawings: RenumberDrawings;
+    readonly renumberFitText: RenumberFitText;
     /** Gives the lists that the notes' paragraphs are in ids in the document */
     readonly renumberLists: (elements: readonly Element[]) => readonly Element[];
     /** Records the styles that the notes' paragraphs use, so those the document doesn't have are added to it */
@@ -146,7 +148,7 @@ const patchNotesOfKind = (
     notes: PatchNotes,
     // eslint-disable-next-line functional/prefer-readonly-type
     parts: Map<string, Element>,
-    { createContext, addContentTypeOverride, renumberBookmarks, renumberDrawings, renumberLists, useStyles }: NotesHelpers,
+    { createContext, addContentTypeOverride, renumberBookmarks, renumberDrawings, renumberFitText, renumberLists, useStyles }: NotesHelpers,
 ): Omit<NotesPatcher, "carry"> & { readonly carry: (reference: object, note: Note) => number } => {
     const givenNotes = new Map(Object.entries(notes).map(([id, note]) => [Number(id), note]));
     // The ids of the notes that reference runs bring with them, by their runs, after the ids of the notes given
@@ -215,7 +217,11 @@ const patchNotesOfKind = (
                     note,
                     useStyles(
                         renumberLists(
-                            renumberBookmarks(paragraphs.map((paragraph, index) => (index === 0 ? withMark(paragraph, mark) : paragraph))),
+                            renumberFitText(
+                                renumberBookmarks(
+                                    paragraphs.map((paragraph, index) => (index === 0 ? withMark(paragraph, mark) : paragraph)),
+                                ),
+                            ),
                         ),
                     ),
                 ];
