@@ -5,23 +5,14 @@ import { describe, expect, it, vi } from "vitest";
 import "docx";
 import { formatted, formattedWithNotes, written as writtenOf } from "tests/html";
 
-// @ts-expect-error -- Vite reads the file as text, which TypeScript has no type for
 import ckeditor5 from "../../demo/assets/html/ckeditor5.html?raw";
-// @ts-expect-error -- Vite reads the file as text, which TypeScript has no type for
 import googleDocs from "../../demo/assets/html/google-docs.html?raw";
-// @ts-expect-error -- Vite reads the file as text, which TypeScript has no type for
 import lexical from "../../demo/assets/html/lexical.html?raw";
-// @ts-expect-error -- Vite reads the image as a data URL, which TypeScript has no type for
 import logo from "../../demo/assets/html/logo.png?inline";
-// @ts-expect-error -- Vite reads the file as text, which TypeScript has no type for
 import markdown from "../../demo/assets/html/markdown.html?raw";
-// @ts-expect-error -- Vite reads the file as text, which TypeScript has no type for
 import quill from "../../demo/assets/html/quill.html?raw";
-// @ts-expect-error -- Vite reads the file as text, which TypeScript has no type for
 import tinymce from "../../demo/assets/html/tinymce.html?raw";
-// @ts-expect-error -- Vite reads the file as text, which TypeScript has no type for
 import tiptap from "../../demo/assets/html/tiptap.html?raw";
-// @ts-expect-error -- Vite reads the file as text, which TypeScript has no type for
 import word from "../../demo/assets/html/word.html?raw";
 import { htmlToContent } from "./html-to-content";
 import type { HtmlWarning } from "./options";

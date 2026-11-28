@@ -4,7 +4,6 @@ import { Formatter } from "@export/formatter";
 import { BorderStyle } from "@file/border";
 import { HorizontalPositionAlign, VerticalPositionAlign } from "@file/shared";
 
-// @ts-expect-error -- Vite reads the schema as text, which TypeScript has no type for
 import wmlSchema from "../../../ooxml-schemas/ISO-IEC29500-4_2016/wml.xsd?raw";
 import { SectionProperties } from "../document/body/section-properties/section-properties";
 import { DocumentWrapper } from "../document-wrapper";

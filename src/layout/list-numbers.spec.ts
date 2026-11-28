@@ -22,9 +22,7 @@ import {
 } from "docx";
 import { textOf, unzip } from "tests/zip";
 
-// @ts-expect-error -- Vite reads the document as a data URL, which TypeScript has no type for
 import wordTocNumbersFont from "../../scripts/layout-probes/word-toc-numbers-font.docx?inline";
-// @ts-expect-error -- Vite reads the document as a data URL, which TypeScript has no type for
 import wordTocNumbers from "../../scripts/layout-probes/word-toc-numbers.docx?inline";
 import { DEFAULT_MEASURER } from "../text-layout";
 import { estimatePageNumbers, estimatePageNumbersWith } from "./estimate-page-numbers";

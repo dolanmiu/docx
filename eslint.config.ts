@@ -1,5 +1,5 @@
 import eslint from "@eslint/js";
-import type { Linter } from "eslint";
+import type { ESLint, Linter, Rule } from "eslint";
 import { createTypeScriptImportResolver } from "eslint-import-resolver-typescript";
 import { createNodeResolver, importX } from "eslint-plugin-import-x";
 import unicorn from "eslint-plugin-unicorn";
@@ -8,6 +8,39 @@ import preferArrow from "eslint-plugin-prefer-arrow";
 import functional from "eslint-plugin-functional";
 import globals from "globals";
 import tsEslint from "typescript-eslint";
+
+/**
+ * A rule that reports what it always has, but offers its fixes as suggestions, which an editor shows, rather than as
+ * fixes, which `eslint --fix` applies.
+ */
+const withFixesAsSuggestions = (rule: Rule.RuleModule, description: string): Rule.RuleModule => ({
+    ...rule,
+    meta: { ...rule.meta, fixable: undefined, hasSuggestions: true },
+    create: (context) =>
+        rule.create(
+            // The context is frozen, so the rule is given one that reports through it
+            Object.create(context, {
+                report: {
+                    value: ({ fix, ...descriptor }: Rule.ReportDescriptor): void =>
+                        context.report(fix ? { ...descriptor, suggest: [{ desc: description, fix }] } : descriptor),
+                },
+            }) as Rule.RuleContext,
+        ),
+});
+
+// functional/prefer-readonly-type's fix makes an array, map, set or field readonly without looking at whether the code
+// changes it. Applied by `eslint --fix`, it breaks every push to an array the code builds, and functional/immutable-data
+// then has nothing to report there, so `--fix` also removes the comments that allowed the push
+const functionalWithSafeFixes: ESLint.Plugin = {
+    ...functional,
+    rules: {
+        ...functional.rules,
+        "prefer-readonly-type": withFixesAsSuggestions(
+            functional.rules["prefer-readonly-type"] as unknown as Rule.RuleModule,
+            "Make it readonly, if nothing changes it",
+        ),
+    },
+};
 
 const config: Linter.Config<Linter.RulesRecord>[] = [
     {
@@ -34,7 +67,7 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
             unicorn,
             jsdoc,
             "prefer-arrow": preferArrow,
-            functional,
+            functional: functionalWithSafeFixes,
         },
 
         languageOptions: {
@@ -364,7 +397,7 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
             unicorn,
             jsdoc,
             "prefer-arrow": preferArrow,
-            functional,
+            functional: functionalWithSafeFixes,
         },
         languageOptions: {
             globals: {
