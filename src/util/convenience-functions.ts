@@ -122,7 +122,9 @@ export const docPropertiesUniqueNumericIdGen = (): UniqueNumericIdCreator => uni
  * Drawing IDs (`wp:docPr` and `wps:cNvPr`) must be unique within a document,
  * and Word reports unreadable content when two drawings share one. A drawing
  * is created before it belongs to a document, so all drawings draw from this
- * one counter rather than a generator per instance.
+ * one counter rather than a generator per instance. The Packer numbers the
+ * drawings of each document again from 1, so the ids it writes don't depend on
+ * the drawings made before the document.
  *
  * @returns A number no earlier call has returned
  *

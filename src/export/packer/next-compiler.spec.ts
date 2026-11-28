@@ -482,6 +482,46 @@ describe("Compiler", () => {
             expect(new Set(ids).size).to.equal(6);
         });
 
+        it("should number the drawings of a document from 1, across its parts, however many drawings were made before it", () => {
+            // Each drawing takes its id from one counter for the whole process when it is created
+            const image = (): Paragraph =>
+                new Paragraph({
+                    children: [new ImageRun({ type: "png", data: Buffer.from("", "base64"), transformation: { width: 10, height: 10 } })],
+                });
+            const createFile = (): File =>
+                new File({
+                    footnotes: { 1: { children: [image()] } },
+                    endnotes: { 1: { children: [image()] } },
+                    comments: { children: [{ id: 0, date: new Date("2026-01-01T00:00:00Z"), children: [image()] }] },
+                    sections: [
+                        {
+                            headers: { default: new Header({ children: [image()] }) },
+                            footers: { default: new Footer({ children: [image()] }) },
+                            children: [image(), image()],
+                        },
+                    ],
+                });
+            const parts = [
+                "word/document.xml",
+                "word/header1.xml",
+                "word/footer1.xml",
+                "word/footnotes.xml",
+                "word/endnotes.xml",
+                "word/comments.xml",
+            ];
+            const partsOf = (file: File): readonly string[] => {
+                const zipFile = compile(file);
+                return parts.map((path) => textOf(zipFile, path)!);
+            };
+
+            const first = partsOf(createFile());
+            const second = partsOf(createFile());
+
+            expect(second).to.deep.equal(first);
+            const ids = first.map((xml) => [...xml.matchAll(/<wp:docPr id="(\d+)"/g)].map(([, id]) => Number(id)));
+            expect(ids).to.deep.equal([[1, 2], [3], [4], [5], [6], [7]]);
+        });
+
         it("should write the same package when a document is packed again", () => {
             // Packing again used to repeat the lists, custom properties, links on pictures and relationships the first
             // pack wrote, which Word can't open. Apps pack again when a user downloads a document a second time
