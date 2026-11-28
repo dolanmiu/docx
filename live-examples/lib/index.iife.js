@@ -3456,7 +3456,9 @@ DOT: "dot" };
 	* Drawing IDs (`wp:docPr` and `wps:cNvPr`) must be unique within a document,
 	* and Word reports unreadable content when two drawings share one. A drawing
 	* is created before it belongs to a document, so all drawings draw from this
-	* one counter rather than a generator per instance.
+	* one counter rather than a generator per instance. The Packer numbers the
+	* drawings of each document again from 1, so the ids it writes don't depend on
+	* the drawings made before the document.
 	*
 	* @returns A number no earlier call has returned
 	*
@@ -25852,6 +25854,66 @@ MAX: 9026 };
 			else throw Error("XMLComponent did not format correctly");
 		}
 	};
+	// src/export/packer/drawing-ids.ts
+	/**
+	* Numbers the drawings of a document as it is packed.
+	*
+	* @module
+	*/
+	var TAG = /<(\/?)(wp:inline|wp:anchor|wp:docPr|wps:cNvPr|wpg:cNvPr|pic:cNvPr|a:stCxn|a:endCxn)(?=[\s/>])[^>]*>/g;
+	var ID = /(\s)id="(\d+)"/;
+	/**
+	* Creates a function that numbers the drawings in the parts of a document from 1, in the order they are written.
+	*
+	* Each drawing is given an id when it is created, from one counter for the whole process, so no two drawings share
+	* one. Written as they are, the ids of a document would depend on the drawings created before it, and the same
+	* document would be written differently each time. Word only needs the ids to be unique in the document, across all
+	* of its parts, so the parts of a document are numbered by the same function, one after the other.
+	*
+	* Every drawing, and every shape, picture and group in it, is given the next id, even when the same drawing is in the
+	* document twice, and a connector still joins the shapes it did. A picture's own `pic:cNvPr` keeps the id 0 it is
+	* written with, as Word writes it: only its drawing's id needs to be unique.
+	*
+	* @returns A function that returns a part's XML with its drawings numbered after those of the parts before it
+	*/
+	var createDrawingNumbering = () => {
+		let lastId = 0;
+		return (xml) => {
+			const newIds = /* @__PURE__ */ new Map();
+			const drawings = [];
+			const ends = [];
+			for (const { 0: tag, 1: closing, 2: name, index: offset } of xml.matchAll(TAG)) {
+				var _ID$exec;
+				if (name === "wp:inline" || name === "wp:anchor") {
+					if (closing) drawings.pop();
+					else drawings.push(/* @__PURE__ */ new Map());
+					continue;
+				}
+				const shapes = drawings[drawings.length - 1];
+				const id = Number((_ID$exec = ID.exec(tag)) === null || _ID$exec === void 0 ? void 0 : _ID$exec[2]);
+				if (closing || !shapes || !Number.isInteger(id) || name === "pic:cNvPr" && id === 0) continue;
+				if (name === "a:stCxn" || name === "a:endCxn") {
+					ends.push({
+						offset,
+						shapes,
+						id
+					});
+					continue;
+				}
+				lastId++;
+				newIds.set(offset, lastId);
+				if (name !== "wp:docPr" && !shapes.has(id)) shapes.set(id, lastId);
+			}
+			for (const { offset, shapes, id } of ends) {
+				const shape = shapes.get(id);
+				if (shape !== void 0) newIds.set(offset, shape);
+			}
+			return newIds.size === 0 ? xml : xml.replace(TAG, (tag, _closing, _name, offset) => {
+				const id = newIds.get(offset);
+				return id === void 0 ? tag : tag.replace(ID, `$1id="${id}"`);
+			});
+		};
+	};
 	// src/export/packer/placeholders.ts
 	/**
 	* Placeholder module for the `{key}` tokens docx writes before it knows an image's or a list's id.
@@ -26107,6 +26169,7 @@ MAX: 9026 };
 			const commentRelationshipCount = file.Comments.Relationships.RelationshipCount + 1;
 			const footnoteRelationshipCount = file.FootNotes.Relationships.RelationshipCount + 1;
 			const endnoteRelationshipCount = file.Endnotes.Relationships.RelationshipCount + 1;
+			const numberDrawings = createDrawingNumbering();
 			const documentMediaDatas = this.imageReplacer.getMediaData(documentXmlData, file.Media);
 			const commentMediaDatas = this.imageReplacer.getMediaData(commentXmlData, file.Media);
 			const footnoteMediaDatas = this.imageReplacer.getMediaData(footnoteXmlData, file.Media);
@@ -26132,7 +26195,7 @@ MAX: 9026 };
 				},
 				Document: {
 					data: (() => {
-						const xmlData = this.imageReplacer.replace(documentXmlData, documentMediaDatas, documentRelationshipCount);
+						const xmlData = this.imageReplacer.replace(numberDrawings(documentXmlData), documentMediaDatas, documentRelationshipCount);
 						return this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
 					})(),
 					path: "word/document.xml"
@@ -26241,7 +26304,7 @@ MAX: 9026 };
 						declaration: { encoding: "UTF-8" }
 					});
 					const mediaDatas = this.imageReplacer.getMediaData(tempXmlData, file.Media);
-					const xmlData = this.imageReplacer.replace(tempXmlData, mediaDatas, 0);
+					const xmlData = this.imageReplacer.replace(numberDrawings(tempXmlData), mediaDatas, 0);
 					return {
 						data: this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering),
 						path: `word/header${index + 1}.xml`
@@ -26257,7 +26320,7 @@ MAX: 9026 };
 						declaration: { encoding: "UTF-8" }
 					});
 					const mediaDatas = this.imageReplacer.getMediaData(tempXmlData, file.Media);
-					const xmlData = this.imageReplacer.replace(tempXmlData, mediaDatas, 0);
+					const xmlData = this.imageReplacer.replace(numberDrawings(tempXmlData), mediaDatas, 0);
 					return {
 						data: this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering),
 						path: `word/footer${index + 1}.xml`
@@ -26293,7 +26356,7 @@ MAX: 9026 };
 				},
 				FootNotes: {
 					data: (() => {
-						const xmlData = this.imageReplacer.replace(footnoteXmlData, footnoteMediaDatas, footnoteRelationshipCount);
+						const xmlData = this.imageReplacer.replace(numberDrawings(footnoteXmlData), footnoteMediaDatas, footnoteRelationshipCount);
 						return this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
 					})(),
 					path: "word/footnotes.xml"
@@ -26317,7 +26380,7 @@ MAX: 9026 };
 				},
 				Endnotes: {
 					data: (() => {
-						const xmlData = this.imageReplacer.replace(endnoteXmlData, endnoteMediaDatas, endnoteRelationshipCount);
+						const xmlData = this.imageReplacer.replace(numberDrawings(endnoteXmlData), endnoteMediaDatas, endnoteRelationshipCount);
 						return this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
 					})(),
 					path: "word/endnotes.xml"
@@ -26356,7 +26419,7 @@ MAX: 9026 };
 			}, file.Comments.IsEmpty ? {} : {
 				Comments: {
 					data: (() => {
-						const xmlData = this.imageReplacer.replace(commentXmlData, commentMediaDatas, commentRelationshipCount);
+						const xmlData = this.imageReplacer.replace(numberDrawings(commentXmlData), commentMediaDatas, commentRelationshipCount);
 						return this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
 					})(),
 					path: "word/comments.xml"

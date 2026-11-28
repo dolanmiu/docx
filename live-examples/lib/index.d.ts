@@ -3098,6 +3098,10 @@ export declare type DocPropertiesOptions = {
     readonly description?: string;
     /** Title of the drawing element */
     readonly title?: string;
+    /**
+     * The drawing's id. Default is the next id no other drawing has. The Packer numbers the drawings of a document again
+     * from 1, in the order they are written, so its drawing ids don't depend on the drawings made before it
+     */
     readonly id?: string;
 };
 
@@ -3107,7 +3111,9 @@ export declare type DocPropertiesOptions = {
  * Drawing IDs (`wp:docPr` and `wps:cNvPr`) must be unique within a document,
  * and Word reports unreadable content when two drawings share one. A drawing
  * is created before it belongs to a document, so all drawings draw from this
- * one counter rather than a generator per instance.
+ * one counter rather than a generator per instance. The Packer numbers the
+ * drawings of each document again from 1, so the ids it writes don't depend on
+ * the drawings made before the document.
  *
  * @returns A number no earlier call has returned
  *

@@ -8704,7 +8704,8 @@ var docxShapes = (function(exports, docx) {
 		y: b * x + d * y
 	});
 	/**
-	* A name for a shape, as Word gives them: what it is, then its drawing id, such as "Rounded Rectangle 4".
+	* A name for a shape, as Word gives them: what it is, then a number, such as "Rounded Rectangle 4". The number is the
+	* shape's drawing id within its drawing, which counts from 1, so the same drawing has the same names in any document.
 	*/
 	var defaultName = (kind, drawingId) => `${kind.replace(/([a-z\d])([A-Z])/g, "$1 $2").replace(/^./, (first) => first.toUpperCase())} ${drawingId}`;
 	var createNonVisualDrawingProperties = (drawingId, kind, { altText, link, decorative }) => {
@@ -8790,37 +8791,37 @@ var docxShapes = (function(exports, docx) {
 	/**
 	* Gives the band and header of each lane of a layout drawing ids.
 	*/
-	var assignLaneIds = (layout) => {
+	var assignLaneIds = (nextId, layout) => {
 		var _layout$lanes;
-		return (layout === null || layout === void 0 ? void 0 : layout.type) === "flow" ? ((_layout$lanes = layout.lanes) !== null && _layout$lanes !== void 0 ? _layout$lanes : []).map(() => [(0, docx.docPropertiesUniqueNumericId)(), (0, docx.docPropertiesUniqueNumericId)()]) : [];
+		return (layout === null || layout === void 0 ? void 0 : layout.type) === "flow" ? ((_layout$lanes = layout.lanes) !== null && _layout$lanes !== void 0 ? _layout$lanes : []).map(() => [nextId(), nextId()]) : [];
 	};
 	/**
 	* Gives every shape, picture, group, connector and label a drawing id, in the order they are written.
 	*/
-	var assignIds = (children) => children.map((options) => {
+	var assignIds = (children, nextId) => children.map((options) => {
 		switch (options.type) {
 			case "connector": return {
 				kind: "connector",
 				options,
-				drawingId: (0, docx.docPropertiesUniqueNumericId)(),
-				labelId: options.label ? (0, docx.docPropertiesUniqueNumericId)() : void 0
+				drawingId: nextId(),
+				labelId: options.label ? nextId() : void 0
 			};
 			case "picture": return {
 				kind: "picture",
 				options,
-				drawingId: (0, docx.docPropertiesUniqueNumericId)()
+				drawingId: nextId()
 			};
 			case "group": return {
 				kind: "group",
 				options,
-				drawingId: (0, docx.docPropertiesUniqueNumericId)(),
-				laneIds: assignLaneIds(options.layout),
-				children: assignIds(options.children)
+				drawingId: nextId(),
+				laneIds: assignLaneIds(nextId, options.layout),
+				children: assignIds(options.children, nextId)
 			};
 			default: return {
 				kind: "shape",
 				options,
-				drawingId: (0, docx.docPropertiesUniqueNumericId)()
+				drawingId: nextId()
 			};
 		}
 	});
@@ -9698,7 +9699,7 @@ var docxShapes = (function(exports, docx) {
 			leaves
 		};
 	};
-	var toMediaData = (child, shift) => {
+	var toMediaData = (child, shift, drawingIds) => {
 		const x = Math.round(child.box.x + shift.x);
 		const y = Math.round(child.box.y + shift.y);
 		const width = Math.round(child.box.width);
@@ -9725,16 +9726,23 @@ var docxShapes = (function(exports, docx) {
 			flip: child.flip,
 			rotation: child.rotation ? child.rotation * 6e4 : void 0
 		};
+		const withDrawingId = (properties) => _objectSpread2(_objectSpread2({}, properties), {}, { id: drawingIds[properties.id - 1] });
 		switch (child.type) {
-			case "wps": return {
-				type: "wps",
-				transformation,
-				data: child.data
-			};
+			case "wps": {
+				const { nonVisualDrawingProperties, connections } = child.data;
+				return {
+					type: "wps",
+					transformation,
+					data: _objectSpread2(_objectSpread2(_objectSpread2({}, child.data), nonVisualDrawingProperties && { nonVisualDrawingProperties: withDrawingId(nonVisualDrawingProperties) }), connections && { connections: {
+						start: connections.start && withDrawingId(connections.start),
+						end: connections.end && withDrawingId(connections.end)
+					} })
+				};
+			}
 			case "picture": return {
 				type: "picture",
 				transformation,
-				data: child.data
+				data: _objectSpread2(_objectSpread2({}, child.data), {}, { nonVisualDrawingProperties: withDrawingId(child.data.nonVisualDrawingProperties) })
 			};
 			default: return {
 				type: "group",
@@ -9744,8 +9752,8 @@ var docxShapes = (function(exports, docx) {
 				children: child.children.map((grandchild) => toMediaData(grandchild, {
 					x: 0,
 					y: 0
-				})),
-				nonVisualDrawingProperties: child.nonVisualDrawingProperties
+				}, drawingIds)),
+				nonVisualDrawingProperties: withDrawingId(child.nonVisualDrawingProperties)
 			};
 		}
 	};
@@ -9753,15 +9761,23 @@ var docxShapes = (function(exports, docx) {
 	* Gives the children of a group or canvas their drawing ids. Every shape, picture, group and connector identifies
 	* itself with a cNvPr, which needs an id that is unique in the document.
 	*
+	* They are numbered from 1 within the drawing, and named after that number, so the same drawing has the same names in
+	* any document. Each is written as an id from the counter every drawing takes its id from, so no two drawings share
+	* one, and the Packer then numbers the drawings of the document from 1.
+	*
 	* @throws If two shapes or pictures have the same `id`
 	*/
 	var createShapeDrawingNodes = (children, layout) => {
-		const laneIds = assignLaneIds(layout);
-		const nodes = assignIds(children);
+		let count = 0;
+		const nextId = () => ++count;
+		const laneIds = assignLaneIds(nextId, layout);
+		const nodes = assignIds(children, nextId);
+		const drawingIds = Array.from({ length: count }, () => (0, docx.docPropertiesUniqueNumericId)());
 		return {
 			nodes,
 			ids: collectIds(nodes),
-			laneIds
+			laneIds,
+			drawingIds
 		};
 	};
 	/**
@@ -9775,7 +9791,7 @@ var docxShapes = (function(exports, docx) {
 	* @throws If a group has no children, two shapes have the same `id`, a connector refers to an `id` no shape in its group has, or a shape to a lane the layout doesn't have
 	*/
 	var layoutShapeDrawing = (children, { keepPositive = false, layout: shapeLayout, styles = WORD_DEFAULT_STYLES } = {}) => {
-		const { nodes, ids, laneIds } = "nodes" in children ? children : createShapeDrawingNodes(children, shapeLayout);
+		const { nodes, ids, laneIds, drawingIds } = "nodes" in children ? children : createShapeDrawingNodes(children, shapeLayout);
 		const layout = layoutGroup(nodes, ids, styles, shapeLayout, laneIds);
 		const shift = keepPositive ? {
 			x: Math.max(0, -layout.reach.left),
@@ -9791,7 +9807,7 @@ var docxShapes = (function(exports, docx) {
 			bottom: bottom + shift.y
 		});
 		return {
-			children: layout.children.map((child) => toMediaData(child, shift)),
+			children: layout.children.map((child) => toMediaData(child, shift, drawingIds)),
 			bounds: move(layout.box),
 			reach: move(layout.reach)
 		};
@@ -10324,7 +10340,7 @@ var docxShapes = (function(exports, docx) {
 						line: (_options$line = options.line) !== null && _options$line !== void 0 ? _options$line : "none",
 						nonVisualDrawingProperties: {
 							id: backgroundId,
-							name: `Canvas ${backgroundId}`,
+							name: "Canvas",
 							decorative: true
 						}
 					}
