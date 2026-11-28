@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import { File } from "@file/file";
 import type { IContext, IStylesOptions } from "docx";
 
-// @ts-expect-error -- Vite reads the schema as text, which TypeScript has no type for
 import wmlSchema from "../../ooxml-schemas/ISO-IEC29500-4_2016/wml.xsd?raw";
 import {
     BORDER_WIDTHS,

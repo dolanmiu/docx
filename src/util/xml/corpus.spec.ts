@@ -14,8 +14,8 @@ import type { XmlElement } from "./types";
  */
 
 declare global {
-    // Vite's own types for import.meta, vite/client, would type every "?raw" import, which other specs expect not to be
-    // typed
+    // Vite's own types for import.meta, vite/client, would also type imports of images and other assets everywhere in
+    // src (see src/tests/vite-imports.d.ts)
     // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
     interface ImportMeta {
         readonly glob: ImportGlobFunction;

@@ -6,7 +6,6 @@ import { Relationships } from "@file/relationships";
 import { type XmlElement as Element, parseXml, stringifyXmlable } from "@util/xml";
 import { type IContext, PackagePart } from "docx";
 
-// @ts-expect-error -- Vite reads the schema as text, which TypeScript has no type for
 import chartSchema from "../../ooxml-schemas/ISO-IEC29500-4_2016/dml-chart.xsd?raw";
 import { createChartData } from "./chart-data";
 import type { ChartRunOptions, ChartSeries } from "./chart-options";

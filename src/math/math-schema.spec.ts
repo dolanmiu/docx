@@ -4,7 +4,6 @@ import { Formatter } from "@export/formatter";
 import { type XmlElement as Element, parseXml, stringifyXmlable } from "@util/xml";
 import { Math, type MathComponent, MathFraction, MathIntegral, MathRun, MathSum, MathSuperScript } from "docx";
 
-// @ts-expect-error -- Vite reads the schema as text, which TypeScript has no type for
 import mathSchema from "../../ooxml-schemas/ISO-IEC29500-4_2016/shared-math.xsd?raw";
 import { latexToMath } from "./latex-to-math";
 import { MathAccent } from "./math-accent";
