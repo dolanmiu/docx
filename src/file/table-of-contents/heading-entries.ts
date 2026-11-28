@@ -520,11 +520,20 @@ export const fillTablesOfContents = (
     );
 
     // A heading is bookmarked once, however many tables of contents list it. The bookmarks are named after the
-    // headings' places, as their ids are numbered again when the document is packed
+    // headings' places, as their ids are numbered again when the document is packed, skipping the names of the
+    // bookmarks already in the body, which the entries' links would otherwise share
+    const takenNames = new Set(bookmarkMarksOf(body).flatMap((mark) => (mark.start ? [mark.name] : [])));
+    let place = 0;
+    const nextName = (): string => {
+        do {
+            place++;
+        } while (takenNames.has(`_Toc${place}`));
+        return `_Toc${place}`;
+    };
     const headings = paragraphs
         .map((paragraph) => ({ paragraph, levels: tables.map(([, { properties }]) => levelIn(properties, paragraph, styles)) }))
         .filter(({ levels }) => levels.some((level) => level !== undefined))
-        .map((heading, index) => ({ ...heading, id: bookmarkIds.get(index), name: `_Toc${index + 1}` }));
+        .map((heading, index) => ({ ...heading, id: bookmarkIds.get(index), name: nextName() }));
     for (const { paragraph, id, name } of headings) {
         bookmark(paragraph.element, name, id, context);
     }

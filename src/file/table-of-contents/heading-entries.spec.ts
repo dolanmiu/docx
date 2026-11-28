@@ -139,6 +139,25 @@ describe("Table of contents filled in from the headings", () => {
         ]);
     });
 
+    it("names the headings' bookmarks after their places, skipping a name a bookmark in the body already has", () => {
+        const body = bodyOf({
+            sections: [
+                {
+                    children: [
+                        new TableOfContents("Contents", { hyperlink: true, headingStyleRange: "1-1" }),
+                        new Paragraph({ children: [new Bookmark({ id: "_Toc1", children: [new TextRun("Mine")] })] }),
+                        heading("First"),
+                        heading("Second"),
+                    ],
+                },
+            ],
+        });
+
+        expect(bookmarksIn(body)).to.deep.equal({ Mine: "_Toc1", First: "_Toc2", Second: "_Toc3" });
+        const anchors = [...JSON.stringify(tableOfContentsIn(body)).matchAll(/"w:anchor":"(_Toc\d+)"/g)].map(([, anchor]) => anchor);
+        expect(anchors).to.deep.equal(["_Toc2", "_Toc3"]);
+    });
+
     it("lists the headings in the range of headingStyleRange (\\o), leaving out empty headings and other paragraphs", () => {
         const body = bodyOf({
             sections: [
