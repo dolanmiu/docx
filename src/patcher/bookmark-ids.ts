@@ -34,14 +34,14 @@ export const findBookmarkIds = (element: Element): readonly number[] => {
  * already uses. Bookmark ids must be unique within a document, but a bookmark's id is chosen when it is created,
  * without knowing which ids the template has.
  *
- * A bookmark keeps its id if nothing in the document uses it yet, and otherwise gets the next unused one. An id is
- * renumbered the same way each time, so a bookmark's start and end still share one, even in separate patches.
+ * Each bookmark gets the id after the highest one the document has, in the order the bookmarks are inserted, so the
+ * ids don't depend on the bookmarks created before the patch. An id is renumbered the same way each time, so a
+ * bookmark's start and end still share one, even in separate patches.
  *
  * @param idsInDocument - The ids of the bookmarks already in the document
  * @returns A function that returns the elements with their bookmarks renumbered
  */
 export const renumberBookmarksAvoiding = (idsInDocument: readonly number[]): RenumberBookmarks => {
-    const usedIds = new Set(idsInDocument);
     const newIds = new Map<number, number>();
     // Always the highest id in use, so the one after it is free
     let highestId = idsInDocument.reduce((highest, id) => Math.max(highest, id), 0);
@@ -52,13 +52,10 @@ export const renumberBookmarksAvoiding = (idsInDocument: readonly number[]): Ren
             return knownId;
         }
 
-        const newId = usedIds.has(id) ? highestId + 1 : id;
-        highestId = Math.max(highestId, newId);
+        highestId++;
         // eslint-disable-next-line functional/immutable-data
-        usedIds.add(newId);
-        // eslint-disable-next-line functional/immutable-data
-        newIds.set(id, newId);
-        return newId;
+        newIds.set(id, highestId);
+        return highestId;
     };
 
     const renumber = (element: Element): Element => {

@@ -519,23 +519,22 @@ export const fillTablesOfContents = (
         followBookmarks,
     );
 
-    // A heading is bookmarked once, however many tables of contents list it
+    // A heading is bookmarked once, however many tables of contents list it. The bookmarks are named after the
+    // headings' places, as their ids are numbered again when the document is packed
     const headings = paragraphs
         .map((paragraph) => ({ paragraph, levels: tables.map(([, { properties }]) => levelIn(properties, paragraph, styles)) }))
         .filter(({ levels }) => levels.some((level) => level !== undefined))
-        .map((heading, index) => ({ ...heading, id: bookmarkIds.get(index) }));
-    for (const { paragraph, id } of headings) {
-        bookmark(paragraph.element, `_Toc${id}`, id, context);
+        .map((heading, index) => ({ ...heading, id: bookmarkIds.get(index), name: `_Toc${index + 1}` }));
+    for (const { paragraph, id, name } of headings) {
+        bookmark(paragraph.element, name, id, context);
     }
     const listNumbers = headings.length > 0 ? listNumbersOf?.(body) : undefined;
 
     tables.forEach(([table, options], index) => {
-        const entries = headings.flatMap(({ paragraph, levels, id }) => {
+        const entries = headings.flatMap(({ paragraph, levels, name }) => {
             const level = levels[index];
-            const listNumber = listNumbers?.get(`_Toc${id}`);
-            return level === undefined
-                ? []
-                : [{ title: paragraph.text, level, bookmark: `_Toc${id}`, ...(listNumber ? { listNumber } : {}) }];
+            const listNumber = listNumbers?.get(name);
+            return level === undefined ? [] : [{ title: paragraph.text, level, bookmark: name, ...(listNumber ? { listNumber } : {}) }];
         });
         if (entries.length === 0) {
             return;

@@ -10,7 +10,9 @@ import { stringifyXmlable } from "@util/xml";
 import type { ZipFileData } from "@util/zip";
 
 import { Formatter } from "../formatter";
+import { createBookmarkNumbering } from "./bookmark-ids";
 import { createDrawingNumbering } from "./drawing-ids";
+import { createFitTextNumbering } from "./fit-text-ids";
 import { ImageReplacer } from "./image-replacer";
 import { NumberingReplacer } from "./numbering-replacer";
 import { type PackagePartFile, xmlifyPackageParts } from "./package-part-writer";
@@ -239,9 +241,12 @@ export class Compiler {
         const footnoteRelationshipCount = file.FootNotes.Relationships.RelationshipCount + 1;
         const endnoteRelationshipCount = file.Endnotes.Relationships.RelationshipCount + 1;
 
-        // The drawings are numbered in the order the parts are written below, so their ids don't depend on the drawings
-        // made before the document
+        // The drawings, bookmarks and runs fitted on their own are numbered in the order the parts are written below, so
+        // their ids don't depend on the ones made before the document
         const numberDrawings = createDrawingNumbering();
+        const numberBookmarks = createBookmarkNumbering();
+        const numberFitText = createFitTextNumbering();
+        const numberIds = (xml: string): string => numberFitText(numberBookmarks(numberDrawings(xml)));
 
         const documentMediaDatas = this.imageReplacer.getMediaData(documentXmlData, file.Media);
         const commentMediaDatas = this.imageReplacer.getMediaData(commentXmlData, file.Media);
@@ -285,11 +290,7 @@ export class Compiler {
             },
             Document: {
                 data: (() => {
-                    const xmlData = this.imageReplacer.replace(
-                        numberDrawings(documentXmlData),
-                        documentMediaDatas,
-                        documentRelationshipCount,
-                    );
+                    const xmlData = this.imageReplacer.replace(numberIds(documentXmlData), documentMediaDatas, documentRelationshipCount);
                     const referenedXmlData = this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
                     return referenedXmlData;
                 })(),
@@ -311,7 +312,7 @@ export class Compiler {
                             },
                         },
                     );
-                    const referencedXmlStyles = this.numberingReplacer.replace(xmlStyles, file.Numbering.ConcreteNumbering);
+                    const referencedXmlStyles = this.numberingReplacer.replace(numberFitText(xmlStyles), file.Numbering.ConcreteNumbering);
                     return referencedXmlStyles;
                 })(),
                 path: "word/styles.xml",
@@ -451,7 +452,7 @@ export class Compiler {
                 );
                 const mediaDatas = this.imageReplacer.getMediaData(tempXmlData, file.Media);
                 // TODO: 0 needs to be changed when headers get relationships of their own
-                const xmlData = this.imageReplacer.replace(numberDrawings(tempXmlData), mediaDatas, 0);
+                const xmlData = this.imageReplacer.replace(numberIds(tempXmlData), mediaDatas, 0);
 
                 const referenedXmlData = this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
 
@@ -476,7 +477,7 @@ export class Compiler {
                 );
                 const mediaDatas = this.imageReplacer.getMediaData(tempXmlData, file.Media);
                 // TODO: 0 needs to be changed when headers get relationships of their own
-                const xmlData = this.imageReplacer.replace(numberDrawings(tempXmlData), mediaDatas, 0);
+                const xmlData = this.imageReplacer.replace(numberIds(tempXmlData), mediaDatas, 0);
 
                 const referenedXmlData = this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
 
@@ -521,11 +522,7 @@ export class Compiler {
             },
             FootNotes: {
                 data: (() => {
-                    const xmlData = this.imageReplacer.replace(
-                        numberDrawings(footnoteXmlData),
-                        footnoteMediaDatas,
-                        footnoteRelationshipCount,
-                    );
+                    const xmlData = this.imageReplacer.replace(numberIds(footnoteXmlData), footnoteMediaDatas, footnoteRelationshipCount);
                     const referenedXmlData = this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
                     return referenedXmlData;
                 })(),
@@ -560,7 +557,7 @@ export class Compiler {
             },
             Endnotes: {
                 data: (() => {
-                    const xmlData = this.imageReplacer.replace(numberDrawings(endnoteXmlData), endnoteMediaDatas, endnoteRelationshipCount);
+                    const xmlData = this.imageReplacer.replace(numberIds(endnoteXmlData), endnoteMediaDatas, endnoteRelationshipCount);
                     const referenedXmlData = this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
                     return referenedXmlData;
                 })(),
@@ -616,7 +613,7 @@ export class Compiler {
                       Comments: {
                           data: (() => {
                               const xmlData = this.imageReplacer.replace(
-                                  numberDrawings(commentXmlData),
+                                  numberIds(commentXmlData),
                                   commentMediaDatas,
                                   commentRelationshipCount,
                               );
@@ -852,19 +849,21 @@ export class Compiler {
             // After every part that can have lists, such as headers and footers, as the lists they use are added to the
             // numbering while they're written
             Numbering: {
-                data: stringifyXmlable(
-                    this.formatter.format(file.Numbering, {
-                        viewWrapper: file.Document,
-                        file,
-                        stack: [],
-                    }),
-                    {
-                        indent: prettify,
-                        declaration: {
-                            standalone: "yes",
-                            encoding: "UTF-8",
+                data: numberFitText(
+                    stringifyXmlable(
+                        this.formatter.format(file.Numbering, {
+                            viewWrapper: file.Document,
+                            file,
+                            stack: [],
+                        }),
+                        {
+                            indent: prettify,
+                            declaration: {
+                                standalone: "yes",
+                                encoding: "UTF-8",
+                            },
                         },
-                    },
+                    ),
                 ),
                 path: "word/numbering.xml",
             },

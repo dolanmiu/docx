@@ -90,8 +90,10 @@ describe("Table of contents filled in from the headings", () => {
             ],
         });
 
+        // The bookmark is named after the heading's place, and its id is numbered again when the document is packed
         const name = bookmarksIn(body).Introduction;
-        const id = Number(name.replace("_Toc", ""));
+        expect(name).to.equal("_Toc1");
+        const id = attributesOf(elementsNamed(body[1], "w:bookmarkStart")[0], "w:bookmarkStart")?.["w:id"];
         expect(body[1]).to.deep.equal({
             "w:p": [
                 { "w:pPr": [{ "w:pStyle": { _attr: { "w:val": "Heading1" } } }] },

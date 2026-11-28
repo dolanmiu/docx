@@ -36,12 +36,12 @@ describe("bookmark-ids", () => {
     });
 
     describe("renumberBookmarksAvoiding", () => {
-        it("should keep an id the document does not use", () => {
+        it("should give a bookmark the id after the document's highest, even one the document doesn't use", () => {
             const renumber = renumberBookmarksAvoiding([1, 2]);
 
             const output = renumber(elementsOf(`<w:bookmarkStart w:id="5" w:name="a"/><w:bookmarkEnd w:id="5"/>`));
 
-            expect(bookmarkIdsIn(output)).to.deep.equal([5, 5]);
+            expect(bookmarkIdsIn(output)).to.deep.equal([3, 3]);
         });
 
         it("should give an id the document uses the next unused one, on both the start and the end", () => {
@@ -85,7 +85,7 @@ describe("bookmark-ids", () => {
             expect(bookmarkIdsIn(output)).to.deep.equal([3, 3, 4, 4]);
         });
 
-        it("should not give a renumbered bookmark an id that an earlier inserted one kept", () => {
+        it("should number the bookmarks in the order they are inserted, whatever ids they had", () => {
             const renumber = renumberBookmarksAvoiding([1]);
 
             const output = renumber(
@@ -95,7 +95,7 @@ describe("bookmark-ids", () => {
                 ),
             );
 
-            expect(bookmarkIdsIn(output)).to.deep.equal([9, 9, 10, 10]);
+            expect(bookmarkIdsIn(output)).to.deep.equal([2, 2, 3, 3]);
         });
 
         it("should keep the bookmark's other attributes and leave other elements' ids alone", () => {
