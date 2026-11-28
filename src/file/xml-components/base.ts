@@ -26,7 +26,6 @@ export type IContext = {
     /** Access to document relationships and other document parts. */
     readonly viewWrapper: IViewWrapper;
     /** Current traversal stack of components (mutable for performance). */
-    // eslint-disable-next-line functional/prefer-readonly-type
     readonly stack: IXmlableObject[];
 };
 

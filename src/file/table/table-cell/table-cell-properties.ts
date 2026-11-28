@@ -143,7 +143,6 @@ export type ITableCellPropertiesChangeOptions = ITableCellPropertiesOptionsBase 
  */
 export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
     private readonly hasWidth: boolean;
-    // eslint-disable-next-line functional/prefer-readonly-type
     private hasColumnWidth = false;
 
     public constructor(options: ITableCellPropertiesOptions) {

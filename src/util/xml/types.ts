@@ -4,7 +4,7 @@
  *
  * @module
  */
-/* eslint-disable functional/prefer-readonly-type -- Changes to a document, such as patches, are made to its tree in place */
+// The types aren't readonly, as changes to a document, such as patches, are made to its tree in place
 
 /**
  * The attributes of an element, by name.

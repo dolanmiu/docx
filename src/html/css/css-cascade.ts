@@ -173,7 +173,6 @@ export const substituteVariables = (value: string, variableOf: (name: string) =>
 const customPropertiesOf = (own: ReadonlyMap<string, string>, inherited: ReadonlyMap<string, string>): ReadonlyMap<string, string> => {
     const resolved = new Map<string, string | undefined>();
     // The properties being worked out, each referring to the next, and those found to be in a cycle
-    // eslint-disable-next-line functional/prefer-readonly-type
     const resolving: string[] = [];
     const cyclic = new Set<string>();
     const resolve = (name: string): string | undefined => {

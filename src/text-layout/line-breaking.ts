@@ -409,7 +409,6 @@ const tokenizeText = (items: readonly (TextItem | SoftHyphenItem)[], rules: Line
         items.filter((item): item is TextItem => item.type === "text"),
         rules,
     );
-    // eslint-disable-next-line functional/prefer-readonly-type
     const tokens: { readonly type: "word" | "space"; readonly pieces: Piece[]; hyphens?: Hyphen[] }[] = [];
     let index = 0;
     // Whether the last character was a soft hyphen in a word, after which its next is measured apart
@@ -458,9 +457,7 @@ const tokenizeText = (items: readonly (TextItem | SoftHyphenItem)[], rules: Line
  * Turns a part of a paragraph into tokens.
  */
 const tokenize = (items: readonly InlineItem[], rules: LineBreakRules): readonly Token[] => {
-    // eslint-disable-next-line functional/prefer-readonly-type
     const tokens: Token[] = [];
-    // eslint-disable-next-line functional/prefer-readonly-type
     let text: (TextItem | SoftHyphenItem)[] = [];
     for (const item of items) {
         if (item.type === "text" || item.type === "softHyphen") {
@@ -593,7 +590,6 @@ const widthOf = (pieces: readonly Piece[], measurer: TextMeasurer): number => {
  * between the second f and the i of "efficient", its "ff", where "ffi" is without them (stops2/word-stops-text3.ts SH18e).
  */
 export const textMeasuredTogether = (items: readonly InlineItem[]): readonly Piece[] => {
-    // eslint-disable-next-line functional/prefer-readonly-type
     const pieces: Piece[] = [];
     let joins = false;
     for (const item of items) {
@@ -1293,7 +1289,6 @@ const spacedOnGrid = (
     items: readonly InlineItem[],
     space: number,
 ): { readonly items: readonly InlineItem[]; readonly unsupported?: string } => {
-    // eslint-disable-next-line functional/prefer-readonly-type
     const spaced: InlineItem[] = [];
     let unsupported: string | undefined;
     // The last character, its item in what is laid out, its kind and size, and whether it is in an East Asian font
@@ -1410,7 +1405,6 @@ const spacedBesideEastAsian = (
     items: readonly InlineItem[],
     spacing: { readonly letters: boolean; readonly digits: boolean },
 ): { readonly items: readonly InlineItem[]; readonly unsupported?: string } => {
-    // eslint-disable-next-line functional/prefer-readonly-type
     const spaced: InlineItem[] = [];
     let unsupported: string | undefined;
     // The last character, its item in what is laid out and its kind
@@ -1523,7 +1517,6 @@ const withAcross = (items: readonly InlineItem[], measurer: TextMeasurer): reado
 
 /** The two tokens after one, by its index, but for markers */
 const nextTwo = (tokens: readonly Token[], index: number): readonly Token[] => {
-    // eslint-disable-next-line functional/prefer-readonly-type
     const next: Token[] = [];
     for (let at = index + 1; at < tokens.length && next.length < 2; at++) {
         if (tokens[at].type !== "marker") {
@@ -1851,7 +1844,6 @@ export const layoutLines = (
     const endsWithBreak = parts.length > 1 && previous.end!.kind === "page" && last.tokens.every((token) => token.type === "marker");
     const segments = endsWithBreak ? [...parts.slice(0, -2), { tokens: [...previous.tokens, ...last.tokens], end: previous.end }] : parts;
 
-    // eslint-disable-next-line functional/prefer-readonly-type
     const lines: LaidOutLine[] = [];
     /** The room of a line of its own, from its index, when it has one */
     const roomOf = (line: number): LineRoom | undefined => {
@@ -2218,7 +2210,6 @@ export const layoutLines = (
                 if (token.pieces.some(({ font }) => hasLigatures(font))) {
                     line = { ...line, unsupported: line.unsupported ?? "a word longer than its line with ligatures" };
                 }
-                // eslint-disable-next-line functional/prefer-readonly-type
                 let onLine: Piece[] = [];
                 let from = line.position;
                 for (const character of charactersOf(token.pieces)) {

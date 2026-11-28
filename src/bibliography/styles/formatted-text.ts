@@ -54,7 +54,6 @@ const sameFormat = (a: FormattedRun, b: FormattedRun): boolean =>
  * joined, and empty ones dropped.
  */
 export const readAsWord = (text: TextLike): FormattedText => {
-    // eslint-disable-next-line functional/prefer-readonly-type
     const runs: FormattedRun[] = [];
     // Whether the text so far ends with a space, or is at the start of the paragraph or of a line
     let atSpace = true;

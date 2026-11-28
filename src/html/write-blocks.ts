@@ -18,7 +18,6 @@ import { writeInline } from "./write-inline";
  */
 export const writeBlocks = (blocks: readonly Block[], idOf: () => number): readonly (Paragraph | Table)[] => {
     const numbering = numberLists(blocks);
-    // eslint-disable-next-line functional/prefer-readonly-type
     const written: (Paragraph | Table)[] = [];
     let pending: "page" | "column" | undefined;
     for (const block of blocks) {

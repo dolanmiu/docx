@@ -55,7 +55,6 @@ export const toJson = (xmlData: string): Element => {
  * // Returns XML elements for <w:t>Hello World</w:t>
  * ```
  */
-// eslint-disable-next-line functional/prefer-readonly-type
 export const createTextElementContents = (text: string): Element[] => {
     const textJson = toJson(stringifyXmlable(formatter.format(new Text({ text }))));
 
@@ -101,7 +100,6 @@ export const patchSpaceAttribute = (element: Element): Element => ({
  * // Returns array of Relationship elements
  * ```
  */
-// eslint-disable-next-line functional/prefer-readonly-type
 export const getFirstLevelElements = (relationships: Element, id: string): Element[] => {
     const parent = relationships.elements?.find((e) => e.name === id);
     if (parent === undefined) {

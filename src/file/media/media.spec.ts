@@ -73,7 +73,6 @@ describe("Media", () => {
         });
 
         it("should take each image's path from the function it is given, as from a package's parts", () => {
-            // eslint-disable-next-line functional/prefer-readonly-type
             const taken: string[] = [];
             const media = new Media((extension) => {
                 // eslint-disable-next-line functional/immutable-data

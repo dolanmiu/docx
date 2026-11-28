@@ -31,7 +31,6 @@ export type Link = { readonly href: string } | { readonly anchor: string };
  */
 export type Note = {
     readonly kind: "footnote" | "endnote";
-    // eslint-disable-next-line functional/prefer-readonly-type
     content?: readonly ParagraphBlock[];
 };
 

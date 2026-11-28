@@ -63,7 +63,6 @@ export type IBodyOptions = {
  * ```
  */
 export class Body extends XmlComponent {
-    // eslint-disable-next-line functional/prefer-readonly-type
     private readonly sections: SectionProperties[] = [];
     /**
      * Section properties that were moved into a paragraph at the end of their section

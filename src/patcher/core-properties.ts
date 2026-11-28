@@ -42,7 +42,6 @@ const ELEMENTS: Readonly<Record<keyof PatchDocumentProperties, { readonly namesp
 };
 
 // The text of a property's element. An empty value clears the property
-// eslint-disable-next-line functional/prefer-readonly-type
 const textOf = (value: string | number): Element[] => (value === "" ? [] : [{ type: "text", text: String(value) }]);
 
 // An element's name without its namespace prefix, which a document may choose. The core properties' elements each have
@@ -77,13 +76,7 @@ const decode = (bytes: Uint8Array): string => {
  * .xml, with its other parts, as it found it, so that is read and moved to its XML parts, to be written in UTF-8 with
  * them, rather than written over them as it was.
  */
-const readPart = (
-    // eslint-disable-next-line functional/prefer-readonly-type
-    parts: Map<string, Element>,
-    // eslint-disable-next-line functional/prefer-readonly-type
-    binaryParts: Map<string, Uint8Array>,
-    path: string,
-): Element | undefined => {
+const readPart = (parts: Map<string, Element>, binaryParts: Map<string, Uint8Array>, path: string): Element | undefined => {
     const bytes = binaryParts.get(path);
     if (bytes === undefined) {
         return parts.get(path);
@@ -105,7 +98,6 @@ const readPart = (
  * The path of the package's core properties part, found from its relationships. A package without one is given a
  * relationship to docProps/core.xml.
  */
-// eslint-disable-next-line functional/prefer-readonly-type
 const corePropertiesPathOf = (parts: Map<string, Element>): string => {
     const relationships = parts.get(PACKAGE_RELATIONSHIPS_PATH) ?? createRelationshipFile();
     const target = getFirstLevelElements(relationships, "Relationships").find(
@@ -130,9 +122,7 @@ const corePropertiesPathOf = (parts: Map<string, Element>): string => {
  * @param addContentTypeOverride - Adds the content type of the part, if it's new
  */
 export const patchCoreProperties = (
-    // eslint-disable-next-line functional/prefer-readonly-type
     parts: Map<string, Element>,
-    // eslint-disable-next-line functional/prefer-readonly-type
     binaryParts: Map<string, Uint8Array>,
     properties: PatchDocumentProperties,
     { addContentTypeOverride }: { readonly addContentTypeOverride: (contentType: string, partName: string) => void },

@@ -100,7 +100,6 @@ type Call = {
 
 // A drawing patch that records each call, and does what it is given to
 class RecordingPatch extends DrawingPatch {
-    // eslint-disable-next-line functional/prefer-readonly-type
     public readonly calls: Call[] = [];
 
     public constructor(private readonly onPatch: (drawing: TemplateDrawing, template: TemplatePackage) => void = () => undefined) {
@@ -484,7 +483,6 @@ describe("drawing-patch", () => {
 
         describe("the template's package", () => {
             const relatedPart = async (files: Readonly<Record<string, string | Uint8Array | undefined>>, id = "rId5") => {
-                // eslint-disable-next-line functional/prefer-readonly-type
                 const parts: (ReturnType<TemplatePackage["getRelatedPart"]> | "none")[] = [];
                 await patch(templateWith(files), {
                     chart: new RecordingPatch(({ part }, template) => {
@@ -1011,7 +1009,6 @@ describe("drawing-patch", () => {
             });
 
             it("should accept a drawing patch whose class docx doesn't know, by its type", async () => {
-                // eslint-disable-next-line functional/prefer-readonly-type
                 const calls: string[] = [];
                 await patch(templateWith(), {
                     chart: {

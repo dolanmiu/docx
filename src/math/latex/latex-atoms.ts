@@ -158,7 +158,6 @@ type Piece =
  * `a{b}c`.
  */
 const atomsToPieces = (atoms: readonly Atom[]): readonly Piece[] => {
-    // eslint-disable-next-line functional/prefer-readonly-type
     const pieces: Piece[] = [];
 
     for (let index = 0; index < atoms.length; index++) {

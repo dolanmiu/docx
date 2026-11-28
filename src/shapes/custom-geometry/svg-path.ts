@@ -67,7 +67,6 @@ const NUMBER = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/;
  * @throws If the path doesn't start with a move, has an unknown command, or a command has the wrong number of arguments
  */
 const tokenize = (path: string): readonly Command[] => {
-    // eslint-disable-next-line functional/prefer-readonly-type
     const commands: Command[] = [];
     let index = 0;
     let letter: string | undefined;

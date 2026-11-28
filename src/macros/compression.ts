@@ -65,7 +65,6 @@ const findMatch = (
  * Reference: [MS-OVBA] 2.4.1.3.7 Compressing a DecompressedChunk
  */
 const compressChunk = (data: Uint8Array, chunkStart: number, chunkEnd: number): readonly number[] => {
-    // eslint-disable-next-line functional/prefer-readonly-type
     const tokens: number[] = [];
     let current = chunkStart;
     while (current < chunkEnd) {
@@ -109,7 +108,6 @@ const compressChunk = (data: Uint8Array, chunkStart: number, chunkEnd: number): 
  * Reference: [MS-OVBA] 2.4.1.3.6 Compression algorithm
  */
 export const compress = (data: Uint8Array): Uint8Array => {
-    // eslint-disable-next-line functional/prefer-readonly-type
     const output: number[] = [0x01];
     for (let chunkStart = 0; chunkStart < data.length; chunkStart += CHUNK_SIZE) {
         // eslint-disable-next-line functional/immutable-data

@@ -178,7 +178,6 @@ export const sequenceNumbering = (context: IContext): SequenceNumbering => {
     // The SEQ fields of each identifier counted so far
     const counted = new Map<string, readonly Counted[]>();
     // The paragraph each heading level, from 1, was last at, and the last paragraph whose heading level isn't clear
-    // eslint-disable-next-line functional/prefer-readonly-type
     const headingsAt: number[] = [];
     let unclearAt = -1;
     let paragraph = -1;

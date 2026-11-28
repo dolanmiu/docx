@@ -57,7 +57,6 @@ export type StringifyXmlableOptions = {
  * @param isLast - Whether this is the last object written, which isn't followed by a line break
  * @param out - The pieces of XML written so far
  */
-// eslint-disable-next-line functional/prefer-readonly-type
 const write = (data: object, indent: string, indents: string, isLast: boolean, out: string[]): void => {
     // An empty object has no name, and writes nothing
     const name = Object.keys(data)[0] as string | undefined;
@@ -153,7 +152,6 @@ export const stringifyXmlable = (
         declaration === undefined
             ? ""
             : `<?xml version="1.0" encoding="${escapeAll(declaration.encoding || "UTF-8")}"${standalone}?>${indent ? "\n" : ""}`;
-    // eslint-disable-next-line functional/prefer-readonly-type
     const out: string[] = [declarationXml];
     items.forEach((item, i) => write(item, indent, "", i === items.length - 1, out));
     return out.join("");

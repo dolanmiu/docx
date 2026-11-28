@@ -100,7 +100,6 @@ export const recordTableOfContents = (table: IXmlableObject, fillWith: HeadingEn
  * from the counter every bookmark shares, the first time it is needed, so a document packed again is written the same.
  */
 export class HeadingBookmarkIds {
-    // eslint-disable-next-line functional/prefer-readonly-type
     private readonly ids: number[] = [];
 
     public get(index: number): number {
@@ -186,7 +185,6 @@ const textOfRunContent = (element: unknown): string => {
 /** The text of a paragraph. Of a field, only its result is text, not its instruction */
 const textOf = (paragraph: Element): string => {
     // For each field that has begun, whether its result has
-    // eslint-disable-next-line functional/prefer-readonly-type
     const fields: boolean[] = [];
     const read = (element: unknown): string => {
         const name = nameOf(element);

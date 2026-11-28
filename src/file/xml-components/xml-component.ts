@@ -23,7 +23,6 @@ export const EMPTY_OBJECT = Object.seal({});
 /**
  * Adds what a child wrote to an element's children, leaving it out when it is undefined.
  */
-// eslint-disable-next-line functional/prefer-readonly-type
 const addChild = (children: IXmlableObject[], written: unknown): void => {
     if (written !== undefined) {
         // eslint-disable-next-line functional/immutable-data
@@ -60,7 +59,7 @@ export abstract class XmlComponent extends BaseXmlComponent {
      * This array forms the content of the XML element. It can contain other
      * XmlComponents, string values (text nodes), or attribute components.
      */
-    // eslint-disable-next-line functional/prefer-readonly-type, @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected root: (BaseXmlComponent | string | any)[];
 
     /**
@@ -105,7 +104,6 @@ export abstract class XmlComponent extends BaseXmlComponent {
         // Recursively prepare all children for serialization. A child written as several components, such as a run with
         // a run in its children, is written as each of them in turn. Built in place, as an element of a document's body
         // can have thousands of children
-        // eslint-disable-next-line functional/prefer-readonly-type
         const children: IXmlableObject[] = [];
         for (const comp of this.root) {
             // A component from another copy of docx, such as one a plugin was bundled with, isn't an instance of

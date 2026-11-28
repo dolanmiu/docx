@@ -66,7 +66,6 @@ const decodeFace = (encoded: string, drawnIn: string | undefined): ArabicFace =>
     if (known) {
         return known;
     }
-    // eslint-disable-next-line functional/prefer-readonly-type
     const widths: (number | undefined)[] = [];
     let last: number | undefined;
     for (let at = 0; at < encoded.length;) {

@@ -46,10 +46,8 @@ const elementsToWrapper = (wrapper: ElementWrapper): readonly ElementWrapper[] =
  * ```
  */
 export const traverse = (node: Element): readonly IRenderedParagraphNode[] => {
-    // eslint-disable-next-line functional/prefer-readonly-type
     const renderedParagraphs: IRenderedParagraphNode[] = [];
 
-    // eslint-disable-next-line functional/prefer-readonly-type
     const queue: ElementWrapper[] = [
         ...elementsToWrapper({
             element: node,

@@ -78,7 +78,6 @@ export const readCompoundFile = (file: Uint8Array): ReadCompoundFile => {
     // The FAT's sectors: the first 109 are listed in the header, and the rest in a chain of DIFAT sectors, each listing
     // as many as it has room for after the number of the next
     const fatSectorCount = view.getUint32(44, true);
-    // eslint-disable-next-line functional/prefer-readonly-type
     const fatSectors: number[] = [];
     for (let index = 0; index < Math.min(fatSectorCount, 109); index++) {
         // eslint-disable-next-line functional/immutable-data
@@ -96,7 +95,6 @@ export const readCompoundFile = (file: Uint8Array): ReadCompoundFile => {
         Array.from({ length: sectorSize / 4 }, (_, index) => view.getUint32(sectorOffset(sector) + index * 4, true)),
     );
     const chain = (table: readonly number[], start: number): readonly number[] => {
-        // eslint-disable-next-line functional/prefer-readonly-type
         const sectors: number[] = [];
         // No longer than the table, so a chain that loops ends
         for (let sector = start; sector !== END_OF_CHAIN && sectors.length < table.length; sector = table[sector]) {

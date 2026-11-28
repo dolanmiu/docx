@@ -146,7 +146,6 @@ const withMark = (paragraph: Element, mark: Element): Element => {
 const patchNotesOfKind = (
     kind: NoteKind,
     notes: PatchNotes,
-    // eslint-disable-next-line functional/prefer-readonly-type
     parts: Map<string, Element>,
     { createContext, addContentTypeOverride, renumberBookmarks, renumberDrawings, renumberFitText, renumberLists, useStyles }: NotesHelpers,
 ): Omit<NotesPatcher, "carry"> & { readonly carry: (reference: object, note: Note) => number } => {
@@ -283,7 +282,6 @@ const patchNotesOfKind = (
  */
 export const patchNotes = (
     { footnotes = {}, endnotes = {} }: { readonly footnotes?: PatchNotes; readonly endnotes?: PatchNotes },
-    // eslint-disable-next-line functional/prefer-readonly-type
     parts: Map<string, Element>,
     helpers: NotesHelpers,
 ): NotesPatcher => {

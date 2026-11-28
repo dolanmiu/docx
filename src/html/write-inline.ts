@@ -49,7 +49,6 @@ const transformed = (text: string, transform: "lowercase" | "capitalize" | undef
  * A line break that ends the paragraph is left out, as it starts a line with nothing on it.
  */
 const collapse = (content: readonly WrittenInline[]): readonly Piece[] => {
-    // eslint-disable-next-line functional/prefer-readonly-type
     const pieces: Piece[] = [];
     let lineStart = true;
     let previous = "";
@@ -146,10 +145,8 @@ const sameFormat = (a: RunFormat, b: RunFormat): boolean => JSON.stringify(a) ==
 
 /** Runs of text, tabs and line breaks, with each stretch of one formatting and revision in one run */
 const runsOf = (pieces: readonly RunPiece[], idOf: () => number): readonly ParagraphChild[] => {
-    // eslint-disable-next-line functional/prefer-readonly-type
     const runs: ParagraphChild[] = [];
     let breaks = 0;
-    // eslint-disable-next-line functional/prefer-readonly-type
     let children: (string | Tab)[] = [];
     let current: Exclude<RunPiece, { readonly type: "break" }> | undefined;
 
@@ -209,9 +206,7 @@ const runsOf = (pieces: readonly RunPiece[], idOf: () => number): readonly Parag
 
 /** The content of a link, or of the text between links: its runs, with images and other content between them */
 const childrenOf = (pieces: readonly Exclude<Piece, { readonly type: "bookmark" }>[], idOf: () => number): readonly ParagraphChild[] => {
-    // eslint-disable-next-line functional/prefer-readonly-type
     const children: ParagraphChild[] = [];
-    // eslint-disable-next-line functional/prefer-readonly-type
     let runs: RunPiece[] = [];
     for (const piece of pieces) {
         if (piece.type === "atom") {
@@ -235,7 +230,6 @@ const childrenOf = (pieces: readonly Exclude<Piece, { readonly type: "bookmark" 
  */
 export const writeInline = (content: readonly WrittenInline[], idOf: () => number): readonly ParagraphChild[] => {
     const pieces = collapse(content);
-    // eslint-disable-next-line functional/prefer-readonly-type
     const children: ParagraphChild[] = [];
     let index = 0;
     while (index < pieces.length) {
