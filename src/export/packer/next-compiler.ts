@@ -239,7 +239,8 @@ export class Compiler {
         const footnoteRelationshipCount = file.FootNotes.Relationships.RelationshipCount + 1;
         const endnoteRelationshipCount = file.Endnotes.Relationships.RelationshipCount + 1;
 
-        // The drawings are numbered in the order the parts are written below, so the document is written the same each time
+        // The drawings are numbered in the order the parts are written below, so their ids don't depend on the drawings
+        // made before the document
         const numberDrawings = createDrawingNumbering();
 
         const documentMediaDatas = this.imageReplacer.getMediaData(documentXmlData, file.Media);

@@ -38,7 +38,7 @@ export type DocPropertiesOptions = {
     readonly title?: string;
     /**
      * The drawing's id. Default is the next id no other drawing has. The Packer numbers the drawings of a document again
-     * from 1, in the order they are written, so the same document is written the same each time
+     * from 1, in the order they are written, so its drawing ids don't depend on the drawings made before it
      */
     readonly id?: string;
 };
